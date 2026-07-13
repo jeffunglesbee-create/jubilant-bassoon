@@ -237,18 +237,31 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
   accurate current-cause message including the real call count.
   See `docs/outbox/cc-fetchcompoundeditorial-typed-migration-2026-07-13.md`.
 
-### 8. `fetchFIELDBriefFromClaude` (index.html ~L31144-31286) — 1 caller, user-facing messaging
+### 8. `fetchFIELDBriefFromClaude` (index.html ~L31334) — ✅ MIGRATED 2026-07-13
 
-- FIELD's flagship brief feature. The sole caller currently shows ONE
-  generic "verification chain failed" message for: proof-mode (deliberate
-  test skip), budget-exceeded (a resource-limit state, not a failure),
-  "no ranked games" (a genuine data-state), deliberate suppression
-  (decided game, intentional), legacy-proxy HTTP failure, and a terminal
-  catch-all — 6 distinct causes, one alarming message.
-- **Target:** differentiate at minimum "intentional/expected" states
-  (proof-mode, suppression, no-data) from genuine failures, so debugging
-  sessions and any future user-facing degraded-state messaging aren't
-  misled by a scary message on a benign state.
+- FIELD's flagship brief feature. The sole caller used to show ONE
+  generic "Tonight's narrative is unsettled... didn't pass FIELD's
+  verification chain" message for all 6 of: proof-mode (deliberate test
+  skip), budget-exhausted (a resource-limit state, not a failure), "no
+  ranked games" (a genuine data-state), deliberate suppression (decided
+  game, intentional), legacy-proxy HTTP failure, and a quality-too-short/
+  exception catch-all.
+- **Real fix (return contract changed from `string|null` to
+  `{ok:true,text}` / `{ok:false,reason}` — exactly 1 real caller, updated
+  in the same commit, zero risk beyond this function):** the caller
+  already renders a sensible static fallback (`buildFIELDBriefStatic`)
+  into the DOM *before* this function is even called. For the 4
+  intentional/expected reasons (`proof-mode`, `budget-exhausted`,
+  `no-ranked-games`, `suppressed`), the caller now simply leaves that
+  static text alone — no invented new copy, just correct routing. The 3
+  genuine-failure reasons (`http-failure`, `quality-too-short`,
+  `exception`) still show the exact same brand-safe "verification chain"
+  card as before, unchanged.
+- Real verification: 7 forced scenarios on the function itself (all 6
+  reasons + genuine success) confirmed correctly tagged, plus 8 routing
+  scenarios (including the success case) confirmed the caller sends each
+  to the right UI outcome. See
+  `docs/outbox/cc-fetchfieldbrieffromclaude-typed-migration-2026-07-13.md`.
 
 ### 9. `fetchMLBGameBriefFromClaude` (index.html ~L31581-31705) — 2 callers, 4 conflated causes
 

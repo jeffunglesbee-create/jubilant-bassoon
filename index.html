@@ -24595,7 +24595,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12n';
+  const SW_VERSION = '2026-07-12o';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31320,18 +31320,29 @@ function buildGameContext(g) {
   return { gid, sport, dramaTrend, standingsGap, milestone, liveDrama };
 }
 
+// 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #8): the sole
+// caller (initFIELDBrief) used to show the SAME user-facing "verification
+// chain failed" card for every null cause here -- proof-mode, budget
+// exhaustion, a night with no ranked games, deliberate suppression, a
+// real HTTP failure, or a thrown exception, 6 causes, one alarming
+// message. Migrated the return contract from `string|null` to
+// `{ok:true,text}` / `{ok:false,reason}` so the caller can tell
+// intentional/expected states (which should silently leave the existing
+// static brief text alone) from genuine failures (which should still show
+// the verification-chain-failed card, unchanged). Exactly 1 real caller,
+// updated in the same commit.
 async function fetchFIELDBriefFromClaude(sections){
-  if (_proofMode) return null; // proof mode: no AI calls
+  if (_proofMode) return {ok:false, reason:'proof-mode'}; // proof mode: no AI calls
   const budget=journalismCallsToday();
   // J3 brief is served from relay KV (no Gemini call); compound 429 backoff must not gate it.
   // Hard ceiling only — read the counter directly, bypassing canCall() backoff bleed.
   const _jCount = parseInt(sessionStorage.getItem('field_j_calls_'+fieldDateKey(new Date()))||'0');
-  if (_jCount >= 50) return null;
+  if (_jCount >= 50) return {ok:false, reason:'budget-exhausted'};
   // Pre-fetch standings from relay/API sources (MLB Stats API, NBA relay, NHL relay — not ESPN)
   await Promise.allSettled(sections.slice(0, 5).map(s => fetchStandingsForPrompt(s.sport)));
   const all=sections.flatMap(s=>(s.games||[]).map(g=>({...g,_section:s.sport})));
   const ranked=all.filter(g=>g.home&&g.away&&g.home!=='ATP/WTA Field').sort((a,b)=>preGameScore(b)-preGameScore(a)).slice(0,8);
-  if(!ranked.length) return null;
+  if(!ranked.length) return {ok:false, reason:'no-ranked-games'};
   // Big-game flag: Conference Finals and above get doubled brief length.
   // Mirrors the compound path (line ~17293) so standalone J3 gets the same
   // editorial depth treatment when Conference Finals / Cup / NBA Finals are on
@@ -31357,7 +31368,7 @@ async function fetchFIELDBriefFromClaude(sections){
                    : sport.includes('baseball')   ? period >= 8 : false;
       if (isLate) {
         if (FIELD_DEBUG) console.log('[J3] suppressed — top game cooling in final period');
-        return null;
+        return {ok:false, reason:'suppressed'};
       }
     }
   } catch(e_) {}
@@ -31444,11 +31455,11 @@ async function fetchFIELDBriefFromClaude(sections){
     if (_viaRelay && _viaRelay.length > 30) {
       budget.inc();
       scoreProse(_viaRelay, null).then(s=>renderProseScore(s,'J3 Brief'));
-      return _viaRelay.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();
+      return {ok:true, text: _viaRelay.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim()};
     }
     // Fallback: legacy direct-proxy path
     const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
-    if(!r.ok) return null;
+    if(!r.ok) return {ok:false, reason:'http-failure'};
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>50){
@@ -31460,10 +31471,16 @@ async function fetchFIELDBriefFromClaude(sections){
       text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
       scoreProse(text, null).then(s=>renderProseScore(s,'J3 Brief'));
-      return text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim();
+      return {ok:true, text: text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim()};
     }
-  }catch(e){if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);}
-  return null;
+    // Fell through: text came back but didn't clear the length bar -- a
+    // quality issue, not an infra failure. Was an implicit fallthrough to
+    // the function's own final `return null;`; now explicit.
+    return {ok:false, reason:'quality-too-short'};
+  }catch(e){
+    if(FIELD_DEBUG)console.error('[J3 FIELD Brief] proxy error:',e.message);
+    return {ok:false, reason:'exception'};
+  }
 }
 
 // ── My Teams Brief Line ───────────────────────────────────────────────────────
@@ -31661,8 +31678,9 @@ async function initFIELDBrief(sections){
   }
 
   // Compound null (429 / parse fail): individual brief + temporal spread for series
-  const claudeText=await fetchFIELDBriefFromClaude(sections);
-  if(claudeText){
+  const briefResult=await fetchFIELDBriefFromClaude(sections);
+  if(briefResult.ok){
+    const claudeText=briefResult.text;
     const textEl=el.querySelector('.field-brief-text');
     if(textEl){textEl.textContent=_enforceNBAAttributionFooter(trimToCompleteSentence(claudeText), sections);textEl.classList.remove('pending');textEl.classList.add('loaded');}
     sessionStorage.setItem(cacheKey,claudeText);
@@ -31670,7 +31688,18 @@ async function initFIELDBrief(sections){
     // FIELD Desk: must be triggered here too — compound null path never called renderFieldDesk
     scheduleFieldDesk(300);
     setTimeout(renderJournalism, 300);
+  } else if (briefResult.reason==='proof-mode' || briefResult.reason==='budget-exhausted' || briefResult.reason==='no-ranked-games' || briefResult.reason==='suppressed') {
+    // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #8): intentional
+    // or expected states, not failures -- a deliberate proof-mode test
+    // skip, today's AI budget already spent, no ranked games tonight, or a
+    // decided game deliberately suppressed. Leave the static brief text
+    // (buildFIELDBriefStatic, already rendered into el before this call)
+    // as-is. Showing "FIELD's verification chain didn't pass" when nothing
+    // actually failed was actively misleading -- this was the queue's
+    // core finding for this function.
   } else {
+    // Genuine failure (http-failure / quality-too-short / exception) --
+    // same brand-safe fallback card as before this migration, unchanged.
     // ── JQ Gate brand-safe fallback (PM-31-JQ) ──────────────────────────────
     // All three journalism paths failed (relay KV → compound editorial →
     // fetchFIELDBriefFromClaude). FIELD never fills silence with stale generic
