@@ -217,17 +217,25 @@ re-derivation of `saveEspnFinal`, `findESPNScore`, and `fetchTeamRank`.
 - **Re-verified independently this session (TASK 4 spot-check): CONFIRMED**
   — including the exact 7-day TTL value.
 
-### 7. `fetchCompoundEditorial` (index.html ~L28145-28160) — 1 caller, but 3 conflated causes with an existing side-channel
+### 7. `fetchCompoundEditorial` (index.html ~L28308) — ✅ MIGRATED 2026-07-13
 
-- Proof-mode-skip, budget-exhausted, and backoff-active nulls are all
-  indistinguishable to the sole caller (`if(compound){...}`).
-- **Notably:** the backoff-active branch (L28160) ALREADY sets
-  `window._compoundLastError` as a side-channel — proving the
-  differentiation is meaningful and already partially built. The
-  budget-exhausted branch (L28147) does NOT set this side-channel, an
-  inconsistency within the same function. Low-risk, concrete fix: route
-  all three causes through the same mechanism already proven to work for
-  one of them.
+- The backoff-active branch's `window._compoundLastError` side-channel
+  was fixed as part of entry #5 (it was dead code — see that entry).
+  Extended the same mechanism to the budget-exhausted branch, which set
+  no message at all: the Health Panel (~L5120/5123) displays
+  `_compoundLastError` verbatim whenever the brief is static/missing, so
+  a budget-exhausted state was showing whatever error happened to be set
+  LAST — possibly hours old, from an unrelated failure — misleading
+  anyone reading the panel about the real current cause. Now sets
+  `journalism budget exhausted (N/50 calls used today)`.
+- Proof-mode-skip (`if (_proofMode) return null;`) left untouched — its
+  own comment explicitly documents this as deliberate ("prevents
+  _fieldErrors entries" — avoids telemetry noise during test runs), not a
+  gap.
+- Real verification: forced budget-exhaustion with a pre-set stale
+  `_compoundLastError` value, confirmed it's overwritten with the
+  accurate current-cause message including the real call count.
+  See `docs/outbox/cc-fetchcompoundeditorial-typed-migration-2026-07-13.md`.
 
 ### 8. `fetchFIELDBriefFromClaude` (index.html ~L31144-31286) — 1 caller, user-facing messaging
 

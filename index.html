@@ -24595,7 +24595,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12m';
+  const SW_VERSION = '2026-07-12n';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -28319,8 +28319,17 @@ async function fetchCompoundEditorial(sections) {
     // countdown message was confirmed dead code (nothing between here and
     // there could change _compoundRetryAfter). Moved the diagnostic here,
     // to the check that actually fires.
-    if (budget.blockedReason() === 'backoff' && typeof _compoundRetryAfter !== 'undefined') {
+    const _reason = budget.blockedReason();
+    if (_reason === 'backoff' && typeof _compoundRetryAfter !== 'undefined') {
       try { window._compoundLastError = `in 429 backoff (${Math.ceil((_compoundRetryAfter-Date.now())/1000)}s left)`; } catch(_){}
+    } else if (_reason === 'budget-exhausted') {
+      // 2026-07-13: the Health Panel (~L5120/5123) displays
+      // window._compoundLastError verbatim whenever the brief is
+      // static/missing -- without setting it here, a budget-exhausted
+      // state showed whatever error happened to be set LAST (possibly
+      // hours old, from a completely different failure), misleading
+      // anyone reading the panel about the actual current cause.
+      try { window._compoundLastError = `journalism budget exhausted (${budget.get()}/50 calls used today)`; } catch(_){}
     }
     return null;
   }
