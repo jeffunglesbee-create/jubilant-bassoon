@@ -1700,6 +1700,35 @@ body.wf-mode .np-inner{max-width:100%}
   .pga-leaderboard th:nth-child(6),.pga-leaderboard th:nth-child(7),
   .pga-leaderboard td.pga-gir,.pga-leaderboard td.pga-drive{display:none}
 }
+/* ── Home Run Derby bracket card ──────────────────────────────────────────
+   Mirrors .pga-card's shell/eyebrow/title/head + leaderboard table styling
+   (same design tokens), with an added semis/final bracket block below the
+   Round 1 table — HRD's shape is leaderboard (Round 1) + true bracket
+   (semis/final), unlike golf's pure leaderboard. */
+.hrd-card{padding:.3rem .85rem .45rem;border-top:1px solid rgba(201,168,76,.18);margin-top:.25rem}
+.hrd-eyebrow{font-size:.6rem;color:var(--gold2);font-weight:700;letter-spacing:.07em;text-transform:uppercase;opacity:.85;margin-bottom:.18rem}
+.hrd-title{font-family:var(--ff-display);font-size:.85rem;font-weight:700;color:var(--white);letter-spacing:-.01em;line-height:1.25}
+.hrd-head{margin-bottom:.35rem}
+.hrd-leaderboard{width:100%;border-collapse:collapse;font-size:.6rem;font-family:var(--ff-mono);color:var(--muted);margin-bottom:.35rem}
+.hrd-leaderboard th{text-align:right;color:var(--gold2);font-weight:600;font-size:.55rem;letter-spacing:.05em;text-transform:uppercase;opacity:.75;padding:.15rem .25rem .2rem;border-bottom:1px solid rgba(201,168,76,.18);white-space:nowrap}
+.hrd-leaderboard th:nth-child(1){text-align:left}
+.hrd-leaderboard td{padding:.2rem .25rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}
+.hrd-leaderboard tr.hrd-row td.hrd-name{text-align:left;color:var(--text)}
+.hrd-leaderboard tr.hrd-row:hover td{background:rgba(255,255,255,.03)}
+.hrd-team{display:block;font-size:.52rem;color:var(--muted);opacity:.75;letter-spacing:.02em}
+.hrd-round-label{font-size:.6rem;color:var(--gold2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.85;margin:.3rem 0 .18rem}
+.hrd-bracket-rounds{display:flex;flex-direction:column;gap:.3rem}
+.hrd-semi{border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:.25rem .4rem}
+.hrd-semi-label,.hrd-final-label{font-size:.55rem;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;opacity:.7;margin-bottom:.12rem}
+.hrd-semi-player,.hrd-final-player{font-size:.62rem;font-family:var(--ff-mono);color:var(--muted);padding:.06rem 0}
+.hrd-semi-player.hrd-winner,.hrd-final-player.hrd-winner{color:var(--gold2);font-weight:700}
+.hrd-final{border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:.25rem .4rem;margin-top:.15rem}
+.hrd-final-tbd{font-size:.6rem;color:var(--muted);opacity:.7;padding:.2rem 0}
+.hrd-champion{margin-top:.2rem;font-size:.62rem;font-weight:700;color:var(--gold2)}
+@media(max-width:600px){
+  .hrd-card{padding:.25rem .65rem .35rem}
+  .hrd-leaderboard{font-size:.56rem}
+}
 .importance-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.6rem;font-weight:700;letter-spacing:.04em;padding:.15rem .4rem;border-radius:3px;margin:.1rem .85rem .15rem;width:fit-content}
 .importance-badge.series-deciding{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.35)}
 .importance-badge.elimination{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3)}
@@ -17053,6 +17082,209 @@ function buildGolfPromptContext(pgaData) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// Home Run Derby — bracket structure + journalism context (CC-CMD-2026-07-13-
+// hrd-bracket-client). Single-night, fixed 8-slot bracket, known field in
+// advance — unlike golf's multi-day tournament shape, the bracket structure
+// itself doesn't need live data to build and test correctly, only the live
+// results do. Companion relay work (field-relay-nba's /homeRunDerby/{gamePk}
+// proxy) was not confirmed landed as of this build — see buildHRDBracket's
+// own doc comment for the live-results hook this is built against, not
+// wired to any live source yet.
+//
+// Real, verified 2026 field (cross-checked across 5 sources):
+// Kyle Schwarber (Phillies, MLB HR leader), Bryce Harper (Phillies, 2018
+// champion / 2013 runner-up, home stadium), Munetaka Murakami (White Sox,
+// second-ever Japanese-born participant after Ohtani 2021), Junior Caminero
+// (Rays, 2025 runner-up), Ben Rice (Yankees), Jac Caglianone (Royals,
+// youngest at 23), Willson Contreras (Red Sox), Jordan Walker (Cardinals).
+// Format: Round 1 all eight, 20 swings each, top 4 HR totals advance (ties
+// broken by longest HR distance); semis/final 15 swings each, seeded
+// 1v4/2v3; ties broken by 3-swing swing-off.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const HRD_FIELD_2026 = [
+  { name: 'Kyle Schwarber',     team: 'Phillies',  note: 'MLB HR leader' },
+  { name: 'Bryce Harper',       team: 'Phillies',  note: '2018 champion · 2013 runner-up · home stadium' },
+  { name: 'Munetaka Murakami',  team: 'White Sox', note: 'second-ever Japanese-born participant, after Ohtani 2021' },
+  { name: 'Junior Caminero',    team: 'Rays',      note: '2025 runner-up' },
+  { name: 'Ben Rice',           team: 'Yankees',   note: '' },
+  { name: 'Jac Caglianone',     team: 'Royals',    note: 'youngest in the field, age 23' },
+  { name: 'Willson Contreras',  team: 'Red Sox',   note: '' },
+  { name: 'Jordan Walker',      team: 'Cardinals', note: '' },
+];
+
+// buildHRDBracket(liveResults) — derives the full bracket state from the
+// real, fixed field above plus an optional liveResults object. Safe with
+// liveResults absent/undefined (pre-event, all-zero placeholder state) or
+// partially populated (Round 1 in progress, semis not yet reached, etc).
+//
+// liveResults shape (a documented HOOK for live data to be injected later —
+// no relay wiring exists yet, this shape is not fabricated data, just the
+// contract a future live-data call site would populate):
+//   {
+//     round1: [{ name, hrTotal, longestHR }, ...]  up to 8 entries,
+//     semis:  [{ name, hrTotal, longestHR }, ...]  up to 4 entries (semi-round totals for the 4 semifinalists),
+//     final:  [{ name, hrTotal, longestHR }, ...]  up to 2 entries (final-round totals for the 2 finalists),
+//     swingOff: { winner: name } | null,             // only consulted on an exact final-round tie
+//   }
+function buildHRDBracket(liveResults) {
+  const r = liveResults || {};
+  const round1 = HRD_FIELD_2026.map(p => {
+    const live = (r.round1 || []).find(x => x.name === p.name);
+    return { name: p.name, team: p.team, note: p.note, hrTotal: live?.hrTotal ?? null, longestHR: live?.longestHR ?? null };
+  });
+  const round1Complete = round1.every(p => p.hrTotal != null);
+  const round1Ranked = round1Complete
+    ? [...round1].sort((a, b) => (b.hrTotal - a.hrTotal) || (b.longestHR - a.longestHR))
+    : null; // don't imply a ranking before real totals exist
+  const top4 = round1Ranked ? round1Ranked.slice(0, 4) : null;
+
+  const semiSeeds = top4
+    ? [ { seedLabel: '1 vs 4', players: [top4[0], top4[3]] },
+        { seedLabel: '2 vs 3', players: [top4[1], top4[2]] } ]
+    : [ { seedLabel: '1 vs 4', players: null },
+        { seedLabel: '2 vs 3', players: null } ];
+
+  const semis = semiSeeds.map(s => {
+    if (!s.players) return { ...s, results: null, winner: null };
+    const results = s.players.map(p => {
+      const live = (r.semis || []).find(x => x.name === p.name);
+      return { name: p.name, hrTotal: live?.hrTotal ?? null, longestHR: live?.longestHR ?? null };
+    });
+    const complete = results.every(x => x.hrTotal != null);
+    const winner = complete
+      ? (results[0].hrTotal !== results[1].hrTotal
+          ? (results[0].hrTotal > results[1].hrTotal ? results[0] : results[1])
+          : (results[0].longestHR > results[1].longestHR ? results[0] : results[1]))
+      : null;
+    return { ...s, results, winner };
+  });
+
+  const finalists = semis.every(s => s.winner) ? semis.map(s => s.winner) : null;
+  const finalResults = finalists
+    ? finalists.map(f => {
+        const live = (r.final || []).find(x => x.name === f.name);
+        return { name: f.name, hrTotal: live?.hrTotal ?? null, longestHR: live?.longestHR ?? null };
+      })
+    : null;
+  const finalComplete = !!(finalResults && finalResults.every(x => x.hrTotal != null));
+  let champion = null;
+  if (finalComplete) {
+    if (finalResults[0].hrTotal !== finalResults[1].hrTotal) {
+      champion = finalResults[0].hrTotal > finalResults[1].hrTotal ? finalResults[0] : finalResults[1];
+    } else if (r.swingOff && r.swingOff.winner) {
+      champion = finalResults.find(x => x.name === r.swingOff.winner) || null;
+    }
+    // Exact tie with no swingOff.winner yet: champion stays null — correct,
+    // not a bug — the swing-off hasn't resolved as far as this data shows.
+  }
+
+  return { field: HRD_FIELD_2026, round1, round1Complete, top4, semis, finalists, finalResults, finalComplete, champion };
+}
+
+// renderHRDBracket(bracket) — HTML card for the bracket. Matches
+// renderPGALeaderboard's convention: takes a derived data object, returns
+// an HTML string, renders correctly whether the bracket is all-placeholder
+// (pre-event) or partially/fully populated.
+function renderHRDBracket(bracket) {
+  if (!bracket) return '';
+  const round1Rows = bracket.round1.map(p => {
+    const hr = p.hrTotal != null ? String(p.hrTotal) : '—';
+    const dist = p.longestHR != null ? `${p.longestHR}ft` : '';
+    return `<tr class="hrd-row">
+      <td class="hrd-name">${p.name}<span class="hrd-team">${p.team}</span></td>
+      <td class="hrd-hr">${hr}</td>
+      <td class="hrd-dist">${dist}</td>
+    </tr>`;
+  }).join('');
+  const round1Table = `<table class="hrd-leaderboard">
+    <thead><tr><th>Player</th><th>HR</th><th>Longest</th></tr></thead>
+    <tbody>${round1Rows}</tbody>
+  </table>`;
+
+  const semiHTML = bracket.semis.map((s, i) => {
+    const line = (idx) => {
+      if (!s.players) return `<div class="hrd-semi-player">TBD</div>`;
+      const p = s.players[idx];
+      const res = s.results ? s.results[idx] : null;
+      const hr = res && res.hrTotal != null ? ` — ${res.hrTotal}` : '';
+      const isWinner = s.winner && s.winner.name === p.name;
+      return `<div class="hrd-semi-player${isWinner ? ' hrd-winner' : ''}">${p.name}${hr}</div>`;
+    };
+    return `<div class="hrd-semi">
+      <div class="hrd-semi-label">Semifinal ${i + 1} (${s.seedLabel})</div>
+      ${line(0)}
+      ${line(1)}
+    </div>`;
+  }).join('');
+
+  const finalHTML = (() => {
+    if (!bracket.finalists) return `<div class="hrd-final-tbd">Final: TBD (semifinals not yet complete)</div>`;
+    const [a, b] = bracket.finalists;
+    const ra = bracket.finalResults?.find(x => x.name === a.name);
+    const rb = bracket.finalResults?.find(x => x.name === b.name);
+    const champ = bracket.champion;
+    const line = (p, res) => {
+      const hr = res && res.hrTotal != null ? ` — ${res.hrTotal}` : '';
+      const isWinner = champ && champ.name === p.name;
+      return `<div class="hrd-final-player${isWinner ? ' hrd-winner' : ''}">${p.name}${hr}</div>`;
+    };
+    return `<div class="hrd-final">
+      <div class="hrd-final-label">Final</div>
+      ${line(a, ra)}
+      ${line(b, rb)}
+      ${champ ? `<div class="hrd-champion">🏆 ${champ.name} — 2026 Home Run Derby Champion</div>` : ''}
+    </div>`;
+  })();
+
+  return `<div class="hrd-card">
+    <div class="hrd-head">
+      <div class="hrd-eyebrow">HOME RUN DERBY · ROUND 1</div>
+      <div class="hrd-title">2026 Field</div>
+    </div>
+    ${round1Table}
+    <div class="hrd-round-label">Bracket</div>
+    <div class="hrd-bracket-rounds">
+      ${semiHTML}
+      ${finalHTML}
+    </div>
+  </div>`;
+}
+
+// buildHRDPromptContext(bracket) — journalism context builder, matching
+// buildGolfPromptContext's convention: [TAG]-prefixed string built from a
+// parts array, real static storylines (from the CC-CMD's own 5-source-
+// verified field), graceful when live round results aren't available yet.
+// Never fabricates a result the bracket data doesn't actually contain.
+function buildHRDPromptContext(bracket) {
+  const b = bracket || buildHRDBracket(null);
+  const parts = ['[HOME RUN DERBY CONTEXT]'];
+  parts.push('2026 Field (8 sluggers, single-night bracket — Round 1 all eight/20 swings each, top 4 HR totals advance (ties broken by longest HR distance); semis/final 15 swings each, seeded 1v4/2v3; ties broken by 3-swing swing-off):');
+  HRD_FIELD_2026.forEach(p => {
+    parts.push(`  ${p.name} (${p.team})${p.note ? ' — ' + p.note : ''}`);
+  });
+  parts.push('Storylines:');
+  parts.push('  Kyle Schwarber enters as the 2026 MLB home run leader.');
+  parts.push('  Bryce Harper returns to a Derby he knows well — 2018 champion, 2013 runner-up — at his home stadium, Citizens Bank Park.');
+  parts.push('  Junior Caminero is back after finishing runner-up in 2025.');
+  parts.push('  Munetaka Murakami becomes just the second Japanese-born Derby participant, after Shohei Ohtani in 2021.');
+  parts.push('  Jac Caglianone, 23, is the youngest competitor in the field.');
+  parts.push('  Format note: the swing-based, clock-free system has replaced the timed format used since 2015.');
+  if (!b.round1Complete) {
+    parts.push('Live round results: not yet available — Round 1 has not started or is still in progress.');
+  } else {
+    parts.push('Round 1 results (top 4 advance):');
+    b.top4.forEach((p, i) => parts.push(`  ${i + 1}. ${p.name} — ${p.hrTotal} HR${p.longestHR != null ? `, longest ${p.longestHR}ft` : ''}`));
+    if (b.finalComplete && b.champion) {
+      parts.push(`Champion: ${b.champion.name}.`);
+    } else if (b.finalists) {
+      parts.push(`Final matchup: ${b.finalists[0].name} vs ${b.finalists[1].name}.`);
+    }
+  }
+  return parts.join('\n');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // Football-Data.org engine
 // Free tier: 10 req/min, no commercial use, attribution required
 // Covers: PL, ELC, PD, SA, BL1, FL1, CL, EL, ECL and more
@@ -24682,7 +24914,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13f';
+  const SW_VERSION = '2026-07-13g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
