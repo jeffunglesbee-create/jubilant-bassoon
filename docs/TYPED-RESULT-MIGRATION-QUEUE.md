@@ -727,7 +727,7 @@ value over the grouped view.
 | 1 | `_resolvePickIfExists` (~L28941) | 1 | Best-effort DOM widget refresh inside a .then() with no consumer of the outcome. |
 | 1 | `hydrateMissedRecaps` (~L29109) | 1 | Comment explicitly states "hydration failure is silent — recap snippet is enhancement". |
 | 1 | `_isSSECovered` (~L29472) | 0 | Exported via window._ambientES but has zero real call sites; boolean predicate is correct as designed regardless. |
-| 1 | `fieldEvents 'field:lead_change' listener` (~L29713) | 1 | "Never throw from a bus listener" design convention explicitly stated in the code comment. |
+| 1 | `fieldEvents 'field:lead_change' listener` (~L29991) | 1 | "Never throw from a bus listener" design convention explicitly stated in the code comment. Line citation corrected 2026-07-13 (CC-CMD-bucketc-cleanup): was `~L29713`, now `~L29991` (278 lines of drift from new code inserted above it) — content and classification unchanged, re-verified against the exact comment text still present at the real current line. |
 | 1 | `fieldEvents 'field:crunch' listener` (~L29769) | 1 | Same bus-listener "never throw" convention for the fan-out chip injection. |
 | 1 | `fieldEvents 'field:ws_fresh' listener` (~L29846) | 1 | Best-effort updateWsPulseDot call; no consumer of listener outcome. |
 | 1 | `staleness sweep (setInterval)` (~L29856) | 1 | Best-effort periodic dot-update sweep; single registration, no consumer of outcome. |
