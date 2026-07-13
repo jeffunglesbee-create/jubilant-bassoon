@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "captured_by": "chat sandbox (has direct relay egress; Claude Code's sandbox and the probe_relay_route tool's own internal allowlist both confirmed blocked for this specific path)",
+    "captured_at": "2026-07-13T19:22:00Z",
+    "source_url": "https://field-relay-nba.jeffunglesbee.workers.dev/mlb-stats/homeRunDerby/839032",
+    "purpose": "Real API response for CC-CMD-2026-07-13-hrd-live-wiring TASK 0 field-mapping. This is genuinely live data, captured directly, not fabricated or mocked -- use it as ground truth for mapping matchups/seed/topDerbyHitData to buildHRDBracket()'s liveResults shape.",
+    "note_for_cc": "This response reflects pre-event state (status.state: Preview, all topDerbyHitData zeroed). The rounds[1] and rounds[2] entries (semis/final) currently have no matchups array populated -- they only gain matchups once round 1 completes. Structure your field-mapping to handle both the pre-populated round-1-only shape shown here AND the eventual post-round-1 shape where rounds[1]/rounds[2] gain their own matchups arrays with the same topSeed/bottomSeed/topDerbyHitData structure. Re-fetch closer to or during the event for the live/populated shape if this session runs before real swings have happened."
+  },
+  "info": {
+    "id": 839032,
+    "nonGameGuid": "f3000e76-2728-4e2b-98cd-41881424c309",
+    "name": "2026 MLB Home Run Derby",
+    "eventType": { "code": "O", "name": "Other" },
+    "eventDate": "2026-07-14T00:00:00Z",
+    "venue": { "id": 2681, "name": "Citizens Bank Park", "link": "/api/v1/venues/2681" },
+    "isMultiDay": false,
+    "isPrimaryCalendar": false,
+    "eventNumber": 33,
+    "publicFacing": true,
+    "teams": [ { "id": 143, "name": "Philadelphia Phillies", "link": "/api/v1/teams/143" } ]
+  },
+  "status": {
+    "state": "Preview",
+    "currentRound": 1,
+    "currentRoundTimeLeft": "-:--",
+    "inTieBreaker": false,
+    "tieBreakerNum": 0,
+    "clockStopped": true,
+    "bonusTime": false,
+    "bonusDistanceNeededPerRound": 420,
+    "bonusCountNeededPerRound": 1,
+    "pitchesInRound": 20,
+    "pitchesRemaining": 20,
+    "bonusOutsCurrent": 0,
+    "bonusOutsTotal": 1,
+    "bonusTypeOuts": true,
+    "swingsRemaining": 20,
+    "swingsInRound": 20
+  },
+  "rounds": [
+    {
+      "round": 1, "numBatters": 8, "type": "Pool", "roundTime": 0, "numberOfPitches": 20, "numberOfSwings": 20,
+      "matchups": [
+        { "topSeed": { "complete": false, "started": false, "winner": false, "player": {"id":656941,"fullName":"Kyle Schwarber","link":"/api/v1/people/656941"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":1, "order":7, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 },
+          "bottomSeed": { "complete": false, "started": false, "winner": false, "player": {"id":695506,"fullName":"Jac Caglianone","link":"/api/v1/people/695506"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":8, "order":1, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 } },
+        { "topSeed": { "complete": false, "started": false, "winner": false, "player": {"id":700250,"fullName":"Ben Rice","link":"/api/v1/people/700250"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":2, "order":6, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 },
+          "bottomSeed": { "complete": false, "started": false, "winner": false, "player": {"id":808959,"fullName":"Munetaka Murakami","link":"/api/v1/people/808959"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":7, "order":5, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 } },
+        { "topSeed": { "complete": false, "started": false, "winner": false, "player": {"id":691406,"fullName":"Junior Caminero","link":"/api/v1/people/691406"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":3, "order":2, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 },
+          "bottomSeed": { "complete": false, "started": false, "winner": false, "player": {"id":547180,"fullName":"Bryce Harper","link":"/api/v1/people/547180"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":6, "order":4, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 } },
+        { "topSeed": { "complete": false, "started": false, "winner": false, "player": {"id":691023,"fullName":"Jordan Walker","link":"/api/v1/people/691023"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":4, "order":8, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 },
+          "bottomSeed": { "complete": false, "started": false, "winner": false, "player": {"id":575929,"fullName":"Willson Contreras","link":"/api/v1/people/575929"}, "topDerbyHitData": {"launchSpeed":0.0,"totalDistance":0.0,"coordinates":{}}, "seed":5, "order":3, "isWinner":false, "isComplete":false, "isStarted":false, "numHomeRuns":0, "numPoints":0 } }
+      ]
+    },
+    { "round": 2, "numBatters": 4, "type": "Bracket", "roundTime": 0, "numberOfPitches": 15, "numberOfSwings": 15 },
+    { "round": 3, "numBatters": 2, "type": "Bracket", "roundTime": 0, "numberOfPitches": 15, "numberOfSwings": 15 }
+  ],
+  "_note_players_array": "The real response also includes a full 'players' array (8 entries) with rich per-player season hitting stats (avg/obp/slg/homeRuns/etc, all real 2026 season-to-date numbers) and Statcast metricAverages (launchSpeed, hrDistance). Omitted here for file size -- available via the same live endpoint if the journalism-context task needs richer per-player stat lines beyond what CC-CMD-2026-07-13-hrd-bracket-client already has. Player IDs for reference: Schwarber 656941, Rice 700250, Caminero 691406, Walker 691023, Contreras 575929, Harper 547180, Murakami 808959, Caglianone 695506."
+}
