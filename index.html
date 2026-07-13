@@ -24537,7 +24537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // May 25 ended at 'b'. May 26 starts here.
-  const SW_VERSION = '2026-07-12i';
+  const SW_VERSION = '2026-07-12j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24775,23 +24775,46 @@ function _readCachedRank(ck) {
 // backfill path — computeDramaRetroactive's caller already awaits
 // fetchSoccerHistoricalStates, so awaiting this too adds no new blocking
 // behavior class, just one more per-game relay call).
+//
+// 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #6): the real bug
+// here was never "the exception is swallowed" alone -- it was that BOTH a
+// thrown exception AND a bare HTTP failure (!r.ok) got persisted to
+// localStorage under the SAME FIFA_RANK_TTL (7 days) as a genuine "team
+// not found in rankings" response. A single dropped request or transient
+// 500 used to silence the upset-bonus signal for that team for a full
+// week, indistinguishable from the team genuinely not being ranked. Fix:
+// don't cache failures at all -- only a DEFINITIVE outcome (a real rank,
+// or a confirmed "not found" from a valid API response) is written to the
+// 7-day cache. A failure returns null for THIS call only; the cache stays
+// unwritten, so the NEXT call (next render/poll cycle) retries from
+// scratch -- that retry IS the fix, no new retry machinery needed.
 async function fetchTeamRank(teamName) {
   if (!teamName) return null;
   const ck = _fifaRankCacheKey(teamName);
   const cached = _readCachedRank(ck);
   if (cached !== undefined) return cached;
-  let rank = null;
-  try {
+  const result = await fieldOperation({subsystem:'scores', operation:'fetch-team-rank', retryable:true, context:{teamName}}, async () => {
     const r = await fetch(`${V2_RELAY_BASE}/fifa-rankings/${encodeURIComponent(teamName)}`,
       { signal: AbortSignal.timeout(5000) });
-    if (r.ok) {
-      const d = await r.json();
-      // d.ok:false ("team not found in rankings") is expected for
-      // unmapped teams (confirmed real error shape, not guessed) — rank
-      // simply stays null, meaning no upset bonus is possible for them.
-      rank = d.ok ? d.rank : null;
+    if (!r.ok) {
+      // Treated as a real failure, not a silent "not found" -- an HTTP
+      // error status is not a valid business answer from the API, and
+      // must not be cached as one.
+      const httpErr = new Error(`fifa-rankings HTTP ${r.status}`);
+      httpErr.status = r.status;
+      throw httpErr;
     }
-  } catch(_) {}
+    const d = await r.json();
+    // d.ok:false ("team not found in rankings") is expected for
+    // unmapped teams (confirmed real error shape, not guessed) — rank
+    // simply stays null, meaning no upset bonus is possible for them.
+    // This IS a definitive outcome (a valid response, just "no"), unlike
+    // the thrown-error case above -- it's correct to cache this for the
+    // full TTL.
+    return d.ok ? d.rank : null;
+  });
+  if (!result.ok) return null; // failure -- do not cache, see header comment
+  const rank = result.value;
   _fifaRankCache[ck] = rank;
   try { localStorage.setItem(ck, JSON.stringify({ rank, ts: Date.now() })); } catch(_) {}
   return rank;
@@ -24808,7 +24831,9 @@ function getCachedTeamRank(teamName) {
   const ck = _fifaRankCacheKey(teamName);
   const cached = _readCachedRank(ck);
   if (cached !== undefined) return cached;
-  fetchTeamRank(teamName).catch(() => {});
+  // 2026-07-13: .catch(() => {}) removed -- fetchTeamRank() is now
+  // migrated to fieldOperation(), whose own promise never rejects.
+  fetchTeamRank(teamName);
   return null;
 }
 
