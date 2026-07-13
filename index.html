@@ -7048,7 +7048,7 @@ function _bundleFinalizedAt(game) {
     const iso = raw.includes('T') ? raw : raw.replace(' ', 'T') + 'Z';
     const ts = new Date(iso).getTime();
     return isNaN(ts) ? null : ts;
-  } catch (_) { return null; }
+  } catch (_e) { captureFieldError('newspaper:bundle-finalized-at', _e, true); return null; }
 }
 
 // No existing field carries a genuine finalized-at moment (espnScoreTs is
@@ -11188,7 +11188,7 @@ function findConflicts(games) {
       const slot = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
       if (!slots[slot]) slots[slot] = [];
       slots[slot].push(g);
-    } catch(_) {}
+    } catch(_e) { captureFieldError('schedule:find-conflicts', _e, true); }
   }
   const conflicts = Object.entries(slots)
     .filter(([_, gs]) => gs.length >= 3)
@@ -11273,7 +11273,7 @@ function renderConflictChip(conflicts) {
       const rowsHTML = conflicts.slice(0, 4).map(c => {
         const gameRows = c.games.slice(0, 6).map(g => {
           let t = '';
-          try { t = _fmtLocalTime(new Date(g.start_time)); } catch(_) {}
+          try { t = _fmtLocalTime(new Date(g.start_time)); } catch(_e) { captureFieldError('schedule:conflict-chip-time-format', _e, true); }
           const matchup = (g.away || '?') + ' @ ' + (g.home || '?');
           const bundle = _bundleLabel(g);
           return `<div class="conflict-detail-row">
@@ -14334,10 +14334,12 @@ function renderArchiveTimeline(briefs) {
       if (snippet) {
         if (expanded) {
           try { snippet.textContent = decodeURIComponent(row.dataset.full || ''); }
-          catch(_) {}
+          catch(_e) { captureFieldError('journalism:archive-timeline-decode', _e, true); }
         } else {
-          const t = decodeURIComponent(row.dataset.full || '');
-          snippet.textContent = t.length > 110 ? t.slice(0, 110) + '…' : t;
+          try {
+            const t = decodeURIComponent(row.dataset.full || '');
+            snippet.textContent = t.length > 110 ? t.slice(0, 110) + '…' : t;
+          } catch(_e) { captureFieldError('journalism:archive-timeline-decode', _e, true); }
         }
       }
     });
@@ -23228,7 +23230,7 @@ function renderNewspaper(bundle) {
   // FIELD's Pick badge — apply now (cards may already be painted) and
   // re-apply on every renderAll via the post-render hook.
   if (typeof applyFieldPickBadge === 'function') {
-    try { applyFieldPickBadge(); } catch (_) {}
+    try { applyFieldPickBadge(); } catch (_e) { captureFieldError('newspaper:apply-pick-badge', _e, true); }
   }
 }
 // Idempotent — safe to call from end of renderAll() on every paint. Reads
@@ -24034,7 +24036,7 @@ function showEUPushConsent(onAccept){
 // Filter state vars must be initialized before goToDate() triggers buildFilters()/renderAll()
 let MY_TEAMS = new Set(JSON.parse(localStorage.getItem('field_my_teams')||'[]'));
 function saveMyTeams(){
-  try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){}
+  try{ localStorage.setItem('field_my_teams', JSON.stringify([...MY_TEAMS])); }catch(e){captureFieldError('userdo:save-my-teams', e, true);}
   // Sync to Service Worker via the same keyed PREF_UPDATE channel (2026-07-06)
   // so push notifications can be scoped to followed teams.
   if(navigator.serviceWorker?.controller){
@@ -24672,7 +24674,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-13c';
+  const SW_VERSION = '2026-07-13d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26533,7 +26535,7 @@ function _initBannedExtension() {
       if (typeof FIELD_DEBUG!=='undefined'&&FIELD_DEBUG)
         console.debug('[JQ Evolution] Session banned extension:', _bannedExtension);
     }
-  } catch(e_) {}
+  } catch(e_) { captureFieldError('journalism:banned-extension-init', e_, true); }
 }
 
 // Layer 2: detect banned phrases in generated text
@@ -42905,7 +42907,7 @@ async function idbSet(store, key, value){
       tx.oncomplete = () => resolve(true);
       tx.onerror    = () => resolve(false);
     });
-  } catch(_) { return false; }
+  } catch(_e) { captureFieldError('snapshot:idb-set', _e, true); return false; }
 }
 async function saveSnapshot(){
   try {
@@ -42940,7 +42942,7 @@ async function restoreSnapshot(){
     if (ambient && snap.ambientHTML) ambient.innerHTML = snap.ambientHTML;
     showFreshnessStrip(ageMin);
     return true;
-  } catch(_) { return false; }
+  } catch(_e) { captureFieldError('snapshot:restore', _e, true); return false; }
 }
 function showFreshnessStrip(ageMin){
   const strip = document.getElementById('freshness-strip');
