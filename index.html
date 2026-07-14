@@ -34285,6 +34285,14 @@ async function fetchWCTabBrief(wcGames) {
       const eq = await fetch(JOURNALISM_ENQUEUE_RELAY, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
+        // Deliberately no home/away/matchupNote (CC-CMD-2026-07-14-wc-tab-
+        // brief-context-doc): unlike scouts-pick/finals-desk/night-owl --
+        // each a single-game brief, fixed this month for the same enqueue-
+        // context-gap bug -- wc-tab-brief summarizes up to 4 games in one
+        // prompt (gameLines above), so there's no single game to anchor
+        // Context Anchoring/Matchup Depth to. Same shape as the relay's
+        // own cron-slate path, which passes sport: null with no single-
+        // game context for the identical reason. Not an oversight.
         body: JSON.stringify({
           prompt,
           sport: 'soccer',
