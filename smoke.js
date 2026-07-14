@@ -6785,5 +6785,15 @@ assert('A742 — HRD round 1 renders as a pool leaderboard (top-4-advance, dista
   })(),
   '2026-07-13 (hrd-round1-pool-fix): the real captured MLB Stats API response (docs/hrd-api-response-reference-2026-07-13.json) labels round 1 "type":"Pool" and rounds 2/3 "type":"Bracket" — confirmed against 5+ live news sources same-day (Fox Sports, Yahoo, ABC News, NBC10, MLB.com), all describing round 1 as all 8 batters competing independently, ranked by total HR, top 4 advance, ties broken by distance. An earlier build (CC-CMD-2026-07-13-hrd-live-wiring) misread the API topSeed/bottomSeed batting-order pairing in round 1 as a real head-to-head elimination structure and rendered/described it that way. This assertion protects the fix: a silent revert to matchup-pair rendering or the old prompt-context description for round 1 would misrepresent the real tournament format, including in AI-generated journalism, without CI catching it.');
 
+assert('A743 — HRD hasLiveData requires real evidence of activity (state!=="Preview" or a started/complete slot), not just matchup-array presence',
+  (() => {
+    const buildIdx = html.indexOf('function buildHRDBracket(apiResponse)');
+    if (buildIdx === -1) return false;
+    const buildBlock = html.slice(buildIdx, buildIdx + 4000); // measured offset 3290, not guessed -- learned from A741/A742's own window-size mistakes
+    return buildBlock.includes("apiState !== 'Preview'") && buildBlock.includes('round1AnyStarted') &&
+      buildBlock.includes('s.isStarted || s.isComplete');
+  })(),
+  '2026-07-13 (hrd-hasLiveData-preview-guard): discovered live during the actual event -- the pre-event placeholder response has the identical matchup-array structure as a real result (4 pairs, 8 slots), just every slot at 0 HR / not started / state:"Preview". The old `round1.length > 0` check could not tell a real result from that placeholder, so buildHRDPromptContext risked stating "1. [Player] — 0 HR" for every competitor as fact once round1.length>0 became true pre-event -- actively wrong, worse than the existing "not yet available" fallback. Confirmed via a real live probe against the actual event (cache-busted, non-cached upstream fetch, status.state stayed "Preview" throughout) that this is a real gap, not theoretical.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

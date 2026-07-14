@@ -17310,10 +17310,26 @@ function buildHRDBracket(apiResponse) {
 
   const champion = (round3.length === 1 && round3[0].complete) ? round3[0].winner : null;
 
+  // 2026-07-13 (hrd-hasLiveData-preview-guard): discovered live during tonight's
+  // actual event -- the pre-event PLACEHOLDER response has the exact same
+  // matchup-array structure as a real result (4 pairs, 8 slots), just with
+  // every slot at 0 HR / isStarted:false / state:"Preview". The old
+  // `round1.length > 0` check can't tell a real result from that placeholder,
+  // so buildHRDPromptContext could have stated "1. Schwarber — 0 HR" for
+  // every player as fact -- actively wrong, worse than "not yet available".
+  // Require real evidence of activity: API state isn't Preview, OR at least
+  // one slot is genuinely started/complete. Confirmed via a real live probe
+  // against the actual event (status.state stayed "Preview" with a
+  // cache-busted, non-cached upstream fetch) that this guard is necessary,
+  // not theoretical.
+  const apiState = (apiResponse && apiResponse.status && apiResponse.status.state) || null;
+  const round1AnyStarted = round1Slots.some(s => s.isStarted || s.isComplete);
+  const hasLiveData = round1.length > 0 && (apiState !== 'Preview' || round1AnyStarted);
+
   return {
     field: HRD_FIELD_2026,
-    hasLiveData: round1.length > 0,
-    state: (apiResponse && apiResponse.status && apiResponse.status.state) || null,
+    hasLiveData,
+    state: apiState,
     round1, round1Type, round1Leaderboard, round1Complete,
     round2, round2Complete,
     round3, champion,
