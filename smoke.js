@@ -6747,5 +6747,25 @@ assert('A740 — fieldOperation()/FIELD_OPERATIONS/classifyFieldError() exist',
   html.includes('function classifyFieldError('),
   'Per CC-CMD-2026-07-13-missing-july12-assertions: c6f632c2 (2026-07-12 23:21 ET) shipped fieldOperation()/FIELD_OPERATIONS/classifyFieldError() with zero structural existence check protecting them -- every other Bucket A migration this session (saveEspnFinal, fetchNHLRelayScores, fetchTeamRank, etc.) wraps its fix in fieldOperation(), so a silent removal/rename of any of these three would break the typed-result-migration sweep without CI ever catching it.');
 
+assert('A741 — fieldOperation real-pilot: recordSuccess has a real body, all 3 compound-editorial phases record via a shared operationId',
+  (() => {
+    const foIdx = html.indexOf('const FIELD_OPERATIONS = {');
+    if (foIdx === -1) return false;
+    const foBlock = html.slice(foIdx, foIdx + 900);
+    const realBody = foBlock.includes('_pushFieldOperation({ subsystem, operation, duration, context, ok: true');
+    const capExists = html.includes('const FIELD_OPERATIONS_CAP = 200');
+    const fnIdx = html.indexOf('async function fetchCompoundEditorial(sections)');
+    if (fnIdx === -1) return false;
+    const fnBlock = html.slice(fnIdx, fnIdx + 24000); // function body is ~22.7K chars, confirmed via direct measurement -- not guessed
+    const hasOpId = fnBlock.includes('const _compoundOpId =') && fnBlock.includes('crypto.randomUUID()');
+    const allThreePhases =
+      fnBlock.includes("operation: 'compound-editorial-generate'") &&
+      fnBlock.includes("operation: 'compound-editorial-quality-chain'") &&
+      fnBlock.includes("operation: 'compound-editorial-card-retry'");
+    const sharedId = (fnBlock.match(/context: \{ operationId: _compoundOpId \}/g) || []).length >= 2;
+    return realBody && capExists && hasOpId && allThreePhases && sharedId;
+  })(),
+  'Per the fieldOperation vs captureFieldError Drive analysis (novel direction #1, operation identity): recordSuccess was a no-op stub since Chunk 1 (CC-CMD-2026-07-12-field-operation-primitive) — success events were never observable. fetchCompoundEditorial has 3 real phases that complete at different times (sync fast-path + 2 independent fire-and-forget tails) — a naive single fieldOperation() wrap could only see the fast path and would miss both tails entirely, which previously had zero operation-level telemetry (tail failures landed as generic unhandledrejection entries). This assertion protects the pilot: a silent revert of recordSuccess to a stub, or a rename/removal of any of the 3 phase labels or the shared operationId, would break correlation without CI catching it.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

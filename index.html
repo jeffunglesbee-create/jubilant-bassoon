@@ -5031,11 +5031,33 @@ function captureFieldError(fn, err, silent=true){
 // CC-CMD-2026-07-12-field-operation-primitive: Chunk 1 of a multi-CC-CMD sequence
 // (see docs/CC-CMD-2026-07-12-typed-result-survey.md for Chunk 2). This chunk only
 // builds the primitive -- zero existing call sites migrated to it here.
+//
+// 2026-07-13 (fieldOperation real-pilot — fetchCompoundEditorial, per the
+// "fieldOperation vs captureFieldError and Novel Directions" Drive analysis'
+// novel direction #1, operation identity): recordSuccess was a no-op stub
+// ("additive counters/timing only — no behavior change to any caller") since
+// Chunk 1. Giving it a real, capped body so success events are observable for
+// the first time -- mirrors window._fieldErrors' ring-buffer pattern
+// (FIELD_ERRORS_CAP=500 above), deliberately simplified: no per-fn dedup
+// window, since successes don't carry the same hot-loop noise risk repeated
+// failures do, and this has exactly one caller today (see fetchCompoundEditorial
+// below). Revisit dedup if adoption grows past this pilot.
+window._fieldOperations = window._fieldOperations || [];
+const FIELD_OPERATIONS_CAP = 200;
+function _pushFieldOperation(entry) {
+  if (window._fieldOperations.length >= FIELD_OPERATIONS_CAP) Array.prototype.shift.call(window._fieldOperations);
+  window._fieldOperations.push(entry);
+}
 const FIELD_OPERATIONS = {
   recordSuccess({ subsystem, operation, duration, context }) {
-    // additive counters/timing only — no behavior change to any caller.
+    _pushFieldOperation({ subsystem, operation, duration, context, ok: true, ts: Date.now() });
   },
   recordFailure(failure) {
+    _pushFieldOperation({
+      subsystem: failure.subsystem, operation: failure.operation,
+      context: failure.context, ok: false,
+      error: failure.error?.message || String(failure.error), ts: Date.now(),
+    });
     captureFieldError(`${failure.subsystem}:${failure.operation}`, failure.error, failure.severity !== 'trace');
     // additive: also retain the richer failure object for future consumers
     // (window._fieldFailures or similar) — do not remove or alter what
@@ -28832,6 +28854,17 @@ async function fetchCompoundEditorial(sections) {
     try { return JSON.parse(cached); } catch(e) { captureFieldError('journalism:compound-cache-parse', e, true); }
   }
 
+  // 2026-07-13 (fieldOperation real-pilot, novel direction #1 — operation
+  // identity): one ID per real generation attempt, shared across the fast
+  // path below and both fire-and-forget tails (quality-chain, per-card
+  // retry) so all three phases of this multi-step operation can be
+  // correlated later. Generated here, not earlier -- proof-mode/budget
+  // guards above are deliberate non-attempts, not operations, and
+  // shouldn't get an ID. Same crypto.randomUUID() precedent already used
+  // elsewhere in this file (~L29460, resolveGameIdByHome-adjacent).
+  const _compoundOpId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+  const _compoundOpStart = performance.now();
+
   // ── Items 4-6: pre-fetch depth data before building prompt ───────────────
   // All three are async; run in parallel. buildCompoundPrompt reads from caches.
   const games = (sections||[]).flatMap(s=>s.games||[]);
@@ -28930,7 +28963,16 @@ async function fetchCompoundEditorial(sections) {
       if(found.length&&FIELD_DEBUG) console.warn('[JQ Layer 2] Compound brief clichés:',found);
       if(overused.length&&FIELD_DEBUG) console.warn('[JQ Layer 2e] Compound overused:',overused.map(r=>r.phrase+'×'+r.count));
       // Chain all quality passes async (non-blocking — result already returned to caller)
+      // 2026-07-13 (fieldOperation real-pilot): wrapped in try/catch, same
+      // operationId as the fast-path phase above. Behavior is unchanged --
+      // a throw here previously died as a generic unhandled rejection and
+      // stopped execution at that point (nothing after it in this IIFE ran
+      // either way); it's now attributed to compound-editorial-quality-chain
+      // instead of the anonymous unhandledrejection bucket, still stops in
+      // the same place, still swallowed (fire-and-forget by design).
       (async()=>{
+        const _tailAStart = performance.now();
+        try {
         let improved = result.brief;
         const prompt = window._lastCompoundPrompt || buildCompoundPrompt(sections); // reuse captured prompt
         // Layer 2f: wire-copy verb retry (PM-17 — runs before lead/stat checks
@@ -28960,6 +29002,19 @@ async function fetchCompoundEditorial(sections) {
           }
         } else {
           scoreProse(result.brief, null).then(s=>renderProseScore(s,'Compound Brief'));
+        }
+        FIELD_OPERATIONS.recordSuccess({
+          subsystem: 'journalism', operation: 'compound-editorial-quality-chain',
+          duration: performance.now() - _tailAStart,
+          context: { operationId: _compoundOpId },
+        });
+        } catch(_tailAErr) {
+          FIELD_OPERATIONS.recordFailure({
+            subsystem: 'journalism', operation: 'compound-editorial-quality-chain',
+            severity: 'degraded', retryable: false,
+            context: { operationId: _compoundOpId },
+            error: _tailAErr,
+          });
         }
       })();
     }
@@ -29018,7 +29073,12 @@ async function fetchCompoundEditorial(sections) {
     // Budget guard: max 5 retries total across both arrays per compound call
     // (else N briefs × 2 retries could blow journalism quota on a heavy slate).
     // Fire-and-forget — result returned to caller below before this completes.
+    // 2026-07-13 (fieldOperation real-pilot): try/catch + phase telemetry
+    // added, same operationId, same rationale as Tail A above -- behavior
+    // at any throw point is unchanged, now attributed instead of generic.
     (async()=>{
+      const _tailBStart = performance.now();
+      try {
       const compoundPrompt = window._lastCompoundPrompt || buildCompoundPrompt(sections);
       let retryBudget = 5;
       // Helper: find the matching game object for a result item id
@@ -29100,6 +29160,19 @@ async function fetchCompoundEditorial(sections) {
       try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(_) {}
       try { archiveBrief('compound', null, null, result.brief, null); } catch(_){}
       if (FIELD_DEBUG) console.debug('[JQ Phase 2] Per-card retry pass complete, budget remaining:', retryBudget);
+      FIELD_OPERATIONS.recordSuccess({
+        subsystem: 'journalism', operation: 'compound-editorial-card-retry',
+        duration: performance.now() - _tailBStart,
+        context: { operationId: _compoundOpId },
+      });
+      } catch(_tailBErr) {
+        FIELD_OPERATIONS.recordFailure({
+          subsystem: 'journalism', operation: 'compound-editorial-card-retry',
+          severity: 'degraded', retryable: false,
+          context: { operationId: _compoundOpId },
+          error: _tailBErr,
+        });
+      }
     })();
 
     sessionStorage.setItem(cacheKey, JSON.stringify(result));
@@ -29115,6 +29188,16 @@ async function fetchCompoundEditorial(sections) {
         });
       }
     } catch(_) {}
+    // fieldOperation real-pilot: fast-path phase succeeded. duration covers
+    // guards+cache-check+prefetch+generation+parse, not either fire-and-forget
+    // tail (each records its own phase separately, same operationId).
+    try {
+      FIELD_OPERATIONS.recordSuccess({
+        subsystem: 'journalism', operation: 'compound-editorial-generate',
+        duration: performance.now() - _compoundOpStart,
+        context: { operationId: _compoundOpId },
+      });
+    } catch(_) {}
     return result;
   } catch(e) {
     if (FIELD_DEBUG) console.log('[COMPOUND] failed:', e.message);
@@ -29124,6 +29207,17 @@ async function fetchCompoundEditorial(sections) {
       if (typeof window._fieldErrors !== 'undefined')
         window._fieldErrors.push({fn:'fetchCompoundEditorial', err:(e?.message||String(e)), ts:Date.now()});
       window._compoundLastError = (e?.message||String(e));
+    } catch(_) {}
+    // fieldOperation real-pilot: additive alongside the existing _fieldErrors
+    // push above -- does not replace it, matches Rule 47 (extends, never
+    // replaces existing telemetry).
+    try {
+      FIELD_OPERATIONS.recordFailure({
+        subsystem: 'journalism', operation: 'compound-editorial-generate',
+        severity: 'degraded', retryable: true,
+        context: { operationId: typeof _compoundOpId !== 'undefined' ? _compoundOpId : null },
+        error: e,
+      });
     } catch(_) {}
     return null;
   }
