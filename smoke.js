@@ -6795,5 +6795,22 @@ assert('A743 — HRD hasLiveData requires real evidence of activity (state!=="Pr
   })(),
   '2026-07-13 (hrd-hasLiveData-preview-guard): discovered live during the actual event -- the pre-event placeholder response has the identical matchup-array structure as a real result (4 pairs, 8 slots), just every slot at 0 HR / not started / state:"Preview". The old `round1.length > 0` check could not tell a real result from that placeholder, so buildHRDPromptContext risked stating "1. [Player] — 0 HR" for every competitor as fact once round1.length>0 became true pre-event -- actively wrong, worse than the existing "not yet available" fallback. Confirmed via a real live probe against the actual event (cache-busted, non-cached upstream fetch, status.state stayed "Preview" throughout) that this is a real gap, not theoretical.');
 
+assert('A744 — HRD verified final result (Walker def. Schwarber, 12-11) wired into journalism context as the fallback when live tracking is unavailable',
+  (() => {
+    const constIdx = html.indexOf('const HRD_2026_VERIFIED_FINAL');
+    if (constIdx === -1) return false;
+    const constBlock = html.slice(constIdx, constIdx + 900);
+    const hasRealResult = constBlock.includes("champion: 'Jordan Walker'") &&
+      constBlock.includes("runnerUp: 'Kyle Schwarber'") &&
+      constBlock.includes("finalScore: '12-11'");
+    const ctxIdx = html.indexOf('function buildHRDPromptContext(bracket)');
+    if (ctxIdx === -1) return false;
+    const ctxBlock = html.slice(ctxIdx, ctxIdx + 2200); // measured usage offset 1306, margin included
+    const wiredIn = ctxBlock.includes('HRD_2026_VERIFIED_FINAL.champion} defeats') &&
+      !ctxBlock.includes('Round 1 matchups have not been set or the event has not started');
+    return hasRealResult && wiredIn;
+  })(),
+  '2026-07-13 (hrd-verified-final-result): the live /homeRunDerby/839032 pipeline never left status:"Preview" all night -- confirmed a genuine MLB-side gap (cache-busted probe forced a real upstream re-fetch, identical stale response came back), not fixable from the relay side. The real result is known and verified -- cross-checked live across 4 independent sources (Bleacher Report, DraftKings Network, Philadelphia Inquirer, Yahoo Sports) within minutes of the event ending, all agreeing. Without this fallback, buildHRDPromptContext would tell journalism "not yet available" forever for an event that already happened -- this assertion protects the real, verified result from being silently reverted or lost.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

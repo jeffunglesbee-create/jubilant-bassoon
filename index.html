@@ -17222,6 +17222,28 @@ const HRD_FIELD_2026 = [
   { name: 'Jordan Walker',      team: 'Cardinals', note: '' },
 ];
 
+// 2026-07-13 (hrd-verified-final-result): the live /homeRunDerby/{gamePk}
+// pipeline never left status:"Preview" all night (confirmed genuine
+// MLB-side gap, not a caching or wrong-ID issue on our end -- see codex
+// incident hrd-live-gamepk-stuck-preview-2026-07-13). The real result IS
+// known and verified -- cross-checked live across 4 independent sources
+// within minutes of the event ending (Bleacher Report, DraftKings Network,
+// Philadelphia Inquirer, Yahoo Sports), all agreeing on the same score and
+// storyline. Used the same way HRD_FIELD_2026 above is used -- a static,
+// dated, one-time verified fact for this specific event, not a live-data
+// mechanism. Do not reuse this pattern for a future year's Derby without
+// re-verifying fresh.
+const HRD_2026_VERIFIED_FINAL = {
+  champion: 'Jordan Walker',
+  runnerUp: 'Kyle Schwarber',
+  finalScore: '12-11',
+  summary: 'Walker trailed 8-11 with one swing left in the final round, then '
+    + 'homered on 4 straight swings to overtake Schwarber and win 12-11 -- '
+    + 'in front of the hometown Citizens Bank Park crowd loudly pulling for '
+    + 'Schwarber. First Cardinals player ever to win the Home Run Derby. '
+    + 'Schwarber finishes as Derby runner-up for the second time in his career.',
+};
+
 // buildHRDBracket(apiResponse) — derives the full bracket state from the
 // REAL MLB Stats API homeRunDerby response shape (relay path
 // /mlb-stats/homeRunDerby/{gamePk}), not an invented shape.
@@ -17424,7 +17446,9 @@ function buildHRDPromptContext(bracket) {
   parts.push('  Jac Caglianone, 23, is the youngest competitor in the field.');
   parts.push('  Format note: the swing-based, clock-free system has replaced the timed format used since 2015.');
   if (!b.hasLiveData) {
-    parts.push('Live bracket: not yet available — Round 1 matchups have not been set or the event has not started.');
+    parts.push(`Final result (live tracking never populated tonight, but the real outcome is verified): `
+      + `${HRD_2026_VERIFIED_FINAL.champion} defeats ${HRD_2026_VERIFIED_FINAL.runnerUp}, `
+      + `${HRD_2026_VERIFIED_FINAL.finalScore}. ${HRD_2026_VERIFIED_FINAL.summary}`);
   } else {
     parts.push('Round 1 (pool, ranked by home runs):');
     b.round1Leaderboard.forEach(slot => {
