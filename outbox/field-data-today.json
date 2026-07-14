@@ -1,14 +1,15 @@
 {
   "_meta": {
     "schema_version": "2.0",
-    "generated_at": "2026-07-13T10:38:34.662Z",
-    "for_date": "2026-07-13",
+    "generated_at": "2026-07-14T09:24:59.632Z",
+    "for_date": "2026-07-14",
     "source": "field-data workflow (automated)",
     "games_found": {
       "nhl": 0,
       "nba": 0,
       "mlb": 0,
-      "mls": 0
+      "mls": 0,
+      "wnba": 2
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -18,7 +19,27 @@
     "nhl": [],
     "nba": [],
     "mlb": [],
-    "soccer": []
+    "soccer": [],
+    "wnba": [
+      {
+        "sport": "WNBA",
+        "home": "Connecticut Sun",
+        "away": "Portland Fire",
+        "start_time": "2026-07-14T15:00Z",
+        "venue": "Mohegan Sun Arena",
+        "league": "WNBA",
+        "confirmed": true
+      },
+      {
+        "sport": "WNBA",
+        "home": "Toronto Tempo",
+        "away": "Washington Mystics",
+        "start_time": "2026-07-14T23:00Z",
+        "venue": "Coca-Cola Coliseum",
+        "league": "WNBA",
+        "confirmed": true
+      }
+    ]
   },
   "game_overlays": []
 }
