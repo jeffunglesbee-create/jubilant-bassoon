@@ -6767,5 +6767,23 @@ assert('A741 — fieldOperation real-pilot: recordSuccess has a real body, all 3
   })(),
   'Per the fieldOperation vs captureFieldError Drive analysis (novel direction #1, operation identity): recordSuccess was a no-op stub since Chunk 1 (CC-CMD-2026-07-12-field-operation-primitive) — success events were never observable. fetchCompoundEditorial has 3 real phases that complete at different times (sync fast-path + 2 independent fire-and-forget tails) — a naive single fieldOperation() wrap could only see the fast path and would miss both tails entirely, which previously had zero operation-level telemetry (tail failures landed as generic unhandledrejection entries). This assertion protects the pilot: a silent revert of recordSuccess to a stub, or a rename/removal of any of the 3 phase labels or the shared operationId, would break correlation without CI catching it.');
 
+assert('A742 — HRD round 1 renders as a pool leaderboard (top-4-advance, distance tiebreak), not head-to-head matchups',
+  (() => {
+    const buildIdx = html.indexOf('function buildHRDBracket(apiResponse)');
+    const renderIdx = html.indexOf('function renderHRDBracket(bracket)');
+    const ctxIdx = html.indexOf('function buildHRDPromptContext(bracket)');
+    if (buildIdx === -1 || renderIdx === -1 || ctxIdx === -1) return false;
+    const buildBlock = html.slice(buildIdx, buildIdx + 2200);
+    const renderBlock = html.slice(renderIdx, renderIdx + 1600);
+    const ctxBlock = html.slice(ctxIdx, ctxIdx + 2000);
+    const hasLeaderboardField = buildBlock.includes('round1Leaderboard') && buildBlock.includes('advancing: i < 4');
+    const hasDistanceTiebreak = buildBlock.includes('longestHR ?? -1) - (a.longestHR ?? -1)') || buildBlock.includes('(b.longestHR');
+    const renderUsesLeaderboard = renderBlock.includes('bracket.round1Leaderboard') && renderBlock.includes('hrd-pool-row');
+    const renderDoesNotUseOldMatchupPattern = !renderBlock.includes('Round 1 · Match');
+    const ctxFixed = ctxBlock.includes('all 8 compete independently') && !ctxBlock.includes('four seeded head-to-head matchups');
+    return hasLeaderboardField && hasDistanceTiebreak && renderUsesLeaderboard && renderDoesNotUseOldMatchupPattern && ctxFixed;
+  })(),
+  '2026-07-13 (hrd-round1-pool-fix): the real captured MLB Stats API response (docs/hrd-api-response-reference-2026-07-13.json) labels round 1 "type":"Pool" and rounds 2/3 "type":"Bracket" — confirmed against 5+ live news sources same-day (Fox Sports, Yahoo, ABC News, NBC10, MLB.com), all describing round 1 as all 8 batters competing independently, ranked by total HR, top 4 advance, ties broken by distance. An earlier build (CC-CMD-2026-07-13-hrd-live-wiring) misread the API topSeed/bottomSeed batting-order pairing in round 1 as a real head-to-head elimination structure and rendered/described it that way. This assertion protects the fix: a silent revert to matchup-pair rendering or the old prompt-context description for round 1 would misrepresent the real tournament format, including in AI-generated journalism, without CI catching it.');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

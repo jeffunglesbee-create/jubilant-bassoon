@@ -1717,6 +1717,13 @@ body.wf-mode .np-inner{max-width:100%}
 .hrd-title{font-family:var(--ff-display);font-size:.85rem;font-weight:700;color:var(--white);letter-spacing:-.01em;line-height:1.25}
 .hrd-head{margin-bottom:.35rem}
 .hrd-team{display:block;font-size:.52rem;color:var(--muted);opacity:.75;letter-spacing:.02em}
+.hrd-pool-row{display:flex;align-items:baseline;gap:.4rem;border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:.2rem .4rem;font-family:var(--ff-mono);font-size:.62rem;color:var(--muted)}
+.hrd-pool-row.hrd-winner{border-color:rgba(201,168,76,.25)}
+.hrd-pool-rank{width:1.1em;flex:0 0 auto;opacity:.7}
+.hrd-pool-name{flex:1 1 auto}
+.hrd-pool-row.hrd-winner .hrd-pool-name{color:var(--gold2);font-weight:700}
+.hrd-pool-hr{flex:0 0 auto}
+.hrd-pool-dist{flex:0 0 auto;opacity:.6;min-width:2.6em;text-align:right}
 .hrd-round-label{font-size:.6rem;color:var(--gold2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.85;margin:.3rem 0 .18rem}
 .hrd-bracket-rounds{display:flex;flex-direction:column;gap:.3rem}
 .hrd-semi{border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:.25rem .4rem}
@@ -17275,7 +17282,27 @@ function buildHRDBracket(apiResponse) {
     return (src && Array.isArray(src.matchups)) ? src.matchups.map(_hrdMapMatchup).filter(Boolean) : [];
   };
 
-  const round1 = mapRound(1);
+  // 2026-07-13 (hrd-round1-pool-fix): the real captured API response
+  // (docs/hrd-api-response-reference-2026-07-13.json) labels round 1
+  // `"type": "Pool"` and rounds 2/3 `"type": "Bracket"` -- confirmed against
+  // 5+ live news sources during this fix (Fox Sports, Yahoo, ABC News,
+  // NBC10, MLB.com, all matching): round 1 is NOT head-to-head elimination.
+  // All 8 batters compete independently (20 swings each); the API's
+  // topSeed/bottomSeed "matchup" pairing in round 1 (1v8, 2v7, 3v6, 4v5) is
+  // a batting-ORDER pairing for broadcast pacing, not a competitive pairing
+  // -- isWinner within a round-1 pair does not determine advancement.
+  // Advancement is: rank all 8 by numHomeRuns, ties broken by longest HR
+  // distance (topDerbyHitData.totalDistance), top 4 advance. Rounds 2/3
+  // (type:"Bracket") ARE genuine head-to-head elimination -- unchanged,
+  // still correctly handled by the existing matchup mapping below.
+  const round1Src = byRound(1);
+  const round1Type = (round1Src && round1Src.type) || null;
+  const round1 = mapRound(1); // kept for backward compat / raw pairing data
+  const round1Slots = round1.flatMap(m => [m.top, m.bottom]).filter(Boolean);
+  const round1Leaderboard = round1Slots
+    .slice()
+    .sort((a, b) => (b.hrTotal ?? -1) - (a.hrTotal ?? -1) || (b.longestHR ?? -1) - (a.longestHR ?? -1))
+    .map((slot, i) => ({ ...slot, rank: i + 1, advancing: i < 4 }));
   const round1Complete = round1.length > 0 && round1.every(m => m.complete);
   const round2 = mapRound(2); // semifinals — only populated by the API once round 1 completes
   const round2Complete = round2.length > 0 && round2.every(m => m.complete);
@@ -17287,7 +17314,7 @@ function buildHRDBracket(apiResponse) {
     field: HRD_FIELD_2026,
     hasLiveData: round1.length > 0,
     state: (apiResponse && apiResponse.status && apiResponse.status.state) || null,
-    round1, round1Complete,
+    round1, round1Type, round1Leaderboard, round1Complete,
     round2, round2Complete,
     round3, champion,
   };
@@ -17297,9 +17324,12 @@ function buildHRDBracket(apiResponse) {
 // renderPGALeaderboard's convention: takes a derived data object, returns
 // an HTML string, renders correctly whether the bracket is all-placeholder
 // (pre-event, no matchups decided anywhere) or partially/fully populated.
-// All three rounds render uniformly as head-to-head matchup cards, matching
-// the real API's own uniform round shape (see buildHRDBracket's doc comment).
+// 2026-07-13 (hrd-round1-pool-fix): Round 1 renders as a ranked leaderboard
+// (round1Leaderboard) -- half golf-leaderboard, half bracket, matching the
+// real tournament shape. Semifinals/Final render as head-to-head matchup
+// cards (unchanged, those rounds genuinely are elimination bracket).
 function _hrdRenderMatchup(m, label, extraCls) {
+
   const cls = 'hrd-semi' + (extraCls ? ' ' + extraCls : '');
   if (!m) {
     return `<div class="${cls}"><div class="hrd-semi-label">${label}</div><div class="hrd-semi-player">TBD</div><div class="hrd-semi-player">TBD</div></div>`;
@@ -17312,11 +17342,24 @@ function _hrdRenderMatchup(m, label, extraCls) {
   };
   return `<div class="${cls}"><div class="hrd-semi-label">${label}</div>${line(m.top)}${line(m.bottom)}</div>`;
 }
+function _hrdRenderLeaderboardRow(slot) {
+  const hr = slot.hrTotal != null ? slot.hrTotal : '—';
+  const dist = slot.longestHR != null ? `${Math.round(slot.longestHR)}ft` : '';
+  const field = HRD_FIELD_2026.find(p => p.name === slot.name);
+  const team = field ? field.team : '';
+  const rowCls = 'hrd-pool-row' + (slot.advancing ? ' hrd-winner' : '');
+  return `<div class="${rowCls}">
+    <span class="hrd-pool-rank">${slot.rank}</span>
+    <span class="hrd-pool-name">${slot.name}${team ? ` <span class="hrd-team">${team}</span>` : ''}</span>
+    <span class="hrd-pool-hr">${hr} HR</span>
+    <span class="hrd-pool-dist">${dist}</span>
+  </div>`;
+}
 function renderHRDBracket(bracket) {
   if (!bracket) return '';
-  const round1HTML = bracket.round1.length
-    ? bracket.round1.map((m, i) => _hrdRenderMatchup(m, `Round 1 · Match ${i + 1}`)).join('')
-    : HRD_FIELD_2026.map(p => `<div class="hrd-semi"><div class="hrd-semi-player">${p.name} <span class="hrd-team">${p.team}</span></div></div>`).join('');
+  const round1HTML = bracket.round1Leaderboard.length
+    ? bracket.round1Leaderboard.map(_hrdRenderLeaderboardRow).join('')
+    : HRD_FIELD_2026.map(p => `<div class="hrd-pool-row"><span class="hrd-pool-name">${p.name} <span class="hrd-team">${p.team}</span></span></div>`).join('');
 
   const round2HTML = bracket.round2.length
     ? bracket.round2.map((m, i) => _hrdRenderMatchup(m, `Semifinal ${i + 1}`)).join('')
@@ -17335,9 +17378,10 @@ function renderHRDBracket(bracket) {
       <div class="hrd-eyebrow">HOME RUN DERBY${bracket.state ? ' · ' + String(bracket.state).toUpperCase() : ''}</div>
       <div class="hrd-title">2026 Bracket</div>
     </div>
-    <div class="hrd-round-label">Round 1</div>
+    <div class="hrd-round-label">Round 1${bracket.round1Complete ? ' · top 4 advance' : ' · pool, top 4 advance'}</div>
     <div class="hrd-bracket-rounds">${round1HTML}</div>
     <div class="hrd-round-label">Semifinals</div>
+
     <div class="hrd-bracket-rounds">${round2HTML}</div>
     <div class="hrd-round-label">Final</div>
     <div class="hrd-bracket-rounds">${round3HTML}${championHTML}</div>
@@ -17352,7 +17396,7 @@ function renderHRDBracket(bracket) {
 function buildHRDPromptContext(bracket) {
   const b = bracket || buildHRDBracket(null);
   const parts = ['[HOME RUN DERBY CONTEXT]'];
-  parts.push('2026 Field (8 sluggers, single-elimination bracket — Round 1: four seeded head-to-head matchups (1v8, 2v7, 3v6, 4v5), 20 swings each; Semifinals/Final: 15 swings each; official MLB bonus-time and tiebreak rules apply):');
+  parts.push('2026 Field (8 sluggers — Round 1: all 8 compete independently, 20 swings each, ranked by total home runs (ties broken by longest HR distance), top 4 advance; Semifinals/Final: seeded head-to-head, 15 swings each, official MLB bonus-time and tiebreak rules apply):');
   HRD_FIELD_2026.forEach(p => {
     parts.push(`  ${p.name} (${p.team})${p.note ? ' — ' + p.note : ''}`);
   });
@@ -17366,11 +17410,12 @@ function buildHRDPromptContext(bracket) {
   if (!b.hasLiveData) {
     parts.push('Live bracket: not yet available — Round 1 matchups have not been set or the event has not started.');
   } else {
-    parts.push('Round 1 matchups:');
-    b.round1.forEach((m, i) => {
-      const status = m.complete && m.winner ? ` — ${m.winner.name} wins`
-        : (m.top.isStarted || m.bottom.isStarted) ? ' — in progress' : ' — not yet started';
-      parts.push(`  Match ${i + 1}: (${m.top.seed}) ${m.top.name} vs (${m.bottom.seed}) ${m.bottom.name}${status}`);
+    parts.push('Round 1 (pool, ranked by home runs):');
+    b.round1Leaderboard.forEach(slot => {
+      const status = slot.hrTotal == null ? ' — not yet started'
+        : slot.isComplete ? '' : ' — in progress';
+      const adv = slot.advancing ? ' (advancing)' : '';
+      parts.push(`  ${slot.rank}. ${slot.name} — ${slot.hrTotal ?? 0} HR${adv}${status}`);
     });
     if (b.round2.length) {
       parts.push('Semifinals:');
