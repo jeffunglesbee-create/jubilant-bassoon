@@ -4498,6 +4498,36 @@ the choice, no-exposure beats reduced-exposure.
    action pattern this rule is describing. Prefer adding specific,
    named tools (one per real, distinct need) over one broad tool that
    can do many things.
+4. **Live-event / time-pressure exception (named per direct user
+   instruction, 2026-07-13).** A confirmed live event with a real
+   clock — a game or broadcast already in progress, a fix needed
+   before it airs or ends, not a self-imposed deadline — is a
+   standing, pre-sanctioned instance of operational rule 2's "stated
+   reason," without needing to re-argue the case each time. The
+   scoped-tool gap doesn't stop existing just because the moment is
+   urgent; this rule exists so urgency has a named, legitimate path
+   instead of a silent one.
+   - **Still required even under this exception:** state at the time
+     of use that this is the live-event exception (not a silent
+     bypass), and register the usage in the Rule 90 registry the same
+     session — this rule lowers the bar to invoke the exception, not
+     the bar to log it.
+   - **Does not replace the real fix.** The exception exists because
+     the underlying scoped-tool gap is real, not because the gap is
+     acceptable. If the same capability gap (e.g. large-file commit,
+     compact Actions-run-status) recurs, that is a signal to close it
+     with a proper scoped tool, not evidence the exception is working
+     as intended.
+   - **Case study, HRD 2026-07-13:** commit_file/read_file's
+     literal-content-parameter interface made editing 800KB+ files
+     (jubilant-bassoon index.html, field-relay-nba src/index.js)
+     expensive enough that the session used git-clone-with-PAT
+     directly instead, across the fieldOperation real-pilot and three
+     Home Run Derby fixes shipped before and during the actual event.
+     The deviation itself was reasonable under a real clock; failing
+     to state it as a deliberate exception at the time (only surfaced
+     when directly asked afterward) is what operational rule 4 exists
+     to fix going forward — see codex rule-89 for the full incident.
 
 ## Rule 90 — Mechanical rule-registry tracking (RULE-COMPLIANCE-FOLLOWUP-A)
 
