@@ -12575,6 +12575,13 @@ function buildTodaySchedule(){
   // is fully generic. Reactivates every EPL Final Day: refresh PL_FD's
   // pts/gd/gf values for that season's real title and relegation scenarios,
   // do not delete. Not an oversight.
+  // CORRECTION (CC-CMD-2026-07-15-string-referenced-verify): all 4 note
+  // functions currently have ZERO real callers anywhere in the file,
+  // confirmed via direct grep. "Reactivates" above means the LOGIC is
+  // correct once real data and a real caller exist, not that a dormant
+  // caller is already wired and just needs fresh numbers. Whoever picks
+  // this up next season needs to build a real caller (e.g. a per-game
+  // matchupNote injection point) in addition to refreshing PL_FD.
   const PL_FD={
     ARS:{pts:82,gd:43,gf:69},   // CONFIRMED CHAMPIONS 🏆 — 37 played, no game May 19
     MCI:{pts:78,gd:43,gf:76},   // UPDATED: 77→78 — drew 1-1 vs BOU (Haaland 90+, Kroupi 39')
@@ -18425,6 +18432,13 @@ const ESPN_SPORTS = [
 // date-comparison logic itself is generic. Reactivates every EFL playoff
 // season: update START/END to that season's real window, do not delete.
 // Not an oversight.
+// CORRECTION (CC-CMD-2026-07-15-string-referenced-verify): inEFLPlayoffs
+// currently has ZERO real callers anywhere in the file, confirmed via
+// direct grep — not just an uncommon call mechanism. "Reactivates" above
+// means the LOGIC is correct once real data/a real caller exist, not that
+// a dormant caller already exists waiting for fresh data. Whoever picks
+// this up next season needs to build a real caller (e.g. gating a UI
+// element or note on it), not just refresh START/END.
 const EFL_PLAYOFF_START = new Date("2026-05-08T00:00:00Z");
 const EFL_PLAYOFF_END   = new Date("2026-05-25T23:59:00Z");
 const inEFLPlayoffs = () => { const n=new Date(); return n>=EFL_PLAYOFF_START && n<=EFL_PLAYOFF_END; };
