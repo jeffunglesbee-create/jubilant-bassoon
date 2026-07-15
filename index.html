@@ -14647,17 +14647,17 @@ function loadArchiveTimeline() {
         return;
       }
     }
-  } catch(_) {}
+  } catch(e) { captureFieldError('archive:timeline-cache-read', e, true); }
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   fetch(base + '/archive/query?brief_type=slate&source=cron&limit=7')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (!data) return;
-      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(e) { captureFieldError('archive:timeline-cache-write', e, true); }
       renderArchiveTimeline(data);
     })
-    .catch(() => {});
+    .catch(e => captureFieldError('archive:timeline-fetch', e, false));
 }
 
 // ── CC-CMD-2026-06-15-client-features-2 Commit 1: Upset Archaeology ──────────
@@ -14861,7 +14861,7 @@ function loadMarketConsensus() {
         return;
       }
     }
-  } catch(_) {}
+  } catch(e) { captureFieldError('archive:market-consensus-cache-read', e, true); }
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   fetch(base + '/archive/query?limit=50')
@@ -14871,10 +14871,10 @@ function loadMarketConsensus() {
       const games = _upsetExtractGames(payload);
       if (!games.length) return;
       try { sessionStorage.setItem('field_archive_upsets',
-        JSON.stringify({ ts: Date.now(), games })); } catch(_) {}
+        JSON.stringify({ ts: Date.now(), games })); } catch(e) { captureFieldError('archive:market-consensus-cache-write', e, true); }
       renderMarketConsensus(games);
     })
-    .catch(() => {});
+    .catch(e => captureFieldError('archive:market-consensus-fetch', e, false));
 }
 
 // Fire-and-forget upset loader. Try /archive/upsets first; on any failure
@@ -14892,7 +14892,7 @@ function loadUpsets() {
         return;
       }
     }
-  } catch(_) {}
+  } catch(e) { captureFieldError('archive:upsets-cache-read', e, true); }
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   fetch(base + '/archive/upsets')
@@ -14901,7 +14901,7 @@ function loadUpsets() {
       if (payload) {
         const games = _upsetExtractGames(payload);
         if (games.length) {
-          try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games })); } catch(_) {}
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games })); } catch(e) { captureFieldError('archive:upsets-cache-write', e, true); }
           renderUpsets(games);
           return;
         }
@@ -14913,12 +14913,12 @@ function loadUpsets() {
           if (!payload2) return;
           const games2 = _upsetExtractGames(payload2);
           if (!games2.length) return;
-          try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games: games2 })); } catch(_) {}
+          try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), games: games2 })); } catch(e) { captureFieldError('archive:upsets-cache-write', e, true); }
           renderUpsets(games2);
         })
-        .catch(() => {});
+        .catch(e => captureFieldError('archive:upsets-fallback-fetch', e, false));
     })
-    .catch(() => {});
+    .catch(e => captureFieldError('archive:upsets-fetch', e, false));
 }
 
 // C3: Companion sidebar at desktop (1440px+). Sources are read-only — same
@@ -15113,7 +15113,7 @@ function renderJournalismArchive() {
       const c = JSON.parse(raw);
       if (c && (Date.now() - (c.ts || 0)) < 1800000 && c.data) cached = c.data;
     }
-  } catch(_) {}
+  } catch(e) { captureFieldError('archive:journalism-archive-cache-read', e, true); }
   if (cached) { useServerData(cached); return; }
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
@@ -15121,10 +15121,10 @@ function renderJournalismArchive() {
     .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (!data) { if (content.dataset.jrnArchiveReq === _archiveReqId) renderEmpty(); return; }
-      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(e) { captureFieldError('archive:journalism-archive-cache-write', e, true); }
       useServerData(data);
     })
-    .catch(() => { if (content.dataset.jrnArchiveReq === _archiveReqId) renderEmpty(); });
+    .catch(e => { captureFieldError('archive:journalism-archive-fetch', e, false); if (content.dataset.jrnArchiveReq === _archiveReqId) renderEmpty(); });
 }
 
 
@@ -18858,7 +18858,7 @@ async function renderWCBracketImpact(gameId, home, away, relayBase) {
           + `</div>`
         ).join('');
     gameCard.insertAdjacentElement('afterend', card);
-  } catch (_) { /* non-blocking */ }
+  } catch (e) { captureFieldError('archive:bracket-impact', e, false); /* non-blocking */ }
 }
 
 // V2 in-game leaders (fetchV2Leaders) — REMOVED 2026-06-30. API-Sports.io
@@ -25423,7 +25423,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-15c';
+  const SW_VERSION = '2026-07-15d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32929,7 +32929,7 @@ async function fetchLastMeeting(teamA, teamB) {
     );
     if (!r.ok) return null;
     return r.json();
-  } catch (_) { return null; }
+  } catch (e) { captureFieldError('archive:last-meeting', e, true); return null; }
 }
 
 async function fetchArchiveDate(iso) {
@@ -37049,10 +37049,11 @@ async function runDramaBackfillDiscovery() {
     const data = await r.json();
     const games = (data.games || []).slice(0, 20); // hard cap even if the relay ever returns more
     for (const g of games) {
-      _backfillOneDramaGame(g).catch(() => {}); // fire-and-forget, never blocks
+      _backfillOneDramaGame(g).catch(e => captureFieldError('archive:drama-backfill-game', e, true)); // fire-and-forget, never blocks
     }
     return games.length;
   } catch(e) {
+    captureFieldError('archive:drama-backfill-discovery', e, false);
     if (typeof FIELD_DEBUG !== 'undefined' && FIELD_DEBUG) console.log('[DRAMA-BACKFILL] discovery error:', e?.message);
     return 0;
   }

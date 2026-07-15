@@ -5224,10 +5224,14 @@ assert('A618 — Upset Archaeology: renderUpsets + loadUpsets wired into Journal
   // (3) Target div + sessionStorage cache key.
   /id="jrn-upsets"/.test(html) &&
   html.includes("'field_archive_upsets'") &&
-  // (4) Wired into renderJournalism with fire-and-forget contract.
+  // (4) Wired into renderJournalism with fire-and-forget contract (still
+  // fire-and-forget after the 2026-07-15 archive-path silent-catch fix --
+  // checked as the real current text, not the old '.catch(() => {});'
+  // substring, which would trivially, falsely still match via unrelated
+  // catches elsewhere in the file, same class of bug found in A614/A661).
   html.includes("if (typeof loadUpsets === 'function') loadUpsets();") &&
-  html.includes('.catch(() => {});'),
-  'CC-CMD-2026-06-15-client-features-2 Commit 1: Upset Archaeology section in the Journal tab. Tries relay /archive/upsets first, falls back to /archive/query?limit=20 with client-side _isUpset() filter. Major upsets (dog price > +300) use the DISCOVERY tier (teal). 30-min sessionStorage cache (field_archive_upsets). Fire-and-forget — .catch(() => {}) on every fetch.');
+  html.includes(".catch(e => captureFieldError('archive:upsets-fetch', e, false));"),
+  'CC-CMD-2026-06-15-client-features-2 Commit 1: Upset Archaeology section in the Journal tab. Tries relay /archive/upsets first, falls back to /archive/query?limit=20 with client-side _isUpset() filter. Major upsets (dog price > +300) use the DISCOVERY tier (teal). 30-min sessionStorage cache (field_archive_upsets). Fire-and-forget — a failure never blocks the journalism rail, but (since 2026-07-15) is no longer silently lost either: reports via captureFieldError.');
 
 // ── A619 / Commit 2: Market Consensus Tracker ──
 assert('A619 — Market Consensus Tracker: computeMarketConsensus + Market Watch label render',
@@ -5286,9 +5290,13 @@ assert('A615 — Archive Timeline: renderArchiveTimeline + loadArchiveTimeline w
   /id="jrn-archive-timeline"/.test(html) &&
   // (5) Wired into renderJournalism so it fires when the Journal tab renders.
   html.includes("if (typeof loadArchiveTimeline === 'function') loadArchiveTimeline();") &&
-  // (6) Fire-and-forget contract — .catch(() => {}) present on the loader.
-  html.includes('.catch(() => {});'),
-  'CC-CMD-2026-06-15-client-features Commit 1: Archive Timeline section in the Journal tab. Renders briefs from relay /archive/query (brief_type=slate, source=cron, limit=7) in a tap-to-expand list. sessionStorage field_archive_timeline cached 30 min. Fire-and-forget — .catch(() => {}) on the fetch is mandatory so a relay outage never blocks the journalism rail.');
+  // (6) Fire-and-forget contract on the loader's own fetch (still fire-and-
+  // forget after the 2026-07-15 archive-path silent-catch fix -- checked
+  // as the real current text, not the old '.catch(() => {});' substring,
+  // which would trivially, falsely still match via unrelated catches
+  // elsewhere in the file, same class of bug found in A614/A661).
+  html.includes(".catch(e => captureFieldError('archive:timeline-fetch', e, false));"),
+  'CC-CMD-2026-06-15-client-features Commit 1: Archive Timeline section in the Journal tab. Renders briefs from relay /archive/query (brief_type=slate, source=cron, limit=7) in a tap-to-expand list. sessionStorage field_archive_timeline cached 30 min. Fire-and-forget — a failure never blocks the journalism rail, but (since 2026-07-15) is no longer silently lost either: reports via captureFieldError.');
 
 // ── A616 / Commit 2: Broadcast Archaeology in Streaming Discovery ──
 assert('A616 — Broadcast Archaeology: buildBroadcastSummary + renderBroadcastArchaeology in #streaming-section',
