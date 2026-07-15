@@ -1,37 +1,41 @@
-# Claude Code Command — Verify the 5 named string-referenced functions and enumerate the full 29
+# Claude Code Command — Investigate the 27 genuinely unclear string-referenced functions
 
-**Date:** 2026-07-15
+**Date:** 2026-07-15 (revised — this chat session solved the tree-sitter native-compilation blocker itself via `web-tree-sitter` (WASM, no `node-gyp`) and ran the sweep directly. Real findings below replace the original open-ended scope.)
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole)
 **Branch:** main — commit directly, do not create a feature branch or PR.
 
-git remote get-url origin || { echo "run from a jubilant-bassoon checkout"; exit 1; }
-git pull.
+git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO"; exit 1; }; git pull.
 
-Write findings to docs/outbox/cc-string-referenced-verify-2026-07-15.md. Commit with `[skip ci]`. Read-only investigation — no functional code change expected unless TASK 0 finds a real problem.
+Write findings to docs/outbox/cc-string-referenced-verify-2026-07-15.md. Commit with `[skip ci]`. Read-only investigation — no functional code change expected unless a real problem is found.
 
-## CONTEXT
+## CONTEXT — real findings from this chat session, not assumed
 
-A tree-sitter sweep two sessions ago found 25 genuine orphans (fully investigated, all 9 resulting CC-CMDs now done) and separately, 29 "string-only referenced" functions — flagged as "referenced from `onclick="..."` or similar generated-HTML strings — legitimate, not dead" but never individually verified the way the 25 were. Only 5 were ever named in the original report: `pinGame`, `unpinGame`, `toggleStandings`, `openWcGroup`, `makePick`. The other 24 were never enumerated. This chat session attempted to re-run the sweep independently to get the full list, but hit a real sandbox constraint — `tree-sitter` requires native compilation via `node-gyp`, which needs `nodejs.org` (not on this chat's network allowlist). This environment can build it; that's the actual reason this is a CC-CMD rather than something resolved directly.
+Ran the sweep directly (`web-tree-sitter` + `tree-sitter-javascript`'s own bundled `.wasm`, no native compilation needed — confirms this environment's own `tree-sitter`/`node-gyp` setup can be replaced; see the companion `web-tree-sitter-migration` CC-CMD). Real, current results against today's post-9-CC-CMD codebase:
 
-## TASK 0 — Get the real, complete list
+**5 genuine orphans remain — confirmed this is exactly right, nothing missed:** `dispatchFieldScore`, `getEmberThreshold`, `renderWCGroupsEmpty`, `reportFieldRenderPipeline`, `validateBundles`. Every one of these is a real, deliberate "leave alone" case from tonight's own 9-CC-CMD batch (redundant debug utility, patent-safety-superseded, zero callers even after generalization, or valid orphaned dev tooling) — not a gap.
 
-Re-run (or rebuild, if the prior session's script wasn't checked in — confirm which before assuming) the orphan sweep, specifically capturing the full "string-only referenced" bucket (raw-text-matched but zero real AST call sites) — all ~29 names, not just the 5 already known.
+**The "29 string-referenced" bucket resolves into three real, distinct categories, not one:**
 
-## TASK 1 — Verify the 5 named ones directly
+1. **13 real `onclick="...()"` inline references** — the literal mechanism the original report described: `_deskCardToggle`, `_wwFindCard`, `fetchMCPStatus`, `jumpToGameCard`, `makePick`, `openJournalismForGame`, `openWcGroup`, `pinGame`, `renderJournalismArchive`, `scrollToMediaSpecial`, `setViewerIntelMode`, `toggleStandings`, `unpinGame`. All 5 originally-named functions confirmed genuinely here.
+2. **29 real indirect-call mechanisms** (`setTimeout(fn)`, `addEventListener(..., fn)`, `window.fn =`) — a broader, equally-legitimate category a simple AST call-expression walk can't see: `_bsdActivateForWC`, `bdlPrefetchAll`, `espnInjuriesPrefetch`, `fetchATPLiveScores`, `fetchMLSLive`, `fetchSoccerFixtures`, `initEPLMatchBriefs`, `initMLBGameBriefs`, `initSeriesPreviews`, `initStakesBriefs`, `initWNBAGameBriefs`, `mlbPitcherStatsInit`, `mlbProbablePitcherInit`, `mlbStatsInit`, `nbaCluichInit`, `nbaPlayerCluichInit`, `nbaPlayoffLeadersPrefetch`, `nhlAnalyticsInit`, `nhlGSAXInit`, `nhlPlayoffLeadersPrefetch`, `nhlSeriesInit`, `refreshMLBStatus`, `registerAnticipatoryPrefetch`, `renderFinalsDesk`, `runSilentErrorScan`, `slashGolfPrefetchAll`, `squigglePrefetchAll`, `uflEpaInit`, `weatherPrefetchAll`.
+3. **27 matching neither pattern — genuinely unclear, the real remaining work:** `_computeSRPlayEPA`, `_hrdMapMatchup`, `_hrdRenderLeaderboardRow`, `_isUpset`, `_openGameSheetTablet`, `bdlInjuryContextSync`, `buildLinescoreContext`, `buildSlashGolfGamesForToday`, `claimCardRegion`, `enrichGame`, `fetchBDLRecentForm`, `fieldFetch`, `forEachGame`, `gameHasFreeStream`, `gameNetwork`, `getGameReasonTags`, `inEFLPlayoffs`, `injectNBARegression`, `markFreshnessLive`, `mlbBaserunnerBonus`, `nhlStreams`, `normalizeApiFootballStats`, `normalizeNBAGameRelay`, `squiggleToFieldGame`, `teamName`, `trackNHLPenaltyTransitions`, `updateRankedSlots`. Not confirmed orphans (something references each beyond its own declaration) but not accounted for by onclick or the 3 checked indirect-call mechanisms either — could be object-method shorthand, `FIELD_FEATURES[key]()`-style dynamic dispatch, a mechanism not yet checked for, or a genuine false positive from crude text-matching (comment mention, etc.).
 
-For each of `pinGame`, `unpinGame`, `toggleStandings`, `openWcGroup`, `makePick`: confirm the real, exact string reference (the literal `onclick="..."` or equivalent) exists in the current code, confirm it's genuinely reachable (the element it's attached to actually renders under real, plausible conditions — not itself inside dead/unreachable code), and confirm the function body itself does what its name implies (a quick sanity read, not a full audit).
+Note `inEFLPlayoffs` appears in bucket 3 despite already being confirmed real and seasonal (protected via `CC-CMD-2026-07-15-seasonal-comments`) — its real call site just doesn't match the two mechanisms checked. A useful validation case: TASK 0 finding its real reference mechanism should also explain why it landed in this bucket, not bucket 1 or 2.
 
-## TASK 2 — Spot-check a real sample of the remaining ~24
+## TASK 0 — Investigate all 27, real evidence per function
 
-Don't do a full 25-style deep-dive on all 24 — that's disproportionate for a category where a wrong call just leaves something unnoticed rather than something useful deleted. Pick a real, representative sample (5-8 names) and verify them the same way as TASK 1. Flag anything that looks genuinely suspicious (a name suggesting it should be reachable but isn't, based on your reading) for the outbox even if not fully investigated.
+For each of the 27: find its real reference mechanism directly (grep for the name, read the actual surrounding code — don't guess a category). Categorize each into: real-but-uncommon-mechanism (found how, confirmed live), genuine orphan mis-sorted by the crude text-match heuristic (a false positive — the only real mention is unrelated, e.g. a comment), or something requiring its own follow-up (rare, but possible for a name suggesting real functionality that turns out to be broken/unreachable).
+
+## TASK 1 — Light verification of buckets 1 and 2 (already directly confirmed by this chat session, spot-check only)
+
+Pick 3-4 from the 13 onclick-referenced and 3-4 from the 29 indirect-call functions, confirm the cited mechanism is real and the code path is genuinely reachable (not itself dead). This is a light sanity check, not a full re-derivation — this chat session already verified the raw pattern match directly; the goal here is confirming reachability, not re-finding the pattern.
 
 ## DONE CONDITION
 
-The complete ~29-name list exists and is recorded. All 5 originally-named functions individually confirmed genuinely live via real string reference. A real, honest sample of the remaining ~24 checked, with anything suspicious flagged rather than silently passed through.
+All 27 genuinely unclear functions individually resolved with real evidence — reference mechanism found, or correctly reclassified as a genuine orphan if the original raw-text match was a false positive. Buckets 1 and 2 spot-checked for reachability, not just pattern presence.
 
 **Confidence scoring:**
-- TASK 0 (30 pts): real, complete list obtained, method disclosed (rebuilt tool vs. found existing one)
-- TASK 1 (40 pts): all 5 named functions verified with real evidence, not just re-asserted from the original report
-- TASK 2 (30 pts): real sample checked, anything suspicious honestly flagged
+- TASK 0 (60 pts): all 27 investigated with real evidence, correct categorization (real mechanism found / genuine false-positive orphan / needs follow-up), not guessed
+- TASK 1 (40 pts): real spot-check of both buckets confirms reachability, not just re-confirming what this chat session already found
 
 Do not commit unless confidence >= 95. If score < 95, report verbatim and stop.
