@@ -6888,5 +6888,21 @@ assert('A-WNBASC-2 — the stale hardcoded wnbaGames array is untouched (this di
   html.includes('if(wnbaGames.length) { applyNarrativeContext(wnbaGames); sections.push({sport:"WNBA", games:wnbaGames}); }'),
   'the pre-existing hardcoded WNBA schedule array and its section-push must remain exactly as before');
 
+// ── Card badges: isPlayoffGame BUG-09 fix + stat-of-day badge (A-CARDBADGE — 2026-07-15) ──
+assert('A-CARDBADGE-1 — importance-badge condition uses isPlayoffGame(g), not raw g._gameImportance (BUG-09 fix)',
+  /\$\{isPlayoffGame\(g\)\?`<div class="importance-badge/.test(html) &&
+  !/\$\{g\._gameImportance\?`<div class="importance-badge/.test(html),
+  'the card template must gate the importance badge on isPlayoffGame(g), which falls back to a league-string regex when g._gameImportance is unset (often true for Conference Finals entries)');
+
+assert('A-CARDBADGE-2 — narrative-line fallback stays consistent with isPlayoffGame(g) too (avoids re-introducing a crowded card)',
+  /g\.narrative\?\.label&&!isPlayoffGame\(g\)/.test(html) &&
+  !/g\.narrative\?\.label&&!g\._gameImportance\?/.test(html),
+  'the narrative-line\'s own mutual-exclusion check must match the importance-badge\'s real gating condition, or a Conference Finals game with g._gameImportance unset could show both at once');
+
+assert('A-CARDBADGE-3 — stat-of-day badge wired into the primary card template, suppressed for Scout\'s Pick games',
+  /class="badge-row stat-day-badge-row"/.test(html) &&
+  html.includes("if(typeof isScoutsPick==='function'&&isScoutsPick(g))return ''"),
+  'buildStatOfDayBadge must render in the primary card template (previously orphaned) and must be suppressed for Scout\'s Pick games, matching the already-documented "Option B" precedent (stat folds into that badge\'s own text)');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
