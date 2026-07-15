@@ -25424,7 +25424,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-15e';
+  const SW_VERSION = '2026-07-15f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -40807,7 +40807,7 @@ async function saveEspnFinal(game, eData){
         if (nhlLive) statCtx += (statCtx?'\n':'') + '  [NHL LIVE] ' + nhlLive;
       }
       // Linescore removed from prompt (June 20 2026) — analytical buildScoreNarrativeContext used instead.
-    } catch(_) {}
+    } catch(_) { captureFieldError('scores:statctx-build', _, true); }
     const entry = {
       id, home:game.home||'', away:game.away||'',
       homeScore:eData.homeScore, awayScore:eData.awayScore,
@@ -40839,8 +40839,8 @@ async function saveEspnFinal(game, eData){
         const _owlQueueKey = 'field_owl_job_v' + _owlQueueSwV + '_' + id;
         const _owlBriefKey = 'field_nightowl_v' + _owlQueueSwV + '_' + id;
         // Only enqueue if no cached brief and no pending job
-        const alreadyHasBrief = (() => { try { return !!sessionStorage.getItem(_owlBriefKey); } catch(e_) { return false; } })();
-        const alreadyQueued   = (() => { try { return !!sessionStorage.getItem(_owlQueueKey); } catch(e_) { return false; } })();
+        const alreadyHasBrief = (() => { try { return !!sessionStorage.getItem(_owlBriefKey); } catch(e_) { captureFieldError('scores:night-owl-brief-cache-read', e_, true); return false; } })();
+        const alreadyQueued   = (() => { try { return !!sessionStorage.getItem(_owlQueueKey); } catch(e_) { captureFieldError('scores:night-owl-queue-cache-read', e_, true); return false; } })();
         if (!alreadyHasBrief && !alreadyQueued) {
           // Build a minimal prompt from the entry data — full context added by
           // fetchNightOwlFromClaude when it runs as fallback, but queue gives us
@@ -40891,12 +40891,12 @@ async function saveEspnFinal(game, eData){
             }),
           }).then(r => r.ok ? r.json() : null).then(data => {
             if (data?.jobId) {
-              try { sessionStorage.setItem(_owlQueueKey, data.jobId); } catch(e_) {}
+              try { sessionStorage.setItem(_owlQueueKey, data.jobId); } catch(e_) { captureFieldError('scores:night-owl-jobid-cache-write', e_, true); }
             }
-          }).catch(() => {});
+          }).catch((e) => { captureFieldError('scores:night-owl-enqueue-fetch', e, true); });
         }
       }
-    } catch(e_) {}
+    } catch(e_) { captureFieldError('scores:night-owl-enqueue', e_, true); }
     // Write to both ET and UTC tonight-finals keys so loadTonightFinals finds it
     // even when ET date (save time) ≠ ET date (read time) across midnight boundary.
     for(const dateKey of [etToday, utcToday]){
@@ -40907,7 +40907,7 @@ async function saveEspnFinal(game, eData){
           tnPool.push(entry);
           localStorage.setItem(tnKey,JSON.stringify(tnPool.slice(-10)));
         }
-      }catch(e2){}
+      }catch(e2){ captureFieldError('scores:tonight-finals-write', e2, true); }
     }
     return true;
   });
