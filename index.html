@@ -12568,6 +12568,13 @@ function buildTodaySchedule(){
   // ── Premier League Final Day Calculator ──────────────────────────────────────
   // Standings entering May 24 Final Day. Update pts/gd/gf values in daily update
   // after May 19 results (City vs Bournemouth, Chelsea vs Spurs).
+  // SEASONAL, NOT DEAD (CC-CMD-2026-07-15-seasonal-comments): _plTitleNote/
+  // _plCityNote/_plTotNote/_plWhuNote below look orphaned outside EPL Final
+  // Day (May 24) because PL_FD is hardcoded to the 2025-26 title race and
+  // relegation battle — but the clinch-scenario/goal-difference math itself
+  // is fully generic. Reactivates every EPL Final Day: refresh PL_FD's
+  // pts/gd/gf values for that season's real title and relegation scenarios,
+  // do not delete. Not an oversight.
   const PL_FD={
     ARS:{pts:82,gd:43,gf:69},   // CONFIRMED CHAMPIONS 🏆 — 37 played, no game May 19
     MCI:{pts:78,gd:43,gf:76},   // UPDATED: 77→78 — drew 1-1 vs BOU (Haaland 90+, Kroupi 39')
@@ -18412,6 +18419,12 @@ const ESPN_SPORTS = [
 ];
 
 // Domestic soccer leagues fetched from ESPN daily — fixtures + live scores
+// SEASONAL, NOT DEAD (CC-CMD-2026-07-15-seasonal-comments): inEFLPlayoffs
+// looks orphaned outside the 2026 EFL playoff window because
+// EFL_PLAYOFF_START/END are hardcoded to that one window — but the
+// date-comparison logic itself is generic. Reactivates every EFL playoff
+// season: update START/END to that season's real window, do not delete.
+// Not an oversight.
 const EFL_PLAYOFF_START = new Date("2026-05-08T00:00:00Z");
 const EFL_PLAYOFF_END   = new Date("2026-05-25T23:59:00Z");
 const inEFLPlayoffs = () => { const n=new Date(); return n>=EFL_PLAYOFF_START && n<=EFL_PLAYOFF_END; };
