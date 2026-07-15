@@ -19621,9 +19621,19 @@ async function fetchBDLPlayerContext(playerNames) {
 
 // ── BDL Recent Form — NBA momentum signal (last 5 games) ────────────────────
 // Answers "how has this player performed recently?" vs season average
-// Used in: J3 compound prompt (momentum context), Night Owl arc context
+// CC-CMD-2026-07-15-bdl-recent-form: the two "Used in" claims this comment
+// previously made (J3 compound prompt momentum context, Night Owl arc
+// context) were both confirmed false -- J3's real [DRAMA: RISING/COOLING]
+// tag is powered by ctx.dramaTrend, a game-level signal, not player-level
+// form; buildNightOwlStatic contains no BDL/momentum reference at all.
+// Real home found instead: the compound-prompt series matchupNote pipeline
+// (~L29253 prefetch, ~L29094 [SEASON STATS] reader) -- same real player
+// names already extracted there for season averages, now also prefetched
+// here and surfaced as a sibling [RECENT FORM] tag, a genuinely distinct
+// signal (this player's own recent trend, not getStatOfDay's team-vs-
+// league deviation or ctx.dramaTrend's game-level trend).
 // Cache: 4h per player (recent form changes more than season avg)
-// Pattern: "Brunson: 34.1 PPG last 5 (season: 28.4)" — delta is the signal
+// Pattern: "Brunson: 34.1 PPG last 5 (34.1 APG / 5.2 RPG)" — .formatted field
 const _bdlRecentFormCache = {};
 async function fetchBDLRecentForm(playerName) {
   if (!playerName) return null;
@@ -29092,6 +29102,11 @@ function buildCompoundPrompt(sections) {
       }catch(e_){return ''}})(),
       // Item 4: BDL season averages for named players (from pre-fetched _bdlStatCache)
       (()=>{try{if(!g.seriesRecord||!g.matchupNote) return '';const names=[];const m=g.matchupNote.matchAll(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s+\d+/g);for(const match of m){if(!names.includes(match[1]))names.push(match[1]);}const stats=names.slice(0,3).map(n=>{const k='bdl_stat_'+n.toLowerCase().replace(/\s+/g,'_');return _bdlStatCache[k]||''}).filter(Boolean);return stats.length?`  [SEASON STATS] ${stats.join(' · ')}`:''}catch(e_){return ''}})(),
+      // CC-CMD-2026-07-15-bdl-recent-form: last-5-games form vs season avg,
+      // for the same named players -- a real, distinct signal from
+      // [SEASON STATS] above (this player's own recent trend, not a static
+      // season number), pre-fetched into _bdlRecentFormCache above.
+      (()=>{try{if(!g.seriesRecord||!g.matchupNote) return '';const names=[];const m=g.matchupNote.matchAll(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s+\d+/g);for(const match of m){if(!names.includes(match[1]))names.push(match[1]);}const forms=names.slice(0,3).map(n=>{const k='bdl_recent_'+n.toLowerCase().replace(/\s+/g,'_');return _bdlRecentFormCache[k]?.formatted||''}).filter(Boolean);return forms.length?`  [RECENT FORM] ${forms.join(' · ')}`:''}catch(e_){return ''}})(),
       // Volatility Index: game flow context for AI — CHAOTIC or LOCKED IN framing
       (()=>{try{const vL=getVolatilityLabel(g._id||'');return vL?`  [GAME FLOW: ${vL.toUpperCase()} — drama swinging ${vL==='chaotic'?'significantly':'steadily'} this period]`:''}catch(e_){return ''}})(),
       // Axis 3 Phase B: populate optional fields (coaches/historical from
@@ -29258,6 +29273,13 @@ async function fetchCompoundEditorial(sections) {
         for (const match of m) { if (!names.includes(match[1])) names.push(match[1]); }
       });
       if (names.length) await fetchBDLPlayerContext(names.slice(0,6));
+      // CC-CMD-2026-07-15-bdl-recent-form: same real player set, a genuinely
+      // distinct signal (last-5-games vs THIS player's own season average,
+      // not a team-vs-league deviation like getStatOfDay, nor a game-level
+      // trend like ctx.dramaTrend). Serial, matching fetchBDLPlayerContext's
+      // own rate-conscious pattern above rather than bursting the relay.
+      // Only the top 3 (matches the [RECENT FORM] reader below).
+      for (const n of names.slice(0,3)) { try { await fetchBDLRecentForm(n); } catch(_) {} }
     })(),
     // Item 7: ESPN athlete stats — MLB pitchers (structured names) + named players all sports
     // Covers MLB/NHL where BDL has no data; supplements NBA BDL with ESPN's own figures

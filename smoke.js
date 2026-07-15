@@ -6979,5 +6979,17 @@ assert('A-NHLDRIFT-2 — trackNHLPenaltyTransitions is wired into the real per-c
   html.includes('const _prevNHLSituation = {};'),
   'the per-card loop must call trackNHLPenaltyTransitions with the real game object and a real prevSit/curSit pair sourced from a dedicated gameId-keyed snapshot cache, so computePenaltyDriftSignal (already live) finally receives real penalty counts instead of always-undefined ones');
 
+// ── BDL recent form wired into a real, non-duplicate home (A-BDLFORM — 2026-07-15) ──
+assert('A-BDLFORM-1 — fetchBDLRecentForm\'s header comment no longer makes the two false "Used in" claims',
+  !html.includes('Used in: J3 compound prompt (momentum context), Night Owl arc context') &&
+  html.includes('compound-prompt series matchupNote pipeline'),
+  'the header comment must accurately reflect the real integration point, not the two claims confirmed false this dispatch (J3 dramaTrend is game-level, buildNightOwlStatic has no BDL reference)');
+
+assert('A-BDLFORM-2 — fetchBDLRecentForm is genuinely prefetched (same real player names already extracted for [SEASON STATS]) and surfaced as a real, distinct [RECENT FORM] compound-prompt tag',
+  html.includes('for (const n of names.slice(0,3)) { try { await fetchBDLRecentForm(n); } catch(_) {} }') &&
+  html.includes("_bdlRecentFormCache[k]?.formatted||''") &&
+  html.includes('[RECENT FORM] ${forms.join'),
+  'the prefetch side must call fetchBDLRecentForm for the same player names already extracted for fetchBDLPlayerContext, and the prompt-reader must read the real .formatted field (the raw cache entry is an object, not a string) to surface a [RECENT FORM] tag distinct from [SEASON STATS]');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
