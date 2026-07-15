@@ -1,15 +1,15 @@
 {
   "_meta": {
     "schema_version": "2.0",
-    "generated_at": "2026-07-14T09:24:59.632Z",
-    "for_date": "2026-07-14",
+    "generated_at": "2026-07-15T09:28:33.706Z",
+    "for_date": "2026-07-15",
     "source": "field-data workflow (automated)",
     "games_found": {
       "nhl": 0,
       "nba": 0,
       "mlb": 0,
       "mls": 0,
-      "wnba": 2
+      "wnba": 3
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -23,19 +23,28 @@
     "wnba": [
       {
         "sport": "WNBA",
-        "home": "Connecticut Sun",
-        "away": "Portland Fire",
-        "start_time": "2026-07-14T15:00Z",
-        "venue": "Mohegan Sun Arena",
+        "home": "Chicago Sky",
+        "away": "Seattle Storm",
+        "start_time": "2026-07-15T16:00Z",
+        "venue": "Wintrust Arena",
         "league": "WNBA",
         "confirmed": true
       },
       {
         "sport": "WNBA",
-        "home": "Toronto Tempo",
-        "away": "Washington Mystics",
-        "start_time": "2026-07-14T23:00Z",
-        "venue": "Coca-Cola Coliseum",
+        "home": "Minnesota Lynx",
+        "away": "Los Angeles Sparks",
+        "start_time": "2026-07-15T17:00Z",
+        "venue": "Target Center",
+        "league": "WNBA",
+        "confirmed": true
+      },
+      {
+        "sport": "WNBA",
+        "home": "Indiana Fever",
+        "away": "Golden State Valkyries",
+        "start_time": "2026-07-16T00:00Z",
+        "venue": "Gainbridge Fieldhouse",
         "league": "WNBA",
         "confirmed": true
       }
