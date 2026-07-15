@@ -6904,5 +6904,15 @@ assert('A-CARDBADGE-3 — stat-of-day badge wired into the primary card template
   html.includes("if(typeof isScoutsPick==='function'&&isScoutsPick(g))return ''"),
   'buildStatOfDayBadge must render in the primary card template (previously orphaned) and must be suppressed for Scout\'s Pick games, matching the already-documented "Option B" precedent (stat folds into that badge\'s own text)');
 
+// ── Last meeting (A-LASTMEETING — 2026-07-15) ─────────────────────────────────
+assert('A-LASTMEETING-1 — fetchLastMeeting wired into the bottom sheet, real (teamA,teamB)->(home,away) call shape',
+  /fetchLastMeeting\(game\.home, game\.away\)/.test(html) &&
+  html.includes('<div id="bs-last-meeting"></div>'),
+  'openBottomSheet must call fetchLastMeeting(game.home, game.away) and have a #bs-last-meeting anchor in the initial template for the async result to fill');
+
+assert('A-LASTMEETING-2 — no-prior-meeting and null-score cases correctly omit the section, never render blank/undefined scores',
+  /if \(!anchor \|\| !g2 \|\| g2\.home_score == null \|\| g2\.away_score == null\) return;/.test(html),
+  'the fill-in callback must bail out (leaving the section empty/omitted) for game:null, and for a row whose scores are genuinely null -- never render "undefined – undefined"');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

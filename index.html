@@ -42744,6 +42744,7 @@ function openBottomSheet(gameId) {
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
     ${(game.matchupNote||game.localNote||milestoneStr) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
     ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
+    <div id="bs-last-meeting"></div>
     ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'🦚 Peacock GOTD · Free to stream · ':game.espnGOTD?'📺 Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
     ${_bsBsdEventId ? `<div class="bs-section"><div class="bs-section-label">Pitch</div><div id="bsd-pitch" style="width:100%;min-height:200px"></div></div>` : ''}
@@ -42801,6 +42802,26 @@ function openBottomSheet(gameId) {
     }).catch(() => {
       document.getElementById('bs-brief-pending')?.remove();
     });
+  }
+
+  // Last meeting (CC-CMD-2026-07-15-last-meeting): fetchLastMeeting was
+  // real, live, and never called from anywhere. Fires after the sheet
+  // opens, same fire-and-forget pattern as the BSD post-game shotmap
+  // above -- no loading placeholder (unlike the brief above; this is a
+  // small, fast lookup, not an LLM generation). Real relay shape confirmed
+  // directly against the route handler: { ok, game } where game is a
+  // single most-recent regular_season_games row (or null -- e.g. a
+  // genuinely first-ever matchup, or if the only prior meeting was a
+  // postseason game, which this endpoint doesn't search). Correctly
+  // omits the section entirely rather than showing an error or empty state.
+  if (typeof fetchLastMeeting === 'function' && game.home && game.away) {
+    fetchLastMeeting(game.home, game.away).then(res => {
+      const g2 = res?.game;
+      const anchor = document.getElementById('bs-last-meeting');
+      if (!anchor || !g2 || g2.home_score == null || g2.away_score == null) return;
+      const dateStr = g2.date ? new Date(g2.date + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '';
+      anchor.outerHTML = `<div class="bs-section"><div class="bs-section-label">Last Meeting</div><div class="bs-section-body">${teamNick(g2.away||'')} ${g2.away_score} – ${teamNick(g2.home||'')} ${g2.home_score}${dateStr ? ' · ' + dateStr : ''}</div></div>`;
+    }).catch(() => {});
   }
 }
 
