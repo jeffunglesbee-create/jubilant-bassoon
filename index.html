@@ -5912,6 +5912,7 @@ if (typeof location !== 'undefined') {
 const FIELD_FEATURES = {
   // Featured tier + compact overflow (July 15 2026)
   'featured-tier-overflow':  '2026-07-15',  // isFeaturedTierGame/buildRankBadge/buildOverflowStrip — generic volume-management split for high-volume sport sections (CFB now), inert below FEATURED_TIER_OVERFLOW_THRESHOLD
+  'cfb-section-injection':   '2026-07-15',  // injectV2SportSection() — generic V2-poll-to-allData.sports schedule injection (mirrors WC26's own pattern), wired for cfb; mapV2ToESPN threads homeCuratedRank/awayCuratedRank
   // PM-25 Rich-visual confidence glyph (June 5 2026)
   'pm25-confidence-glyph':               '2026-06-05',  // .cg CSS (verified/mismatch/single) + renderCardBadges glyph injection into .game-time. Additive to PM-20 text glyph. A496.
   // PM-27 Event Bus Payload Standard (June 5 2026)
@@ -18809,6 +18810,13 @@ function mapV2ToESPN(fg) {
     espnEventId: null, wp: null, wp_prev: null,
     homeLeader: null, awayLeader: null,
     bsdEventId: fg.bsdEventId || null,  // BSD event ID — activates pitch/momentum when set
+    // AP/CFP poll rank (CC-CMD-2026-07-15-cfb-section-injection). Safe no-op
+    // until the relay's own companion fix (CC-CMD-2026-07-15-cfb-
+    // curatedrank-relay, separate repo) forwards fg.home/away.curatedRank --
+    // ?? null either way. isFeaturedTierGame (CC-CMD-2026-07-15-featured-
+    // tier-overflow) already reads these defensively.
+    homeCuratedRank: fg.home?.curatedRank ?? null,
+    awayCuratedRank: fg.away?.curatedRank ?? null,
     start_time: fg.start || '',
     round: fg.round || '',
     series: fg.series || null,
@@ -18895,6 +18903,60 @@ async function renderWCBracketImpact(gameId, home, away, relayBase) {
 // Called the relay's /apisports/basketball/games/statistics/players passthrough,
 // which no longer exists. homeLeader/awayLeader fields remain in espnScores
 // shape (always null now) — downstream renderers already null-safe by design.
+
+// ── Generic V2 sport section injection (CC-CMD-2026-07-15-cfb-section-
+// injection) — mirrors the FIFA World Cup injection pattern below, but
+// genuinely generic (sportKey/sectionLabel params) so a future CBB adapter
+// can reuse it without rebuilding this. V2 polling fetches cfb games into
+// espnScores, but nothing previously turned them into allData.sports card
+// entries -- confirmed only WC26 had a dedicated injection block; CFB/NFL
+// games sat in espnScores forever, never rendered by renderAll(). Unlike
+// WC26, there is no pre-existing hardcoded fallback schedule for CFB to
+// dedup against (confirmed via grep -- no sections.push for CFB anywhere),
+// so this is simpler: first sighting always creates a fresh section.
+const _v2SectionInjected = {}; // sportKey -> true once its section exists in allData.sports
+function injectV2SportSection(sportKey, sectionLabel) {
+  try {
+    const keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey);
+    if (!keys.length) return;
+    const games = keys.map(k => {
+      const e = espnScores[k];
+      const [home, away] = k.split('|');
+      return {
+        home, away, _id: e._gameId || e.espnEventId || k,
+        league: sectionLabel, _sport: sectionLabel, _section: sectionLabel,
+        start_time: e.start_time || '',
+        state: e.state || 'pre',
+        confirmed: true,
+        round: e.round || '',
+        // Threaded from mapV2ToESPN (CC-CMD-2026-07-15-cfb-section-
+        // injection); real values arrive once the relay's companion fix
+        // (CC-CMD-2026-07-15-cfb-curatedrank-relay) lands. isFeaturedTierGame
+        // (CC-CMD-2026-07-15-featured-tier-overflow) reads these directly.
+        homeCuratedRank: e.homeCuratedRank ?? null,
+        awayCuratedRank: e.awayCuratedRank ?? null,
+      };
+    });
+    const existing = allData?.sports?.find(s => s.section === sectionLabel || s.sport === sectionLabel);
+    if (existing) {
+      // Subsequent polls: merge V2 state into the existing section, same
+      // overlay pattern the FIFA block below uses (V2 wins per-field, keyed
+      // by lowercased home|away).
+      const byKey = new Map();
+      (existing.games || []).forEach(g => byKey.set(`${(g.home||'').toLowerCase()}|${(g.away||'').toLowerCase()}`, g));
+      games.forEach(v => {
+        const k = `${(v.home||'').toLowerCase()}|${(v.away||'').toLowerCase()}`;
+        byKey.set(k, { ...byKey.get(k), ...v });
+      });
+      existing.games = Array.from(byKey.values());
+      _v2SectionInjected[sportKey] = true;
+    } else if (allData?.sports) {
+      allData.sports.push({ sport: sectionLabel, section: sectionLabel, games });
+      buildFilters(allData.sports);
+      _v2SectionInjected[sportKey] = true;
+    }
+  } catch (_e) { captureFieldError(`v2-section-inject:${sportKey}`, _e, true); }
+}
 
 async function fetchV2AllScores() {
   _v2PollCycle++;
@@ -19082,6 +19144,12 @@ async function fetchV2AllScores() {
   })));
 
   hydrateEspnScoresFromFinals(); // restore known final scores before rendering (V2 returns null on finals)
+
+  // CFB schedule section (CC-CMD-2026-07-15-cfb-section-injection). Ready
+  // for a future CBB adapter via the same injectV2SportSection() call with
+  // a different sportKey/sectionLabel -- not built here, per that CC-CMD's
+  // own "do not preemptively apply to a sport with no real data source yet."
+  if (FIELD_V2_SOURCES.cfb) injectV2SportSection('cfb', 'College Football');
 
   // ── Inject FIFA World Cup section into allData.sports ─────────────────────
   // V2 polling fetches wc26 games → espnScores. allData.sports may already
@@ -25345,7 +25413,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-14b';
+  const SW_VERSION = '2026-07-14c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

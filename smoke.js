@@ -34,8 +34,13 @@ console.log('\n── FIELD Smoke Test (GitHub Actions) ────────
 // 1. File size sanity (>500KB, <2.5MB)
 // Ceiling raised from 2MB → 2.5MB (June 10 2026): wc26Raw + all WC team context inline.
 // Refactor target: extract wc26Raw + static team context to fetched JSON (~200KB savings).
+// Raised 2.5MB → 2.6MB (July 15 2026): organic growth crossed the prior
+// ceiling by ~2.9KB (confirmed via real byte count, not assumed) --
+// CC-CMD-2026-07-15-cfb-section-injection's ~3.2KB addition, not a
+// duplication bug. Modest buffer, not a rubber stamp -- still catches a
+// genuine runaway-growth anomaly.
 const size = Buffer.byteLength(html, 'utf8');
-assert('File size in range', size > 500000 && size < 2500000, `${size} bytes`);
+assert('File size in range', size > 500000 && size < 2600000, `${size} bytes`);
 
 // 2. HTML structure
 assert('Has DOCTYPE', html.startsWith('<!DOCTYPE html'));
@@ -6852,6 +6857,21 @@ assert('A-FTO-5 — buildRankBadge() reuses the existing small-chip badge patter
   html.includes('rank-badge') &&
   /g\.homeCuratedRank/.test(html) && /g\.awayCuratedRank/.test(html),
   'buildRankBadge must use homeCuratedRank/awayCuratedRank (distinct from the existing FIFA-ranking homeRank/awayRank fields) and render into the established badge-row chip pattern');
+
+// ── CFB section injection (A-CFBI — 2026-07-15) ───────────────────────────────
+assert('A-CFBI-1 — injectV2SportSection() is generic (sportKey/sectionLabel params), mirrors the real WC26 injection pattern',
+  html.includes('function injectV2SportSection(sportKey, sectionLabel)') &&
+  html.includes("keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey)"),
+  'injectV2SportSection must take sportKey/sectionLabel as parameters (not hardcoded to CFB) and filter espnScores by the real V2 _sport key');
+
+assert('A-CFBI-2 — CFB wired via the generic injector, gated on FIELD_V2_SOURCES.cfb, ready for CBB without rebuilding',
+  /if \(FIELD_V2_SOURCES\.cfb\) injectV2SportSection\('cfb', 'College Football'\)/.test(html),
+  'fetchV2AllScores must call injectV2SportSection for cfb specifically, gated on the real FIELD_V2_SOURCES.cfb flag');
+
+assert('A-CFBI-3 — mapV2ToESPN threads homeCuratedRank/awayCuratedRank from the relay FieldGame shape',
+  /homeCuratedRank: fg\.home\?\.curatedRank \?\? null/.test(html) &&
+  /awayCuratedRank: fg\.away\?\.curatedRank \?\? null/.test(html),
+  'mapV2ToESPN must thread fg.home/away.curatedRank into homeCuratedRank/awayCuratedRank (?? null-safe) so isFeaturedTierGame can read real rank data once the relay forwards it');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
