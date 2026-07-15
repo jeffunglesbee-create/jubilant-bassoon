@@ -6748,8 +6748,6 @@ function mlbBundle(){
 }
 const MLB_BUNDLE = mlbBundle();
 
-// NHL: odd game# = ESPN, even = TNT (verified from 2026 NHL schedule)
-function nhlStreams(gameNum){ return resolveBundle((gameNum%2===0)?"NHL_TNT":"NHL_ESPN"); }
 function mlbStreams(){ return resolveBundle(MLB_BUNDLE); }
 
 // ── State ────────────────────────────────────────────────────
@@ -7050,7 +7048,12 @@ function getStatus(iso, opts){
   return "upcoming";
 }
 // localDayHour removed — mlbStreams now uses pre-computed TODAY_DOW
-// nhlStreams and mlbStreams defined in SR block above
+// mlbStreams defined in SR block above. nhlStreams removed
+// (CC-CMD-2026-07-15-never-adopted-utilities-disposal): its TNT/ESPN-
+// alternating-by-game# assumption never matched the real 2026 Stanley
+// Cup Final broadcast deal (all-ABC, confirmed via the hardcoded G1-G6
+// entries below, each resolveBundle("NHL_ABC") directly) -- zero real
+// callers, and the 2026 NHL postseason already concluded June 14.
 
 // ── Per-game Circadian State (CC-CMD-2026-07-04-circadian-client-phase-v2) ──
 // v2.2: cross-sport, per-adapter field awareness — confirmed via live
@@ -10766,26 +10769,13 @@ function buildMLBNAlertChip(game, smoothedDrama) {
     + `${strikeZoneNote}</div>`;
 }
 
-// ── fieldFetch: fetch wrapper with AbortSignal timeout + JSON parse.
-// Replaces 39 inline fetch(url, {signal:AbortSignal.timeout(n)}) patterns.
-// Returns parsed JSON or throws on network/HTTP error.
-async function fieldFetch(url, { timeoutMs=8000, headers={}, method='GET', body=null }={}) {
-  const opts = { method, headers: { 'Content-Type':'application/json', ...headers },
-    signal: AbortSignal.timeout(timeoutMs) };
-  if (body) opts.body = typeof body === 'string' ? body : JSON.stringify(body);
-  const r = await fetch(url, opts);
-  if (!r.ok) throw new Error(`HTTP ${r.status} ${url.split('?')[0]}`);
-  return r.json();
-}
-
-// forEachGame: iterate every game in allData.sports safely.
-// Replaces 32 inline (allData?.sports||[]).forEach(sec=>(sec.games||[]).forEach(g=>...))
-// patterns that each have subtly different null-safety guards.
-function forEachGame(fn) {
-  (allData?.sports || []).forEach(sec => {
-    (sec.games || []).forEach(g => fn(g, sec));
-  });
-}
+// fieldFetch and forEachGame removed (CC-CMD-2026-07-15-never-adopted-
+// utilities-disposal): both real, well-built refactor utilities, zero
+// real callers -- their own comments documented the consolidation they
+// were meant to enable (39 inline fetch(...) patterns, 32 inline
+// forEach(...) patterns respectively), but the actual refactor never
+// happened. Same "never-adopted alternate" class already removed
+// earlier tonight (orphan-cleanup-dead's logoImg/$/$$).
 
 // allGamesFlat: returns flat array of all games across all sport sections.
 // Replaces allGamesFlat() patterns.
@@ -16669,18 +16659,16 @@ async function slashGolfPrefetchAll(){
     if(FIELD_DEBUG) console.debug(`[SlashGolf] ${active.length} active/upcoming events`);
     if(!active.length) return;
 
-    // 2b. Backfill the Golf section in allData.sports if buildTodaySchedule
-    // didn't create it. The hardcoded golfGames array in buildTodaySchedule
-    // is intentionally empty — golf is data-driven, populated by SlashGolf
-    // here. Without this backfill, active tournaments have no .game-card
-    // target for injectSlashGolfLeaderNotes (step 4) or for the ESPN PGA
-    // injectPGALeaderboard (T+4000ms boot step) to attach to.
-    // The schedule fetch on line above is sessionStorage-cached, so the
-    // buildSlashGolfGamesForToday call below reuses it for free.
-    // SlashGolf does NOT create PGA Tour Golf sections.
-    // ESPN enriched (/v2/golf/enriched) is the primary PGA Tour source.
-    // Golf section creation happens in the loadPGASlate callback (T+4000ms).
-    // SlashGolf remains active for LIV Golf, DP World Tour, LPGA, Champions Tour.
+    // 2b. SlashGolf does NOT create PGA Tour Golf sections. ESPN enriched
+    // (/v2/golf/enriched) is the primary PGA Tour source; golf section
+    // creation happens in the loadPGASlate callback (T+4000ms). SlashGolf
+    // remains active for LIV Golf, DP World Tour, LPGA, Champions Tour,
+    // annotating whatever cards already exist via injectSlashGolfLeaderNotes
+    // (step 4) below -- it does not build game entries itself.
+    // buildSlashGolfGamesForToday (an earlier, superseded approach to
+    // building game entries directly from this schedule) removed
+    // (CC-CMD-2026-07-15-never-adopted-utilities-disposal) -- zero real
+    // callers, confirmed genuinely obsolete architecture, not a gap.
 
     // 3. Leaderboards ONLY for in-progress events (not upcoming)
     // On Mon-Wed there are no in-progress events → 0 leaderboard requests
@@ -16712,52 +16700,6 @@ async function slashGolfPrefetchAll(){
     if(FIELD_DEBUG) console.debug("[SlashGolf] prefetch complete", leaderboards);
   }catch(e){
     if(FIELD_DEBUG) console.warn("[SlashGolf] prefetch error", e.message);
-  }
-}
-
-// Dynamic golf schedule from Slash Golf — builds a golfGames-like array
-// from the API schedule for today, to supplement the hardcoded fallback
-async function buildSlashGolfGamesForToday(){
-  try{
-    const schedule = await fetchSlashGolfSchedule();
-    if(!schedule) return [];
-    const active = getActiveTournaments(schedule);
-    const today = TODAY_ISO;
-
-    return active
-      .filter(t => {
-        const start = t.date?.start || "";
-        const end = t.date?.end || "";
-        return start <= today && today <= end;
-      })
-      .map(t => {
-        const name = t.name || "PGA Tour Event";
-        const venue = t.course?.name || "";
-        const city = t.course?.location || "";
-        const fullVenue = venue + (city ? `, ${city}` : "");
-        const roundLabel = golfRoundLabel(t);
-        const leaderNote = t.firstPlace
-          ? `${roundLabel ? roundLabel + " · " : ""}${t.firstPlace.lastName||""} ${t.firstPlace.total||""}`
-          : roundLabel;
-
-        // Determine bundle from schedule metadata (signature event, major, standard)
-        const isSignature = (t.fedexCupPoints || 0) >= 700;
-        const bundle = isSignature ? "GOLF_NBC" : "GOLF_CBS";
-
-        return {
-          home: name, away: "",
-          league: `PGA Tour${isSignature?" – Signature Event":""}${roundLabel?" · "+roundLabel:""}`,
-          start_time: (t.date?.start || today) + "T13:00:00Z",
-          venue: fullVenue,
-          streams: resolveBundle(bundle),
-          leaderNote: leaderNote,
-          slashGolfTournId: t.tournId,
-          _id: "sg_" + (t.tournId || name.replace(/\s/g,"")),
-        };
-      });
-  }catch(e){
-    if(FIELD_DEBUG) console.warn("[SlashGolf] buildGamesForToday error", e.message);
-    return [];
   }
 }
 
@@ -22043,16 +21985,12 @@ function _mlbWhosUpNext(liveGame, aheadSlots = 3) {
   return { name: targetName, slot: targetIdx + 1, estMinutes };
 }
 
-// mlbBaserunnerBonus — wired into Heat Index in subsequent session
-function mlbBaserunnerBonus(liveState) {
-  if (!liveState) return 0;
-  const { onFirst, onSecond, onThird, outs, inning } = liveState;
-  const runnersOn = (onFirst?1:0) + (onSecond?1:0) + (onThird?1:0);
-  let bonus = runnersOn * 3;
-  if (outs === 2)   bonus += 5;
-  if (inning >= 9)  bonus += 5;
-  return Math.min(bonus, 20);
-}
+// mlbBaserunnerBonus removed (CC-CMD-2026-07-15-never-adopted-utilities-
+// disposal): its own comment said "wired into Heat Index in subsequent
+// session" but no Heat Index aggregator was ever built. Confirmed
+// genuinely superseded, not just unadopted -- applyQW1SituationBonus's
+// real, live BASEBALL section already computes a more refined version
+// of the identical baserunner/outs/inning drama signal independently.
 
 // loadMLBSlate — main entry point; wired into fetchMLBFixtures below
 async function loadMLBSlate(date) {
@@ -22872,9 +22810,13 @@ async function fetchSoccerFixtures(){
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GAME INTELLIGENCE PIPELINE — Stages 1 & 2
-// enrichGame(game, espnScore) → RichGame  (Session A: Sport Classifier + Story Engine)
-// Session B adds Stage 3 (Broadcast Authority)
-// Session C adds Stage 4 (Watch Engine)
+// classifySport/computeGameNarrative (Session A: Sport Classifier + Story
+// Engine) remain real and used independently. The enrichGame() orchestrator
+// that was meant to combine them with Stage 3 (Broadcast Authority) and
+// Stage 4 (Watch Engine) into one RichGame object was removed
+// (CC-CMD-2026-07-15-never-adopted-utilities-disposal) -- never adopted,
+// Stage 4's watchValue concept independently reimplemented elsewhere as
+// computeWatchValue().
 // ═══════════════════════════════════════════════════════════════════════════
 
 // STAGE 1 — Sport Classifier
@@ -23066,7 +23008,6 @@ function computeGameNarrative(game, espnScore, sportClass){
           isCollapse:null,volatility:null,wpLeader:null};
 }
 
-// ─── enrichGame() shell — Stages 3+4 plugged in by Sessions B+C ─────────────
 // ─── PIPELINE B: resolveGameBroadcast() — Stage 3 ────────────────────────────
 // Returns the best broadcast option for a game as a Broadcast object:
 //   { label, watchUrl, authType, isFreeOTA, key }
@@ -23109,13 +23050,15 @@ function resolveGameBroadcast(game){
     authType:s.auth||'sub',isFreeOTA:FREE_OTA.has(key),key};
 }
 
-function enrichGame(game, espnScore){
-  const sportClass=classifySport(game,espnScore);
-  const narrative=computeGameNarrative(game,espnScore,sportClass);
-  const broadcast=resolveGameBroadcast(game); // Stage 3: Pipeline B ✅
-  // watchValue populated in Session C
-  return {...game,sportClass,narrative,broadcast,watchValue:null};
-}
+// enrichGame() removed (CC-CMD-2026-07-15-never-adopted-utilities-
+// disposal): the RichGame orchestrator shell had zero real callers --
+// an abandoned multi-session build-out (its own comment: "Stages 3+4
+// plugged in by Sessions B+C"). Its Stage 4 concept (watchValue) was
+// independently reimplemented as the real, live computeWatchValue()
+// (2 real call sites, completely different shape). classifySport,
+// computeGameNarrative, and resolveGameBroadcast (Stage 3, directly
+// above) all remain real, live, used elsewhere -- confirmed unaffected
+// by this removal.
 
 // Render score overlays onto existing game cards
 // Maps sport period to OT suffix when period exceeds normal game length
@@ -39284,29 +39227,13 @@ function buildNBAPlayerContext(game, eData) {
   } catch(e_) { return ''; }
 }
 
-// PM-28i: normalizeApiFootballStats() — converts API-Football stats array-of-objects
-// Input: [{team:{name}, statistics:[{type:"Yellow Cards",value:2},...]}]
-// Output: {"Arsenal":{"Yellow Cards":2,"Shots on Goal":5,...},"Chelsea":{...}}
-function normalizeApiFootballStats(raw) {
-  try {
-    if (!Array.isArray(raw)) return {};
-    const out = {};
-    for (const entry of raw) {
-      const teamName = entry?.team?.name || '';
-      if (!teamName) continue;
-      out[teamName] = {};
-      for (const stat of (entry?.statistics || [])) {
-        if (stat?.type && stat?.value != null) {
-          // Coerce numeric strings; keep null/"null" as 0
-          const v = stat.value === 'null' || stat.value === null ? 0
-            : isNaN(Number(stat.value)) ? stat.value : Number(stat.value);
-          out[teamName][stat.type] = v;
-        }
-      }
-    }
-    return out;
-  } catch(e_) { return {}; }
-}
+// normalizeApiFootballStats removed (CC-CMD-2026-07-15-never-adopted-
+// utilities-disposal): zero real callers, confirmed genuinely superseded
+// -- the real, live soccer [MATCH STATS] feature (P6A/P6B) reads
+// possession/shots/corners directly from a differently-shaped
+// localStorage payload (soccer_stats_{home}|{away}), bypassing this
+// normalizer entirely. An independently-built, simpler mechanism
+// shipped instead.
 
 function recordScoreSnapshot(gameId, homeScore, awayScore) {
   if (!gameId) return;

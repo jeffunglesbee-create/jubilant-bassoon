@@ -756,14 +756,19 @@ const hasSportClassifier = html.includes('function classifySport(') &&
 if(hasSportClassifier) pass('Assertion 53 — Sport Classifier: classifySport() + all sport flags');
 else fail('Assertion 53 — Sport Classifier missing (classifySport/isNBA/isAFL/isSoccer/isConferenceFinals)');
 
-// Assertion 54 — Story Engine: computeGameNarrative() with scoreline + statusLine + enrichGame shell
+// Assertion 54 — Story Engine: computeGameNarrative() with scoreline + statusLine
+// enrichGame (the never-adopted RichGame orchestrator shell that wrapped this)
+// removed 2026-07-15 (CC-CMD-never-adopted-utilities-disposal) -- zero real
+// callers, its own Stage 4 concept independently reimplemented elsewhere as
+// computeWatchValue(). computeGameNarrative/scoreline/statusLine remain real
+// and live on their own; this assertion now checks them directly rather than
+// the removed orchestrator that merely called computeGameNarrative once.
 const hasStoryEngine = html.includes('function computeGameNarrative(') &&
   html.includes('scoreline') && html.includes('statusLine') &&
   html.includes('leaderNick') && html.includes('trailerNick') &&
-  html.includes('function enrichGame(') &&
   html.includes('def. ') && html.includes('lead ');
-if(hasStoryEngine) pass('Assertion 54 — Story Engine: computeGameNarrative() + enrichGame shell + Story Score strings');
-else fail('Assertion 54 — Story Engine missing (computeGameNarrative/scoreline/statusLine/enrichGame)');
+if(hasStoryEngine) pass('Assertion 54 — Story Engine: computeGameNarrative() + Story Score strings');
+else fail('Assertion 54 — Story Engine missing (computeGameNarrative/scoreline/statusLine)');
 
 // Assertion 55 — Story Score: .score-status CSS + scoreHTML uses _n.statusLine + previousScores uses _sl
 const hasStoryScore = html.includes('score-status') &&

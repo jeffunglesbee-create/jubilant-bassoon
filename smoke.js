@@ -4002,14 +4002,21 @@ assert('A499 — PM-27 WS Pulse: field:ws_fresh emitter + _lastWSMessageTime + u
 // ── PM-28: Context Richness Layer (A500) ──────────────────────────────────────
 // A500: Full PM-28 surface — all functions + cache + injection points present
 
-assert('A500 — PM-28 Context Richness: recordLinescores/getLinescores/buildLinescoreContext/buildGoalTimeline/buildNBAPlayerContext/normalizeApiFootballStats + injections',
+// normalizeApiFootballStats removed from this assertion 2026-07-15
+// (CC-CMD-never-adopted-utilities-disposal): zero real callers, confirmed
+// genuinely superseded by the real, live [MATCH STATS] feature (P6A/P6B),
+// which reads a differently-shaped localStorage payload directly. The
+// raw html.includes('normalizeApiFootballStats') check would have kept
+// trivially, falsely passing anyway (the removal comment itself contains
+// that string) -- fixed to check the real remaining surface, not a
+// coincidental substring match.
+assert('A500 — PM-28 Context Richness: recordLinescores/getLinescores/buildLinescoreContext/buildGoalTimeline/buildNBAPlayerContext + injections',
   html.includes('recordLinescores') &&
   html.includes('getLinescores') &&
   html.includes('LINESCORE_KEY') &&
   html.includes('buildLinescoreContext') &&
   html.includes('buildGoalTimeline') &&
   html.includes('buildNBAPlayerContext') &&
-  html.includes('normalizeApiFootballStats') &&
   html.includes('_nbaBoxscoreCache') &&
   html.includes('_afEventCache') &&
   html.includes('byPeriod') &&
@@ -4021,7 +4028,7 @@ assert('A500 — PM-28 Context Richness: recordLinescores/getLinescores/buildLin
   html.includes("'pm28-nba-boxscore-quarters'") &&
   html.includes("'pm28-nhl-period-scores'") &&
   html.includes("'pm28-build-goal-timeline'"),
-  'PM-28 Context Richness Layer (A500): recordLinescores() + getLinescores() persist homeLinescores/awayLinescores to localStorage per period boundary. buildLinescoreContext() formats [LINE SCORE] Q1-Q4/P1-P3/Inn1-9 for compound + Night Owl. buildGoalTimeline() reads _fdGoalCache + _afEventCache → [GOAL TIMELINE] with HT score. buildNBAPlayerContext() reads _nbaBoxscoreCache (populated by fetchNBABoxScoreViaRelay in checkForNewFinals) → [NBA BOX] top scorers. normalizeApiFootballStats() converts API-Football array-of-objects stats schema → keyed map. PM-28e NHL byPeriod extraction writes homeLinescores/awayLinescores from bd.linescore.byPeriod in fetchNHLLiveStats boxscore try-block. All three context builders injected into buildCompoundPrompt (after extremeNote) and fetchNightOwlFromClaude (_owlStatCtx). _afEventCache declared for AF soccer events. Midnight prune: field_linescore_ keys auto-pruned by existing .t field check — no new code needed.');
+  'PM-28 Context Richness Layer (A500): recordLinescores() + getLinescores() persist homeLinescores/awayLinescores to localStorage per period boundary. buildLinescoreContext() formats [LINE SCORE] Q1-Q4/P1-P3/Inn1-9 for compound + Night Owl (its own call site was later removed 2026-06-20, function retained -- see its own REMOVED comment). buildGoalTimeline() reads _fdGoalCache + _afEventCache → [GOAL TIMELINE] with HT score. buildNBAPlayerContext() reads _nbaBoxscoreCache (populated by fetchNBABoxScoreViaRelay in checkForNewFinals) → [NBA BOX] top scorers. PM-28e NHL byPeriod extraction writes homeLinescores/awayLinescores from bd.linescore.byPeriod in fetchNHLLiveStats boxscore try-block. All three context builders injected into buildCompoundPrompt (after extremeNote) and fetchNightOwlFromClaude (_owlStatCtx). _afEventCache declared for AF soccer events. Midnight prune: field_linescore_ keys auto-pruned by existing .t field check — no new code needed.');
 
 // ── PM-29: Postgame Drama Context Revival (A501) ──────────────────────────────
 assert('A501 — PM-29 Postgame Drama Context: buildScoreNarrativeContext + buildDramaArcDescription + Night Owl + bottom sheet + compound',
@@ -6990,6 +6997,23 @@ assert('A-BDLFORM-2 — fetchBDLRecentForm is genuinely prefetched (same real pl
   html.includes("_bdlRecentFormCache[k]?.formatted||''") &&
   html.includes('[RECENT FORM] ${forms.join'),
   'the prefetch side must call fetchBDLRecentForm for the same player names already extracted for fetchBDLPlayerContext, and the prompt-reader must read the real .formatted field (the raw cache entry is an object, not a string) to surface a [RECENT FORM] tag distinct from [SEASON STATS]');
+
+// ── Never-adopted utilities disposal (A-DISPOSAL — 2026-07-15) ────────────
+assert('A-DISPOSAL-1 — the 7 confirmed never-adopted/superseded utilities are genuinely removed, not just left as dead code',
+  !/function nhlStreams\(/.test(html) &&
+  !/function mlbBaserunnerBonus\(/.test(html) &&
+  !/function normalizeApiFootballStats\(/.test(html) &&
+  !/function enrichGame\(/.test(html) &&
+  !/function forEachGame\(/.test(html) &&
+  !/function fieldFetch\(/.test(html) &&
+  !/function buildSlashGolfGamesForToday\(/.test(html),
+  'nhlStreams (obsolete TNT/ESPN assumption, real 2026 SCF was all-ABC), mlbBaserunnerBonus (superseded by applyQW1SituationBonus\'s real baseball section), normalizeApiFootballStats (superseded by the real [MATCH STATS] localStorage mechanism), enrichGame (abandoned shell, watchValue reimplemented as computeWatchValue), forEachGame/fieldFetch (never-adopted refactor utilities), buildSlashGolfGamesForToday (superseded golf-schedule architecture) must all be genuinely removed, each independently confirmed dead with real evidence, not just orphaned');
+
+assert('A-DISPOSAL-2 — injectNBARegression correctly left as-is: a real, self-documented manual-injection mechanism, not dead code needing an automated wire',
+  html.includes('function injectNBARegression(gameKey, data)') &&
+  html.includes('Manual injection: update after each Finals game') &&
+  html.includes('const regress = getNBARegression(game._id);'),
+  'injectNBARegression must remain exactly as-is: its own section comment ("Manual injection: update after each Finals game") is a legitimate disclosed reason, and its real reader getNBARegression is genuinely called from _buildFinalsDeskPrompt -- correcting the original classification, which missed the section-header comment');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
