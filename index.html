@@ -34164,14 +34164,19 @@ function _bsdDeactivate() {
   _bsdShotData = [];
 }
 
-// Find a live WC game with bsdEventId and subscribe
+// Find any live BSD-covered game with bsdEventId and subscribe (CC-CMD-
+// 2026-07-14-bsd-pitch-generalize -- no longer WC-only; bsdEventId is the
+// authoritative "BSD covers this exact game right now" signal, same as
+// WC26). Name kept for now -- still only ever triggered from
+// toggleWCView()'s WC-entry branch (see setTimeout call below), so this
+// only widens what it picks up while the WC tab happens to be open.
 function _bsdActivateForWC() {
   try {
     if (typeof espnScores === 'undefined') return;
     var entry = null;
     Object.keys(espnScores).forEach(function(k) {
       var s = espnScores[k];
-      if (s && s._sport === 'wc26' && s.state === 'in' && s.bsdEventId && !entry) {
+      if (s && s.state === 'in' && s.bsdEventId && !entry) {
         entry = s;
       }
     });
@@ -42572,7 +42577,7 @@ function openBottomSheet(gameId) {
     ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
     ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'🦚 Peacock GOTD · Free to stream · ':game.espnGOTD?'📺 Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
-    ${(_bsIsWC && _bsBsdEventId) ? `<div class="bs-section"><div class="bs-section-label">Pitch</div><div id="bsd-pitch" style="width:100%;min-height:200px"></div></div>` : ''}
+    ${_bsBsdEventId ? `<div class="bs-section"><div class="bs-section-label">Pitch</div><div id="bsd-pitch" style="width:100%;min-height:200px"></div></div>` : ''}
     <div style="margin-top:1rem;display:flex;gap:.6rem">
       <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
       <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">⬆ Share</button>

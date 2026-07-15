@@ -5868,11 +5868,11 @@ assert('A_BSD_8 — bsd:ball SSE listener in _connect()',
   html.includes("addEventListener('bsd:ball'"),
   '_connect() must register bsd:ball listener on existing _es singleton');
 
-assert('A_BSD_9 — bottom sheet renders bsd-pitch container gated on WC + bsdEventId',
+assert('A_BSD_9 — bottom sheet renders bsd-pitch container gated on bsdEventId alone (CC-CMD-2026-07-14-bsd-pitch-generalize)',
   /_bsIsWC\s*=\s*\/wc26\|world cup\|fifa\/i\.test/.test(html) &&
   /_bsBsdEventId\s*=\s*eData\?\.bsdEventId/.test(html) &&
-  /\(_bsIsWC\s*&&\s*_bsBsdEventId\)\s*\?\s*`<div class="bs-section">[^`]*id="bsd-pitch"/.test(html),
-  'openBottomSheet must include a bsd-pitch container conditioned on _bsIsWC && _bsBsdEventId');
+  /\$\{_bsBsdEventId\s*\?\s*`<div class="bs-section">[^`]*id="bsd-pitch"/.test(html),
+  'openBottomSheet must include a bsd-pitch container conditioned on _bsBsdEventId alone -- not WC-only, any BSD-covered live game qualifies');
 
 assert('A_BSD_10 — post-game WC bottom sheet fetches /bsd/r2/read and feeds _bsdRepaint',
   /bsd\/wc26\/\$\{_bsBsdEventId\}\/stats\.json/.test(html) &&
