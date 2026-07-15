@@ -14,6 +14,7 @@
     "lint": "eslint --plugin html index.html",
     "inventory": "node scripts/inventory.js",
     "audit-prompt-tags": "node scripts/audit-prompt-tag-array.js",
+    "call-graph": "node scripts/call-graph.js",
     "lint:fix": "eslint --plugin html --fix index.html"
   },
   "devDependencies": {
