@@ -43887,7 +43887,24 @@ async function registerAnticipatoryPrefetch(){
     // Permission required by spec; query before register to avoid prompt spam.
     const status = await navigator.permissions.query({name: 'periodic-background-sync'}).catch(() => null);
     if (status && status.state !== 'granted') return;
-    await reg.periodicSync.register('field-prewarm', { minInterval: 24 * 60 * 60 * 1000 }).catch(() => {});
+    // minInterval is the only real scheduling lever periodicSync exposes — a
+    // floor on how soon the browser may fire, not an exact time (the browser
+    // still decides the actual moment via its own engagement heuristics).
+    // predictNextOpenHour() can't make the sync fire AT the predicted hour,
+    // but it can raise the floor so the registration can't fire well before
+    // it — biasing the eventual prewarm closer to when the user is actually
+    // likely to open the app. Falls back to the prior flat 24h floor when
+    // there isn't enough open-hour history yet to predict (new users).
+    let minInterval = 24 * 60 * 60 * 1000;
+    const predictedHour = predictNextOpenHour();
+    if (predictedHour !== null) {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(predictedHour, 0, 0, 0);
+      if (next <= now) next.setDate(next.getDate() + 1);
+      minInterval = next.getTime() - now.getTime();
+    }
+    await reg.periodicSync.register('field-prewarm', { minInterval }).catch(() => {});
   } catch(_) { /* opportunistic — never block boot on registration failure */ }
 }
 recordOpenHour();

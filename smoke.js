@@ -6936,5 +6936,17 @@ assert('A-DROPSOCKET-2 — wsOpened flag is cleared on teardown, preventing a st
   html.includes('delete card.dataset.wsOpened;\n          dropGameSocket(_gSport, _gId);'),
   'card.dataset.wsOpened must be cleared alongside the actual dropGameSocket() call, keeping the open/close flag consistent with real socket state');
 
+// ── Predict open hour wired into anticipatory prefetch (A-PREDICTHOUR — 2026-07-15) ──
+assert('A-PREDICTHOUR-1 — registerAnticipatoryPrefetch calls predictNextOpenHour() and computes a real minInterval from it',
+  html.includes('const predictedHour = predictNextOpenHour();') &&
+  html.includes('next.setHours(predictedHour, 0, 0, 0);') &&
+  html.includes('minInterval = next.getTime() - now.getTime();'),
+  'registerAnticipatoryPrefetch must consume the real predictNextOpenHour() output to narrow the periodicSync minInterval floor toward the predicted next-open hour');
+
+assert('A-PREDICTHOUR-2 — insufficient-history case still degrades gracefully to the original flat 24h minInterval',
+  html.includes('let minInterval = 24 * 60 * 60 * 1000;') &&
+  html.includes('if (predictedHour !== null) {'),
+  'when predictNextOpenHour() returns null (not enough open-hour history yet), registerAnticipatoryPrefetch must fall back to the original flat 24h floor rather than crashing or registering a bad interval');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
