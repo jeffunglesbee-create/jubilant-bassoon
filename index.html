@@ -13479,7 +13479,7 @@ function buildDynamicPregames(){
         : "TBD";
       // J8: surface matchupNote in SMT card for playoff editorial context
       const nbaContextLine = game.matchupNote ? ' '+game.matchupNote.split('.')[0].slice(0,80)+'.' : '';
-      const nbaNet = game.streams?.[0]?.label || 'ESPN';
+      const nbaNet = gameNetwork(game, 'ESPN');
       cards.push({
         show:pregameLabel, network:nbaNet, chip:"ESPN",
         time:pregameTime+" ET",
@@ -13516,7 +13516,7 @@ function buildDynamicPregames(){
       nhlDone=true;
       const gameTime = game.start_time ? fmtTime(game.start_time) : "TBD";
       const srKey = game.streams&&game.streams[0]&&SR[game.streams[0]];
-      const network = game.streams?.[0]?.label || (srKey ? srKey[0] : "ESPN");
+      const network = gameNetwork(game, srKey ? srKey[0] : "ESPN");
       const pregameTime = game.start_time
         ? fmtTime(shiftTime(game.start_time, -30))
         : "TBD";
@@ -13825,7 +13825,7 @@ function buildPlayoffSpecials() {
     for (const game of (sec.games || [])) {
       if (!game.seriesRecord || game.seriesRecord === '0-0') continue;
       const league = (game.league || '').toLowerCase();
-      const network = game.streams?.[0]?.label || '';
+      const network = gameNetwork(game);
       const gameTime = game.start_time ? fmtTime(game.start_time) : 'TBD';
 
       // NBA Finals
@@ -14114,7 +14114,7 @@ function renderFieldDesk(){
       const isWCGame = /wc26|world cup|fifa/i.test(topPick._sport||topPick.league||'');
       const wcLine = isWCGame && /MD[23]/.test(topPick.league||'')
         ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">⚽ Advancement on the line</div>` : '';
-      const network = topPick.streams?.[0]?.label || '';
+      const network = gameNetwork(topPick);
       const networkLine = network ? `<span style="opacity:.6"> · ${network}</span>` : '';
       const seriesLine = topPick.seriesRecord ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">${topPick.seriesRecord}</div>` : '';
       // Count other qualifying games for footnote
@@ -14439,7 +14439,7 @@ function renderJournalism() {
       const safe = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const marker = g.league || 'PLAYOFF GAME';
       const matchup = `${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`;
-      const streamLabel = g.streams?.[0]?.label || '';
+      const streamLabel = gameNetwork(g);
       const timeStr = (typeof fmtTime === 'function') ? fmtTime(g.start_time) : '';
       const metaParts = [timeStr ? timeStr + ' ET' : '', streamLabel].filter(Boolean);
       let tonightHtml = '';
@@ -14480,7 +14480,7 @@ function renderJournalism() {
         if (!game) return;
         const safe = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const matchup = `${game.away||''} ${game.neutral?'vs':'@'} ${game.home||''}`;
-        const stream = game.streams?.[0]?.label || '';
+        const stream = gameNetwork(game);
         const timeStr = (typeof fmtTime === 'function') ? fmtTime(game.start_time) : '';
         const metaParts = [timeStr ? timeStr + ' ET' : '', stream].filter(Boolean);
         slateItems.push(`<li class="jrn-slate-item" data-gameid="${gid}">
@@ -14965,7 +14965,7 @@ function renderJournalismCompanion(counts) {
       if (isNaN(gt) || gt <= now) return;
       const matchup = `${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}`;
       const timeStr = (typeof fmtTime === 'function') ? fmtTime(g.start_time) : '';
-      const streamLabel = g.streams?.[0]?.label || '';
+      const streamLabel = gameNetwork(g);
       const metaBits = [timeStr ? timeStr + ' ET' : '', g.league || '', streamLabel].filter(Boolean);
       items.push({ matchup, meta: metaBits.join(' · '), gt });
     }));
@@ -22481,7 +22481,7 @@ function getCrewForGame(game) {
   }
   // Fall back to network-level registry using bundle label
   const bundle = game?._nationalBundle || game?.nationalBundle ||
-                 game?.streams?.[0]?.label || '';
+                 gameNetwork(game);
   return BROADCASTER_REGISTRY[bundle] || null;
 }
 
@@ -28698,7 +28698,7 @@ function buildLayer3Rules(games) {
     if (g._gameImportance === 'series_deciding')
       rules.push('- CLOSEOUT ['+name+']: Write about the series arc. One team can advance tonight.');
     if (g.streams?.[0] && typeof FREE_OTA !== 'undefined' && FREE_OTA.has(g.streams[0].key))
-      rules.push('- FREE GAME ['+name+']: Explicitly mention it is free on '+g.streams[0].label+'. Write for someone new to the sport.');
+      rules.push('- FREE GAME ['+name+']: Explicitly mention it is free on '+gameNetwork(g)+'. Write for someone new to the sport.');
     if (typeof isNationalGame==='function' && isNationalGame(g) && typeof preGameScore==='function' && preGameScore(g)<35)
       rules.push('- LOW-STAKES NATIONAL ['+name+']: Prominent broadcast, low interest. Brief mention only.');
     if (typeof MY_TEAMS!=='undefined' && MY_TEAMS.size>0 && (MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away)))
@@ -28861,7 +28861,7 @@ function buildCompoundPrompt(sections) {
         return `  [WHEN: ${dayLabel} — NOT tonight]`;
       } catch(_) { return ''; }
     })();
-    const stream = g.streams?.[0]?.label || 'local';
+    const stream = gameNetwork(g, 'local');
     const crewCtx = getCrewContext(g);
     const arcType = (typeof detectArcType === 'function') ? detectArcType(g) : null;
     // #29b: Fan Misery Index — franchise historical context
@@ -29075,7 +29075,7 @@ function buildCompoundPrompt(sections) {
   const _suppNote = _suppressedNote ? ` (${_suppressedNote} also tonight — context condensed)` : '';
   const regularSection = regularGames.length ? `\nREGULAR-SEASON GAMES${_suppNote} (max 2 games per sport shown — 1-2 sentences per sport, do not expand each game individually into a full paragraph):\n` +
     regularGames.map(g => {
-      const stream = g.streams?.[0]?.label || '';
+      const stream = gameNetwork(g);
       const venue = g.venue ? ` · ${g.venue}` : '';
       const pickTag = (typeof isScoutsPick === 'function' && isScoutsPick(g)) ? '  [SCOUT\'S PICK — under-the-radar game worth flagging]' : '';
       return `- ${g.away} @ ${g.home} · ${g._sport||g.league||''}${stream ? ' · '+stream : ''}${venue}${g.localNote ? ' · '+g.localNote : ''}${pickTag}`;
@@ -29084,7 +29084,7 @@ function buildCompoundPrompt(sections) {
   const eplSection = soccerGames.length ? `\nSOCCER FIXTURES (write a 40-60 word match brief for each):\n` +
     soccerGames.map(g => {
       const mw = (g.league||'').match(/Matchweek\s*(\d+)/i);
-      return `- ${g.away} @ ${g.home}${g.league ? ` · ${g.league}` : ''}${g.streams?.[0]?.label ? ` · ${g.streams[0].label}` : ''}${mw ? ` · MW${mw[1]}/38` : ''}`;
+      return `- ${g.away} @ ${g.home}${g.league ? ` · ${g.league}` : ''}${gameNetwork(g) ? ` · ${gameNetwork(g)}` : ''}${mw ? ` · MW${mw[1]}/38` : ''}`;
     }).join('\n') : '';
   const eplIds = soccerGames.map(g => `${(g.home||'').toLowerCase().replace(/\s+/g,'_')}_${(g.away||'').toLowerCase().replace(/\s+/g,'_')}`);
 
@@ -29814,13 +29814,13 @@ function buildFIELDBriefStatic(sections){
   const playoffGames=ranked.filter(g=>g._gameImportance||/playoff|final|semifinal|conference|cup final|series/i.test(g.league||'')).length;
   let lines=['Tonight on FIELD: '+totalGames+' events across '+(sections.length)+' sports.'];
   if(playoffGames) lines.push(playoffGames+' playoff game'+(playoffGames>1?'s':'')+' on the slate.');
-  const topStream=(top.streams&&top.streams[0]&&top.streams[0].label)||'';
+  const topStream=gameNetwork(top);
   lines.push('\nTop game: '+top.away+' @ '+top.home+(top.seriesRecord?' ('+top.seriesRecord+')':'')+'.'+(topStream?' On '+topStream+'.':''));
   const scout=ranked.find(g=>isScoutsPick(g));
   if(scout) lines.push("Scout's Pick: "+scout.away+' @ '+scout.home+' \u2014 high drama, under the radar.');
   const FREE_OTA_LABEL=new Set(['ABC','NBC','CBS','FOX','ION']);
   const freeGame=ranked.find(g=>g.streams&&g.streams[0]&&FREE_OTA_LABEL.has(g.streams[0].label));
-  if(freeGame) lines.push(freeGame.away+' @ '+freeGame.home+' is on '+freeGame.streams[0].label+' \u2014 free over the air, no subscription needed.');
+  if(freeGame) lines.push(freeGame.away+' @ '+freeGame.home+' is on '+gameNetwork(freeGame)+' \u2014 free over the air, no subscription needed.');
   return lines.join('\n');
 }
 // ── Relay-first standings for J3/J5 prompt enrichment ─────────────────────
@@ -32319,7 +32319,7 @@ async function fetchFIELDBriefFromClaude(sections){
   const noteResults=await Promise.allSettled(ranked.map(g=>fetchGameNotes(g)));
   const notes=noteResults.map(r=>r.status==='fulfilled'?r.value:null);
   const gameLines=ranked.map((g,i)=>{
-    const stream=(g.streams&&g.streams[0]&&g.streams[0].label)||'local';
+    const stream=gameNetwork(g, 'local');
     const free=g.streams&&g.streams[0]&&new Set(['ABC','NBC','CBS','FOX','ION']).has(g.streams[0].label);
     const standingsCtx = buildGameStandingsContext(g);
     const crewCtx = getCrewContext(g);
@@ -32439,7 +32439,7 @@ function buildMyTeamsBriefLine(sections) {
     const myTeam = MY_TEAMS.has(g.home)?g.home:g.away;
     const opp   = MY_TEAMS.has(g.home)?g.away:g.home;
     const sr    = g.seriesRecord&&g.seriesRecord!=='0-0'?' ('+g.seriesRecord+')':'';
-    const net   = g.streams?.[0]?.label||'';
+    const net   = gameNetwork(g);
     return (teamNick(myTeam))+' vs '+(teamNick(opp))+sr+' '+fmtTime(g.start_time)+(net?' · '+net:'');
   }).join(' | ');
 }
@@ -32684,7 +32684,7 @@ if(Object.keys(espnScores||{}).length){
 
 function buildEPLMatchBriefStatic(g) {
   const mw = parseMatchweek(g.league);
-  const stream = g.streams?.[0]?.label || '';
+  const stream = gameNetwork(g);
   const streamNote = stream ? ` Available on ${stream}.` : '';
   const league = (g.league||'').toLowerCase();
   const leagueName = g.league || 'the match';
@@ -33015,7 +33015,7 @@ async function fetchWNBAGameBriefFromClaude(g) {
   if (!cardBudget.canCall()) return null;
 
   const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(g) : '';
-  const stream = g.streams?.[0]?.label || '';
+  const stream = gameNetwork(g);
 
   // Only fire if we have something worth writing about — suppress card if context is bare
   const _wnbaHasContext = !!(standingsCtx || g.matchupNote || g.seriesRecord);
@@ -33505,7 +33505,7 @@ async function fetchGameBriefOnDemand(game, sport) {
   else {
     const standingsCtx = (typeof buildGameStandingsContext === 'function') ? buildGameStandingsContext(game) : '';
     const series = game.seriesRecord ? `Series: ${game.seriesRecord}.` : '';
-    const stream = game.streams?.[0]?.label || '';
+    const stream = gameNetwork(game);
     // CHAMPIONSHIP-BRIEF-SPEC: when this game IS a championship clinch,
     // surface drought + trophy + clinch type so the prompt rises to the
     // moment. buildChampionshipContext returns null when not applicable —
@@ -33608,7 +33608,7 @@ async function fetchEPLMatchBriefFromClaude(g) {
   const budget = journalismCallsToday();
   if(!budget.canCall()) return null;
   const mw = parseMatchweek(g.league);
-  const stream = g.streams?.[0]?.label || '';
+  const stream = gameNetwork(g);
 
   // Build H2H and form context from FD data (already cached by fdPrefetchSoccerLive)
   // Gives AI concrete facts: table position, form string, recent meetings
@@ -36327,7 +36327,7 @@ function renderAmbientPanel(){
         soonGame=g;
     }));
     if(soonGame){
-      const net=soonGame.streams?.[0]?.label||'';
+      const net=gameNetwork(soonGame);
       const cd=buildOTWCountdown(soonGame.start_time);
       otwHTML=`<div class="ap-soon">
         <span class="ap-otw-header">One to Watch</span>
@@ -36387,7 +36387,7 @@ function renderAmbientPanel(){
     const rows=_apSoon.slice(0,3).map(({g,ms})=>{
       const mins=Math.round(ms/60000);
       const cd=mins<=1?'now':mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`;
-      const net=g.streams?.[0]?.label||'';
+      const net=gameNetwork(g);
       return `<div class="ap-score-row">
         <span class="ap-score-teams">${railName(g.away)} ${g.neutral?'vs':'@'} ${railName(g.home)}${net?` · <span style="opacity:.6">${net}</span>`:''}</span>
         <span class="ap-score-clock">${cd}</span>
@@ -36693,7 +36693,7 @@ function renderWatchWindow(){
   const wwHeader = minsAway > 35 ? 'Up Next' : 'Coming Up';
   const minsStr=minsAway<=1?'Starting now':minsAway<=5?_wwVerb+' in '+Math.ceil(minsAway)+' min':minsAway<=35?'Starting in '+Math.ceil(minsAway)+' min':'In ~'+Math.round(minsAway)+' min';
   const stream=g.streams&&g.streams[0];
-  const streamLabel=stream?stream.label:'';
+  const streamLabel=gameNetwork(g);
   const streamKey=stream?stream.key:'';
   const deepLink=streamKey?getDeepLink(streamKey):null;
   const netChip=streamLabel?'<a class="ww-net" '+(deepLink?'href="'+deepLink+'" target="_blank"':'')+'>'+streamLabel+'</a>':'';
@@ -37235,7 +37235,7 @@ function evaluateEMBER(g, sport, ed) {
 
   return {
     ember: true, tier,
-    channel: g.streams?.[0]?.label || g.nationalBundle || 'local',
+    channel: gameNetwork(g, g.nationalBundle || 'local'),
     contextFlag: contextBoost,
     lateClose: lateAndClose,
   };
@@ -39612,7 +39612,7 @@ function renderOneToWatch(){
   });});
   if(soon&&_otwDismissedId!=='soon_'+soon.g._id){
     const {g}=soon;
-    const net=g.streams?.[0]?.label||'';
+    const net=gameNetwork(g);
     const cd=buildOTWCountdown(g.start_time);
     const startRender=()=>{
       const el=document.getElementById('otw-countdown');
@@ -39749,7 +39749,7 @@ function generateICS(game){
   const fmt=d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
   const esc=s=>(s||'').replace(/[,;\\]/g,'\\$&').replace(/\n/g,'\\n');
   const title=`${game.away||'Game'} @ ${game.home||'TBD'}`;
-  const network=(game.streams&&game.streams[0]&&game.streams[0].label)||'';
+  const network=gameNetwork(game);
   const desc=esc([
     game.league||'',
     network?`Watch on ${network}`:'',
@@ -41800,7 +41800,7 @@ function computeInsights(game, sport){
            parseFloat((SERVICE_COST[b.key]||'$999').replace('$',''));
   });
   const broadcast={
-    network:streams[0]?.label||'',
+    network:gameNetwork(game),
     isFreeOTA:freeStreams.length>0,
     freeOption:freeStreams[0]?{service:freeStreams[0].label,method:'antenna',cost:12}:null,
     cheapestOption:subStreams[0]?{service:subStreams[0].label,price:parseFloat((SERVICE_COST[subStreams[0].key]||'0').replace('$',''))}:null,
@@ -42115,7 +42115,7 @@ function buildLifeStageContent(game, eData, stage) {
       // Imminent: countdown + network
       const start = new Date(game.start_time||Date.now());
       const minsLeft = Math.round((start - Date.now()) / 60000);
-      const net = game.streams?.[0]?.label || '';
+      const net = gameNetwork(game);
       const countdownLabel = sp.includes('baseball') ? 'First pitch'
         : sp.includes('hockey') || sp.includes('nhl') ? 'Puck drop'
         : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') || sp.includes('efl') || sp.includes('world cup') || sp.includes('fifa') || sp.includes('wc26') ? 'Kickoff'
