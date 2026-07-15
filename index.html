@@ -23536,12 +23536,25 @@ function renderESPNScores(){
       // Proactively open GameDO WebSocket on live cards (not just at CRUNCH).
       // This activates the ws-pulse dot and ensures per-game facts arrive via
       // WS immediately, not waiting for the first CRUNCH signal.
-      if (isLive && typeof ensureGameSocket === 'function') {
+      if ((isLive || isFinal) && (typeof ensureGameSocket === 'function' || typeof dropGameSocket === 'function')) {
         const _gSport = (score.sport || sport || '').toLowerCase();
         const _gId    = (score.gameId || game._id || '').replace(/^[a-z]+:/, '');
-        if (_gSport && _gId && !card.dataset.wsOpened) {
+        if (isLive && _gSport && _gId && !card.dataset.wsOpened) {
           card.dataset.wsOpened = '1';
           ensureGameSocket(_gSport, _gId, null);
+        } else if (isFinal && _gSport && _gId && card.dataset.wsOpened) {
+          // Teardown (CC-CMD-2026-07-15-drop-game-socket): GameSocket's own
+          // cleanup() (fired on ws.onclose/onerror) reconnects forever
+          // unless .disconnect() is explicitly called -- dropGameSocket was
+          // never wired anywhere, confirmed via a real, focused search, not
+          // assumed. This isn't mere implicit-GC reliance: the reconnect
+          // setTimeout loop actively keeps the socket alive indefinitely
+          // for a game that may have ended hours ago, as long as the tab
+          // stays open. Tear down the moment this same per-card update
+          // loop -- the only real place a socket is ever opened -- detects
+          // the game has gone final.
+          delete card.dataset.wsOpened;
+          dropGameSocket(_gSport, _gId);
         }
       }
 

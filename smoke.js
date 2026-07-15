@@ -6925,5 +6925,16 @@ assert('A-GOLFRANK-2 — findLeaderWorldRank only annotates a top-50 OWGR leader
   html.includes('if(!rank || rank > 50) return "";'),
   'findLeaderWorldRank must gate on a real top-50 rank (avoiding clutter for a non-notable ranking) and degrade gracefully when leaderboard/rankings data is missing or the leader isn\'t found in the rankings list');
 
+// ── Drop game socket (A-DROPSOCKET — 2026-07-15) ──────────────────────────────
+assert('A-DROPSOCKET-1 — dropGameSocket wired at the real teardown point (the same per-card loop that opens sockets via ensureGameSocket, on isFinal)',
+  /if \(\(isLive \|\| isFinal\) && \(typeof ensureGameSocket === 'function' \|\| typeof dropGameSocket === 'function'\)\)/.test(html) &&
+  html.includes('} else if (isFinal && _gSport && _gId && card.dataset.wsOpened) {') &&
+  html.includes('dropGameSocket(_gSport, _gId);'),
+  'the per-card update loop must call dropGameSocket(_gSport, _gId) when a previously-opened card transitions to isFinal -- GameSocket.cleanup() reconnects forever otherwise (confirmed real resource leak, not cosmetic)');
+
+assert('A-DROPSOCKET-2 — wsOpened flag is cleared on teardown, preventing a stale flag from blocking a legitimate future re-open',
+  html.includes('delete card.dataset.wsOpened;\n          dropGameSocket(_gSport, _gId);'),
+  'card.dataset.wsOpened must be cleared alongside the actual dropGameSocket() call, keeping the open/close flag consistent with real socket state');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
