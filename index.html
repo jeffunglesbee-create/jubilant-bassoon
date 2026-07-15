@@ -1826,6 +1826,32 @@ body.wf-mode .np-inner{max-width:100%}
   border:1px solid var(--edge);padding:.07rem .42rem;border-radius:3px;
   flex-shrink:0;
 }
+/* Featured tier + compact overflow (CC-CMD-2026-07-15-featured-tier-overflow) */
+.rank-badge{
+  display:inline-flex;align-items:center;
+  font-family:var(--ff-mono);font-size:.62rem;font-weight:700;letter-spacing:.04em;
+  color:var(--gold2,#c9a84c);background:rgba(201,168,76,.1);
+  border:1px solid rgba(201,168,76,.3);border-radius:3px;
+  padding:.05rem .32rem;margin-right:.35rem;
+}
+.overflow-strip{margin-top:.5rem}
+.overflow-toggle{
+  font-family:var(--ff-cond);font-size:.68rem;letter-spacing:.04em;
+  color:var(--smoke);cursor:pointer;padding:.4rem .2rem;
+  border-top:1px solid var(--edge);user-select:none;
+}
+.overflow-toggle:hover{color:var(--platinum)}
+.overflow-strip.collapsed .overflow-rows{display:none}
+.overflow-rows{display:flex;flex-direction:column;gap:1px}
+.overflow-row{
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  padding:.3rem .4rem;font-size:.68rem;color:var(--platinum);
+  background:var(--card3);cursor:pointer;border-radius:2px;
+}
+.overflow-row:hover{background:var(--card2,rgba(255,255,255,.04))}
+.overflow-teams{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.overflow-meta{flex-shrink:0;font-family:var(--ff-mono);color:var(--smoke)}
+.overflow-row.overflow-live .overflow-meta{color:#f87171;font-weight:700}
 .watch-btn{
   font-family:var(--ff-cond);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;
   color:var(--gold);border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.06);
@@ -5884,6 +5910,8 @@ if (typeof location !== 'undefined') {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // Featured tier + compact overflow (July 15 2026)
+  'featured-tier-overflow':  '2026-07-15',  // isFeaturedTierGame/buildRankBadge/buildOverflowStrip — generic volume-management split for high-volume sport sections (CFB now), inert below FEATURED_TIER_OVERFLOW_THRESHOLD
   // PM-25 Rich-visual confidence glyph (June 5 2026)
   'pm25-confidence-glyph':               '2026-06-05',  // .cg CSS (verified/mismatch/single) + renderCardBadges glyph injection into .game-time. Additive to PM-20 text glyph. A496.
   // PM-27 Event Bus Payload Standard (June 5 2026)
@@ -11520,6 +11548,103 @@ function attachNavLinkOnce(id, handler) {
   });
 }
 
+// ── Featured tier + compact overflow (CC-CMD-2026-07-15-featured-tier-
+// overflow) — generic volume-management mechanism for any sport section
+// whose game count outgrows a full-card grid. CFB can have 60-130+ games
+// on one Saturday (99 real events confirmed on one real recent date);
+// nothing in FIELD previously capped or paginated a section's card count.
+// Genuinely generic, not CFB-specific — the identical curatedRank shape
+// was confirmed on a real historical college-basketball query too, so
+// this is ready for a CBB adapter without needing to be rebuilt.
+//
+// THRESHOLD REASONING: 30. Every other real sport section observed in
+// this codebase stays well under it (NFL's real max is 16; NBA/NHL/MLB
+// single-day slates never approach 20) — the mechanism stays fully inert
+// for them, rendering exactly as before. CFB's real confirmed range
+// (60-130+, with a specific 99-game date already verified) sits
+// comfortably above it, guaranteeing the split activates for CFB's real
+// volume. Not the CFB number itself (which would make the split trigger
+// right at the edge of a real slate) — a clear margin below CFB's
+// smallest documented volume (60) and above every other sport's real max.
+const FEATURED_TIER_OVERFLOW_THRESHOLD = 30;
+
+// Featured-tier promotion: a game earns a full card (vs. the compact
+// overflow strip) if ANY of three signals fire. Ranking must be one way
+// IN, not a hard filter — Scout's Pick / MY_TEAMS still surface unranked
+// games, preserving FIELD's existing anti-hype design (a pure "ranked
+// teams only" filter would just relabel the "only the hyped game
+// matters" bias this system already exists to counter).
+//
+// g.homeCuratedRank/g.awayCuratedRank: NOT yet populated by any real data
+// source as of this CC-CMD — ESPN's curatedRank:{current:N} field is
+// confirmed real and live on CFB (and CBB) competitor objects, but the
+// relay's adaptESPNFootball doesn't forward it yet (confirmed via direct
+// relay source read, not assumed) and no jubilant-bassoon code writes it
+// either. This check is safe by construction either way (`?? 99` treats
+// an absent rank as unranked) -- it starts as a permanent no-op for the
+// rank signal specifically until the relay-side companion CC-CMD lands,
+// without needing a fallback branch or invented placeholder data. Scout's
+// Pick and MY_TEAMS already work today and are unaffected.
+//
+// Deliberately g.homeCuratedRank/g.awayCuratedRank, NOT g.homeRank/
+// g.awayRank -- those names are already used elsewhere in this file for
+// FIFA world rankings (getCachedTeamRank), a completely different concept
+// (soccer drama-scoring upset bonus). Reusing that name for AP/CFP poll
+// rank would be exactly the kind of field-name collision this codebase
+// has already found and fixed multiple times tonight (WC label
+// fragmentation, league mislabel).
+function isFeaturedTierGame(g) {
+  const rank = Math.min(g.homeCuratedRank ?? 99, g.awayCuratedRank ?? 99);
+  if (rank <= 25) return true;
+  if (MY_TEAMS.has(g.home) || MY_TEAMS.has(g.away)) return true;
+  if (typeof isScoutsPick === 'function') {
+    try { if (isScoutsPick(g)) return true; } catch(_e) {}
+  }
+  return false;
+}
+
+// Ranking badge — small #N tag(s) for featured cards with a ranked team,
+// reusing buildRoundBadge's existing small-chip badge pattern (same visual
+// family as .round-badge/.importance-badge) rather than inventing new
+// card chrome. Renders nothing when neither team carries a real rank.
+function buildRankBadge(g) {
+  const parts = [];
+  if (typeof g.homeCuratedRank === 'number' && g.homeCuratedRank <= 25)
+    parts.push(`<span class="rank-badge">#${g.homeCuratedRank} ${teamNick(g.home)}</span>`);
+  if (typeof g.awayCuratedRank === 'number' && g.awayCuratedRank <= 25)
+    parts.push(`<span class="rank-badge">#${g.awayCuratedRank} ${teamNick(g.away)}</span>`);
+  return parts.join('');
+}
+
+// Compact overflow strip — generic, reusable for any sport section over
+// FEATURED_TIER_OVERFLOW_THRESHOLD games. Team names + start time/score
+// only, no full card treatment (closer to a schedule strip than the card
+// grid). Collapsed by default, expandable on tap. Clicking a row opens
+// the SAME bottom sheet full cards use (openBottomSheet) -- a pointer to
+// the existing game-detail UI, not a second copy of it.
+function buildOverflowStrip(games, sportLabel) {
+  if (!games?.length) return '';
+  const rows = games.map(g => {
+    const eData = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
+    const st = getStatus(g.start_time, g._aflComplete !== undefined ? { aflComplete: g._aflComplete } : undefined);
+    const isLive = st === 'live';
+    const hasScore = eData && (eData.homeScore != null || eData.awayScore != null);
+    const meta = hasScore
+      ? `${eData.awayScore ?? '-'}–${eData.homeScore ?? '-'}${isLive ? ' LIVE' : ''}`
+      : fmtTime(g.start_time);
+    const rankTag = (typeof g.homeCuratedRank === 'number' && g.homeCuratedRank <= 25) ? `#${g.homeCuratedRank} ` :
+                    (typeof g.awayCuratedRank === 'number' && g.awayCuratedRank <= 25) ? `#${g.awayCuratedRank} ` : '';
+    return `<div class="overflow-row${isLive ? ' overflow-live' : ''}" role="button" tabindex="0" data-open="${g._id}">
+      <span class="overflow-teams">${rankTag}${(g.away || '').replace(/</g, '')} @ ${(g.home || '').replace(/</g, '')}</span>
+      <span class="overflow-meta">${meta}</span>
+    </div>`;
+  }).join('');
+  return `<div class="overflow-strip collapsed">
+    <div class="overflow-toggle" role="button" tabindex="0" aria-expanded="false">+${games.length} more ${sportLabel} games ▾</div>
+    <div class="overflow-rows">${rows}</div>
+  </div>`;
+}
+
 // Fix: patch _homeAbbr eagerly on every renderAll so badges never miss it.
 // nhlAnalyticsInit is also called at T+4500ms but that's too late for early renders.
 // MLB: two sources — API games (homeTeam=abbr) + mlbRaw overrides (home=full name, no homeTeam).
@@ -11613,7 +11738,16 @@ function renderAll(skipUnchanged){
     });
     const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
-    const cards=games.map((g,gi)=>{
+    // Featured tier + compact overflow (CC-CMD-2026-07-15-featured-tier-
+    // overflow): inert (renders exactly as before, every game a full
+    // card) until a section's real game count crosses
+    // FEATURED_TIER_OVERFLOW_THRESHOLD. .filter() preserves the circadian
+    // sort order already applied above within each sub-group -- a stable
+    // partition, not a fresh sort.
+    const _overThreshold = games.length > FEATURED_TIER_OVERFLOW_THRESHOLD;
+    const cardGames = _overThreshold ? games.filter(isFeaturedTierGame) : games;
+    const overflowGames = _overThreshold ? games.filter(g => !isFeaturedTierGame(g)) : [];
+    const cards=cardGames.map((g,gi)=>{
       if(!g._id) g._id="g"+(++_gid);
       // Per-card string computation cache (CC-CMD-2026-07-04-card-dom-
       // reconciliation-phase2, TASK 2). Whole-object fingerprint (not a
@@ -11685,6 +11819,7 @@ function renderAll(skipUnchanged){
           ${(()=>{ const _pb=buildParkFactorBadge(g); const _ub=buildUmpWatchBadge(g); return (_pb||_ub) ? `<div class="badge-row mlb-analytics-badges">${_pb}${_ub}</div>` : ''; })()}
           ${(()=>{ const _nb=buildNHLAnalyticsBadges(g); return _nb ? `<div class="badge-row nhl-analytics-badges">${_nb}</div>` : ''; })()}
           ${(()=>{ const _rb=buildRoundBadge(g); return _rb?`<div class="badge-row round-badge-row">${_rb}</div>`:''; })()}
+          ${(()=>{ const _rkb=buildRankBadge(g); return _rkb?`<div class="badge-row rank-badge-row">${_rkb}</div>`:''; })()}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${g._gameImportance?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'"'+(v.onclick?' role="button" tabindex="0" style="cursor:pointer" onclick="'+v.onclick+'"':'')+'>'+v.label+'</span>').join('')+'</div>':'';})()}
@@ -11716,6 +11851,7 @@ function renderAll(skipUnchanged){
         <span class="s-count">${sportCountLabel(sec.sport, games.length)}</span>
       </div>
       <div class="games-list">${cards}</div>
+      ${_overThreshold ? buildOverflowStrip(overflowGames, sec.sport) : ''}
     </div>`;
   }).filter(Boolean).join("");
   applyMainHTML(_renderAllHTML);
@@ -11764,7 +11900,7 @@ function renderAll(skipUnchanged){
   //
   // Pointer events remain for desktop mouse (click fallback, no touch events).
   // Guard: _touched flag prevents mouse click from double-firing after touchend.
-  document.querySelectorAll('.card-body[data-open]').forEach(el => {
+  document.querySelectorAll('.card-body[data-open], .overflow-row[data-open]').forEach(el => {
     const gameId = el.dataset.open;
     if (!gameId) return;
     let _tx = 0, _ty = 0, _tMoved = false, _touched = false;
@@ -11795,6 +11931,21 @@ function renderAll(skipUnchanged){
     // Keyboard accessibility
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBottomSheet(gameId); }
+    });
+  });
+  // Overflow strip expand/collapse (CC-CMD-2026-07-15-featured-tier-overflow):
+  // re-wired fresh after every render, matching this file's established
+  // convention (e.g. Night Owl's collapsed-toggle) rather than event
+  // delegation, which isn't used elsewhere in this codebase.
+  document.querySelectorAll('.overflow-toggle').forEach(el => {
+    el.addEventListener('click', () => {
+      const strip = el.closest('.overflow-strip');
+      if (!strip) return;
+      const collapsed = strip.classList.toggle('collapsed');
+      el.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
     });
   });
   // iPad-2: re-apply expand state after card HTML is rebuilt by renderAll.

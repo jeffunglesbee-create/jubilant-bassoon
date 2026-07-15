@@ -6817,5 +6817,41 @@ assert('A744 — HRD verified final result (Walker def. Schwarber, 12-11) wired 
   })(),
   '2026-07-13 (hrd-verified-final-result): the live /homeRunDerby/839032 pipeline never left status:"Preview" all night -- confirmed a genuine MLB-side gap (cache-busted probe forced a real upstream re-fetch, identical stale response came back), not fixable from the relay side. The real result is known and verified -- cross-checked live across 4 independent sources (Bleacher Report, DraftKings Network, Philadelphia Inquirer, Yahoo Sports) within minutes of the event ending, all agreeing. Without this fallback, buildHRDPromptContext would tell journalism "not yet available" forever for an event that already happened -- this assertion protects the real, verified result from being silently reverted or lost.');
 
+// ── Featured tier + compact overflow (A-FTO — 2026-07-15) ────────────────────
+assert('A-FTO-1 — FEATURED_TIER_OVERFLOW_THRESHOLD exists and is a real number between low-volume and CFB real volume',
+  (() => {
+    const m = html.match(/const FEATURED_TIER_OVERFLOW_THRESHOLD = (\d+);/);
+    if (!m) return false;
+    const t = parseInt(m[1], 10);
+    return t > 16 && t < 60; // above NFL's real max, below CFB's real confirmed minimum (60-130+)
+  })(),
+  'FEATURED_TIER_OVERFLOW_THRESHOLD must exist and sit strictly between typical low-volume sports and CFB\'s real confirmed volume range');
+
+assert('A-FTO-2 — isFeaturedTierGame() checks all three promotion signals (rank, MY_TEAMS, Scout\'s Pick)',
+  html.includes('function isFeaturedTierGame(g)') &&
+  /Math\.min\(g\.homeCuratedRank \?\? 99, g\.awayCuratedRank \?\? 99\)/.test(html) &&
+  /rank <= 25/.test(html) &&
+  /MY_TEAMS\.has\(g\.home\) \|\| MY_TEAMS\.has\(g\.away\)/.test(html) &&
+  html.includes('isScoutsPick(g)'),
+  'isFeaturedTierGame must check homeCuratedRank/awayCuratedRank <= 25, MY_TEAMS, and isScoutsPick — ranking is one promotion signal, not a hard filter');
+
+assert('A-FTO-3 — renderAll() split is inert below threshold (cardGames falls back to the full games array unchanged)',
+  /const _overThreshold = games\.length > FEATURED_TIER_OVERFLOW_THRESHOLD/.test(html) &&
+  /const cardGames = _overThreshold \? games\.filter\(isFeaturedTierGame\) : games/.test(html) &&
+  /const overflowGames = _overThreshold \? games\.filter\(g => !isFeaturedTierGame\(g\)\) : \[\]/.test(html),
+  'renderAll must only apply the featured/overflow split when a section\'s real game count exceeds the threshold — existing low-volume sports must render every game as a full card, unchanged');
+
+assert('A-FTO-4 — buildOverflowStrip() reuses the existing bottom sheet (data-open), not a new detail UI',
+  html.includes('function buildOverflowStrip(games, sportLabel)') &&
+  /overflow-row.*data-open="\$\{g\._id\}"/.test(html) &&
+  html.includes("querySelectorAll('.card-body[data-open], .overflow-row[data-open]')"),
+  'buildOverflowStrip rows must carry data-open and be wired through the same touch/click handling as full cards, opening the existing bottom sheet rather than a duplicate detail view');
+
+assert('A-FTO-5 — buildRankBadge() reuses the existing small-chip badge pattern, distinct field names from FIFA homeRank/awayRank',
+  html.includes('function buildRankBadge(g)') &&
+  html.includes('rank-badge') &&
+  /g\.homeCuratedRank/.test(html) && /g\.awayCuratedRank/.test(html),
+  'buildRankBadge must use homeCuratedRank/awayCuratedRank (distinct from the existing FIFA-ranking homeRank/awayRank fields) and render into the established badge-row chip pattern');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
