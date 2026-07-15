@@ -15,6 +15,7 @@
     "inventory": "node scripts/inventory.js",
     "audit-prompt-tags": "node scripts/audit-prompt-tag-array.js",
     "call-graph": "node scripts/call-graph.js",
+    "audit-silent-catches": "node scripts/audit-silent-catches.js",
     "lint:fix": "eslint --plugin html --fix index.html"
   },
   "devDependencies": {
