@@ -4870,8 +4870,11 @@ assert('A661 — saveGolfRoundFinal + _isGolfRoundComplete + boot wire after inj
   // Boot wire: archive call lives inside the same setTimeout(...,300) block that
   // delays injectPGALeaderboard past scheduleRenderAll's debounce.
   /_isGolfRoundComplete\(d\)\) \{[\s\S]{0,80}?saveGolfRoundFinal\(d\)/.test(html) &&
-  // Both fetches are fire-and-forget with keepalive.
-  /keepalive: true,\s*\}\)\.catch\(\(\) => \{\}\);/.test(html),
+  // Both fetches are fire-and-forget with keepalive, and observable on failure
+  // (2026-07-15 archive-path silent-catch fix: was .catch(() => {}), now
+  // reports via captureFieldError so a real relay failure isn't invisible).
+  /keepalive: true,\s*\}\)\.catch\(e => captureFieldError\('archive:golf-game', e, false\)\);/.test(html) &&
+  /keepalive: true,\s*\}\)\.catch\(e => captureFieldError\('archive:golf-drama', e, false\)\);/.test(html),
   'CC-CMD-2026-06-19 Prompt 12C golf archive hook: golf doesn\'t flow through V2/GameDO/saveEspnFinal, so /archive/game and /archive/drama never see a golf round. saveGolfRoundFinal mirrors saveEspnFinal: it posts a game row with sport=golf, league="PGA Tour", source_id="golf_<eventId>", home=evName, away="R<round>", home_score=leader.toPar; and it posts a drama row built from golf-specific signals — pack density (+25 for ≥8 within 3 strokes, +15 for ≥5), cut-line stakes (+10 when projection or final mode is active), and leader margin (+15 for ≤1, +5 for ≤3, -10 for ≥4). Three-class arc (thriller ≥70, nail-biter ≥50, sleeper otherwise). _isGolfRoundComplete detects round-done either via a substring match on status (complete/official/final, case-insensitive) or via every top-60 leaderboard player having thru ≥ 18. _golfRoundSaved keyed by eventId+_R+round dedupes within a session; the relay must idempotently dedupe across sessions because loadPGASlate sessionStorage-caches the same payload for 10 min and re-fires on tab reload.');
 
 // ── A660 / CC-CMD-2026-06-19 Prompt 12B AFL V2 client wiring ──
@@ -5323,8 +5326,15 @@ assert('A617 — Schedule Conflict Map: findConflicts + renderConflictChip wired
 assert('A614 — Brief archive: archiveBrief() fire-and-forget helper wired to brief call sites',
   html.includes('function archiveBrief(') &&
   html.includes('/archive/brief') &&
-  // .catch(() => {}) on the fetch — the fire-and-forget contract
-  html.includes('.catch(() => {})') &&
+  // Fire-and-forget contract: the fetch never throws into its caller.
+  // 2026-07-15 archive-path silent-catch fix: was a bare .catch(() => {}),
+  // now reports via captureFieldError so a real relay failure is observable
+  // (window._fieldErrors / Health Panel) instead of vanishing silently --
+  // the write is still fire-and-forget (never blocks UI), just no longer
+  // invisible on failure. Checked as the exact real text, not a bare
+  // '.catch(() => {})' substring, which would trivially, falsely still
+  // match via unrelated catches elsewhere in the file.
+  html.includes("}).catch(e => captureFieldError('archive:brief', e, false));") &&
   // At least the 11 spec types must appear as the type arg of an archiveBrief() call
   /archiveBrief\('slate'/.test(html) &&
   /archiveBrief\('compound'/.test(html) &&
@@ -5336,7 +5346,7 @@ assert('A614 — Brief archive: archiveBrief() fire-and-forget helper wired to b
   /archiveBrief\('wc_tab'/.test(html) &&
   /archiveBrief\('series_preview'/.test(html) &&
   /archiveBrief\('game_ondemand'/.test(html),
-  'archiveBrief() persists AI-generated brief text to D1 via relay POST /archive/brief. Fire-and-forget — the .catch(() => {}) on the fetch is mandatory so an archive write failure never blocks UI. All 11 spec brief types are wired (slate/compound/mlb_game/wnba_game/epl_match/stakes/night_owl/wc_tab/series_preview/game_ondemand) — fetchPrerenderedJournalism (#11) is covered indirectly via the relayJournalism.brief setItem in fetchFIELDBriefFromClaude which calls archiveBrief(slate,...). See outbox/cc-brief-archive-2026-06-15.md for the D1 schema and the relay-side carry-forward.');
+  'archiveBrief() persists AI-generated brief text to D1 via relay POST /archive/brief. Fire-and-forget — a failure never blocks UI, but (since 2026-07-15) is no longer silently lost either: the catch reports via captureFieldError(\'archive:brief\', e, false). All 11 spec brief types are wired (slate/compound/mlb_game/wnba_game/epl_match/stakes/night_owl/wc_tab/series_preview/game_ondemand) — fetchPrerenderedJournalism (#11) is covered indirectly via the relayJournalism.brief setItem in fetchFIELDBriefFromClaude which calls archiveBrief(slate,...). See outbox/cc-brief-archive-2026-06-15.md for the D1 schema and the relay-side carry-forward.');
 
 // ── A604-A621: Championship Brief + Score Overlay + Night Owl + Cross-Engine + Archive D1 + Desktop Layout + Brief Archive + Archive Timeline + Broadcast Archaeology + Conflict Map + Upsets + Market Consensus + Brief Corpus + Crew Chip (June 14-16 2026) ──
 // Reordered 2026-06-15 (CC-CMD assertion-reorder commit) so the block reads

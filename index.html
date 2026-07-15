@@ -14264,7 +14264,7 @@ function archiveBrief(type, sport, gameId, text, hash) {
       context_hash: hash || null,
       word_count: text.split(/\s+/).length,
     }),
-  }).catch(() => {});
+  }).catch(e => captureFieldError('archive:brief', e, false));
 }
 
 // CC-CMD-2026-06-17: richer client-side archive helper for brief types that
@@ -14296,8 +14296,8 @@ async function _archiveBrief({briefType, sport, gameId, briefText, qualityScore,
         word_count: briefText.split(/\s+/).filter(Boolean).length,
         source: 'client',
       }),
-    }).catch(() => {});
-  } catch(_) {}
+    }).catch(e => captureFieldError('archive:brief-client-fetch', e, false));
+  } catch(e) { captureFieldError('archive:brief-client', e, false); }
 }
 
 // ── FIELD Journalism Tab (PM-19, June 2 2026) ──────────────────────────────
@@ -17058,7 +17058,7 @@ function saveGolfRoundFinal(pgaData) {
       note: leaderNote,
     }),
     keepalive: true,
-  }).catch(() => {});
+  }).catch(e => captureFieldError('archive:golf-game', e, false));
 
   // Drama from golf-specific signals
   const pack = (typeof computeGolfPackDensity === 'function') ? computeGolfPackDensity(pgaData) : null;
@@ -17099,7 +17099,7 @@ function saveGolfRoundFinal(pgaData) {
       drama_arc: JSON.stringify(arcPayload),
     }),
     keepalive: true,
-  }).catch(() => {});
+  }).catch(e => captureFieldError('archive:golf-drama', e, false));
 }
 
 async function loadPGASlate() {
@@ -37091,7 +37091,7 @@ async function _backfillOneDramaGame(g) {
       drama_arc: JSON.stringify(arc),
     }),
     keepalive: true,
-  }).catch(() => {});
+  }).catch(e => captureFieldError('archive:drama-backfill', e, false));
 }
 
 // ── Broadcast Narrative Index (BNI) ──────────────────────────────────────────
@@ -40768,9 +40768,9 @@ async function saveEspnFinal(game, eData){
             drama_arc: JSON.stringify(_arcPayload),
           }),
           keepalive: true,
-        }).catch(() => {}); // fire-and-forget, never blocks saveEspnFinal
+        }).catch(e => captureFieldError('archive:drama-final-fetch', e, false)); // fire-and-forget, never blocks saveEspnFinal
       }
-    } catch(_) {} // drama persistence failure cannot affect final save
+    } catch(e) { captureFieldError('archive:drama-final', e, false); } // drama persistence failure cannot affect final save (still observable now)
     // Snapshot stat context at game completion while caches are still warm.
     // Night Owl reads this back via entry.statCtx so it has player stats even
     // after ESPN clears the live box score (the cold-cache J5 ceiling fix).
