@@ -25194,7 +25194,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-14a';
+  const SW_VERSION = '2026-07-14b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -42537,6 +42537,14 @@ function openBottomSheet(gameId) {
   // so _bsdRepaint has something to paint; post-game fetch fills it from R2.
   const _bsIsWC       = /wc26|world cup|fifa/i.test(sport || game._sport || '');
   const _bsBsdEventId = eData?.bsdEventId || game.bsdEventId || null;
+  // Activate BSD subscription directly from the bottom sheet (CC-CMD-2026-
+  // 07-14-bsd-pitch-trigger-generalize): _bsdActivateForWC's own scan only
+  // ever runs when entering the WC tab, so a live non-WC game's bottom
+  // sheet would otherwise render an empty, never-populated pitch container.
+  // _bsdActivate is already idempotent (no-op if this event ID is already
+  // the active one). Gated on state==='in' -- post-game views use the
+  // separate R2 replay read below, no live subscription needed.
+  if (_bsBsdEventId && eData?.state === 'in') _bsdActivate(_bsBsdEventId);
   let _bsPostgameDrama = '';
   if (_bsIsFinal) {
     try {
@@ -42735,6 +42743,12 @@ function closeBottomSheet() {
   getEl('bs-overlay')?.classList.remove('open');
   getEl('bottom-sheet')?.classList.remove('open');
   window._currentBottomSheetGameId = null; // Item F: clear tracker
+  // Deactivate BSD subscription opened by openBottomSheet (CC-CMD-2026-07-
+  // 14-bsd-pitch-trigger-generalize) -- but only if the WC tab isn't also
+  // relying on it. No per-consumer ref-counting exists on _bsdActiveId, so
+  // the safe rule is: don't tear down while wc-mode is active, since the
+  // WC tab's own subscription (via _bsdActivateForWC) may still want it.
+  if (!document.body.classList.contains('wc-mode')) _bsdDeactivate();
 }
 
 // ── Wow#45 Stage 2: Drama Sparkline ──────────────────────────────────────────
