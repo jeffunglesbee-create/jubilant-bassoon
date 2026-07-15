@@ -6948,5 +6948,23 @@ assert('A-PREDICTHOUR-2 — insufficient-history case still degrades gracefully 
   html.includes('if (predictedHour !== null) {'),
   'when predictNextOpenHour() returns null (not enough open-hour history yet), registerAnticipatoryPrefetch must fall back to the original flat 24h floor rather than crashing or registering a bad interval');
 
+// ── Group-stage renderer generalized (A-GROUPGEN — 2026-07-15) ────────────────
+assert('A-GROUPGEN-1 — renderWCGroups accepts opts (groups, advancementText, targetId), all defaulting to WC26\'s own current values',
+  /function renderWCGroups\(standings, matchResults, oddsProbs, liveGames, opts = \{\}\)/.test(html) &&
+  html.includes("groups = 'ABCDEFGHIJKL'.split(''),") &&
+  html.includes("advancementText = 'Top 2 from each group advance · Best 8 third-place teams also advance',") &&
+  html.includes("targetId = 'wc-groups',"),
+  'renderWCGroups must take an opts param with WC26-preserving defaults for group letters, advancement text, and target element id -- the 3 real hardcoded assumptions blocking reuse');
+
+assert('A-GROUPGEN-2 — the groups param threads into _wcComputeAllScenarios, not just the surface iteration (avoids a hidden still-hardcoded-12 assumption underneath)',
+  html.includes('const scenarios = _wcComputeAllScenarios(standings, matchResults, null, oddsProbs, liveGames, groups);') &&
+  /function _wcComputeAllScenarios\(standings, matchResults, fairPlayPoints, oddsProbs, liveGames, groups = 'ABCDEFGHIJKL'\.split\(''\)\)/.test(html),
+  '_wcComputeAllScenarios must accept an optional groups param (defaulting to WC26\'s own 12 letters) and renderWCGroups must pass its own groups through to it');
+
+assert('A-GROUPGEN-3 — buildRound (the separate 32-team knockout bracket-tree function, not group-stage rendering) is untouched -- correctly out of this dispatch\'s 3-parameter scope',
+  html.includes('function buildRound(slotIds, half=\'left\', extraCls=\'\') {') &&
+  html.includes('R32_73_A'),
+  'buildRound must remain exactly as-is: it belongs to the WC26 knockout bracket-tree feature (hardcoded FIFA slot-ID pair arrays), a different feature than group-stage rendering, and was never actually in scope despite CONTEXT naming it');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

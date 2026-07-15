@@ -35284,8 +35284,13 @@ window._wcRenderWithLiveOverlay = _wcRenderWithLiveOverlay;
 }
 
 // Empty state — before tournament starts (no D1 results)
-function renderWCGroupsEmpty() {
-  const el = (_DOM?.wcGroups||document.getElementById('wc-groups'));
+// opts: {groups, targetId} — both default to WC26's own values, so the zero
+// real callers of this function (confirmed orphaned) still get byte-identical
+// WC26 output if ever reconnected. Preview header/footer copy stays WC26-only
+// text (dates, stadiums) — not one of the 3 assumptions this dispatch targets.
+function renderWCGroupsEmpty(opts = {}) {
+  const { groups = 'ABCDEFGHIJKL'.split(''), targetId = 'wc-groups' } = opts;
+  const el = (targetId === 'wc-groups' && _DOM?.wcGroups) || document.getElementById(targetId);
   if (!el) return;
   const daysAway = Math.max(0, Math.round((new Date('2026-06-11') - new Date()) / 86400000));
   const previewHeader = daysAway > 0
@@ -35293,7 +35298,7 @@ function renderWCGroupsEmpty() {
         <p class="wc-preview-intro">The 2026 FIFA World Cup opens <strong>June 11 at Estadio Azteca</strong> — the first tournament with 48 teams across 12 groups. 104 matches, three host nations (USA · Mexico · Canada), 39 days. The USMNT opens Group D on June 12 at SoFi Stadium against Paraguay, free on Tubi. All 72 group-stage games on FOX and FS1 in English; Telemundo and Peacock in Spanish. Group standings update automatically once play begins.</p>
        </div>`
     : '';
-  el.innerHTML = previewHeader + 'ABCDEFGHIJKL'.split('').map(g => {
+  el.innerHTML = previewHeader + groups.map(g => {
     const teams = WC_TEAMS[g] || [];
     const rows = teams.map((t, i) => `
       <tr class="wc-row wc-row--${i < 2 ? 'advance' : i === 2 ? 'maybe' : 'out'}">
@@ -35308,11 +35313,20 @@ function renderWCGroupsEmpty() {
 }
 
 // Live standings from D1
-function renderWCGroups(standings, matchResults, oddsProbs, liveGames) {
-  const el = (_DOM?.wcGroups||document.getElementById('wc-groups'));
+// opts: {groups, advancementText, targetId} — all default to WC26's own
+// current values, so both real live callers (unchanged, still pass exactly
+// 4 positional args) get byte-identical WC26 output. groups threads through
+// to _wcComputeAllScenarios so a non-WC26 caller's group count/letters are
+// honored end-to-end, not just at this function's own surface iteration.
+function renderWCGroups(standings, matchResults, oddsProbs, liveGames, opts = {}) {
+  const {
+    groups = 'ABCDEFGHIJKL'.split(''),
+    advancementText = 'Top 2 from each group advance · Best 8 third-place teams also advance',
+    targetId = 'wc-groups',
+  } = opts;
+  const el = (targetId === 'wc-groups' && _DOM?.wcGroups) || document.getElementById(targetId);
   if (!el) return;
-  const groups = 'ABCDEFGHIJKL'.split('');
-  const scenarios = _wcComputeAllScenarios(standings, matchResults, null, oddsProbs, liveGames);
+  const scenarios = _wcComputeAllScenarios(standings, matchResults, null, oddsProbs, liveGames, groups);
   window._wcScenariosCache = scenarios;
   const groupInputs = (scenarios && scenarios.groupInputs) || [];
   el.innerHTML = groups.map(g => {
@@ -35325,7 +35339,7 @@ function renderWCGroups(standings, matchResults, oddsProbs, liveGames) {
       : '';
     return buildWCGroupShell(g, rows, simBanner);
   }).join('') +
-  '<p class="wc-footnote">Top 2 from each group advance · Best 8 third-place teams also advance</p>';
+  `<p class="wc-footnote">${advancementText}</p>`;
 }
 
 // Build all rows for a group, injecting the Level 1 WP bar between the two live teams
@@ -35407,9 +35421,17 @@ function _wcBuildGroupInput(groupLetter, groupStandings, allFixtures, nowMs, mat
   };
 }
 
-// Compute scenarios across all 12 WC groups + cross-group best-3rd ranking.
-// Returns {perGroup, best3rd} or null on failure.
-function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints, oddsProbs, liveGames) {
+// Compute scenarios across all real groups (WC26's own 12 by default) +
+// cross-group best-3rd ranking. Returns {perGroup, best3rd} or null on failure.
+// groups: optional 6th param, defaults to WC26's own 12 letters so all 3 real
+// call sites (unchanged, still pass exactly 5 positional args) are unaffected.
+// best3rd's "best 8 third-place teams" is a real WC26-specific rule, correctly
+// gated on groupInputs.length === 12 — a caller with a different group count
+// correctly gets best3rd:null rather than an invented rule for its format.
+// allFixtures stays sourced from wc26Raw regardless of groups (not one of the
+// 3 assumptions this dispatch targets) — a real, disclosed residual for any
+// future non-WC26 caller, not a silent gap.
+function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints, oddsProbs, liveGames, groups = 'ABCDEFGHIJKL'.split('')) {
   if (typeof computeGroupScenarios !== 'function') {
     captureFieldError('wc:compute-all-scenarios:missing-fn', new Error('computeGroupScenarios is not a function'), false);
     return null;
@@ -35419,7 +35441,6 @@ function _wcComputeAllScenarios(standings, matchResults, fairPlayPoints, oddsPro
     const nowMs = Date.now();
     const allFixtures = (typeof wc26Raw !== 'undefined' && Array.isArray(wc26Raw))
       ? wc26Raw : [];
-    const groups = 'ABCDEFGHIJKL'.split('');
     const groupInputs = groups
       .map(g => _wcBuildGroupInput(g, standings[g], allFixtures, nowMs, matchResults, oddsProbs, liveGames))
       .filter(Boolean);
