@@ -5933,9 +5933,13 @@ assert('A_BR_4 — J3 brief bypasses compound backoff: no _compoundRetryAfter in
     tournYml.length > 100 && tournYml.includes("cron: '0 11 * * *'") && tournYml.includes('seed-mls-tournaments-2026.py'),
     'mls-tournaments-seed.yml must exist with daily 11am UTC cron and call the seed script');
 
-  assert('A-TOURN-3 — tournament script uses generic Competition iteration (no hardcoded comp allowlist)',
-    (tournScript.match(/MLS-COM-0000/g) || []).length === 1,
-    'seed-mls-tournaments-2026.py must reference MLS-COM-0000 only once (REG_SEASON_COMP) — no hand-maintained competition list');
+  assert('A-TOURN-3 — get_tournament_competitions() discovers competitions generically (no hardcoded comp-ID allowlist), CC-CMD-2026-07-15-mls-tournament-refresh',
+    (() => {
+      const fnBody = tournScript.split('def get_tournament_competitions()')[1]?.split('\ndef ')[0] || '';
+      return fnBody.includes('competition_type') && fnBody.includes('"Tournament"') &&
+        !/MLS-COM-\d/.test(fnBody);
+    })(),
+    'get_tournament_competitions() must discover competitions via competition_type=="Tournament", with zero hardcoded MLS-COM-* IDs in its own body — a scoped entity-filter exception elsewhere (e.g. TELUS_COMP in post_archive_game) is not a competition-discovery allowlist and is allowed');
 
   assert('A-TOURN-4 — tournament script does not set source_id in /archive/game payload',
     tournScript.includes('/archive/game') && !tournScript.includes('"source_id"') && !tournScript.includes("'source_id'"),

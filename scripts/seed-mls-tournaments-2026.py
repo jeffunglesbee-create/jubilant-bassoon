@@ -22,8 +22,17 @@ RELAY_HDR  = {"X-FIELD-Relay": "field-relay-cron-2026", "Content-Type": "applica
 
 MLS_API    = "https://stats-api.mlssoccer.com"
 REG_SEASON_COMP = "MLS-COM-000001"
+TELUS_COMP  = "MLS-COM-00002V"  # TELUS Canadian Championship -- see post_archive_game
 SEASON_ID  = "MLS-SEA-0001KA"
-DATE_FROM  = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+# Fixed season-start anchor (CC-CMD-2026-07-15-mls-tournament-refresh) --
+# was datetime.now(timezone.utc), which meant DATE_FROM rolled forward every
+# day the workflow ran, so a "refresh" run could never re-fetch or backfill
+# a match dated before whenever it happened to execute (confirmed via a real
+# D1 query: the July 14 run's own date_range was "2026-07-14 to 2026-12-31",
+# silently excluding the May Preliminary Round and any earlier leg). Matches
+# DATE_TO's own "generous catch-all; entity+type filters do the real
+# narrowing" philosophy.
+DATE_FROM  = "2026-01-01"
 DATE_TO    = "2026-12-31"   # generous catch-all; entity+type filters do the real narrowing
 
 def api_get(url):
@@ -72,7 +81,17 @@ def fetch_matches(comp_id):
 def post_archive_game(game, comp, roster):
     home_id = game.get("home_team_id")
     away_id = game.get("away_team_id")
-    if home_id not in roster and away_id not in roster:
+    # TELUS Canadian Championship is Canada's national open cup -- every tie
+    # in the bracket matters for continuity (a Canadian Premier League-vs-CPL
+    # early match still tells you who an MLS club's future opponent is),
+    # unlike Leagues Cup/US Open Cup where FIELD only cares about the
+    # specific MLS club's own games. Skip the roster filter for this one
+    # competition (CC-CMD-2026-07-15-mls-tournament-refresh) -- confirmed via
+    # direct D1 query that Forge FC vs CS Saint-Laurent and FC Supra du
+    # Québec vs Atlético Ottawa (both all-non-MLS QF ties) were being
+    # silently excluded by this filter, along with their SF/Final bracket
+    # continuations. Leagues Cup/US Open Cup filtering is unchanged.
+    if comp["competition_id"] != TELUS_COMP and home_id not in roster and away_id not in roster:
         return False  # neither side is a real MLS club — skip (TBC or non-MLS opponent)
 
     kickoff = game.get("planned_kickoff_time", game["start_date"])
