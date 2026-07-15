@@ -1,7 +1,7 @@
-# Outbox — Archive-path silent catches: full fix (write-path + read-path)
+# Outbox — Archive-path silent catches: full fix (write-path + read-path + health-panel)
 
 **Date:** 2026-07-15
-**Scope:** 27 catch sites across 12 functions, all confirmed genuine archive-related silent failures via `scripts/audit-silent-catches.js` (checked-in AST tool, see `outbox/cc-session-2026-07-15-treesitter-tooling.md`). Two dispatch passes, documented together here since they're one continuous piece of work against the same real finding.
+**Scope:** 34 catch sites across 14 functions, all confirmed genuine archive-related silent failures via `scripts/audit-silent-catches.js` (checked-in AST tool, see `outbox/cc-session-2026-07-15-treesitter-tooling.md`). Three dispatch passes, documented together here since they're one continuous piece of work against the same real finding.
 
 ## Origin
 
@@ -10,8 +10,8 @@ A real external review (via chat, on a file confirmed to be this repo's `index.h
 Confirmed directly (`archiveBrief`/`_archiveBrief` both had genuinely empty catches), then built `scripts/audit-silent-catches.js` to find the *full* real cluster via AST rather than eyeballing more grep hits. Precisely scoped to functions whose body touches the literal `/archive/` URL path (not the bare word "archive," which pulled in 43 unrelated functions on a first pass — checked and rejected as over-broad before reporting anything). Result: 16 real archive-touching functions, 45 catch sites, 40 silent, split by severity into three buckets:
 
 1. **Write (persistence)** — fixed in pass 1. *"Durable history fails silently"* is specifically about this bucket.
-2. **Read (display)** — fixed in pass 2 (this dispatch's second half). Real but lower severity: missing/stale display data, not corrupted history.
-3. **Health-panel self-diagnostics** (`buildFieldHealthPanel`, `loadBriefQualityRow`) — **not fixed, explicitly out of scope both passes.** These already surface a real UI row via `warn(...)` on failure; the audit tool flags them only because that's not one of its five recognized "reporter" identifiers. A genuine, disclosed residual — see Carry-Forwards below.
+2. **Read (display)** — fixed in pass 2. Real but lower severity: missing/stale display data, not corrupted history.
+3. **Health-panel self-diagnostics** (`buildFieldHealthPanel`, `loadBriefQualityRow`) — fixed in pass 3 (this dispatch's third pass). Lowest severity of the three: these already surfaced a real UI row via `warn(...)` on failure; the audit tool flagged them only because that's not one of its five recognized "reporter" identifiers. The fix adds `captureFieldError` *alongside* every existing `warn()`/fallback behavior — nothing was replaced.
 
 `saveEspnFinal`'s own *other*, unrelated silent catches (statCtx-snapshot builder, night-owl-enqueue block, tonight-finals localStorage-write loop) were identified and deliberately left untouched in **both** passes — none touch `/archive/*`, each a different concern living in the same large function.
 
@@ -46,6 +46,22 @@ Same convention, applied consistently across every catch in each of the 7 in-sco
 
 `renderJournalismArchive`'s fetch catch is the one site where the existing behavior did something real (`renderEmpty()`, a genuine UI fallback) — `captureFieldError` was added *alongside* it, not in place of it; both still fire.
 
+## Fix — health-panel self-diagnostics (pass 3, 7 sites / 2 functions)
+
+Same convention. All 4 `buildFieldHealthPanel` catches already had some observable behavior (a real `warn()` row, or — for the reset-backoff button — a scheduled page reload) even before this fix; `captureFieldError` was added *alongside* every one of them, matching the "preserve every existing fallback" principle already applied in passes 1 and 2 (e.g. `renderJournalismArchive`'s `renderEmpty()` above). `silent=true` throughout — matches the read-path bucket's cache-read/health-check convention, since none of these are user-initiated actions that need an immediate visible failure signal beyond the row already shown.
+
+| Function | Site | Label |
+|---|---|---|
+| `buildFieldHealthPanel` | Journalism check (`document.querySelector` / cache-key / budget read) | `health-panel:journalism-check` |
+| `buildFieldHealthPanel` | `_makeResetBtn` onclick handler (`localStorage.removeItem` on backoff reset) | `health-panel:reset-backoff-button` |
+| `buildFieldHealthPanel` | Prose Quality rolling average (`localStorage.getItem('field_jq_scores')` + `JSON.parse`) | `health-panel:prose-quality-check` |
+| `buildFieldHealthPanel` | Phrase Review queue (`localStorage.getItem('field_jq_review')` + `JSON.parse`) | `health-panel:phrase-review-check` |
+| `loadBriefQualityRow` | `sessionStorage` cache-read | `health-panel:brief-quality-cache-read` |
+| `loadBriefQualityRow` | `sessionStorage` cache-write | `health-panel:brief-quality-cache-write` |
+| `loadBriefQualityRow` | `/archive/query` fetch | `health-panel:brief-quality-fetch` |
+
+The `_makeResetBtn` catch is the one genuinely *empty* site in this bucket (`catch(e){}`, nested inside an inline onclick-handler function string, not a top-level catch) — found by reading the surrounding code after the audit tool flagged the containing `buildFieldHealthPanel` function, not from the tool's line numbers alone. Its real UX contract (the page reload is still scheduled via `setTimeout` regardless of whether `localStorage.removeItem` throws) is unchanged — confirmed by forced-condition test.
+
 ## Real regressions found and fixed during verification (Rule 77 — investigate, don't rationalize), not routed around
 
 Four separate `smoke.js` assertions encoded the *old, silent* catch text as if it were correct spec, rather than checking the actual intended contract. All four are the identical root cause: a literal substring check that either (a) hard-fails once the literal text changes, or (b) — the more dangerous variant — keeps *coincidentally* passing after a fix, because the exact same substring still exists elsewhere in the file from other, correctly-untouched silent catches, meaning the assertion was never actually scoped to the function it claimed to verify.
@@ -59,29 +75,31 @@ Four separate `smoke.js` assertions encoded the *old, silent* catch text as if i
 
 `A618`/`A615` are a real, notable finding on their own: they demonstrate the *coincidental-pass* failure mode is not a one-off — it recurred a second time, independently, in the second pass, confirming this class of bug is a real, recurring risk in this codebase's smoke-assertion style (`html.includes()` on a short generic literal) whenever a fix changes text that isn't uniquely scoped to begin with. Worth keeping in mind for any future silent-catch or similar boilerplate-pattern fix.
 
+**Pass 3 (health-panel) found zero further regressions of this class.** Proactively grepped `smoke.js`/`field_smoke.js` for every label and every old catch-body literal touched in this pass before committing — the only live references to these two functions (`AVV-MLB-007`, `A620`) check function/div *existence* only, not catch-body text, so they were never at risk.
+
 ## Verification
 
-- Full-file script-block parse: 3/3 clean, both passes.
-- `node smoke.js index.html`: **954 passed, 0 failed** at the end of both passes (2 assertions fixed in each pass, no net count change, no regression left standing). `node field_smoke.js`: exit 0. `node field_unit.js`: 66/66.
-- `node scripts/audit-silent-catches.js "/archive/"` re-run after both passes: all 27 target sites (9 write + 18 read) correctly classified HANDLED. Remaining 14 silent sites are exactly the two disclosed-out-of-scope buckets (`buildFieldHealthPanel`/`loadBriefQualityRow` health-panel diagnostics: 7 sites; `saveEspnFinal`'s other unrelated concerns: 7 sites) — confirmed unchanged from the original audit's own categorization.
-- **18 real forced-condition tests total** (Node `vm`, every function extracted verbatim from the committed source, `captureFieldError` mocked to record real calls):
+- Full-file script-block parse: 3/3 clean, all three passes.
+- `node smoke.js index.html`: **954 passed, 0 failed** at the end of all three passes (2 assertions fixed in each of passes 1 and 2, zero needed in pass 3, no net count change, no regression left standing). `node field_smoke.js`: exit 0. `node field_unit.js`: 66/66.
+- `node scripts/audit-silent-catches.js "/archive/"` re-run after all three passes: all 34 target sites (9 write + 18 read + 7 health-panel) correctly classified HANDLED. The only remaining silent sites are `saveEspnFinal`'s other 7 unrelated catches (never part of this finding — see Carry-forwards).
+- **28 real forced-condition tests total** (Node `vm`, every function/snippet extracted verbatim from the committed source, `captureFieldError` mocked to record real calls):
   - Pass 1 (8 tests): both failure modes where both exist (fetch-rejected vs. exception-before-the-fetch) for `archiveBrief`, `_archiveBrief`, `saveGolfRoundFinal` (both posts, distinct labels), `_backfillOneDramaGame`, and `saveEspnFinal`'s drama-persistence block (extracted as a targeted snippet — the full function is too large/dependency-heavy to extract wholesale).
   - Pass 2 (10 tests): `loadArchiveTimeline` (cache-read AND fetch failure, both real sites), `loadMarketConsensus` (fetch), `loadUpsets` (confirmed a real non-error path — `!ok` HTTP responses correctly produce *zero* `captureFieldError` calls, not false positives — then confirmed the real rejected-fetch path does fire), `renderJournalismArchive` (confirmed `captureFieldError` AND the real `renderEmpty()` UI fallback both still fire together), `renderWCBracketImpact`, `fetchLastMeeting` (confirmed it matches its sibling's exact `silent=true` convention and still returns `null`), `runDramaBackfillDiscovery` (both real sites: the outer discovery-fetch catch and the per-game loop catch).
-  - All 18 passed. Two real test-authoring bugs caught and fixed before the final runs, not silently worked around: (1) the `saveEspnFinal` snippet-extraction helper initially stopped at the `try{}` body's own closing brace, dropping the `catch` clause and producing a "Missing catch or finally after try" syntax error; (2) the read-path test context was missing a real `AbortSignal` global the actual code depends on (`AbortSignal.timeout(...)`), which several of the real functions call.
+  - Pass 3 (10 tests): `buildFieldHealthPanel`'s Journalism check (real thrown exception via a mocked `document.querySelector` throw, confirmed `captureFieldError` AND the real `warn()` row both fire), Prose Quality and Phrase Review checks (both via corrupt `localStorage` JSON, same dual-fire confirmation), `_makeResetBtn`'s onclick handler (real `localStorage.removeItem` throw, confirmed `captureFieldError` fires AND the page-reload `setTimeout` is still scheduled regardless — the real UX contract), `loadBriefQualityRow`'s cache-read and fetch-rejection paths.
+  - All 28 passed. Test-authoring bugs caught and fixed before the final runs, not silently worked around: (1) pass 2's `saveEspnFinal` snippet-extraction helper initially stopped at the `try{}` body's own closing brace, dropping the `catch` clause; (2) pass 2's test context was missing a real `AbortSignal` global; (3) pass 3's Prose-Quality/Phrase-Review catch-clause extraction used a fragile regex against a `rest` slice that started *after* the try block's own closing brace, so the regex's required leading `}` could never match — fixed by switching to the same robust brace-depth-matching extraction already used for the Journalism-check snippet; (4) pass 3's mocked `document.createElement()` for the reset-backoff-button test defined `style` as a setter-only accessor, so the real code's `b.style.cssText = "..."` read `undefined` off the getter before assigning — fixed by mocking `style` as a plain object.
 
 ## DONE CONDITION
 
-All 27 real archive-related silent catches found by the AST audit (write + read) now report via `captureFieldError`, verified end-to-end against the actual committed source for every distinct failure mode present in each function. Fire-and-forget/non-blocking behavior and every existing real fallback (`renderEmpty()`, `return null`, `return 0`, `return false`) is provably unchanged — only observability was added. Four real, independently-discovered stale/coincidentally-passing smoke assertions were found and properly fixed across both passes, not routed around.
+All 34 real archive-related silent catches found by the AST audit (write + read + health-panel) now report via `captureFieldError`, verified end-to-end against the actual committed source for every distinct failure mode present in each function. Fire-and-forget/non-blocking behavior and every existing real fallback (`renderEmpty()`, `return null`, `return 0`, `return false`, the `warn()` UI rows, the reset-button's scheduled reload) is provably unchanged — only observability was added. Four real, independently-discovered stale/coincidentally-passing smoke assertions were found and properly fixed across passes 1-2; pass 3 introduced none.
 
 ## Carry-forwards, explicitly disclosed, not silently dropped
 
-- **Health-panel self-diagnostics** (`buildFieldHealthPanel`, `loadBriefQualityRow` — 7 silent sites) — genuinely out of scope for both passes (not the same finding: these already surface a real, if less structured, UI signal via `warn()`). Not filed as a new CC-CMD; flagged here for whoever next touches the Health Panel, since the fix pattern would be identical (`captureFieldError` alongside the existing `warn()` push).
-- **`saveEspnFinal`'s other 7 silent catches** (statCtx builder, night-owl enqueue, tonight-finals localStorage write) — a different, real, separate concern from archive persistence, never part of this finding, correctly left untouched in both passes.
-- `SW_VERSION` bumped `2026-07-15c` → `2026-07-15d` for this dispatch's own deploy (the write-path pass separately bumped `b` → `c`).
+- **`saveEspnFinal`'s other 7 silent catches** (statCtx builder, night-owl enqueue, tonight-finals localStorage write) — a different, real, separate concern from archive persistence, never part of this finding, correctly left untouched across all three passes.
+- `SW_VERSION` bumped `2026-07-15d` → `2026-07-15e` for this dispatch's own deploy (write-path pass bumped `b`→`c`; read-path pass bumped `c`→`d`).
 
 ## Commit
 
-- `index.html`: 27 catch sites across `archiveBrief`, `_archiveBrief`, `saveGolfRoundFinal`, `_backfillOneDramaGame`, `saveEspnFinal`, `loadArchiveTimeline`, `loadMarketConsensus`, `loadUpsets`, `renderJournalismArchive`, `renderWCBracketImpact`, `fetchLastMeeting`, `runDramaBackfillDiscovery` now report via `captureFieldError` instead of silently discarding the failure.
-- `smoke.js`: `A661`, `A614`, `A618`, `A615` fixed to check real current behavior instead of stale/coincidentally-matching literal text.
-- `sw.js`: `SW_VERSION` bump.
-- This manifest (supersedes the pass-1-only draft of the same filename).
+- `index.html`: 34 catch sites across `archiveBrief`, `_archiveBrief`, `saveGolfRoundFinal`, `_backfillOneDramaGame`, `saveEspnFinal`, `loadArchiveTimeline`, `loadMarketConsensus`, `loadUpsets`, `renderJournalismArchive`, `renderWCBracketImpact`, `fetchLastMeeting`, `runDramaBackfillDiscovery`, `buildFieldHealthPanel`, `loadBriefQualityRow` now report via `captureFieldError` instead of silently discarding the failure.
+- `smoke.js`: `A661`, `A614`, `A618`, `A615` fixed (passes 1-2) to check real current behavior instead of stale/coincidentally-matching literal text. No `smoke.js` changes needed in pass 3.
+- `sw.js`: `SW_VERSION` bump, `d` → `e`.
+- This manifest (supersedes the write+read-only draft of the same filename).

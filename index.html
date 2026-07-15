@@ -5239,7 +5239,7 @@ function buildFieldHealthPanel() {
     const isStatic = /^Tonight on FIELD:/.test(briefTxt) || briefTxt.length < 40;
     const inBackoff = typeof _compoundRetryAfter !== 'undefined' && Date.now() < _compoundRetryAfter;
     const backoffSec = inBackoff ? Math.ceil((_compoundRetryAfter - Date.now()) / 1000) : 0;
-    var _makeResetBtn=function(){var b=document.createElement("button");b.textContent="Reset backoff";b.style.cssText="margin-left:6px;background:#c9a84c;color:#000;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;cursor:pointer;font-weight:700";b.onclick=function(){try{localStorage.removeItem("field_compound_retry_after");_compoundRetryAfter=0;window._compoundLastError="";var o=document.getElementById("fhp-overlay");if(o)o.remove();}catch(e){}setTimeout(function(){location.reload();},200);};return b.outerHTML;}
+    var _makeResetBtn=function(){var b=document.createElement("button");b.textContent="Reset backoff";b.style.cssText="margin-left:6px;background:#c9a84c;color:#000;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;cursor:pointer;font-weight:700";b.onclick=function(){try{localStorage.removeItem("field_compound_retry_after");_compoundRetryAfter=0;window._compoundLastError="";var o=document.getElementById("fhp-overlay");if(o)o.remove();}catch(e){captureFieldError("health-panel:reset-backoff-button",e,true);}setTimeout(function(){location.reload();},200);};return b.outerHTML;}
     const resetBtn = inBackoff ? ' ' + _makeResetBtn() : '';
     if (cached && cached.length > 40) {
       rows.push(ok('Journalism', `Brief rendered (${cached.length} chars) · ${used} AI calls used`));
@@ -5253,6 +5253,7 @@ function buildFieldHealthPanel() {
       rows.push(warn('Journalism', `No brief text · ${used} AI calls${inBackoff ? ` · backoff ${backoffSec}s` : ''}${lastErr}`) + resetBtn);
     }
   } catch(e) {
+    captureFieldError('health-panel:journalism-check', e, true);
     rows.push(warn('Journalism', 'Check failed: ' + (e?.message||'unknown')));
   }
 
@@ -5270,7 +5271,7 @@ function buildFieldHealthPanel() {
     } else {
       rows.push(ok('Prose Quality', 'No briefs scored yet'));
     }
-  } catch(e) { rows.push(warn('Prose Quality', 'Could not read score history')); }
+  } catch(e) { captureFieldError('health-panel:prose-quality-check', e, true); rows.push(warn('Prose Quality', 'Could not read score history')); }
 
   // ── Phrase Review queue (Tier 3 feedback loop) ───────────────────────────
   try {
@@ -5283,7 +5284,7 @@ function buildFieldHealthPanel() {
     } else {
       rows.push(ok('Phrase Review', 'No phrases flagged yet'));
     }
-  } catch(e) { rows.push(warn('Phrase Review', 'Could not read review queue')); }
+  } catch(e) { captureFieldError('health-panel:phrase-review-check', e, true); rows.push(warn('Phrase Review', 'Could not read review queue')); }
 
   // ── Errors ────────────────────────────────────────────────────────────────
   const errors = window._fieldErrors || [];
@@ -5506,17 +5507,17 @@ function loadBriefQualityRow() {
         return;
       }
     }
-  } catch(_) {}
+  } catch(e) { captureFieldError('health-panel:brief-quality-cache-read', e, true); }
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   fetch(base + '/archive/query?brief_type=slate&source=cron&limit=14')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
       if (!data) return;
-      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch(e) { captureFieldError('health-panel:brief-quality-cache-write', e, true); }
       renderBriefQualityRow(data);
     })
-    .catch(() => {});
+    .catch(e => captureFieldError('health-panel:brief-quality-fetch', e, true));
 }
 
 // ── MOBILE-INTEL-A: Right Now Section (debounce fix 800b0e8) ──────────────
@@ -25423,7 +25424,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-15d';
+  const SW_VERSION = '2026-07-15e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
