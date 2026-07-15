@@ -6966,5 +6966,18 @@ assert('A-GROUPGEN-3 — buildRound (the separate 32-team knockout bracket-tree 
   html.includes('R32_73_A'),
   'buildRound must remain exactly as-is: it belongs to the WC26 knockout bracket-tree feature (hardcoded FIFA slot-ID pair arrays), a different feature than group-stage rendering, and was never actually in scope despite CONTEXT naming it');
 
+// ── NHL penalty drift wire (A-NHLDRIFT — 2026-07-15) ───────────────────────
+assert('A-NHLDRIFT-1 — the bare, undeclared `sport` ReferenceError in renderESPNScores is fixed (both occurrences), falling back to sec.sport/game._sport like the rest of the function',
+  html.includes("const _sportLower = String((score.sport || sec.sport || game._sport || '')).toLowerCase();") &&
+  html.includes("const _gSport = (score.sport || sec.sport || game._sport || '').toLowerCase();") &&
+  !html.includes("(score.sport || sport || '')"),
+  'both _sportLower and _gSport must use the real sec.sport/game._sport fallback -- the old bare `sport` reference threw ReferenceError on every live/final card (score.sport is never set by either fetchESPNScores path), silently swallowed by the per-card catch, which also meant CC-CMD-2026-07-15-drop-game-socket\'s fix was unreachable until this fix');
+
+assert('A-NHLDRIFT-2 — trackNHLPenaltyTransitions is wired into the real per-card ESPN update loop, NHL-only, live-only, gated on real situation data',
+  html.includes('if (isLive && _gSport === \'nhl\' && score.situation && typeof trackNHLPenaltyTransitions === \'function\') {') &&
+  html.includes('trackNHLPenaltyTransitions(game, _prevNHLSituation[game._id], score.situation);') &&
+  html.includes('const _prevNHLSituation = {};'),
+  'the per-card loop must call trackNHLPenaltyTransitions with the real game object and a real prevSit/curSit pair sourced from a dedicated gameId-keyed snapshot cache, so computePenaltyDriftSignal (already live) finally receives real penalty counts instead of always-undefined ones');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

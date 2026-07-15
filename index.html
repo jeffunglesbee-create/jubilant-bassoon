@@ -23315,6 +23315,12 @@ function updateRankedSlots(listId, candidates, { capacity, marginThreshold, prio
   return occupants.map(o => ({ ...o, membershipChanged: changed.has(o.id) }));
 }
 
+// CC-CMD-2026-07-15-nhl-penalty-drift-wire: gameId → last poll's NHL situation
+// object, for trackNHLPenaltyTransitions' power-play-transition detection.
+// Same small-dedicated-cache pattern as _leadTracker/_prevEspnScores above --
+// not merged into either, since this tracks a different, unrelated signal.
+const _prevNHLSituation = {};
+
 function renderESPNScores(){
   // Prune stale entries (not updated within ESPN_SCORE_TTL) to prevent yesterday's
   // scores matching today's games by team name
@@ -23502,7 +23508,18 @@ function renderESPNScores(){
       // The odds path remains primary when available — MC only fills the
       // hole. Source is marked via data-wp-source + "(proj)" tag so a
       // viewer can tell which engine produced the bar.
-      const _sportLower = String((score.sport || sport || '')).toLowerCase();
+      // BUG FIX (CC-CMD-2026-07-15-nhl-penalty-drift-wire): `sport` was a bare,
+      // undeclared identifier in this scope -- ReferenceError on every live/
+      // final card, silently swallowed by this loop's own per-card try/catch
+      // (only logs under FIELD_DEBUG). Confirmed empirically: score.sport is
+      // never set by either fetchESPNScores code path (V2 or raw-ESPN both
+      // only set _sport), so this always evaluated the broken fallback. This
+      // silently broke everything below it every render cycle -- the Live WP
+      // bar injection, and CC-CMD-2026-07-15-drop-game-socket's WS teardown
+      // fix (committed tonight, never actually reachable until this fix).
+      // sec.sport/game._sport is the real, already-established convention
+      // for this exact derivation (see _isWC above, same function).
+      const _sportLower = String((score.sport || sec.sport || game._sport || '')).toLowerCase();
       const _isWCGame = _sportLower.includes('wc26')
         || _sportLower.includes('world cup')
         || _sportLower.includes('fifa');
@@ -23564,7 +23581,13 @@ function renderESPNScores(){
       // This activates the ws-pulse dot and ensures per-game facts arrive via
       // WS immediately, not waiting for the first CRUNCH signal.
       if ((isLive || isFinal) && (typeof ensureGameSocket === 'function' || typeof dropGameSocket === 'function')) {
-        const _gSport = (score.sport || sport || '').toLowerCase();
+        // BUG FIX (CC-CMD-2026-07-15-nhl-penalty-drift-wire): same undeclared
+        // `sport` ReferenceError as _sportLower above -- see that comment.
+        // This is the exact reason CC-CMD-2026-07-15-drop-game-socket's fix
+        // never actually ran: the earlier _sportLower line always threw
+        // first, so this whole block (and everything after it) never
+        // executed for any live/final card.
+        const _gSport = (score.sport || sec.sport || game._sport || '').toLowerCase();
         const _gId    = (score.gameId || game._id || '').replace(/^[a-z]+:/, '');
         if (isLive && _gSport && _gId && !card.dataset.wsOpened) {
           card.dataset.wsOpened = '1';
@@ -23582,6 +23605,18 @@ function renderESPNScores(){
           // the game has gone final.
           delete card.dataset.wsOpened;
           dropGameSocket(_gSport, _gId);
+        }
+
+        // Penalty inference (CC-CMD-2026-07-15-nhl-penalty-drift-wire): NHL
+        // only. trackNHLPenaltyTransitions itself is pre-existing, correct
+        // logic -- the only real gap was that nothing ever called it.
+        // Populates game._homePenalties/_awayPenalties, read by
+        // computePenaltyDriftSignal (getNHLAnalyticsContext) for the Tier A
+        // #3 Penalty Drift Indicator. Live-only: situation transitions are
+        // meaningless pre/post-game, and score.situation is null then anyway.
+        if (isLive && _gSport === 'nhl' && score.situation && typeof trackNHLPenaltyTransitions === 'function') {
+          trackNHLPenaltyTransitions(game, _prevNHLSituation[game._id], score.situation);
+          _prevNHLSituation[game._id] = score.situation;
         }
       }
 
