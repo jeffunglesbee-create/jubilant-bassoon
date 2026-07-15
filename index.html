@@ -10130,12 +10130,6 @@ const espnTeamAbbrevs = {
   "tempo":                   {abbrev:"TOR",   espnSport:"wnba"},
 };
 
-function logoImg(name, sport){
-  const url = getTeamLogo(name, sport);
-  if(!url) return "";
-  return `<img class="team-logo" src="${url}" alt="${name}" loading="lazy" onerror="this.style.display='none'">`;
-}
-
 function matchupHTML(g, sport){
   // Individual sports (golf, F1, tennis) — leaderboard format, no home/away
   if(INDIVIDUAL_SPORTS.has(sport) || !g.away){
@@ -10391,17 +10385,6 @@ function getEl(id) {
     window._fieldErrors.push({ fn: 'getEl', err: `#${id} not found`, ts: Date.now() });
   }
   return el;
-}
-
-// $: querySelector shorthand with same null-safety as getEl.
-// Use for class/attribute selectors: $(".game-card") instead of querySelector.
-function $(selector, root) {
-  return (root || document).querySelector(selector);
-}
-
-// $$: querySelectorAll shorthand — always returns an array (never NodeList).
-function $$(selector, root) {
-  return [...(root || document).querySelectorAll(selector)];
 }
 
 // isToday: returns true if the given ISO timestamp falls on today's local date.
@@ -15231,22 +15214,6 @@ async function bdlFetchInjuries(sportName) {
   return injuries;
 }
 
-// ── Fetch season stats leaders for a sport ─────────────────────
-async function bdlFetchStats(sportName) {
-  const map = BDL_SPORT_MAP[sportName];
-  if (!map) return [];
-  const now = Date.now();
-  if (bdlCache.stats[sportName] && (now - bdlCache.lastFetch["stats_"+sportName]) < BDL_CACHE_TTL) {
-    return bdlCache.stats[sportName];
-  }
-  // Fetch current season averages
-  const season = new Date().getFullYear() - (new Date().getMonth() < 9 ? 1 : 0);
-  const data = await bdlFetch(map.statsPath, { per_page: 25, seasons: [season] });
-  if (!data || !data.data) return [];
-  bdlCache.stats[sportName] = data.data;
-  bdlCache.lastFetch["stats_"+sportName] = now;
-  return data.data;
-}
 
 // ── Build injury HTML for a game card ─────────────────────────
 // Returns "" if no relevant injuries, or a badge string
@@ -15676,22 +15643,6 @@ function injectBdlInjuryBadges() {
   });
 }
 
-// ── Build BDL context string for AI prompts ────────────────────
-// Used by AI Game Scout and supplemental fetch
-async function bdlContextForGame(home, away, sportName) {
-  const injuries = await bdlFetchInjuries(sportName);
-  const homeWords = home.toLowerCase().split(" ").filter(w => w.length > 3);
-  const awayWords = away.toLowerCase().split(" ").filter(w => w.length > 3);
-  const relevant = injuries.filter(inj => {
-    const t = inj.team.toLowerCase();
-    return homeWords.some(w => t.includes(w)) || awayWords.some(w => t.includes(w));
-  });
-  if (!relevant.length) return "";
-  const lines = relevant.slice(0,5).map(i =>
-    `${i.player} (${i.team}) — ${i.status}${i.desc ? ": "+i.desc : ""}`
-  ).join("; ");
-  return `Injury report: ${lines}.`;
-}
 
 // ═══════════════════════════════════════════════════════════════
 const BDL_KEY  = "4c881f4b-3845-4542-841f-a0e685c9f10e";
@@ -19891,11 +19842,6 @@ async function fetchNBABoxScoreViaRelay(gameId) {
   if (!r.ok) throw new Error(`RELAY boxscore ${r.status}`);
   return r.json();
 }
-async function fetchNBAChannelsViaRelay() {
-  const r = await fetch(`${RELAY_BASE}/liveData/channels/channels_00.json`, {signal:AbortSignal.timeout(6000)});
-  if (!r.ok) throw new Error(`RELAY channels ${r.status}`);
-  return r.json();
-}
 // Parallel validation + primary path — fires after each ESPN poll cycle
 // 2026-07-13 (follow-up to CC-CMD-2026-07-13-fetchnhlrelayscores-migration,
 // same bug pattern confirmed by direct read, not assumed): migrated to
@@ -22397,14 +22343,6 @@ async function fetchMLSLive() {
   }
 }
 
-async function fetchMLSGoals(matchId) {
-  try {
-    const r = await fetch(MLS_RELAY_BASE+`/v1/goals?match_game_id=${matchId}&include=club&order_by=goal_minute`,
-      {signal:AbortSignal.timeout(5000)});
-    if (!r.ok) return [];
-    return await r.json();
-  } catch(e) { return []; }
-}
 
 // ── OpenF1 — Formula 1 live timing ───────────────────────────────────────────
 const OPENF1_BASE = 'https://api.openf1.org/v1';
@@ -24434,18 +24372,6 @@ const AFL_TEAM_ABBR={
   'St Kilda':'STK','Sydney':'SYD','West Coast':'WCE','Western Bulldogs':'WBD'
 };
 
-async function fetchAFLStandings(){
-  if(_squiggleCache.standings&&Date.now()-_squiggleCache.fetchedAt<120000) return;
-  try{
-    const r=await fetch(SQUIGGLE_RELAY+'?q=standings;year=2026',
-      {headers:{'User-Agent':'FIELD-Global-Sports'},signal:AbortSignal.timeout(7000)});
-    if(!r.ok) return;
-    const data=await r.json();
-    if(data.standings) _squiggleCache.standings=data.standings;
-    if(FIELD_DEBUG) console.debug('[AFL] standings fetched:',data.standings?.length,'teams');
-    renderAFLStandingsWidget();
-  }catch(e){if(FIELD_DEBUG) console.debug('[AFL] standings failed:',e.message);}
-}
 
 function renderAFLStandingsWidget(){
   const s=_squiggleCache.standings;

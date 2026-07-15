@@ -532,13 +532,14 @@ try {
   if(hasUtils) pass('A56 — field_utils.js loaded in index.html');
   else fail('A56 — field_utils.js not loaded — pure functions missing from browser');
 
-  // A57 — getEl/$/$$ DOM helpers in utility block
+  // A57 — getEl DOM helper in utility block. $/$$ removed 2026-07-15
+  // (CC-CMD-2026-07-15-orphan-cleanup-dead, tree-sitter orphan sweep):
+  // confirmed zero real call sites -- same fix as smoke.js's own A57.
   const hasDomHelpers =
     html.includes('function getEl(id)') &&
-    html.includes('window._fieldErrors.push') &&
-    html.includes('function $(selector');
-  if(hasDomHelpers) pass('A57 — getEl/$/$$ DOM helpers present');
-  else fail('A57 — DOM helpers missing — bare getElementById calls unguarded');
+    html.includes('window._fieldErrors.push');
+  if(hasDomHelpers) pass('A57 — getEl DOM helper present');
+  else fail('A57 — getEl DOM helper missing — bare getElementById calls unguarded');
 
   // A58 — no bare document.getElementById().property without null guard
   // Extracts <script> blocks only, strips comments + string literals to avoid false positives

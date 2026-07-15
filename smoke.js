@@ -538,12 +538,15 @@ assert('A56 — field_utils.js loaded in index.html',
   html.includes('field_utils.js') &&
   html.includes('<script src="field_utils.js">'));
 
-  // A57 — getEl/$/$$ DOM helpers in utility block
+  // A57 — getEl DOM helper in utility block. $/$$ (querySelector/All shorthands)
+  // removed 2026-07-15 (CC-CMD-2026-07-15-orphan-cleanup-dead, tree-sitter
+  // orphan sweep): confirmed zero real call sites -- never adopted, every
+  // real DOM lookup in this file uses getEl/getElementById/querySelector
+  // directly instead.
   const hasDomHelpers =
     html.includes('function getEl(id)') &&
-    html.includes('window._fieldErrors.push') &&
-    html.includes('function $(selector');
-  assert('A57 — getEl/$/$$ DOM helpers present in utility block', hasDomHelpers);
+    html.includes('window._fieldErrors.push');
+  assert('A57 — getEl DOM helper present in utility block', hasDomHelpers);
 
   // A58 — no bare document.getElementById().property without null guard
   const jsBlocks2 = (html.match(/<script[^>]*>([\s\S]*?)<\/script>/g)||[]).join('\n');
@@ -1500,10 +1503,13 @@ assert('A254 — FIELD Desk: scheduleFieldDesk called after Claude fallback J3 p
   html.includes('initJournalismQueue(sections);scheduleFieldDesk(500)'),
   'scheduleFieldDesk must be called after J3 Claude fallback stores brief — renderFieldDesk now debounced via scheduleFieldDesk');
 
-assert('A255 — AFL engine complete: AFL_TEAM_ABBR + fetchAFLStandings + renderAFLStandingsWidget restored',
+// fetchAFLStandings removed 2026-07-15 (CC-CMD-2026-07-15-orphan-cleanup-dead,
+// tree-sitter orphan sweep): confirmed zero real call sites -- _squiggleCache
+// and renderAFLStandingsWidget (both still required below) are populated/
+// called by other real, live AFL sync code, not by this function.
+assert('A255 — AFL engine complete: AFL_TEAM_ABBR + renderAFLStandingsWidget present',
   html.includes('const AFL_TEAM_ABBR=') &&
   html.includes('Brisbane Lions') &&
-  html.includes('async function fetchAFLStandings') &&
   html.includes('function renderAFLStandingsWidget'),
   'AFL symbols dropped in betting removal — AFL_TEAM_ABBR undefined would break injectSquiggleLiveScores and tips');
 
