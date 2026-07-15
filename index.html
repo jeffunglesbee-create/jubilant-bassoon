@@ -16510,9 +16510,37 @@ function golfRoundLabel(tourn){
   return "";
 }
 
+// Look up the current tournament leader's OWGR world rank, if notable
+// (top 50 -- a real, well-known golf convention, e.g. major eligibility
+// cutoffs) and rankings data is available. Real value-add beyond
+// leaderboard alone: notes when the leader is a genuinely elite player,
+// context leaderboard (this week's standing) alone doesn't carry.
+// Field-name-tolerant (rankings/players/rank list; lastName/name;
+// rank/position/owgr) matching buildGolfLeaderNote's own established
+// defensive-tolerance style, since this session made zero real live
+// calls against SlashGolf's rate-limited API to confirm the exact
+// rankings response shape (CC-CMD-2026-07-15-golf-rankings TASK 0/2 --
+// see outbox for why: Rule 78, do not burn a scarce shared daily budget
+// for verification alone).
+function findLeaderWorldRank(leaderboard, rankings){
+  if(!leaderboard || !rankings) return "";
+  const leaders = (leaderboard.leaderboard || leaderboard.players || [])
+    .filter(p => p.position && p.lastName)
+    .sort((a,b) => (parseInt(a.position)||99) - (parseInt(b.position)||99));
+  const top = leaders[0];
+  if(!top || !top.lastName) return "";
+  const rankList = rankings.rankings || rankings.players || rankings.rank || [];
+  if(!Array.isArray(rankList)) return "";
+  const match = rankList.find(r => (r.lastName||r.name||"").toLowerCase().includes(top.lastName.toLowerCase()));
+  if(!match) return "";
+  const rank = parseInt(match.rank ?? match.position ?? match.owgr);
+  if(!rank || rank > 50) return "";
+  return `World #${rank}`;
+}
+
 // Inject Slash Golf leaderboard data into matching Golf game cards in the DOM
 // Called after schedule + leaderboard fetch completes
-function injectSlashGolfLeaderNotes(activeTournaments, leaderboards){
+function injectSlashGolfLeaderNotes(activeTournaments, leaderboards, rankings){
   if(!allData||!allData.sports) return;
   allData.sports.forEach(sec => {
     if(sec.sport !== "Golf") return;
@@ -16536,6 +16564,8 @@ function injectSlashGolfLeaderNotes(activeTournaments, leaderboards){
       let leaderNote = "";
       if(lb){
         leaderNote = buildGolfLeaderNote(lb);
+        const wr = findLeaderWorldRank(lb, rankings);
+        if(wr && leaderNote) leaderNote = `${leaderNote} (${wr})`;
       } else if(tourn.firstPlace){
         const fp = tourn.firstPlace;
         leaderNote = `${fp.lastName||""} ${fp.total||""}`;
@@ -16652,8 +16682,18 @@ async function slashGolfPrefetchAll(){
       if(lb) leaderboards[t.tournId] = lb;
     }));
 
+    // 3b. OWGR world rankings (CC-CMD-2026-07-15-golf-rankings): weekly
+    // cache (fetchSlashGolfRankings's own 7-day TTL, already inside
+    // slashGolfFetch) -- calling this on every prefetch is safe, it only
+    // hits the real API when that cache is actually stale. Conceptually
+    // separate from leaderboard (this tournament's current standing) --
+    // rankings is season-long career standing, independent of any one
+    // event. Real value: notes when a leaderboard leader is a genuinely
+    // elite (top-50 OWGR) player, context leaderboard alone doesn't carry.
+    const rankings = inProgress.length ? await fetchSlashGolfRankings() : null;
+
     // 4. Inject into golf cards
-    injectSlashGolfLeaderNotes(active, leaderboards);
+    injectSlashGolfLeaderNotes(active, leaderboards, rankings);
 
     if(FIELD_DEBUG) console.debug("[SlashGolf] prefetch complete", leaderboards);
   }catch(e){

@@ -6914,5 +6914,16 @@ assert('A-LASTMEETING-2 — no-prior-meeting and null-score cases correctly omit
   /if \(!anchor \|\| !g2 \|\| g2\.home_score == null \|\| g2\.away_score == null\) return;/.test(html),
   'the fill-in callback must bail out (leaving the section empty/omitted) for game:null, and for a row whose scores are genuinely null -- never render "undefined – undefined"');
 
+// ── Golf rankings (A-GOLFRANK — 2026-07-15) ───────────────────────────────────
+assert('A-GOLFRANK-1 — fetchSlashGolfRankings wired into the real prefetch flow, reuses its own existing 7-day cache (no duplicate fetch/cache logic)',
+  /const rankings = inProgress\.length \? await fetchSlashGolfRankings\(\) : null;/.test(html) &&
+  html.includes('injectSlashGolfLeaderNotes(active, leaderboards, rankings)'),
+  'slashGolfPrefetchAll must call the existing fetchSlashGolfRankings() as-is and thread the result into injectSlashGolfLeaderNotes');
+
+assert('A-GOLFRANK-2 — findLeaderWorldRank only annotates a top-50 OWGR leader, field-name-tolerant, never crashes on missing data',
+  html.includes('function findLeaderWorldRank(leaderboard, rankings)') &&
+  html.includes('if(!rank || rank > 50) return "";'),
+  'findLeaderWorldRank must gate on a real top-50 rank (avoiding clutter for a non-notable ranking) and degrade gracefully when leaderboard/rankings data is missing or the leader isn\'t found in the rankings list');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
