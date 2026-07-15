@@ -6873,5 +6873,14 @@ assert('A-CFBI-3 — mapV2ToESPN threads homeCuratedRank/awayCuratedRank from th
   /awayCuratedRank: fg\.away\?\.curatedRank \?\? null/.test(html),
   'mapV2ToESPN must thread fg.home/away.curatedRank into homeCuratedRank/awayCuratedRank (?? null-safe) so isFeaturedTierGame can read real rank data once the relay forwards it');
 
+// ── WNBA schedule cards (A-WNBASC — 2026-07-15) ───────────────────────────────
+assert('A-WNBASC-1 — WNBA wired via the existing generic injectV2SportSection, gated on FIELD_V2_SOURCES.wnba',
+  /if \(FIELD_V2_SOURCES\.wnba\) injectV2SportSection\('wnba', 'WNBA'\)/.test(html),
+  'fetchV2AllScores must call injectV2SportSection for wnba, gated on the real FIELD_V2_SOURCES.wnba flag -- reuses the generic injector rather than a new dedicated block');
+
+assert('A-WNBASC-2 — the stale hardcoded wnbaGames array is untouched (this dispatch adds a new path, does not remove or alter the old one)',
+  html.includes('if(wnbaGames.length) { applyNarrativeContext(wnbaGames); sections.push({sport:"WNBA", games:wnbaGames}); }'),
+  'the pre-existing hardcoded WNBA schedule array and its section-push must remain exactly as before');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
