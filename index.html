@@ -42593,13 +42593,21 @@ function openBottomSheet(gameId) {
     }, 290);
   }
 
-  // Post-game shot map from R2: completed WC game with bsd_event_id has its
-  // shotmap captured to R2 (bsd/wc26/{id}/stats.json) by runBSDEndgameCapture.
+  // Post-game shot map from R2: completed BSD-covered game has its shotmap
+  // captured to R2 (bsd/{slug}/{id}/stats.json) by runBSDEndgameCapture
+  // (CC-CMD-2026-07-14-bsd-replay-slug-wire -- relay now writes any covered
+  // club league under its own slug, not just wc26). eData._sport carries
+  // the exact same slug the relay's own V2_LEAGUES table uses (confirmed
+  // directly against the relay's real source, e.g. 'epl'/'mls'/'ucl'/
+  // 'laliga'/'seriea'/'bundesliga'/'ligue1'/'wc26') -- it's set in
+  // mapV2ToESPN as `_sport: fg.sport`, the same object bsdEventId itself
+  // comes from, so it's guaranteed present whenever _bsBsdEventId is.
   // Fetch via relay /bsd/r2/read and render the same bsd-pitch SVG canvas the
   // live branch uses (no extra DOM scaffolding needed).
   const _bsGameAge = game.start_time ? (Date.now() - new Date(game.start_time).getTime()) / 60000 : 0;
-  if (_bsIsWC && _bsBsdEventId && (eData?.state === 'post' || eData?.state === 'final' || _bsGameAge > 95)) {
-    const _r2Key = `bsd/wc26/${_bsBsdEventId}/stats.json`;
+  if (_bsBsdEventId && (eData?.state === 'post' || eData?.state === 'final' || _bsGameAge > 95)) {
+    const _r2Sport = eData?._sport || (_bsIsWC ? 'wc26' : '');
+    const _r2Key = `bsd/${_r2Sport}/${_bsBsdEventId}/stats.json`;
     const _relay = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
     fetch(`${_relay}/bsd/r2/read?key=${encodeURIComponent(_r2Key)}`)
       .then(r => r.ok ? r.json() : null)

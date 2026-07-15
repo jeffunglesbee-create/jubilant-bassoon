@@ -5874,13 +5874,14 @@ assert('A_BSD_9 — bottom sheet renders bsd-pitch container gated on bsdEventId
   /\$\{_bsBsdEventId\s*\?\s*`<div class="bs-section">[^`]*id="bsd-pitch"/.test(html),
   'openBottomSheet must include a bsd-pitch container conditioned on _bsBsdEventId alone -- not WC-only, any BSD-covered live game qualifies');
 
-assert('A_BSD_10 — post-game WC bottom sheet fetches /bsd/r2/read and feeds _bsdRepaint',
-  /bsd\/wc26\/\$\{_bsBsdEventId\}\/stats\.json/.test(html) &&
+assert('A_BSD_10 — post-game bottom sheet fetches /bsd/r2/read with a sport-parameterized key and feeds _bsdRepaint (CC-CMD-2026-07-14-bsd-replay-slug-wire)',
+  /_r2Sport\s*=\s*eData\?\.\_sport\s*\|\|\s*\(_bsIsWC\s*\?\s*'wc26'\s*:\s*''\)/.test(html) &&
+  /bsd\/\$\{_r2Sport\}\/\$\{_bsBsdEventId\}\/stats\.json/.test(html) &&
   /\/bsd\/r2\/read\?key=\$\{encodeURIComponent\(_r2Key\)\}/.test(html) &&
   /eData\?\.state\s*===\s*'post'/.test(html) &&
   /_bsdShotData\s*=\s*d\.shotmap/.test(html) &&
   /_bsdRepaint\(\)/.test(html),
-  'post-game WC bottom sheet must fetch /bsd/r2/read with stats.json key, assign shotmap to _bsdShotData, and call _bsdRepaint()');
+  'post-game bottom sheet must fetch /bsd/r2/read with a bsd/{realSlug}/{id}/stats.json key (falling back to wc26 for WC games), assign shotmap to _bsdShotData, and call _bsdRepaint()');
 
 assert('A_DEV_1 — _isFieldDevMode helper defined (?dev=1 or field_dev localStorage)',
   html.includes('function _isFieldDevMode()') &&
