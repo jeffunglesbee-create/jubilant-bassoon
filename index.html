@@ -22068,15 +22068,48 @@ function _mlbWhosUpNext(liveGame, aheadSlots = 3) {
 async function loadMLBSlate(date) {
   const mlbGames = await fetchMLBSchedule(date);
   if (mlbGames) {
+    // CC-CMD-2026-07-16-broadcast-chip-durable-fix: this is the PRIMARY,
+    // boot-time render path (fetchMLBFixtures -> loadMLBSlate ->
+    // normalizeMLBGame/parseBroadcasts) -- it previously consulted ONLY
+    // this file's own manual ESPN_GOTD_SCHEDULE table, never the server's
+    // real structural GOTD detection (build-field-data.js's
+    // fetchEspnMlbGotd, the 'ESPN Unlmtd' signal from site.api.espn.com,
+    // already wired and working -- confirmed real, not assumed) sitting
+    // right there in field-data-today.json. Cross-referencing it here
+    // (same _mlbOverlayMap-style home|away key convention already used
+    // elsewhere in this file) makes GOTD detection durable without a
+    // human extending a date table going forward, closing the long-
+    // standing TODO parseBroadcasts's own comment names.
+    // Also closes a real, separate gap: parseBroadcasts deliberately
+    // skips ESPN broadcasts entirely (`if (name === 'ESPN' ...) continue`)
+    // -- correct for avoiding false GOTD positives, but it means this
+    // path never checked ESPN_CABLE_SCHEDULE (the ~30-games/season ESPN
+    // cable exclusive window, a real, separate, already-current manual
+    // table -- distinguishing it from GOTD by broadcast NAME alone is
+    // documented as unreliable, per this file's own ESPN_CABLE_SCHEDULE
+    // comment, so it correctly stays a maintained lookup, not name-based
+    // auto-detection) at all -- a cable game (like 2026-07-16 NYM@PHI,
+    // real, confirmed) silently got zero ESPN signal from this path.
+    const _mlbFieldDataByKey = {};
+    (_fieldDataCache?.schedules?.mlb || []).forEach(o => { _mlbFieldDataByKey[`${o.home}|${o.away}`] = o; });
     return mlbGames.map(g => {
       const key = `${g.awayTeam}@${g.homeTeam}`;
-      const isEspnGOTD    = g.espnGOTD    || ESPN_GOTD_SCHEDULE[TODAY_ISO]    === key;
-      const isPeacockGOTD = g.peacockGOTD || PEACOCK_GOTD_SCHEDULE[TODAY_ISO] === key;
+      const serverEntry = _mlbFieldDataByKey[`${g.home}|${g.away}`];
+      const isEspnGOTD    = g.espnGOTD    || serverEntry?.espnGOTD    || ESPN_GOTD_SCHEDULE[TODAY_ISO]    === key;
+      const isPeacockGOTD = g.peacockGOTD || serverEntry?.peacockGOTD || PEACOCK_GOTD_SCHEDULE[TODAY_ISO] === key;
+      // ESPN cable exclusive — independent of GOTD; only consulted when
+      // nothing else (server nationalBundle, or this path's own live
+      // broadcast parse) already identified a national broadcast.
+      const _cableSlot = (!isEspnGOTD && !isPeacockGOTD && !g.nationalBundle && !serverEntry?.nationalBundle)
+        ? _lookupEspnCableSlot(TODAY_ISO, key) : null;
+      const nationalBundle = g.nationalBundle || serverEntry?.nationalBundle
+        || (_cableSlot ? (_cableSlot.abc ? 'MLB_ABC' : 'MLB_ESPN_CABLE') : null);
 
       // ESPN GOTD — NON-EXCLUSIVE: shows espnapp + local RSN chips (in-market)
       // Doc ref: "Code Changes Log MLB Local Chip Rule May 11" — MLB_ESPNU_GOTD: ["espnapp","rsn"]
-      const streams = isEspnGOTD    ? resolveBundle('MLB_ESPNU_GOTD')
-                    : isPeacockGOTD ? resolveBundle('MLB_PEACOCK_GOTD')
+      const streams = isEspnGOTD      ? resolveBundle('MLB_ESPNU_GOTD')
+                    : isPeacockGOTD   ? resolveBundle('MLB_PEACOCK_GOTD')
+                    : nationalBundle  ? resolveBundle(nationalBundle)
                     : g.streams;
 
       // Peacock GOTD weekday — EXCLUSIVE: local RSN suppressed (blacked out)
@@ -22087,6 +22120,7 @@ async function loadMLBSlate(date) {
         ...g,
         espnGOTD:    isEspnGOTD,
         peacockGOTD: isPeacockGOTD,
+        nationalBundle,
         streams,
         localRsn,
       };
@@ -25503,7 +25537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-16b';
+  const SW_VERSION = '2026-07-16c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

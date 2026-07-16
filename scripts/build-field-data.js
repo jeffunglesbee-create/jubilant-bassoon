@@ -195,7 +195,6 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts, espnGotdKeysFromApi) {
   const names = bcast.map(b => (b.name || b.callSign || '').toLowerCase());
   const hasMLBN    = names.some(n => n.includes('mlb network') || n === 'mlbn');
   const hasApple   = names.some(n => n.includes('apple') || n.includes('apple tv'));
-  const hasESPN    = names.some(n => n === 'espn' || n.startsWith('espn '));
   const hasFOX     = names.some(n => n === 'fox');
   const hasFS1     = names.some(n => n === 'fs1');
   const hasTBS     = names.some(n => n === 'tbs');
@@ -239,8 +238,29 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts, espnGotdKeysFromApi) {
     game.mlbnShowcase = true;
   }
 
+  // CC-CMD-2026-07-16-broadcast-chip-durable-fix: ESPN cable schedule,
+  // moved OUT of the `if (bcast.length > 0)` / `hasESPN` gate below and
+  // checked unconditionally, mirroring the GOTD lookup above it. Real bug,
+  // confirmed live: this table is the file's OWN documented "authoritative
+  // source" (see its comment) precisely because plain 'ESPN' in
+  // broadcasts() is NOT a reliable signal -- but gating it behind hasESPN
+  // (a signal from LIVE statsapi broadcasts(all) hydration) meant a build
+  // run before statsapi had attached that morning's/evening's broadcast
+  // assignment (this workflow runs 3:30 AM ET, hours before most first
+  // pitches) never even checked the authoritative table, silently leaving
+  // nationalBundle null for a real, confirmed, already-scheduled ESPN
+  // cable game (2026-07-16 NYM@PHI). The table itself needs no live
+  // confirmation to be trusted -- that's the whole point of it being a
+  // hand-verified, ESPN Press Room-sourced lookup.
+  if (!game.nationalBundle) {
+    const slot = _lookupEspnCableSlot(dateStr, `${game.away}|${game.home}`);
+    if (slot) {
+      game.nationalBundle = slot.abc ? 'MLB_ABC' : 'MLB_ESPN_CABLE';
+    }
+  }
+
   // Assign primary nationalBundle from live broadcast data
-  if (bcast.length > 0) {
+  if (!game.nationalBundle && bcast.length > 0) {
     if (hasNetflix)        { game.nationalBundle = 'MLB_NETFLIX'; return; }
     if (hasApple)          { game.nationalBundle = 'MLB_APPLE'; return; }
     if (hasFOX)            { game.nationalBundle = 'MLB_FOX';   return; }
@@ -259,22 +279,6 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts, espnGotdKeysFromApi) {
         game.peacockGOTD = true;
       }
       return;
-    }
-    // CC-CMD-2026-06-16 broadcast overhaul Commit 3: ESPN cable schedule.
-    // 'ESPN' (or 'ESPN '-prefixed entries) in broadcasts() is NOT a reliable
-    // signal that a game is on the ESPN national cable slate — it appears
-    // for many local-affiliate carries too. Authoritative source is the
-    // ESPN_CABLE_SCHEDULE lookup. Only assign MLB_ESPN_CABLE (or MLB_ABC
-    // for the OTA simulcast subset) when the date+matchup actually matches.
-    if (hasESPN) {
-      const slot = _lookupEspnCableSlot(dateStr, `${game.away}|${game.home}`);
-      if (slot) {
-        game.nationalBundle = slot.abc ? 'MLB_ABC' : 'MLB_ESPN_CABLE';
-        return;
-      }
-      // ESPN in broadcasts without a cable-schedule match → local feed only.
-      // Do not assign any ESPN national bundle here. ESPN Unlimited GOTD is
-      // handled separately above via ESPN_GOTD_LOOKUP / espnGOTD flag.
     }
     if (hasMLBN) { game.nationalBundle = 'MLB_NETWORK'; return; }
     // Has broadcasts but no national signal — leave nationalBundle = null
