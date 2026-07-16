@@ -1,5 +1,25 @@
 # FIELD HANDOFF
-## CLIENT HEAD: 1102ef3 · RELAY HEAD: (see field-relay-nba, multiple real merges tonight — WC label fragmentation, European qualifying, morning-report fix, BSD arc) · 2026-07-15 · via Claude Code
+## CLIENT HEAD: c9505a9 · SW_VERSION: 2026-07-16f · 2026-07-16 · via Claude Code
+## Smoke: 958/958
+## Session doc: outbox/cc-session-2026-07-16-drama-gateway.md
+
+### DONE — getDramaGateway (drama-gateway CC-CMD)
+- `getDramaGateway(game, sport)`: structural access point for drama data keyed on state
+  - post → {mode:'score', value, arc, peak} (numeric only exits here)
+  - live → {mode:'observation', value: CRUNCH_TIME|CLOSE_FINISH|BLOWOUT|IN_PROGRESS}
+  - pre  → {mode:'observation', value: MARQUEE|SCOUTS_PICK|STANDARD}
+- Wired: `injectDramaBadges` + `renderOneToWatch` (guard returns on mode!=='observation')
+- Smoke: 954 → 958 (4 new A-DRAMA-GATEWAY-* assertions)
+- SW_VERSION: 2026-07-16e → 2026-07-16f
+- Commit: c9505a9
+
+### Open
+- docs/CC-CMD-2026-07-16-broadcast-chip-durable-fix.md — not yet executed
+- 35 remaining ad-hoc state-check sites (future migration to gateway, separate prompts)
+- 5 Amnesty Zone CC-CMDs (Arc Poster, Bottom Sheet, Card Face, Leaderboard) — now have gateway foundation
+
+---
+## CLIENT HEAD (prev): 1102ef3 · RELAY HEAD: (see field-relay-nba, multiple real merges tonight — WC label fragmentation, European qualifying, morning-report fix, BSD arc) · 2026-07-15 · via Claude Code
 
 ### DONE — orphan sweep + all real follow-ups it spawned, 14 CC-CMDs total, all pushed to main. Smoke 932 → 954 (22 net new assertions).
 
