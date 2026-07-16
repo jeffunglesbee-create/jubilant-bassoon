@@ -19181,6 +19181,24 @@ async function fetchV2AllScores() {
   // again it merges into the same section rather than duplicating.
   if (FIELD_V2_SOURCES.wnba) injectV2SportSection('wnba', 'WNBA');
 
+  // MLS schedule section (CC-CMD-2026-07-16-mls-schedule-cards). Same gap
+  // class as WNBA above: MLS already flows through this same V2 poll loop
+  // (FIELD_V2_SOURCES.mls: true) into espnScores -- confirmed live via a
+  // real /v2/games?sport=mls fetch returning 4 real MLS games for today,
+  // sport:"mls" on every entry, exactly matching mapV2ToESPN's _sport
+  // field and injectV2SportSection's own filter -- but nothing previously
+  // turned those entries into allData.sports card entries. The only MLS
+  // "schedule" was a hardcoded array (mlsSoccer, buildTodaySchedule())
+  // whose own comment says it covers "Last Before World Cup Break (May
+  // 25-Jul 16)" and was emptied out for the break -- MLS resumes today
+  // (Jul 16) with the break comment's own end date, and the array was
+  // never repopulated, so it has produced zero real cards since May 25.
+  // 'MLS Soccer' matches the hardcoded path's own section label exactly
+  // (see buildTodaySchedule's sections.push({sport:"MLS Soccer",...})),
+  // so if that array is ever repopulated it merges into the same section
+  // rather than duplicating, same guarantee WNBA's injection already has.
+  if (FIELD_V2_SOURCES.mls) injectV2SportSection('mls', 'MLS Soccer');
+
   // ── Inject FIFA World Cup section into allData.sports ─────────────────────
   // V2 polling fetches wc26 games → espnScores. allData.sports may already
   // contain a FIFA section pushed by maybePushWorldCup() from wc26Raw
@@ -22401,7 +22419,15 @@ async function fetchMLSLive() {
         homeName:hClub.name||'', awayName:aClub.name||'',
         home:hClub.name||'', away:aClub.name||'',
         homeWinning:(hMatch.score??0)>(aMatch.score??0),
-        periodPrefix:"'", source:'mls-relay', _sport:'MLS Soccer',
+        // CC-CMD-2026-07-16-mls-schedule-cards: _sport must be the short V2
+        // sportKey ('mls'), not the section label ('MLS Soccer') -- this is
+        // the same convention mapV2ToESPN uses (_sport: fg.sport, e.g.
+        // "mls") and the one injectV2SportSection('mls','MLS Soccer')
+        // filters on (espnScores[k]?._sport === sportKey). The old value
+        // never matched that filter, so this one-shot boot fetch's data
+        // was invisible to schedule-section injection regardless of the
+        // section-creation gap fixed alongside this.
+        periodPrefix:"'", source:'mls-relay', _sport:'mls',
         _mlsOptaHome:hId, _mlsOptaAway:aId, _gameId:String(gameOptaId||key),
       };
       espnScoreTs[key] = Date.now();
@@ -25477,7 +25503,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-16a';
+  const SW_VERSION = '2026-07-16b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
