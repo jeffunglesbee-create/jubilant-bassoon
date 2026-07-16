@@ -24045,6 +24045,11 @@ function renderNewspaper(bundle) {
     const sow = bundle.sport_of_week;
     parts.push(`<div class="np-section np-weekly"><div class="np-label">SPORT OF THE WEEK</div><p class="np-prose">${sow.summary || sow.winner}</p></div>`);
   }
+  if (bundle.broken_record && Array.isArray(bundle.broken_record.records) && bundle.broken_record.records.length) {
+    const chips = bundle.broken_record.records.slice(0, 5)
+      .map(r => `<span class="np-streak-chip np-hot">${r.team}: "${r.phrase}" ×${r.occurrences}</span>`).join('');
+    parts.push(`<div class="np-section np-weekly"><div class="np-label">BROKEN RECORD</div><div class="np-streak-row">${chips}</div></div>`);
+  }
 
   if (!parts.length) return; // nothing to show — silent
 
@@ -25549,7 +25554,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-16d';
+  const SW_VERSION = '2026-07-16e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
