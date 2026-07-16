@@ -290,6 +290,63 @@
       ],
       "proofMode": "required",
       "lastVerifiedAt": "2026-07-01"
+    },
+    "mls-stats-api": {
+      "status": "active",
+      "sourceId": "mls-stats-api-official",
+      "sport": "MLS Soccer",
+      "relayRoutes": [
+        "/v2/games?sport=mls&date={date}",
+        "/soccer/xg?league=usa.1&event={eventId}",
+        "/soccer/season-form?team_id={teamId}",
+        "/context/date/{date}"
+      ],
+      "normalizer": "injectV2SportSection('mls', 'MLS Soccer')",
+      "requiredNormalizedFields": [
+        "home",
+        "away",
+        "homeScore",
+        "awayScore",
+        "state",
+        "league",
+        "start_time",
+        "venue",
+        "_sport"
+      ],
+      "presentationConsumers": [
+        "fetchV2AllScores",
+        "buildSoccerXGContext",
+        "fetchMLSLive"
+      ],
+      "visibleSurfaces": [
+        {
+          "surface": "card",
+          "selector": ".game-card[data-sport='MLS Soccer'] .score-wrap",
+          "proof": "MLS game card renders with score (e.g., STL 3-0 ATX)"
+        },
+        {
+          "surface": "journalism-context",
+          "proof": "[SOCCER XG CONTEXT] block with Possession: appears in MLS game journalism"
+        }
+      ],
+      "fallbackSurfaces": [
+        {
+          "surface": "card",
+          "proof": "No explicit ESPN fallback — V2 source is primary"
+        }
+      ],
+      "fixtures": {
+        "ok": "_MLS_PROOF_FIXTURES.ok (inline in index.html — STL 3-0 ATX, 2026-05-23)",
+        "empty": "_MLS_PROOF_FIXTURES.empty",
+        "malformed": "_MLS_PROOF_FIXTURES.malformed"
+      },
+      "knownGaps": [
+        "MLS has no xG data — _hasXG is false, but _hasMatchStats is true (possession, shots)",
+        "Tournament postseason multiplexer uses /context/date/{date} route, not a dedicated MLS endpoint",
+        "Proof-mode fixture uses past date 2026-05-23; live MLS season resumes post-WC-break 2026-07-16"
+      ],
+      "proofMode": "required",
+      "lastVerifiedAt": null
     }
   }
 }
