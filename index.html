@@ -25554,7 +25554,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-16e';
+  const SW_VERSION = '2026-07-16f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36964,6 +36964,54 @@ function getDramaPeakWithTime(gameId) {
   return hist.reduce((m, h) => h.s > m.s ? h : m, hist[0]);
 }
 
+// getDramaGateway: structural access point for drama data, keyed on game state.
+// post  → {mode:'score', value, arc, peak}: numeric drama value only exits here.
+// live  → {mode:'observation', value: named live condition}: never a raw number.
+// pre   → {mode:'observation', value: named pre-game condition}: never a raw number.
+// Structurally prevents live/pre render paths from receiving a numeric drama value.
+// Named live states: CRUNCH_TIME, CLOSE_FINISH, BLOWOUT, IN_PROGRESS
+// Named pre  states: MARQUEE, SCOUTS_PICK, STANDARD
+function getDramaGateway(game, sport) {
+  const state  = game?.state;
+  const sp     = String(sport || game?._sport || '').toLowerCase();
+  const isPost = state === 'post' || state === 'final';
+  const isLive = state === 'in'   || state === 'live';
+
+  if (isPost) {
+    const gameId    = game._id || game.id || game._gameId || '';
+    const peakInfo  = getDramaPeakWithTime(gameId);
+    const hist      = getDramaHistory(gameId);
+    const lastT     = hist.length ? hist[hist.length - 1].t : 0;
+    const trend     = hist.length >= 2 ? hist[hist.length - 1].s - hist[0].s : 0;
+    const sustained = getDramaSustained(gameId, 65, 30 * 60 * 1000, lastT || undefined);
+    const arc       = _dramaArcClassify(peakInfo.s, sustained, trend, peakInfo.s);
+    return { mode: 'score', value: peakInfo.s, arc, peak: peakInfo.s };
+  }
+
+  if (isLive) {
+    const eData = typeof findEspnEntry === 'function' ? findEspnEntry(game) : null;
+    if (eData) {
+      if (isCrunchTimeGame(eData, sp))      return { mode: 'observation', value: 'CRUNCH_TIME' };
+      if (isLateCloseGame(game, eData, sp)) return { mode: 'observation', value: 'CLOSE_FINISH' };
+      const margin   = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
+      const period   = eData.period || 0;
+      const isFinalP = (
+        (sp.includes('basketball')||sp.includes('nba')) ? period >= 4 :
+        (sp.includes('hockey')    ||sp.includes('nhl')) ? period >= 3 :
+        (sp.includes('football')  ||sp.includes('nfl')) ? period >= 4 :
+        (sp.includes('baseball')  ||sp.includes('mlb')) ? period >= 9 : false
+      );
+      if (isFinalP && margin > 24) return { mode: 'observation', value: 'BLOWOUT' };
+    }
+    return { mode: 'observation', value: 'IN_PROGRESS' };
+  }
+
+  // pre-game (state==='pre') or unknown state
+  if (typeof isMarqueeBroadcast === 'function' && isMarqueeBroadcast(game)) return { mode: 'observation', value: 'MARQUEE' };
+  if (typeof isScoutsPick === 'function' && isScoutsPick(game))             return { mode: 'observation', value: 'SCOUTS_PICK' };
+  return { mode: 'observation', value: 'STANDARD' };
+}
+
 // Rolling average of last N samples — smoothed drama score for badge decisions
 // Use this instead of raw dramaScoreLive() output for any consumer that renders to screen.
 // Raw scores go to recordDramaHistory() (preserve signal); smoothed scores drive display.
@@ -38872,6 +38920,8 @@ function injectDramaBadges(){
     const eData = game ? findEspnEntry(game) : null;
     if(!eData) return;
     const sport = card.dataset.sport||'';
+    const _gwLive = getDramaGateway(game, sport);
+    if (_gwLive.mode !== 'observation') return; // game is post; live badge skipped
     // CC-CMD-2026-07-04-soccer-drama-scoring-fix TASK 4: thread FIFA ranks
     // into a shallow copy (never mutate the shared espnScores entry) for
     // soccer/WC26 games only — sync cache-only read, never blocks this
@@ -39602,6 +39652,8 @@ function renderOneToWatch(){
   const fire=_otwFindLiveGame(getDramaDial());
   if(fire&&fire.g._id!==_otwDismissedId){
     const {g,ed,sport}=fire;
+    const _gwOTW = getDramaGateway(g, sport);
+    if (_gwOTW.mode !== 'observation') return; // game resolved to post; skip OTW
     // ── PM-25 categorical tier refactor: named condition replaces numeric tier ──
     // _otwGetLiveTier returns a named condition string (CRUNCH/EXTRA_TIME/CLOSE_FINISH/LIVE_GAME).
     // _otwTierLabel converts to display string. CSS class still uses the legacy tier name

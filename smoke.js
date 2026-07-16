@@ -7027,6 +7027,32 @@ assert('A-DISPOSAL-1 — the 7 confirmed never-adopted/superseded utilities are 
   !/function buildSlashGolfGamesForToday\(/.test(html),
   'nhlStreams (obsolete TNT/ESPN assumption, real 2026 SCF was all-ABC), mlbBaserunnerBonus (superseded by applyQW1SituationBonus\'s real baseball section), normalizeApiFootballStats (superseded by the real [MATCH STATS] localStorage mechanism), enrichGame (abandoned shell, watchValue reimplemented as computeWatchValue), forEachGame/fieldFetch (never-adopted refactor utilities), buildSlashGolfGamesForToday (superseded golf-schedule architecture) must all be genuinely removed, each independently confirmed dead with real evidence, not just orphaned');
 
+assert('A-DRAMA-GATEWAY-1 — getDramaGateway exists as a function definition',
+  /function getDramaGateway\(/.test(html),
+  'getDramaGateway must be defined; it is the structural access point for drama data keyed on game state');
+
+assert('A-DRAMA-GATEWAY-2 — getDramaGateway returns mode:observation for live/pre and mode:score for post (all 8 named states present)',
+  html.includes("mode: 'observation'") &&
+  html.includes("mode: 'score'") &&
+  html.includes("value: 'CRUNCH_TIME'") &&
+  html.includes("value: 'CLOSE_FINISH'") &&
+  html.includes("value: 'BLOWOUT'") &&
+  html.includes("value: 'IN_PROGRESS'") &&
+  html.includes("value: 'MARQUEE'") &&
+  html.includes("value: 'SCOUTS_PICK'") &&
+  html.includes("value: 'STANDARD'"),
+  'getDramaGateway must define all 3 modes and 8 named state values: CRUNCH_TIME/CLOSE_FINISH/BLOWOUT/IN_PROGRESS (live), MARQUEE/SCOUTS_PICK/STANDARD (pre), score (post)');
+
+assert('A-DRAMA-GATEWAY-3 — getDramaGateway is wired into injectDramaBadges and renderOneToWatch (both proof-of-concept sites)',
+  html.includes('getDramaGateway(game, sport)') &&
+  html.includes('getDramaGateway(g, sport)'),
+  'getDramaGateway must appear at both proof-of-concept sites: injectDramaBadges calls getDramaGateway(game, sport), renderOneToWatch calls getDramaGateway(g, sport)');
+
+assert('A-DRAMA-GATEWAY-4 — getDramaGateway pre-game branch uses isMarqueeBroadcast and isScoutsPick, no dramaScoreLive in pre/live paths',
+  /isMarqueeBroadcast.*MARQUEE/.test(html) &&
+  /isScoutsPick.*SCOUTS_PICK/.test(html),
+  'getDramaGateway pre-game branch must use isMarqueeBroadcast and isScoutsPick exclusively; no dramaScoreLive call may appear in the pre or live branches');
+
 assert('A-DISPOSAL-2 — injectNBARegression correctly left as-is: a real, self-documented manual-injection mechanism, not dead code needing an automated wire',
   html.includes('function injectNBARegression(gameKey, data)') &&
   html.includes('Manual injection: update after each Finals game') &&
