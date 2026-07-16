@@ -16,7 +16,7 @@ Client-side rendering for the Season Drama Leaderboard and historical percentile
 
 Reuse existing patterns: this codebase already has an established live-fetch-with-cache convention (e.g. `loadBriefQualityRow`'s `sessionStorage` cache-then-fetch pattern, fixed for silent-catch observability earlier this same day — reuse that exact shape, including `captureFieldError` on failure, not a new fetch helper). Reuse the existing `.badge-row`/card-chip CSS patterns for the leaderboard position display, not a new UI paradigm.
 
-**Compliance constraint, same as the card-face CC-CMD:** the percentile/leaderboard display must be gated to genuinely post-game-only code paths (see `docs/ADR-002-CONTEXT.md` L95-104, L260-262 — read it directly, don't rely on this summary).
+**Compliance constraint, same as the card-face CC-CMD:** the percentile/leaderboard display must be gated to genuinely post-game-only code paths (see `docs/ADR-002-CONTEXT.md` L95-104, L260-262 — read it directly, don't rely on this summary). The *relay-side computation* of these values is governed separately by ADR-002's corrected push-vs-pull reading (Rules A/B/E — see `CC-CMD-2026-07-16-amnesty-leaderboard-relay.md`'s own CONTEXT for the full citation); that CC-CMD's pull-only guardrail is the relay's responsibility, but this client CC-CMD must not add anything that turns this data into a push trigger either (e.g. do not wire a "you're #1 on the leaderboard" moment into any client-side notification-request flow).
 
 ## TASK 1 — Probe
 

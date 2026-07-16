@@ -14,6 +14,10 @@ The client repo (jubilant-bassoon) wants to display a "Season Drama Leaderboard"
 
 **Do not assume the D1 schema from this description.** Query it directly first.
 
+**Real compliance basis for computing this ON THE RELAY, not just displaying it — read `docs/ADR-002-CONTEXT.md` (jubilant-bassoon) Rules A/B/E directly before writing any code, don't rely on this summary.** The older, more restrictive reading of ADR-002 treated relay-side computation of composite/derived interest values as prohibited outright. That reading was corrected (dated addition, "the RUWT re-analysis session, 2026-07-07"): the patents' actual missing element is an **autonomous push/notification**, not *where* the computation runs or the *shape* of the value. Rule A: "The relay may compute and serve composite interest-level values... in normal pull-based API responses — a client that requests this data and receives it does not supply the notification-in-response-to-threshold element the patents require." Rule B extends this explicitly to scalar/summed values. Rule E extends it to derived/labeled state of any shape, stored or served.
+
+This means: computing the leaderboard ranking and percentile ON THE RELAY (this CC-CMD's own task) is fine, *provided* the endpoints are pull-only — a GET the client explicitly requests, never data the relay pushes unprompted. **Hard guardrail, must hold for all time, not just at initial build:** this leaderboard/percentile data must never be wired into the SW push-notification path (`isCrunchLikePush()`, the `PREF_UPDATE`/`my_teams` push architecture, `CC-CMD-2026-07-06-sw-push-notification-scoping-complete.md`) or any other autonomous-trigger mechanism. A future session adding "your team just set a new season-high drama score — sending a push" would be a real Rule A/E violation regardless of the amnesty-zone display exemption that covers card-face display. State this guardrail explicitly in the outbox manifest so it's visible to whoever reads this CC-CMD's history later, not just implied.
+
 ## TASK 1 — Probe (real, live, first)
 
 Query the real `field-archive` D1 database directly (this session has established precedent for doing this — same pattern as the earlier "how many archived briefs do we have" investigation this same day). Confirm: the actual table name, the actual column names for `drama_peak`/`drama_arc`/`source_id`, whether there's a `sport`/`league` column to scope a leaderboard per-league (an NBA game and a golf round are not comparable on the same 0-100 scale necessarily — confirm with real data whether cross-sport comparison is even meaningful, or whether the leaderboard must be scoped per-sport), whether there's a season/date-range field to scope "this season" vs. all-time, and roughly how many rows currently have a non-null `drama_peak`. Report all of this with real query output before writing any endpoint code.
@@ -26,7 +30,11 @@ New route (e.g. `/archive/drama/leaderboard?sport=X&limit=N`) returning the top-
 
 New route or extension (e.g. `/archive/drama/percentile?sport=X&score=N`) returning what percentile `score` falls at within the stored distribution for that sport. If TASK 1's probe finds too few real rows for a given sport to make a percentile meaningful (e.g. under ~20 data points), report this honestly in the outbox rather than shipping a percentile that's statistically meaningless from a tiny sample — this is a real finding to surface, not a reason to fabricate a plausible-looking number.
 
-## TASK 4 — Verify
+## TASK 4 — Confirm the pull-only guardrail holds, explicitly
+
+Before writing the outbox manifest, grep the relay's own push-trigger code paths (`isCrunchLikePush()` and anything else that autonomously sends a notification) and confirm neither new endpoint is referenced anywhere in them. State this check's result explicitly in the outbox — "confirmed zero references" or name what you found — don't just omit it because nothing turned up.
+
+## TASK 5 — Verify
 
 Live D1 queries against the real database confirming the endpoint's numbers match a manual query for at least 2 real sports. Real forced test against the deployed route (not just local logic) — this session has established MCP-based relay-route-probing precedent (`probe_relay_route`-style tooling) if available in the execution session; otherwise curl the deployed route directly.
 
@@ -35,9 +43,10 @@ Live D1 queries against the real database confirming the endpoint's numbers matc
 Both endpoints return real, verified-correct numbers for at least 2 real sports, cross-checked against a direct D1 query, not just internally self-consistent. If the data is too sparse for a meaningful percentile in some sport, that's documented explicitly, not papered over.
 
 **Confidence scoring:**
-- TASK 1 (30 pts): real D1 schema probe, not assumed
-- TASK 2 (25 pts): leaderboard endpoint correct, reuses existing season-boundary convention
-- TASK 3 (25 pts): percentile endpoint correct, sparse-data cases disclosed honestly
-- TASK 4 (20 pts): live verification against real D1 data for 2+ sports
+- TASK 1 (25 pts): real D1 schema probe, not assumed
+- TASK 2 (20 pts): leaderboard endpoint correct, reuses existing season-boundary convention
+- TASK 3 (20 pts): percentile endpoint correct, sparse-data cases disclosed honestly
+- TASK 4 (15 pts): pull-only/no-push-trigger guardrail explicitly confirmed and documented
+- TASK 5 (20 pts): live verification against real D1 data for 2+ sports
 
 Do not commit unless confidence >= 95. If score < 95, report verbatim and stop. Automate follow-ups. No fallbacks, only fixes.
