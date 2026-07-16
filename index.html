@@ -11238,6 +11238,34 @@ function applyMainHTML(html){
     main.querySelectorAll('.game-card[data-gameid]').forEach(el => {
       if (!existingCards.has(el.dataset.gameid)) existingCards.set(el.dataset.gameid, el);
     });
+    // Duplicate-gameid safety net (CC-CMD-2026-07-16-frozen-card-duplicate-
+    // status): should never happen -- every game object should map to
+    // exactly one card -- but a confirmed-live relay failure (fetchV2Games
+    // silently returning [] on non-ok responses, fixed alongside this) is
+    // exactly the kind of gap that can leave two entries for the same real
+    // game (one frozen from before the gap, one fresh once a poll recovers)
+    // both flowing into allData.sports under the same _id. Without this,
+    // both would render as separate .game-card elements sharing one
+    // data-gameid -- a duplicate, DOM-level "once normal, once stale" card
+    // -- and the comparison loop below (matching each new card individually
+    // against a single first-match `existing`) does not defend against
+    // that on its own; it only prevents unnecessary DOM churn per card, it
+    // never checks whether tmp itself holds two cards for one id. Keep the
+    // LAST occurrence (injectV2SportSection's own byKey merge appends
+    // newly-seen entries after existing ones, so later == fresher) and drop
+    // earlier ones; report via captureFieldError since this signals a real
+    // upstream data bug, not a normal path.
+    const _tmpByGid = new Map();
+    tmp.querySelectorAll('.game-card[data-gameid]').forEach(el => {
+      const gid = el.dataset.gameid;
+      if (!_tmpByGid.has(gid)) _tmpByGid.set(gid, []);
+      _tmpByGid.get(gid).push(el);
+    });
+    for (const [gid, els] of _tmpByGid) {
+      if (els.length < 2) continue;
+      captureFieldError('card-dom-reconciliation:duplicate-gameid', new Error(`${els.length} cards for data-gameid="${gid}"`), false);
+      els.slice(0, -1).forEach(el => { if (!el.hasAttribute('data-lcp-anchor')) el.remove(); });
+    }
     const newCardIds = new Set();
     tmp.querySelectorAll('.game-card[data-gameid]').forEach(newCard => {
       if (newCard.hasAttribute('data-lcp-anchor')) return; // already handled above
@@ -11743,7 +11771,20 @@ function renderAll(skipUnchanged){
             // reasoning); captureFieldError keeps the failure visible in
             // _fieldErrors/Health Panel even though the render itself "succeeds".
       g._insights=computeInsights(g, sec.sport); // Stage 3.5: typed data bridge
-      const st=getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
+      // CC-CMD-2026-07-16-frozen-card-duplicate-status: getStatus() is a pure
+      // elapsed-time heuristic ("live" for the entire 3.5hr window after
+      // start_time) with zero awareness of real game state -- a WNBA game
+      // finishing in ~2hrs still classified "live" (red badge/styling) for
+      // up to another 1.5hrs, confirmed-final or not. isGameOver(g) is the
+      // established, real-data multi-adapter completion check (WC26/V2
+      // g.state, MLB g.status, AFL g._aflComplete -- see its own doc comment)
+      // already used elsewhere in this file; reuse it here to let real state
+      // override the time guess the moment it's known, rather than adding a
+      // second, competing completion heuristic. "upcoming" (not a new value)
+      // is getStatus()'s own existing bucket for "not live" post-game -- past
+      // the 3.5hr mark it already returns "upcoming" for a finished game, so
+      // this keeps the same vocabulary, just makes it real-data-driven first.
+      const st=isGameOver(g) ? "upcoming" : getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
       const timeStr=fmtTime(g.start_time);
       const isLive=st==="live";
       const timeCls=isLive?"game-time live-t":"game-time";
@@ -18536,10 +18577,22 @@ async function fetchV2Games(sport, date) {
     const d = date || new Date().toISOString().slice(0, 10);
     const r = await fetch(`${V2_RELAY_BASE}/v2/games?sport=${sport}&date=${d}`,
       { signal: AbortSignal.timeout(6000) });
-    if (!r.ok) return [];
+    if (!r.ok) {
+      // CC-CMD-2026-07-16-frozen-card-duplicate-status: this failure was
+      // completely silent -- confirmed live via a Health Panel screenshot
+      // showing real 403s from this same relay base (scores:fetch-nba-relay)
+      // within ~25 min of a WNBA card freezing at its last live state.
+      // A !r.ok here means espnScores never gets refreshed for this sport
+      // this poll cycle -- the card just keeps re-rendering its last known
+      // (possibly pre-final) state until a later poll succeeds. Reporting
+      // it so a future incident is diagnosable instead of invisible.
+      captureFieldError('scores:fetch-v2-games', new Error(`${sport} ${d}: HTTP ${r.status}`), true);
+      return [];
+    }
     const data = await r.json();
     return data?.games || [];
   } catch(e) {
+    captureFieldError('scores:fetch-v2-games', e, true);
     if (FIELD_DEBUG) console.warn('[V2] fetchV2Games failed:', sport, e.message);
     return [];
   }
@@ -25424,7 +25477,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-15f';
+  const SW_VERSION = '2026-07-15g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
