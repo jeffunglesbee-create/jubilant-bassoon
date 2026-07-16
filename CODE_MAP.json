@@ -1,17 +1,17 @@
 {
   "file": "index.html",
-  "lineCount": 44105,
-  "generatedAt": "2026-07-16T22:16:48.323Z",
+  "lineCount": 44157,
+  "generatedAt": "2026-07-16T22:25:48.820Z",
   "summary": {
-    "functionCount": 993,
+    "functionCount": 994,
     "sectionCount": 729,
     "constantCount": 139,
     "bootCallCount": 194,
     "largestConstants": [
       {
         "name": "RIVALRIES",
-        "line": 40413,
-        "endLine": 43908,
+        "line": 40465,
+        "endLine": 43960,
         "approximateBytes": 195576
       },
       {
@@ -46,8 +46,8 @@
       },
       {
         "name": "wc26Raw",
-        "line": 40053,
-        "endLine": 40182,
+        "line": 40105,
+        "endLine": 40234,
         "approximateBytes": 51670
       },
       {
@@ -84,8 +84,8 @@
       },
       {
         "name": "hydrateEspnScoresFromFinals ─",
-        "startLine": 41071,
-        "endLine": 41512,
+        "startLine": 41123,
+        "endLine": 41564,
         "lineCount": 442
       },
       {
@@ -102,8 +102,8 @@
       },
       {
         "name": "PM-28a: Linescore persistence",
-        "startLine": 39206,
-        "endLine": 39595,
+        "startLine": 39256,
+        "endLine": 39645,
         "lineCount": 390
       },
       {
@@ -3622,889 +3622,889 @@
     {
       "name": "Consumer API ─",
       "startLine": 36919,
-      "endLine": 36976,
-      "lineCount": 58
+      "endLine": 37024,
+      "lineCount": 106
     },
     {
       "name": "Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client)",
-      "startLine": 36977,
-      "endLine": 37228,
+      "startLine": 37025,
+      "endLine": 37276,
       "lineCount": 252
     },
     {
       "name": "Broadcast Narrative Index (BNI)",
-      "startLine": 37229,
-      "endLine": 37284,
+      "startLine": 37277,
+      "endLine": 37332,
       "lineCount": 56
     },
     {
       "name": "═",
-      "startLine": 37285,
-      "endLine": 37289,
+      "startLine": 37333,
+      "endLine": 37337,
       "lineCount": 5
     },
     {
       "name": "═",
-      "startLine": 37290,
-      "endLine": 37373,
+      "startLine": 37338,
+      "endLine": 37421,
       "lineCount": 84
     },
     {
       "name": "═",
-      "startLine": 37374,
-      "endLine": 37382,
+      "startLine": 37422,
+      "endLine": 37430,
       "lineCount": 9
     },
     {
       "name": "═",
-      "startLine": 37383,
-      "endLine": 37387,
+      "startLine": 37431,
+      "endLine": 37435,
       "lineCount": 5
     },
     {
       "name": "═",
-      "startLine": 37388,
-      "endLine": 37398,
+      "startLine": 37436,
+      "endLine": 37446,
       "lineCount": 11
     },
     {
       "name": "═",
-      "startLine": 37399,
-      "endLine": 37405,
+      "startLine": 37447,
+      "endLine": 37453,
       "lineCount": 7
     },
     {
       "name": "NBA Live Boxscore Cache (PM-30)",
-      "startLine": 37406,
-      "endLine": 37425,
+      "startLine": 37454,
+      "endLine": 37473,
       "lineCount": 20
     },
     {
       "name": "parseNBAScoreboardGames — pure parsing helper for fetchNBAScoreboard",
-      "startLine": 37426,
-      "endLine": 37486,
+      "startLine": 37474,
+      "endLine": 37534,
       "lineCount": 61
     },
     {
       "name": "fetchNBALiveBoxscore (PM-30) ─",
-      "startLine": 37487,
-      "endLine": 37581,
+      "startLine": 37535,
+      "endLine": 37629,
       "lineCount": 95
     },
     {
       "name": "buildFoulTroubleContext (Gap 3)",
-      "startLine": 37582,
-      "endLine": 37597,
+      "startLine": 37630,
+      "endLine": 37645,
       "lineCount": 16
     },
     {
       "name": "buildNBAOncourtContext (Gap 1 display)",
-      "startLine": 37598,
-      "endLine": 37613,
+      "startLine": 37646,
+      "endLine": 37661,
       "lineCount": 16
     },
     {
       "name": "buildNBAScoreLeadersContext (Gap 6 display) ─",
-      "startLine": 37614,
-      "endLine": 37747,
+      "startLine": 37662,
+      "endLine": 37795,
       "lineCount": 134
     },
     {
       "name": "Tier 0: NBA CDN live boxscore oncourt flag (PM-30)",
-      "startLine": 37748,
-      "endLine": 37789,
+      "startLine": 37796,
+      "endLine": 37837,
       "lineCount": 42
     },
     {
       "name": "Tier 1: NBA CDN play-by-play (exact lineup + stint stats)",
-      "startLine": 37790,
-      "endLine": 37804,
+      "startLine": 37838,
+      "endLine": 37852,
       "lineCount": 15
     },
     {
       "name": "Single ESPN summary fetch: captures plays[] (Tier 2) + boxscore (Tier 3) ─",
-      "startLine": 37805,
-      "endLine": 37823,
+      "startLine": 37853,
+      "endLine": 37871,
       "lineCount": 19
     },
     {
       "name": "Tier 2: ESPN plays[] sub detection",
-      "startLine": 37824,
-      "endLine": 37829,
+      "startLine": 37872,
+      "endLine": 37877,
       "lineCount": 6
     },
     {
       "name": "Tier 3: ESPN boxscore (active players by minutes) ─",
-      "startLine": 37830,
-      "endLine": 37965,
+      "startLine": 37878,
+      "endLine": 38013,
       "lineCount": 136
     },
     {
       "name": "═",
-      "startLine": 37966,
-      "endLine": 37972,
+      "startLine": 38014,
+      "endLine": 38020,
       "lineCount": 7
     },
     {
       "name": "═",
-      "startLine": 37973,
-      "endLine": 38006,
+      "startLine": 38021,
+      "endLine": 38054,
       "lineCount": 34
     },
     {
       "name": "Platoon advantage ─",
-      "startLine": 38007,
-      "endLine": 38025,
+      "startLine": 38055,
+      "endLine": 38073,
       "lineCount": 19
     },
     {
       "name": "Count context ─",
-      "startLine": 38026,
-      "endLine": 38122,
+      "startLine": 38074,
+      "endLine": 38170,
       "lineCount": 97
     },
     {
       "name": "Card .rai-line — placed inside score-wrap (grid-column:2, grid-row:2)",
-      "startLine": 38123,
-      "endLine": 38152,
+      "startLine": 38171,
+      "endLine": 38200,
       "lineCount": 30
     },
     {
       "name": "[CLOSING UNIT] badge (named condition)",
-      "startLine": 38153,
-      "endLine": 38174,
+      "startLine": 38201,
+      "endLine": 38222,
       "lineCount": 22
     },
     {
       "name": "PM-25 (June 5 2026): Card Render Slot",
-      "startLine": 38175,
-      "endLine": 38189,
+      "startLine": 38223,
+      "endLine": 38237,
       "lineCount": 15
     },
     {
       "name": "PULSE: ViewingConditions CRUNCH TIME / WORTH WATCHING badge",
-      "startLine": 38190,
-      "endLine": 38226,
+      "startLine": 38238,
+      "endLine": 38274,
       "lineCount": 37
     },
     {
       "name": "PM-27: emit field:crunch for CRUNCH TIME only (not WORTH WATCHING)",
-      "startLine": 38227,
-      "endLine": 38257,
+      "startLine": 38275,
+      "endLine": 38305,
       "lineCount": 31
     },
     {
       "name": "EMBER: BURIED LEAD sits below, never pulses ─",
-      "startLine": 38258,
-      "endLine": 38277,
+      "startLine": 38306,
+      "endLine": 38325,
       "lineCount": 20
     },
     {
       "name": "MLB Network Drama Alert ─",
-      "startLine": 38278,
-      "endLine": 38293,
+      "startLine": 38326,
+      "endLine": 38341,
       "lineCount": 16
     },
     {
       "name": "PM-25 Rich-visual confidence glyph (A496)",
-      "startLine": 38294,
-      "endLine": 38318,
+      "startLine": 38342,
+      "endLine": 38366,
       "lineCount": 25
     },
     {
       "name": "Drama Dial header chip (Jun 9 2026 audit)",
-      "startLine": 38319,
-      "endLine": 38329,
+      "startLine": 38367,
+      "endLine": 38377,
       "lineCount": 11
     },
     {
       "name": "CC-CMD-2026-07-12-otw-tier-categorical / otw-live-tier-categorical ─",
-      "startLine": 38330,
-      "endLine": 38404,
+      "startLine": 38378,
+      "endLine": 38452,
       "lineCount": 75
     },
     {
       "name": "PM-25 / Drama Dial categorical tier refactor (June 5 2026), T3/T4",
-      "startLine": 38405,
-      "endLine": 38493,
+      "startLine": 38453,
+      "endLine": 38541,
       "lineCount": 89
     },
     {
       "name": "ADR-002 Tier Foundation (June 14 2026) ─",
-      "startLine": 38494,
-      "endLine": 38684,
+      "startLine": 38542,
+      "endLine": 38732,
       "lineCount": 191
     },
     {
       "name": "PM-32-VI: Viewer Intelligence Chip",
-      "startLine": 38685,
-      "endLine": 38752,
+      "startLine": 38733,
+      "endLine": 38800,
       "lineCount": 68
     },
     {
       "name": "Signal computation (all boolean/categorical — no composite score) ─",
-      "startLine": 38753,
-      "endLine": 38776,
+      "startLine": 38801,
+      "endLine": 38824,
       "lineCount": 24
     },
     {
       "name": "Mode-ordered label hierarchy",
-      "startLine": 38777,
-      "endLine": 38888,
-      "lineCount": 112
+      "startLine": 38825,
+      "endLine": 38938,
+      "lineCount": 114
     },
     {
       "name": "Wow#41: Garbage Time cap ─",
-      "startLine": 38889,
-      "endLine": 38903,
+      "startLine": 38939,
+      "endLine": 38953,
       "lineCount": 15
     },
     {
       "name": "#18c Statistical Extremes bonus",
-      "startLine": 38904,
-      "endLine": 38911,
+      "startLine": 38954,
+      "endLine": 38961,
       "lineCount": 8
     },
     {
       "name": "First Lead Change Drama Burst ─",
-      "startLine": 38912,
-      "endLine": 38957,
+      "startLine": 38962,
+      "endLine": 39007,
       "lineCount": 46
     },
     {
       "name": "Drama Arc: record RAW score to history ─",
-      "startLine": 38958,
-      "endLine": 38959,
+      "startLine": 39008,
+      "endLine": 39009,
       "lineCount": 2
     },
     {
       "name": "Score snapshot: records factual score changes for OTW momentum ─",
-      "startLine": 38960,
-      "endLine": 38963,
+      "startLine": 39010,
+      "endLine": 39013,
       "lineCount": 4
     },
     {
       "name": "PM-28c: Persist interval scores for journalism context ─",
-      "startLine": 38964,
-      "endLine": 38973,
+      "startLine": 39014,
+      "endLine": 39023,
       "lineCount": 10
     },
     {
       "name": "Smoothing: use rolling average for display decisions",
-      "startLine": 38974,
-      "endLine": 38981,
+      "startLine": 39024,
+      "endLine": 39031,
       "lineCount": 8
     },
     {
       "name": "PM-25 Card Render Slot: delegate all badge mutations to renderCardBadges()",
-      "startLine": 38982,
-      "endLine": 39050,
+      "startLine": 39032,
+      "endLine": 39100,
       "lineCount": 69
     },
     {
       "name": "═",
-      "startLine": 39051,
-      "endLine": 39055,
+      "startLine": 39101,
+      "endLine": 39105,
       "lineCount": 5
     },
     {
       "name": "═",
-      "startLine": 39056,
-      "endLine": 39099,
+      "startLine": 39106,
+      "endLine": 39149,
       "lineCount": 44
     },
     {
       "name": "═",
-      "startLine": 39100,
-      "endLine": 39101,
+      "startLine": 39150,
+      "endLine": 39151,
       "lineCount": 2
     },
     {
       "name": "═",
-      "startLine": 39102,
-      "endLine": 39102,
+      "startLine": 39152,
+      "endLine": 39152,
       "lineCount": 1
     },
     {
       "name": "One to Watch — omnipresent five-state banner ─",
-      "startLine": 39103,
-      "endLine": 39107,
+      "startLine": 39153,
+      "endLine": 39157,
       "lineCount": 5
     },
     {
       "name": "buildOTWStateLabel: named game-state label for OTW banner",
-      "startLine": 39108,
-      "endLine": 39197,
+      "startLine": 39158,
+      "endLine": 39247,
       "lineCount": 90
     },
     {
       "name": "Score Snapshot — factual score-change tracker for OTW momentum",
-      "startLine": 39198,
-      "endLine": 39205,
+      "startLine": 39248,
+      "endLine": 39255,
       "lineCount": 8
     },
     {
       "name": "PM-28a: Linescore persistence",
-      "startLine": 39206,
-      "endLine": 39595,
+      "startLine": 39256,
+      "endLine": 39645,
       "lineCount": 390
     },
     {
       "name": "STATE 1: FIRE — high-drama live game (ESPN or WC V2) ─",
-      "startLine": 39596,
-      "endLine": 39604,
-      "lineCount": 9
+      "startLine": 39646,
+      "endLine": 39656,
+      "lineCount": 11
     },
     {
       "name": "PM-25 categorical tier refactor: named condition replaces numeric tier",
-      "startLine": 39605,
-      "endLine": 39634,
+      "startLine": 39657,
+      "endLine": 39686,
       "lineCount": 30
     },
     {
       "name": "PM-27: emit field:otw_changed if OTW game changed",
-      "startLine": 39635,
-      "endLine": 39647,
+      "startLine": 39687,
+      "endLine": 39699,
       "lineCount": 13
     },
     {
       "name": "field:otw_changed_significant (CC-CMD-2026-07-09-otw-significant-",
-      "startLine": 39648,
-      "endLine": 39701,
+      "startLine": 39700,
+      "endLine": 39753,
       "lineCount": 54
     },
     {
       "name": "STATE 2: LIVE — any live game, low drama",
-      "startLine": 39702,
-      "endLine": 39733,
+      "startLine": 39754,
+      "endLine": 39785,
       "lineCount": 32
     },
     {
       "name": "STATE 3: SOON — game starting in <2 hours ─",
-      "startLine": 39734,
-      "endLine": 39762,
+      "startLine": 39786,
+      "endLine": 39814,
       "lineCount": 29
     },
     {
       "name": "STATE 4: TONIGHT — best upcoming game today ─",
-      "startLine": 39763,
-      "endLine": 39788,
+      "startLine": 39815,
+      "endLine": 39840,
       "lineCount": 26
     },
     {
       "name": "STATE 5: QUIET — nothing notable ─",
-      "startLine": 39789,
-      "endLine": 39807,
+      "startLine": 39841,
+      "endLine": 39859,
       "lineCount": 19
     },
     {
       "name": "Mobile Intelligence Bar — live game summaries on phone ≤600px ─",
-      "startLine": 39808,
-      "endLine": 39868,
+      "startLine": 39860,
+      "endLine": 39920,
       "lineCount": 61
     },
     {
       "name": "═",
-      "startLine": 39869,
-      "endLine": 39870,
+      "startLine": 39921,
+      "endLine": 39922,
       "lineCount": 2
     },
     {
       "name": "═",
-      "startLine": 39871,
-      "endLine": 39871,
+      "startLine": 39923,
+      "endLine": 39923,
       "lineCount": 1
     },
     {
       "name": "ICS Export — Add to Calendar",
-      "startLine": 39872,
-      "endLine": 39967,
+      "startLine": 39924,
+      "endLine": 40019,
       "lineCount": 96
     },
     {
       "name": "Delegate share button clicks ─",
-      "startLine": 39968,
-      "endLine": 39983,
+      "startLine": 40020,
+      "endLine": 40035,
       "lineCount": 16
     },
     {
       "name": "Delegate calendar button clicks",
-      "startLine": 39984,
-      "endLine": 40013,
+      "startLine": 40036,
+      "endLine": 40065,
       "lineCount": 30
     },
     {
       "name": "iOS Safari \"Add to Home Screen\" prompt",
-      "startLine": 40014,
-      "endLine": 40046,
+      "startLine": 40066,
+      "endLine": 40098,
       "lineCount": 33
     },
     {
       "name": "FIFA World Cup 2026 — Date Gate + Live Games ─",
-      "startLine": 40047,
-      "endLine": 40053,
+      "startLine": 40099,
+      "endLine": 40105,
       "lineCount": 7
     },
     {
       "name": "June 11 — Opening Day (Group A) ─",
-      "startLine": 40054,
-      "endLine": 40056,
+      "startLine": 40106,
+      "endLine": 40108,
       "lineCount": 3
     },
     {
       "name": "June 12 (Groups B + D)",
-      "startLine": 40057,
-      "endLine": 40059,
+      "startLine": 40109,
+      "endLine": 40111,
       "lineCount": 3
     },
     {
       "name": "June 13 (Groups B + C + D)",
-      "startLine": 40060,
-      "endLine": 40064,
+      "startLine": 40112,
+      "endLine": 40116,
       "lineCount": 5
     },
     {
       "name": "June 14 (Groups E + F)",
-      "startLine": 40065,
-      "endLine": 40069,
+      "startLine": 40117,
+      "endLine": 40121,
       "lineCount": 5
     },
     {
       "name": "June 15 (Groups G + H)",
-      "startLine": 40070,
-      "endLine": 40074,
+      "startLine": 40122,
+      "endLine": 40126,
       "lineCount": 5
     },
     {
       "name": "June 16 (Groups I + J)",
-      "startLine": 40075,
-      "endLine": 40079,
+      "startLine": 40127,
+      "endLine": 40131,
       "lineCount": 5
     },
     {
       "name": "June 17 (Groups K + L)",
-      "startLine": 40080,
-      "endLine": 40084,
+      "startLine": 40132,
+      "endLine": 40136,
       "lineCount": 5
     },
     {
       "name": "June 18 (Groups A + B)",
-      "startLine": 40085,
-      "endLine": 40089,
+      "startLine": 40137,
+      "endLine": 40141,
       "lineCount": 5
     },
     {
       "name": "June 19 (Groups C + D)",
-      "startLine": 40090,
-      "endLine": 40094,
+      "startLine": 40142,
+      "endLine": 40146,
       "lineCount": 5
     },
     {
       "name": "June 20 (Groups E + F)",
-      "startLine": 40095,
-      "endLine": 40099,
+      "startLine": 40147,
+      "endLine": 40151,
       "lineCount": 5
     },
     {
       "name": "June 21 (Groups G + H)",
-      "startLine": 40100,
-      "endLine": 40104,
+      "startLine": 40152,
+      "endLine": 40156,
       "lineCount": 5
     },
     {
       "name": "June 22 (Groups I + J)",
-      "startLine": 40105,
-      "endLine": 40109,
+      "startLine": 40157,
+      "endLine": 40161,
       "lineCount": 5
     },
     {
       "name": "June 23 (Groups K + L)",
-      "startLine": 40110,
-      "endLine": 40114,
+      "startLine": 40162,
+      "endLine": 40166,
       "lineCount": 5
     },
     {
       "name": "June 24 — Final Matchday Groups A B C (simultaneous)",
-      "startLine": 40115,
-      "endLine": 40121,
+      "startLine": 40167,
+      "endLine": 40173,
       "lineCount": 7
     },
     {
       "name": "June 25 — Final Matchday Groups D E F (simultaneous)",
-      "startLine": 40122,
-      "endLine": 40128,
+      "startLine": 40174,
+      "endLine": 40180,
       "lineCount": 7
     },
     {
       "name": "June 26 — Final Matchday Groups G H I (simultaneous)",
-      "startLine": 40129,
-      "endLine": 40135,
+      "startLine": 40181,
+      "endLine": 40187,
       "lineCount": 7
     },
     {
       "name": "June 27 — Final Matchday Groups J K L (simultaneous)",
-      "startLine": 40136,
-      "endLine": 40142,
+      "startLine": 40188,
+      "endLine": 40194,
       "lineCount": 7
     },
     {
       "name": "WC26 KNOCKOUT STUBS (CC-CMD-2026-06-27) ── R32 × 16, R16 × 8, QF × 4, SF × 2, 3RD, FINAL",
-      "startLine": 40143,
-      "endLine": 40182,
+      "startLine": 40195,
+      "endLine": 40234,
       "lineCount": 40
     },
     {
       "name": "WC card advancement bars (Jun 9 2026 — spec surface W1)",
-      "startLine": 40183,
-      "endLine": 40341,
+      "startLine": 40235,
+      "endLine": 40393,
       "lineCount": 159
     },
     {
       "name": "Baseball Situation Renderer",
-      "startLine": 40342,
-      "endLine": 40375,
+      "startLine": 40394,
+      "endLine": 40427,
       "lineCount": 34
     },
     {
       "name": "Inject baseball situation chips into live MLB cards ─",
-      "startLine": 40376,
-      "endLine": 40405,
+      "startLine": 40428,
+      "endLine": 40457,
       "lineCount": 30
     },
     {
       "name": "═",
-      "startLine": 40406,
-      "endLine": 40409,
+      "startLine": 40458,
+      "endLine": 40461,
       "lineCount": 4
     },
     {
       "name": "═",
-      "startLine": 40410,
-      "endLine": 40424,
+      "startLine": 40462,
+      "endLine": 40476,
       "lineCount": 15
     },
     {
       "name": "VIBE-A helpers (2026-05-28)",
-      "startLine": 40425,
-      "endLine": 40534,
+      "startLine": 40477,
+      "endLine": 40586,
       "lineCount": 110
     },
     {
       "name": "Win probability chip (ESPN scalar wp, 0-1 scale) ─",
-      "startLine": 40535,
-      "endLine": 40569,
+      "startLine": 40587,
+      "endLine": 40621,
       "lineCount": 35
     },
     {
       "name": "Game-card tap delegate — belt-and-suspenders for Android/Samsung ─",
-      "startLine": 40570,
-      "endLine": 40599,
+      "startLine": 40622,
+      "endLine": 40651,
       "lineCount": 30
     },
     {
       "name": "Star button delegate ─",
-      "startLine": 40600,
-      "endLine": 40646,
+      "startLine": 40652,
+      "endLine": 40698,
       "lineCount": 47
     },
     {
       "name": "═",
-      "startLine": 40647,
-      "endLine": 40649,
+      "startLine": 40699,
+      "endLine": 40701,
       "lineCount": 3
     },
     {
       "name": "═",
-      "startLine": 40650,
-      "endLine": 40673,
+      "startLine": 40702,
+      "endLine": 40725,
       "lineCount": 24
     },
     {
       "name": "Coverage stats for tonight's schedule ─",
-      "startLine": 40674,
-      "endLine": 40690,
+      "startLine": 40726,
+      "endLine": 40742,
       "lineCount": 17
     },
     {
       "name": "Render coverage bar at top of My Services modal ─",
-      "startLine": 40691,
-      "endLine": 40720,
+      "startLine": 40743,
+      "endLine": 40772,
       "lineCount": 30
     },
     {
       "name": "═",
-      "startLine": 40721,
-      "endLine": 40724,
+      "startLine": 40773,
+      "endLine": 40776,
       "lineCount": 4
     },
     {
       "name": "═",
-      "startLine": 40725,
-      "endLine": 40852,
+      "startLine": 40777,
+      "endLine": 40904,
       "lineCount": 128
     },
     {
       "name": "Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)",
-      "startLine": 40853,
-      "endLine": 41070,
+      "startLine": 40905,
+      "endLine": 41122,
       "lineCount": 218
     },
     {
       "name": "hydrateEspnScoresFromFinals ─",
-      "startLine": 41071,
-      "endLine": 41512,
+      "startLine": 41123,
+      "endLine": 41564,
       "lineCount": 442
     },
     {
       "name": "ESPN Summary leaders — cold-cache fallback",
-      "startLine": 41513,
-      "endLine": 41661,
+      "startLine": 41565,
+      "endLine": 41713,
       "lineCount": 149
     },
     {
       "name": "WOW 6: try relay quality gate first (live-path quality enforcement)",
-      "startLine": 41662,
-      "endLine": 41709,
+      "startLine": 41714,
+      "endLine": 41761,
       "lineCount": 48
     },
     {
       "name": "Card Life Stages: 5 content states keyed to game clock",
-      "startLine": 41710,
-      "endLine": 41713,
+      "startLine": 41762,
+      "endLine": 41765,
       "lineCount": 4
     },
     {
       "name": "Sport-specific journalism context",
-      "startLine": 41714,
-      "endLine": 41740,
+      "startLine": 41766,
+      "endLine": 41792,
       "lineCount": 27
     },
     {
       "name": "WORKING CLASS: The Skim + Cheap Seats ═",
-      "startLine": 41741,
-      "endLine": 41878,
+      "startLine": 41793,
+      "endLine": 41930,
       "lineCount": 138
     },
     {
       "name": "WORKING CLASS: Injury Intel ═",
-      "startLine": 41879,
-      "endLine": 41909,
+      "startLine": 41931,
+      "endLine": 41961,
       "lineCount": 31
     },
     {
       "name": "PIPELINE C: Watch Engine",
-      "startLine": 41910,
-      "endLine": 41913,
+      "startLine": 41962,
+      "endLine": 41965,
       "lineCount": 4
     },
     {
       "name": "STAGE 3.5: INSIGHTS LAYER — Typed Data Bridge ═",
-      "startLine": 41914,
-      "endLine": 41924,
+      "startLine": 41966,
+      "endLine": 41976,
       "lineCount": 11
     },
     {
       "name": "BROADCAST INTELLIGENCE (Phase 1 — from Stage 3) ─",
-      "startLine": 41925,
-      "endLine": 41944,
+      "startLine": 41977,
+      "endLine": 41996,
       "lineCount": 20
     },
     {
       "name": "WEATHER INTELLIGENCE (Phase 3 — from wxCache) ─",
-      "startLine": 41945,
-      "endLine": 41958,
+      "startLine": 41997,
+      "endLine": 42010,
       "lineCount": 14
     },
     {
       "name": "MODEL INTELLIGENCE (Phase 4 — from Squiggle cache)",
-      "startLine": 41959,
-      "endLine": 41970,
+      "startLine": 42011,
+      "endLine": 42022,
       "lineCount": 12
     },
     {
       "name": "STANDINGS INTELLIGENCE (from cached standings)",
-      "startLine": 41971,
-      "endLine": 41980,
+      "startLine": 42023,
+      "endLine": 42032,
       "lineCount": 10
     },
     {
       "name": "PLAYER INTELLIGENCE (Phase 5 — from BDL cache)",
-      "startLine": 41981,
-      "endLine": 41998,
+      "startLine": 42033,
+      "endLine": 42050,
       "lineCount": 18
     },
     {
       "name": "COMPOSITE SIGNALS ─",
-      "startLine": 41999,
-      "endLine": 42031,
+      "startLine": 42051,
+      "endLine": 42083,
       "lineCount": 33
     },
     {
       "name": "Factor 1: Game state (0-30) ─",
-      "startLine": 42032,
-      "endLine": 42048,
+      "startLine": 42084,
+      "endLine": 42100,
       "lineCount": 17
     },
     {
       "name": "Factor 2: Drama score (0-25)",
-      "startLine": 42049,
-      "endLine": 42061,
+      "startLine": 42101,
+      "endLine": 42113,
       "lineCount": 13
     },
     {
       "name": "Factor 3: Stakes (0-20)",
-      "startLine": 42062,
-      "endLine": 42069,
+      "startLine": 42114,
+      "endLine": 42121,
       "lineCount": 8
     },
     {
       "name": "Factor 4: Sweep/comeback potential (0-10)",
-      "startLine": 42070,
-      "endLine": 42076,
+      "startLine": 42122,
+      "endLine": 42128,
       "lineCount": 7
     },
     {
       "name": "Factor 5: Free access (0-5)",
-      "startLine": 42077,
-      "endLine": 42080,
+      "startLine": 42129,
+      "endLine": 42132,
       "lineCount": 4
     },
     {
       "name": "Factor 6: Rivalry / My Team (0-10)",
-      "startLine": 42081,
-      "endLine": 42084,
+      "startLine": 42133,
+      "endLine": 42136,
       "lineCount": 4
     },
     {
       "name": "Verdict",
-      "startLine": 42085,
-      "endLine": 42139,
+      "startLine": 42137,
+      "endLine": 42191,
       "lineCount": 55
     },
     {
       "name": "VIEWPORT-PHONE-A: Phone capability detection",
-      "startLine": 42140,
-      "endLine": 42392,
+      "startLine": 42192,
+      "endLine": 42444,
       "lineCount": 253
     },
     {
       "name": "═",
-      "startLine": 42393,
-      "endLine": 42394,
+      "startLine": 42445,
+      "endLine": 42446,
       "lineCount": 2
     },
     {
       "name": "═",
-      "startLine": 42395,
-      "endLine": 42396,
+      "startLine": 42447,
+      "endLine": 42448,
       "lineCount": 2
     },
     {
       "name": "Story Moments: detect narrative events from ESPN score deltas",
-      "startLine": 42397,
-      "endLine": 42450,
+      "startLine": 42449,
+      "endLine": 42502,
       "lineCount": 54
     },
     {
       "name": "S0 Event Bus emitter (polling path) ─",
-      "startLine": 42451,
-      "endLine": 42476,
+      "startLine": 42503,
+      "endLine": 42528,
       "lineCount": 26
     },
     {
       "name": "buildScoreNarrativeContext",
-      "startLine": 42477,
-      "endLine": 42584,
+      "startLine": 42529,
+      "endLine": 42636,
       "lineCount": 108
     },
     {
       "name": "buildDramaArcDescription",
-      "startLine": 42585,
-      "endLine": 42643,
+      "startLine": 42637,
+      "endLine": 42695,
       "lineCount": 59
     },
     {
       "name": "Live Score Ticker ─",
-      "startLine": 42644,
-      "endLine": 42721,
+      "startLine": 42696,
+      "endLine": 42773,
       "lineCount": 78
     },
     {
       "name": "Card Drama Pulse",
-      "startLine": 42722,
-      "endLine": 42731,
+      "startLine": 42774,
+      "endLine": 42783,
       "lineCount": 10
     },
     {
       "name": "Pin to Floating Widget",
-      "startLine": 42732,
-      "endLine": 42800,
+      "startLine": 42784,
+      "endLine": 42852,
       "lineCount": 69
     },
     {
       "name": "Comeback Probability",
-      "startLine": 42801,
-      "endLine": 42834,
+      "startLine": 42853,
+      "endLine": 42886,
       "lineCount": 34
     },
     {
       "name": "Bottom-sheet",
-      "startLine": 42835,
-      "endLine": 43044,
+      "startLine": 42887,
+      "endLine": 43096,
       "lineCount": 210
     },
     {
       "name": "Bottom sheet: swipe-to-dismiss + focus trap ─",
-      "startLine": 43045,
-      "endLine": 43152,
+      "startLine": 43097,
+      "endLine": 43204,
       "lineCount": 108
     },
     {
       "name": "Wow#45 Stage 2: Drama Sparkline",
-      "startLine": 43153,
-      "endLine": 43182,
+      "startLine": 43205,
+      "endLine": 43234,
       "lineCount": 30
     },
     {
       "name": "Series Margins Display",
-      "startLine": 43183,
-      "endLine": 43495,
+      "startLine": 43235,
+      "endLine": 43547,
       "lineCount": 313
     },
     {
       "name": "J5 isBlowout gate (Combo B-1+)",
-      "startLine": 43496,
-      "endLine": 43796,
+      "startLine": 43548,
+      "endLine": 43848,
       "lineCount": 301
     },
     {
       "name": "═",
-      "startLine": 43797,
-      "endLine": 43801,
+      "startLine": 43849,
+      "endLine": 43853,
       "lineCount": 5
     },
     {
       "name": "═",
-      "startLine": 43802,
-      "endLine": 43885,
+      "startLine": 43854,
+      "endLine": 43937,
       "lineCount": 84
     },
     {
       "name": "Bootstrap: kick off the initial schedule load ─",
-      "startLine": 43886,
-      "endLine": 43892,
+      "startLine": 43938,
+      "endLine": 43944,
       "lineCount": 7
     },
     {
       "name": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)",
-      "startLine": 43893,
-      "endLine": 44009,
+      "startLine": 43945,
+      "endLine": 44061,
       "lineCount": 117
     },
     {
       "name": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)",
-      "startLine": 44010,
-      "endLine": 44105,
+      "startLine": 44062,
+      "endLine": 44157,
       "lineCount": 96
     }
   ],
@@ -10194,1268 +10194,1275 @@
       "section": "Consumer API ─"
     },
     {
+      "name": "getDramaGateway",
+      "line": 36974,
+      "params": "game, sport",
+      "async": false,
+      "section": "Consumer API ─"
+    },
+    {
       "name": "getSmoothedDrama",
-      "line": 36971,
+      "line": 37019,
       "params": "gameId, n = 3",
       "async": false,
       "section": "Consumer API ─"
     },
     {
       "name": "_dramaArcClassify",
-      "line": 36989,
+      "line": 37037,
       "params": "peak, sustained, trend, peakScore",
       "async": false,
       "section": "Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client)"
     },
     {
       "name": "computeDramaRetroactive",
-      "line": 37014,
+      "line": 37062,
       "params": "historicalStates, sport, homeRank, awayRank",
       "async": false,
       "section": "Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client)"
     },
     {
       "name": "fetchMLBHistoricalStates",
-      "line": 37067,
+      "line": 37115,
       "params": "espnEventId",
       "async": true,
       "section": "Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client)"
     },
     {
       "name": "fetchSoccerHistoricalStates",
-      "line": 37103,
+      "line": 37151,
       "params": "espnEventId, league",
       "async": true,
       "section": "Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client)"
     },
     {
       "name": "runDramaBackfillDiscovery",
-      "line": 37175,
+      "line": 37223,
       "params": "",
       "async": true,
       "section": "Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client)"
     },
     {
       "name": "_backfillOneDramaGame",
-      "line": 37193,
+      "line": 37241,
       "params": "g",
       "async": true,
       "section": "Retroactive Drama Backfill (CC-CMD-2026-07-02 drama-backfill-client)"
     },
     {
       "name": "computeBroadcastNarrativeIndex",
-      "line": 37239,
+      "line": 37287,
       "params": "game",
       "async": false,
       "section": "Broadcast Narrative Index (BNI)"
     },
     {
       "name": "getBNIStrength",
-      "line": 37276,
+      "line": 37324,
       "params": "game, bniType",
       "async": false,
       "section": "Broadcast Narrative Index (BNI)"
     },
     {
       "name": "getEmberDistributionTier",
-      "line": 37298,
+      "line": 37346,
       "params": "g",
       "async": false,
       "section": "═"
     },
     {
       "name": "isLateCloseGame",
-      "line": 37312,
+      "line": 37360,
       "params": "g, ed, sport",
       "async": false,
       "section": "═"
     },
     {
       "name": "getEmberThreshold",
-      "line": 37328,
+      "line": 37376,
       "params": "tier, sport",
       "async": false,
       "section": "═"
     },
     {
       "name": "hasEmberContextBoost",
-      "line": 37341,
+      "line": 37389,
       "params": "g, sport",
       "async": false,
       "section": "═"
     },
     {
       "name": "evaluateEMBER",
-      "line": 37350,
+      "line": 37398,
       "params": "g, sport, ed",
       "async": false,
       "section": "═"
     },
     {
       "name": "parseNBAScoreboardGames",
-      "line": 37434,
+      "line": 37482,
       "params": "games, gameIdMap",
       "async": false,
       "section": "parseNBAScoreboardGames — pure parsing helper for fetchNBAScoreboard"
     },
     {
       "name": "fetchNBAScoreboard",
-      "line": 37471,
+      "line": 37519,
       "params": "",
       "async": true,
       "section": "parseNBAScoreboardGames — pure parsing helper for fetchNBAScoreboard"
     },
     {
       "name": "fetchNBALiveBoxscore",
-      "line": 37503,
+      "line": 37551,
       "params": "nbaId",
       "async": true,
       "section": "fetchNBALiveBoxscore (PM-30) ─"
     },
     {
       "name": "parseTeam",
-      "line": 37521,
+      "line": 37569,
       "params": "team",
       "async": false,
       "section": "fetchNBALiveBoxscore (PM-30) ─"
     },
     {
       "name": "buildFoulTroubleContext",
-      "line": 37586,
+      "line": 37634,
       "params": "nbaId",
       "async": false,
       "section": "buildFoulTroubleContext (Gap 3)"
     },
     {
       "name": "buildNBAOncourtContext",
-      "line": 37601,
+      "line": 37649,
       "params": "nbaId, homeLabel, awayLabel",
       "async": false,
       "section": "buildNBAOncourtContext (Gap 1 display)"
     },
     {
       "name": "buildNBAScoreLeadersContext",
-      "line": 37616,
+      "line": 37664,
       "params": "nbaId",
       "async": false,
       "section": "buildNBAScoreLeadersContext (Gap 6 display) ─"
     },
     {
       "name": "fmt",
-      "line": 37620,
+      "line": 37668,
       "params": "l",
       "async": false,
       "section": "buildNBAScoreLeadersContext (Gap 6 display) ─"
     },
     {
       "name": "fetchNBAPBP",
-      "line": 37627,
+      "line": 37675,
       "params": "homeLabel, awayLabel",
       "async": true,
       "section": "buildNBAScoreLeadersContext (Gap 6 display) ─"
     },
     {
       "name": "parseNBACDNActions",
-      "line": 37652,
+      "line": 37700,
       "params": "actions, homeTricode, awayTricode",
       "async": false,
       "section": "buildNBAScoreLeadersContext (Gap 6 display) ─"
     },
     {
       "name": "parseESPNPlays",
-      "line": 37700,
+      "line": 37748,
       "params": "plays, homeLabel, awayLabel",
       "async": false,
       "section": "buildNBAScoreLeadersContext (Gap 6 display) ─"
     },
     {
       "name": "fetchRosterAdvantage",
-      "line": 37729,
+      "line": 37777,
       "params": "espnGameId, homeLabel, awayLabel",
       "async": true,
       "section": "buildNBAScoreLeadersContext (Gap 6 display) ─"
     },
     {
       "name": "bsTeamActive",
-      "line": 37845,
+      "line": 37893,
       "params": "idx",
       "async": false,
       "section": "Tier 3: ESPN boxscore (active players by minutes) ─"
     },
     {
       "name": "computeQuality",
-      "line": 37861,
+      "line": 37909,
       "params": "playerNames",
       "async": false,
       "section": "Tier 3: ESPN boxscore (active players by minutes) ─"
     },
     {
       "name": "_raiQualityBar",
-      "line": 37916,
+      "line": 37964,
       "params": "q",
       "async": false,
       "section": "Tier 3: ESPN boxscore (active players by minutes) ─"
     },
     {
       "name": "buildRaiCardLine",
-      "line": 37921,
+      "line": 37969,
       "params": "rai, homeLabel, awayLabel",
       "async": false,
       "section": "Tier 3: ESPN boxscore (active players by minutes) ─"
     },
     {
       "name": "buildRaiSheetSection",
-      "line": 37933,
+      "line": 37981,
       "params": "rai, homeLabel, awayLabel",
       "async": false,
       "section": "Tier 3: ESPN boxscore (active players by minutes) ─"
     },
     {
       "name": "stintLabel",
-      "line": 37942,
+      "line": 37990,
       "params": "stintNet",
       "async": false,
       "section": "Tier 3: ESPN boxscore (active players by minutes) ─"
     },
     {
       "name": "fetchMLBPlatoon",
-      "line": 37978,
+      "line": 38026,
       "params": "gamePk",
       "async": true,
       "section": "═"
     },
     {
       "name": "buildMLBPlatoonLine",
-      "line": 38057,
+      "line": 38105,
       "params": "p",
       "async": false,
       "section": "Count context ─"
     },
     {
       "name": "injectMLBPlatoon",
-      "line": 38074,
+      "line": 38122,
       "params": "card, eData, game",
       "async": true,
       "section": "Count context ─"
     },
     {
       "name": "injectLineupEdge",
-      "line": 38105,
+      "line": 38153,
       "params": "card, eData, sport",
       "async": true,
       "section": "Count context ─"
     },
     {
       "name": "renderCardBadges",
-      "line": 38183,
+      "line": 38231,
       "params": "card, eData, sport, gid, smoothed",
       "async": false,
       "section": "PM-25 (June 5 2026): Card Render Slot"
     },
     {
       "name": "gameCardObj",
-      "line": 38195,
+      "line": 38243,
       "params": "(",
       "async": false,
       "section": "PULSE: ViewingConditions CRUNCH TIME / WORTH WATCHING badge"
     },
     {
       "name": "_updateDialChip",
-      "line": 38322,
+      "line": 38370,
       "params": "",
       "async": false,
       "section": "Drama Dial header chip (Jun 9 2026 audit)"
     },
     {
       "name": "_otwMarginTier",
-      "line": 38342,
+      "line": 38390,
       "params": "eData, sport",
       "async": false,
       "section": "CC-CMD-2026-07-12-otw-tier-categorical / otw-live-tier-categorical ─"
     },
     {
       "name": "_otwIsFinalPeriod",
-      "line": 38361,
+      "line": 38409,
       "params": "eData, sport",
       "async": false,
       "section": "CC-CMD-2026-07-12-otw-tier-categorical / otw-live-tier-categorical ─"
     },
     {
       "name": "_otwIsCrunchTime",
-      "line": 38386,
+      "line": 38434,
       "params": "eData, sport",
       "async": false,
       "section": "CC-CMD-2026-07-12-otw-tier-categorical / otw-live-tier-categorical ─"
     },
     {
       "name": "_otwGetLiveTier",
-      "line": 38420,
+      "line": 38468,
       "params": "eData, sport",
       "async": false,
       "section": "PM-25 / Drama Dial categorical tier refactor (June 5 2026), T3/T4"
     },
     {
       "name": "_otwSigTierRank",
-      "line": 38474,
+      "line": 38522,
       "params": "tier",
       "async": false,
       "section": "PM-25 / Drama Dial categorical tier refactor (June 5 2026), T3/T4"
     },
     {
       "name": "_otwTierLabel",
-      "line": 38486,
+      "line": 38534,
       "params": "tier",
       "async": false,
       "section": "PM-25 / Drama Dial categorical tier refactor (June 5 2026), T3/T4"
     },
     {
       "name": "fieldGameTier",
-      "line": 38513,
+      "line": 38561,
       "params": "gameId",
       "async": false,
       "section": "ADR-002 Tier Foundation (June 14 2026) ─"
     },
     {
       "name": "_isCloseAndLate",
-      "line": 38586,
+      "line": 38634,
       "params": "eData, sport",
       "async": false,
       "section": "ADR-002 Tier Foundation (June 14 2026) ─"
     },
     {
       "name": "fieldTierRank",
-      "line": 38609,
+      "line": 38657,
       "params": "tier",
       "async": false,
       "section": "ADR-002 Tier Foundation (June 14 2026) ─"
     },
     {
       "name": "fieldTierLabel",
-      "line": 38625,
+      "line": 38673,
       "params": "tier",
       "async": false,
       "section": "ADR-002 Tier Foundation (June 14 2026) ─"
     },
     {
       "name": "_cardTierClass",
-      "line": 38643,
+      "line": 38691,
       "params": "g",
       "async": false,
       "section": "ADR-002 Tier Foundation (June 14 2026) ─"
     },
     {
       "name": "leagueImportanceTier",
-      "line": 38656,
+      "line": 38704,
       "params": "gameOrLabel",
       "async": false,
       "section": "ADR-002 Tier Foundation (June 14 2026) ─"
     },
     {
       "name": "leagueImportanceRank",
-      "line": 38674,
+      "line": 38722,
       "params": "tier",
       "async": false,
       "section": "ADR-002 Tier Foundation (June 14 2026) ─"
     },
     {
       "name": "getViewerIntelMode",
-      "line": 38703,
+      "line": 38751,
       "params": "",
       "async": false,
       "section": "PM-32-VI: Viewer Intelligence Chip"
     },
     {
       "name": "setViewerIntelMode",
-      "line": 38707,
+      "line": 38755,
       "params": "mode",
       "async": false,
       "section": "PM-32-VI: Viewer Intelligence Chip"
     },
     {
       "name": "_isMyTeamGame",
-      "line": 38745,
+      "line": 38793,
       "params": "g",
       "async": false,
       "section": "PM-32-VI: Viewer Intelligence Chip"
     },
     {
       "name": "buildViewerIntelChip",
-      "line": 38749,
+      "line": 38797,
       "params": "g,sections,mode",
       "async": false,
       "section": "PM-32-VI: Viewer Intelligence Chip"
     },
     {
       "name": "getGameReasonTags",
-      "line": 38837,
+      "line": 38885,
       "params": "game, eData",
       "async": false,
       "section": "Mode-ordered label hierarchy"
     },
     {
       "name": "injectDramaBadges",
-      "line": 38859,
+      "line": 38907,
       "params": "",
       "async": false,
       "section": "Mode-ordered label hierarchy"
     },
     {
       "name": "detectAndRenderDoubleFeature",
-      "line": 39058,
+      "line": 39108,
       "params": "",
       "async": false,
       "section": "═"
     },
     {
       "name": "buildOTWStateLabel",
-      "line": 39113,
+      "line": 39163,
       "params": "g, ed, sport",
       "async": false,
       "section": "buildOTWStateLabel: named game-state label for OTW banner"
     },
     {
       "name": "fmtESPNClock",
-      "line": 39159,
+      "line": 39209,
       "params": "clock",
       "async": false,
       "section": "buildOTWStateLabel: named game-state label for OTW banner"
     },
     {
       "name": "buildOTWWhyLine",
-      "line": 39170,
+      "line": 39220,
       "params": "g, ed, sport, isPreGame",
       "async": false,
       "section": "buildOTWStateLabel: named game-state label for OTW banner"
     },
     {
       "name": "recordLinescores",
-      "line": 39219,
+      "line": 39269,
       "params": "gameId, homeLS, awayLS, sport, innings",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "getLinescores",
-      "line": 39239,
+      "line": 39289,
       "params": "gameId",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "buildLinescoreContext",
-      "line": 39254,
+      "line": 39304,
       "params": "eData, gameId, homeLabel, awayLabel",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "label",
-      "line": 39266,
+      "line": 39316,
       "params": "i",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "buildGoalTimeline",
-      "line": 39298,
+      "line": 39348,
       "params": "game, eData",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "buildNBAPlayerContext",
-      "line": 39334,
+      "line": 39384,
       "params": "game, eData",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "fmt",
-      "line": 39344,
+      "line": 39394,
       "params": "p",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "recordScoreSnapshot",
-      "line": 39370,
+      "line": 39420,
       "params": "gameId, homeScore, awayScore",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "getOTWMomentum",
-      "line": 39411,
+      "line": 39461,
       "params": "gameId",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "buildOTWCountdown",
-      "line": 39422,
+      "line": 39472,
       "params": "startTime",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "_otwFindLiveGame",
-      "line": 39460,
+      "line": 39510,
       "params": "minScore",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "_otwFindWCLiveGame",
-      "line": 39510,
+      "line": 39560,
       "params": "",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "_buildWCOTWLabel",
-      "line": 39554,
+      "line": 39604,
       "params": "wcLive",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "renderOneToWatch",
-      "line": 39566,
+      "line": 39616,
       "params": "",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "dismissBtn",
-      "line": 39577,
+      "line": 39627,
       "params": "",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "wire",
-      "line": 39578,
+      "line": 39628,
       "params": "dismissId,scrollGame",
       "async": false,
       "section": "PM-28a: Linescore persistence"
     },
     {
       "name": "startRender",
-      "line": 39747,
+      "line": 39799,
       "params": "",
       "async": false,
       "section": "STATE 3: SOON — game starting in <2 hours ─"
     },
     {
       "name": "renderMobileLiveBar",
-      "line": 39812,
+      "line": 39864,
       "params": "",
       "async": false,
       "section": "Mobile Intelligence Bar — live game summaries on phone ≤600px ─"
     },
     {
       "name": "generateICS",
-      "line": 39876,
+      "line": 39928,
       "params": "game",
       "async": false,
       "section": "ICS Export — Add to Calendar"
     },
     {
       "name": "fmt",
-      "line": 39879,
+      "line": 39931,
       "params": "d",
       "async": false,
       "section": "ICS Export — Add to Calendar"
     },
     {
       "name": "esc",
-      "line": 39880,
+      "line": 39932,
       "params": "s",
       "async": false,
       "section": "ICS Export — Add to Calendar"
     },
     {
       "name": "shareGame",
-      "line": 39929,
+      "line": 39981,
       "params": "home, away, time, league, streams",
       "async": true,
       "section": "ICS Export — Add to Calendar"
     },
     {
       "name": "showShareToast",
-      "line": 39960,
+      "line": 40012,
       "params": "msg",
       "async": false,
       "section": "ICS Export — Add to Calendar"
     },
     {
       "name": "buildWCBars",
-      "line": 40188,
+      "line": 40240,
       "params": "g",
       "async": false,
       "section": "WC card advancement bars (Jun 9 2026 — spec surface W1)"
     },
     {
       "name": "_normOdds",
-      "line": 40212,
+      "line": 40264,
       "params": "s",
       "async": false,
       "section": "WC card advancement bars (Jun 9 2026 — spec surface W1)"
     },
     {
       "name": "maybePushWorldCup",
-      "line": 40276,
+      "line": 40328,
       "params": "sections",
       "async": false,
       "section": "WC card advancement bars (Jun 9 2026 — spec surface W1)"
     },
     {
       "name": "maybePushFrenchOpen",
-      "line": 40310,
+      "line": 40362,
       "params": "sections",
       "async": false,
       "section": "WC card advancement bars (Jun 9 2026 — spec surface W1)"
     },
     {
       "name": "renderBaseballSitChip",
-      "line": 40343,
+      "line": 40395,
       "params": "eData",
       "async": false,
       "section": "Baseball Situation Renderer"
     },
     {
       "name": "injectBaseballSitChips",
-      "line": 40377,
+      "line": 40429,
       "params": "",
       "async": false,
       "section": "Inject baseball situation chips into live MLB cards ─"
     },
     {
       "name": "renderMLBWhosUpNextChip",
-      "line": 40399,
+      "line": 40451,
       "params": "forecast",
       "async": false,
       "section": "Inject baseball situation chips into live MLB cards ─"
     },
     {
       "name": "esc",
-      "line": 40401,
+      "line": 40453,
       "params": "s",
       "async": false,
       "section": "Inject baseball situation chips into live MLB cards ─"
     },
     {
       "name": "isRivalGame",
-      "line": 40417,
+      "line": 40469,
       "params": "g",
       "async": false,
       "section": "═"
     },
     {
       "name": "isCrunchTimeGame",
-      "line": 40429,
+      "line": 40481,
       "params": "eData, sport",
       "async": false,
       "section": "VIBE-A helpers (2026-05-28)"
     },
     {
       "name": "isObjectiveRival",
-      "line": 40441,
+      "line": 40493,
       "params": "g",
       "async": false,
       "section": "VIBE-A helpers (2026-05-28)"
     },
     {
       "name": "isGrindingGame",
-      "line": 40452,
+      "line": 40504,
       "params": "eData, sport",
       "async": false,
       "section": "VIBE-A helpers (2026-05-28)"
     },
     {
       "name": "isAloneOnScreen",
-      "line": 40463,
+      "line": 40515,
       "params": "game",
       "async": false,
       "section": "VIBE-A helpers (2026-05-28)"
     },
     {
       "name": "isVolatileMatchup",
-      "line": 40475,
+      "line": 40527,
       "params": "game",
       "async": false,
       "section": "VIBE-A helpers (2026-05-28)"
     },
     {
       "name": "buildVibeChips",
-      "line": 40484,
+      "line": 40536,
       "params": "game, eData, sport",
       "async": false,
       "section": "VIBE-A helpers (2026-05-28)"
     },
     {
       "name": "toggleMyTeam",
-      "line": 40559,
+      "line": 40611,
       "params": "name",
       "async": false,
       "section": "Win probability chip (ESPN scalar wp, 0-1 scale) ─"
     },
     {
       "name": "_dismissTeamPicker",
-      "line": 40601,
+      "line": 40653,
       "params": "",
       "async": false,
       "section": "Star button delegate ─"
     },
     {
       "name": "computeCoverageStats",
-      "line": 40675,
+      "line": 40727,
       "params": "services",
       "async": false,
       "section": "Coverage stats for tonight's schedule ─"
     },
     {
       "name": "renderCoverageDashboard",
-      "line": 40692,
+      "line": 40744,
       "params": "",
       "async": false,
       "section": "Render coverage bar at top of My Services modal ─"
     },
     {
       "name": "loadEspnFinals",
-      "line": 40730,
+      "line": 40782,
       "params": "",
       "async": false,
       "section": "═"
     },
     {
       "name": "_eDataMatchesGame",
-      "line": 40760,
+      "line": 40812,
       "params": "game, eData",
       "async": false,
       "section": "═"
     },
     {
       "name": "saveEspnFinal",
-      "line": 40794,
+      "line": 40846,
       "params": "game, eData",
       "async": true,
       "section": "═"
     },
     {
       "name": "alreadyHasBrief",
-      "line": 40972,
+      "line": 41024,
       "params": "(",
       "async": false,
       "section": "Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)"
     },
     {
       "name": "alreadyQueued",
-      "line": 40973,
+      "line": 41025,
       "params": "(",
       "async": false,
       "section": "Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)"
     },
     {
       "name": "loadTonightFinals",
-      "line": 41049,
+      "line": 41101,
       "params": "",
       "async": false,
       "section": "Drama persistence: POST summary to relay archive (CC-CMD-2026-06-19 / Prompt 11B)"
     },
     {
       "name": "hydrateEspnScoresFromFinals",
-      "line": 41078,
+      "line": 41130,
       "params": "",
       "async": false,
       "section": "hydrateEspnScoresFromFinals ─"
     },
     {
       "name": "buildNightOwlStatic",
-      "line": 41144,
+      "line": 41196,
       "params": "f",
       "async": false,
       "section": "hydrateEspnScoresFromFinals ─"
     },
     {
       "name": "fetchNightOwlFromClaude",
-      "line": 41166,
+      "line": 41218,
       "params": "topGame",
       "async": true,
       "section": "hydrateEspnScoresFromFinals ─"
     },
     {
       "name": "pick",
-      "line": 41250,
+      "line": 41302,
       "params": "nick",
       "async": false,
       "section": "hydrateEspnScoresFromFinals ─"
     },
     {
       "name": "sportContext",
-      "line": 41719,
+      "line": 41771,
       "params": "sport",
       "async": false,
       "section": "Sport-specific journalism context"
     },
     {
       "name": "fmtC",
-      "line": 41722,
+      "line": 41774,
       "params": "c",
       "async": false,
       "section": "Sport-specific journalism context"
     },
     {
       "name": "buildCheapSeats",
-      "line": 41744,
+      "line": 41796,
       "params": "game",
       "async": false,
       "section": "WORKING CLASS: The Skim + Cheap Seats ═"
     },
     {
       "name": "buildTheSkim",
-      "line": 41771,
+      "line": 41823,
       "params": "sportsData",
       "async": false,
       "section": "WORKING CLASS: The Skim + Cheap Seats ═"
     },
     {
       "name": "teamName",
-      "line": 41841,
+      "line": 41893,
       "params": "g",
       "async": false,
       "section": "WORKING CLASS: The Skim + Cheap Seats ═"
     },
     {
       "name": "buildStayUpSignal",
-      "line": 41846,
+      "line": 41898,
       "params": "sportsData",
       "async": false,
       "section": "WORKING CLASS: The Skim + Cheap Seats ═"
     },
     {
       "name": "assessInjuryPriceImpact",
-      "line": 41880,
+      "line": 41932,
       "params": "game",
       "async": false,
       "section": "WORKING CLASS: Injury Intel ═"
     },
     {
       "name": "computeInsights",
-      "line": 41918,
+      "line": 41970,
       "params": "game, sport",
       "async": false,
       "section": "STAGE 3.5: INSIGHTS LAYER — Typed Data Bridge ═"
     },
     {
       "name": "computeWatchValue",
-      "line": 42025,
+      "line": 42077,
       "params": "game, sport",
       "async": false,
       "section": "COMPOSITE SIGNALS ─"
     },
     {
       "name": "buildDramaLineTiers",
-      "line": 42103,
+      "line": 42155,
       "params": "game, eData, sport",
       "async": false,
       "section": "Verdict"
     },
     {
       "name": "trim",
-      "line": 42106,
+      "line": 42158,
       "params": "s,n",
       "async": false,
       "section": "Verdict"
     },
     {
       "name": "join",
-      "line": 42107,
+      "line": 42159,
       "params": "p,sep=' \\u00b7 '",
       "async": false,
       "section": "Verdict"
     },
     {
       "name": "getPhoneCapability",
-      "line": 42144,
+      "line": 42196,
       "params": "",
       "async": false,
       "section": "VIEWPORT-PHONE-A: Phone capability detection"
     },
     {
       "name": "initPhoneTier",
-      "line": 42151,
+      "line": 42203,
       "params": "",
       "async": false,
       "section": "VIEWPORT-PHONE-A: Phone capability detection"
     },
     {
       "name": "indexDramaLines",
-      "line": 42157,
+      "line": 42209,
       "params": "",
       "async": false,
       "section": "VIEWPORT-PHONE-A: Phone capability detection"
     },
     {
       "name": "initDramaLineIndexer",
-      "line": 42171,
+      "line": 42223,
       "params": "",
       "async": false,
       "section": "VIEWPORT-PHONE-A: Phone capability detection"
     },
     {
       "name": "computeCardStage",
-      "line": 42177,
+      "line": 42229,
       "params": "game, eData",
       "async": false,
       "section": "VIEWPORT-PHONE-A: Phone capability detection"
     },
     {
       "name": "buildLifeStageContent",
-      "line": 42209,
+      "line": 42261,
       "params": "game, eData, stage",
       "async": false,
       "section": "VIEWPORT-PHONE-A: Phone capability detection"
     },
     {
       "name": "updateCardLifeStages",
-      "line": 42364,
+      "line": 42416,
       "params": "",
       "async": false,
       "section": "VIEWPORT-PHONE-A: Phone capability detection"
     },
     {
       "name": "detectAndStoreStoryMoment",
-      "line": 42400,
+      "line": 42452,
       "params": "gameId, eData, sport",
       "async": false,
       "section": "Story Moments: detect narrative events from ESPN score deltas"
     },
     {
       "name": "push",
-      "line": 42410,
+      "line": 42462,
       "params": "text, highlight=false",
       "async": false,
       "section": "Story Moments: detect narrative events from ESPN score deltas"
     },
     {
       "name": "buildScoreNarrativeContext",
-      "line": 42483,
+      "line": 42535,
       "params": "gameId, homeLabel, awayLabel, sport",
       "async": false,
       "section": "buildScoreNarrativeContext"
     },
     {
       "name": "buildDramaArcDescription",
-      "line": 42591,
+      "line": 42643,
       "params": "gameId",
       "async": false,
       "section": "buildDramaArcDescription"
     },
     {
       "name": "buildStoryTape",
-      "line": 42636,
+      "line": 42688,
       "params": "gameId, maxItems=3",
       "async": false,
       "section": "buildDramaArcDescription"
     },
     {
       "name": "renderScoreTicker",
-      "line": 42645,
+      "line": 42697,
       "params": "",
       "async": false,
       "section": "Live Score Ticker ─"
     },
     {
       "name": "sp",
-      "line": 42674,
+      "line": 42726,
       "params": "s",
       "async": false,
       "section": "Live Score Ticker ─"
     },
     {
       "name": "scrollToGame",
-      "line": 42717,
+      "line": 42769,
       "params": "gameId",
       "async": false,
       "section": "Live Score Ticker ─"
     },
     {
       "name": "applyCardPulse",
-      "line": 42723,
+      "line": 42775,
       "params": "gameId, score",
       "async": false,
       "section": "Card Drama Pulse"
     },
     {
       "name": "pinGame",
-      "line": 42733,
+      "line": 42785,
       "params": "gameId",
       "async": false,
       "section": "Pin to Floating Widget"
     },
     {
       "name": "unpinGame",
-      "line": 42751,
+      "line": 42803,
       "params": "",
       "async": false,
       "section": "Pin to Floating Widget"
     },
     {
       "name": "updatePinWidget",
-      "line": 42756,
+      "line": 42808,
       "params": "",
       "async": false,
       "section": "Pin to Floating Widget"
     },
     {
       "name": "buildComebackProbability",
-      "line": 42804,
+      "line": 42856,
       "params": "gameId, eData, sport",
       "async": false,
       "section": "Comeback Probability"
     },
     {
       "name": "_restoreCardExpandState",
-      "line": 42842,
+      "line": 42894,
       "params": "",
       "async": false,
       "section": "Bottom-sheet"
     },
     {
       "name": "_openGameSheetTablet",
-      "line": 42853,
+      "line": 42905,
       "params": "gameId",
       "async": false,
       "section": "Bottom-sheet"
     },
     {
       "name": "openBottomSheet",
-      "line": 42861,
+      "line": 42913,
       "params": "gameId",
       "async": false,
       "section": "Bottom-sheet"
     },
     {
       "name": "initBottomSheetSwipe",
-      "line": 43049,
+      "line": 43101,
       "params": "",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "onStart",
-      "line": 43058,
+      "line": 43110,
       "params": "e",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "onMove",
-      "line": 43069,
+      "line": 43121,
       "params": "e",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "onEnd",
-      "line": 43098,
+      "line": 43150,
       "params": "",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "closeBottomSheet",
-      "line": 43141,
+      "line": 43193,
       "params": "",
       "async": false,
       "section": "Bottom sheet: swipe-to-dismiss + focus trap ─"
     },
     {
       "name": "buildDramaSparklineSVG",
-      "line": 43157,
+      "line": 43209,
       "params": "gameId, w=140, h=28",
       "async": false,
       "section": "Wow#45 Stage 2: Drama Sparkline"
     },
     {
       "name": "buildSeriesMarginsArc",
-      "line": 43188,
+      "line": 43240,
       "params": "seriesMargins",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "clampM",
-      "line": 43193,
+      "line": 43245,
       "params": "m",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "tension",
-      "line": 43194,
+      "line": 43246,
       "params": "m",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "buildSeriesMarginsDots",
-      "line": 43209,
+      "line": 43261,
       "params": "game",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "buildLiveCardLine",
-      "line": 43230,
+      "line": 43282,
       "params": "game, eData",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "renderNightOwlRecap",
-      "line": 43251,
+      "line": 43303,
       "params": "",
       "async": true,
       "section": "Series Margins Display"
     },
     {
       "name": "_affScore",
-      "line": 43331,
+      "line": 43383,
       "params": "game",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "_owlDate",
-      "line": 43405,
+      "line": 43457,
       "params": "(",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "renderCard",
-      "line": 43418,
+      "line": 43470,
       "params": "text,loaded",
       "async": false,
       "section": "Series Margins Display"
     },
     {
       "name": "_owlJobId",
-      "line": 43510,
+      "line": 43562,
       "params": "(",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "renderLastNight",
-      "line": 43649,
+      "line": 43701,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "checkForNewFinals",
-      "line": 43687,
+      "line": 43739,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "toLS",
-      "line": 43743,
+      "line": 43795,
       "params": "periods",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "topPlayers",
-      "line": 43747,
+      "line": 43799,
       "params": "players, teamLabel",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "renderHalftimeSwitch",
-      "line": 43806,
+      "line": 43858,
       "params": "",
       "async": false,
       "section": "═"
     },
     {
       "name": "currentBucket",
-      "line": 43909,
+      "line": 43961,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "_snapshotOpen",
-      "line": 43916,
+      "line": 43968,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbGet",
-      "line": 43931,
+      "line": 43983,
       "params": "store, key",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbSet",
-      "line": 43942,
+      "line": 43994,
       "params": "store, key, value",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "saveSnapshot",
-      "line": 43953,
+      "line": 44005,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "restoreSnapshot",
-      "line": 43970,
+      "line": 44022,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "showFreshnessStrip",
-      "line": 43988,
+      "line": 44040,
       "params": "ageMin",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "markFreshnessLive",
-      "line": 43998,
+      "line": 44050,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "recordOpenHour",
-      "line": 44020,
+      "line": 44072,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "predictNextOpenHour",
-      "line": 44030,
+      "line": 44082,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "registerAnticipatoryPrefetch",
-      "line": 44045,
+      "line": 44097,
       "params": "",
       "async": true,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
@@ -12220,80 +12227,80 @@
     },
     {
       "name": "_raiCache",
-      "line": 37385,
-      "endLine": 37464,
+      "line": 37433,
+      "endLine": 37512,
       "approximateBytes": 4463
     },
     {
       "name": "_nbaGameIdMap",
-      "line": 37401,
-      "endLine": 37464,
+      "line": 37449,
+      "endLine": 37512,
       "approximateBytes": 3492
     },
     {
       "name": "_nbaBoxscoreCache",
-      "line": 37402,
-      "endLine": 37464,
+      "line": 37450,
+      "endLine": 37512,
       "approximateBytes": 3413
     },
     {
       "name": "_nbaLiveBoxscoreCache",
-      "line": 37411,
-      "endLine": 37464,
+      "line": 37459,
+      "endLine": 37512,
       "approximateBytes": 2764
     },
     {
       "name": "_nbaScoreLeaders",
-      "line": 37424,
-      "endLine": 37464,
+      "line": 37472,
+      "endLine": 37512,
       "approximateBytes": 1951
     },
     {
       "name": "_mlbPlatoonCache",
-      "line": 37975,
-      "endLine": 38055,
+      "line": 38023,
+      "endLine": 38103,
       "approximateBytes": 3221
     },
     {
       "name": "_afEventCache",
-      "line": 39297,
-      "endLine": 39330,
+      "line": 39347,
+      "endLine": 39380,
       "approximateBytes": 1869
     },
     {
       "name": "wc26Raw",
-      "line": 40053,
-      "endLine": 40182,
+      "line": 40105,
+      "endLine": 40234,
       "approximateBytes": 51670
     },
     {
       "name": "RIVALRIES",
-      "line": 40413,
-      "endLine": 43908,
+      "line": 40465,
+      "endLine": 43960,
       "approximateBytes": 195576
     },
     {
       "name": "PACKAGE_INCLUDES",
-      "line": 40657,
-      "endLine": 40664,
+      "line": 40709,
+      "endLine": 40716,
       "approximateBytes": 931
     },
     {
       "name": "_gameBriefCache",
-      "line": 43223,
-      "endLine": 43250,
+      "line": 43275,
+      "endLine": 43302,
       "approximateBytes": 1429
     },
     {
       "name": "_emberResultCache",
-      "line": 43224,
-      "endLine": 43250,
+      "line": 43276,
+      "endLine": 43302,
       "approximateBytes": 1378
     },
     {
       "name": "_finalizedAt",
-      "line": 43686,
-      "endLine": 43793,
+      "line": 43738,
+      "endLine": 43845,
       "approximateBytes": 5789
     }
   ],
@@ -13190,82 +13197,82 @@
     },
     {
       "call": "setTimeout",
-      "line": 39913,
+      "line": 39965,
       "context": "setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);"
     },
     {
       "call": "setTimeout",
-      "line": 39965,
+      "line": 40017,
       "context": "setTimeout(()=>t.classList.remove('show'), 2200);"
     },
     {
       "call": "setTimeout",
-      "line": 40502,
+      "line": 40554,
       "context": "const _onclick = `event.stopPropagation();if(!document.body.classList.contains('journalism-mode'))toggleJournalismView();setTimeout(()=>{const _el=document.querySelector('[data-gameid=\\\\'${_gid}\\\\']')"
     },
     {
       "call": "renderAll",
-      "line": 40563,
+      "line": 40615,
       "context": "renderAll();"
     },
     {
       "call": "renderAll",
-      "line": 41075,
+      "line": 41127,
       "context": "//   1. After renderAll() so score-wraps render with real scores"
     },
     {
       "call": "setTimeout",
-      "line": 42172,
+      "line": 42224,
       "context": "let _t;const d=()=>{clearTimeout(_t);_t=setTimeout(()=>{initPhoneTier();indexDramaLines();},50);};"
     },
     {
       "call": "setTimeout",
-      "line": 42748,
+      "line": 42800,
       "context": "setTimeout(() => hint.remove(), 4000);"
     },
     {
       "call": "setTimeout",
-      "line": 42977,
+      "line": 43029,
       "context": "setTimeout(() => {"
     },
     {
       "call": "setTimeout",
-      "line": 43111,
+      "line": 43163,
       "context": "setTimeout(closeBottomSheet, 260);"
     },
     {
       "call": "setTimeout",
-      "line": 43527,
+      "line": 43579,
       "context": "if (_i < 2) await new Promise(r => setTimeout(r, 2000));"
     },
     {
       "call": "setTimeout",
-      "line": 43881,
+      "line": 43933,
       "context": "setTimeout(()=>{ _htShownGames.add(htKey+'_done'); panel.style.display='none'; }, 90000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 43887,
+      "line": 43939,
       "context": "// fetchSchedule() populates allData from buildTodaySchedule() then calls renderAll()"
     },
     {
       "call": "setTimeout",
-      "line": 44004,
+      "line": 44056,
       "context": "setTimeout(() => { strip.classList.remove('is-visible'); strip.classList.remove('freshness-live'); }, 2000);"
     },
     {
       "call": "setTimeout",
-      "line": 44076,
+      "line": 44128,
       "context": "setTimeout(registerAnticipatoryPrefetch, 4000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 44089,
+      "line": 44141,
       "context": "// Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh)."
     },
     {
       "call": "fetchSchedule",
-      "line": 44091,
+      "line": 44143,
       "context": "restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });"
     }
   ]
