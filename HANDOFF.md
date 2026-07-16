@@ -1,7 +1,17 @@
 # FIELD HANDOFF
-## CLIENT HEAD: c9505a9 · SW_VERSION: 2026-07-16f · 2026-07-16 · via Claude Code
+## CLIENT HEAD: 71e5b09 · SW_VERSION: 2026-07-16f · 2026-07-16 · via Claude Code
 ## Smoke: 958/958
-## Session doc: outbox/cc-session-2026-07-16-drama-gateway.md
+## Session doc: outbox/cc-session-2026-07-16-broadcast-chip-verify.md
+
+### DONE — broadcast chip durable fix (CC-CMD-2026-07-16-broadcast-chip-durable-fix)
+- Client (87dc773): `loadMLBSlate()` cross-references `_fieldDataCache`/`ESPN_CABLE_SCHEDULE` for GOTD + Cable.
+  `assignMLBBroadcast()` (build-field-data.js) un-gated from live broadcast confirmation.
+  SW_VERSION: 2026-07-16b → 2026-07-16c. Smoke: 954/954.
+- Relay (277fdc7): `buildStreamsFromESPN(comp)` added; wired into all 5 V2 adapter sites.
+  Relay CI probe + STRUCTURAL 7 assertion added (4a82a67).
+- Both outbox docs: docs/outbox/cc-broadcast-chip-durable-fix-2026-07-16.md (client),
+  field-relay-nba/outbox/broadcast-chip-durable-fix-2026-07-16.md (relay).
+- Note: these commits preceded getDramaGateway (c9505a9) — HANDOFF tracking was stale.
 
 ### DONE — getDramaGateway (drama-gateway CC-CMD)
 - `getDramaGateway(game, sport)`: structural access point for drama data keyed on state
@@ -14,9 +24,10 @@
 - Commit: c9505a9
 
 ### Open
-- docs/CC-CMD-2026-07-16-broadcast-chip-durable-fix.md — not yet executed
 - 35 remaining ad-hoc state-check sites (future migration to gateway, separate prompts)
 - 5 Amnesty Zone CC-CMDs (Arc Poster, Bottom Sheet, Card Face, Leaderboard) — now have gateway foundation
+- Gap 5 (/context/game/:id field name) — blocked, no authoritative definition
+- Gap 6 (enrichment brief types) — blocked, no authoritative definition
 
 ---
 ## CLIENT HEAD (prev): 1102ef3 · RELAY HEAD: (see field-relay-nba, multiple real merges tonight — WC label fragmentation, European qualifying, morning-report fix, BSD arc) · 2026-07-15 · via Claude Code
