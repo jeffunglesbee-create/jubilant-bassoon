@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
+    "esbuild": "^0.28.1",
     "eslint": "^8.0.0",
     "eslint-plugin-html": "^8.0.0",
     "tree-sitter-css": "^0.25.0",
@@ -31,12 +32,16 @@
   "overrides": {
     "tree-sitter-javascript": {
       "peerDependenciesMeta": {
-        "tree-sitter": { "optional": true }
+        "tree-sitter": {
+          "optional": true
+        }
       }
     },
     "tree-sitter-css": {
       "peerDependenciesMeta": {
-        "tree-sitter": { "optional": true }
+        "tree-sitter": {
+          "optional": true
+        }
       }
     }
   },
