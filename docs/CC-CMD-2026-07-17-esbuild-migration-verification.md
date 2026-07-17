@@ -32,9 +32,9 @@ Install esbuild locally (devDependency, don't commit yet). Attempt the actual Ph
 
 If TASK 3's dry-run produces a real bundled file, run the existing `smoke.js` against it (temporarily, locally). Real pass/fail — if it fails, that's real information about what Phase 1 actually requires beyond "nothing else changes," not a reason to force it green.
 
-## TASK 5 — `deploy-gate.yml`'s real, current behavior
+## TASK 5 — Both real client-side deploy workflows, not just one
 
-Confirm exactly what it deploys today and how — the earlier discussion's claim ("deploys index.html directly, no bundler in the chain") should be verified against the actual current workflow file, not assumed still accurate.
+**Correction from this CC-CMD's own first draft: two separate deploy-related workflows exist in this repo, not one** — `.github/workflows/deploy-gate.yml` and `.github/workflows/field-autodeploy.yml`. Confirm what each one genuinely does (which deploys `index.html` to production, which is a gate/check, whether they run on the same trigger or different ones) — don't assume based on the names alone. The earlier discussion's claim ("deploys index.html directly, no bundler in the chain") needs to be verified against *both* real, current files, since a Phase 1 wrap that only accounts for one of two real deploy paths would leave the other silently serving stale, unwrapped content.
 
 ## DONE CONDITION
 
