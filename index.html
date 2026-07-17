@@ -6253,7 +6253,9 @@ const SR = {
   espnapp:   ["ESPN App GOTD","https://www.espn.com/watch/",                      "#ff6b35","sub", "ESPN Unlimited Game of the Day — 1 non-exclusive out-of-market game/day via ESPN App. Requires ESPN Unlimited (~$29.99/mo). Blacked out in home markets. Different from MLB.TV (which covers all out-of-market games). Games also air on local RSN simultaneously."],
   espnunlimited: ["ESPN App",      "https://www.espn.com/watch/",                   "#ff6b35","sub", "ESPN App / ESPN Unlimited (~$29.99/mo). Carries WWE Premium Live Events (Backlash, SummerSlam, etc.) in US — first hour also on ESPN2. Also airs select NFL and college football games. NOT the same as espnplus (which covers ESPN linear TV + MLB GOTD). Accessed via ESPN App on smart TVs, mobile, consoles."],
   disney:        ["Disney+",       "https://www.disneyplus.com/",                   "#1b3a6b","sub", "Disney+ (~$8/mo with ads, ~$14/mo no ads). Part of Disney Bundle (Disney+/Hulu/ESPN+). Streams ABC sports including select WNBA games and MNF. Disney Bundle includes ESPN+ which carries additional WNBA and college sports."],
-  usa:       ["USA Network",  "https://www.usanetwork.com/live",                    "#1e5fa8","tv",  "Cable/streaming required. Versant-owned — separate from NBC/Peacock. Peacock does NOT simulcast USA Network live. EPL: select matches (typically one 10am ET Sat game + some Sun/midweek). WWE SmackDown (Fri 8pm). WNBA (50+ games/season). NASCAR Cup Playoffs (10 races). PROVIDERS: YouTube TV ✓, Sling Blue ✓, Hulu Live TV ✓, FuboTV ✓, DirecTV ✓. NOT on Peacock, NOT on NBCSN."],
+  usa:       ["USA Network",  "https://www.usanetwork.com/live",                    "#1e5fa8","tv",  "Cable/streaming required. Versant-owned — separate from NBC/Peacock. Peacock does NOT simulcast USA Network live. EPL: select matches (typically one 10am ET Sat game + some Sun/midweek). WWE SmackDown (Fri 8pm). WNBA (50+ games/season). NASCAR Cup Playoffs (10 races). Bundesliga 2026-27: 30+ matches/season (English). PROVIDERS: YouTube TV ✓, Sling Blue ✓, Hulu Live TV ✓, FuboTV ✓, DirecTV ✓. NOT on Peacock, NOT on NBCSN."],
+  fandango:  ["Fandango",       "https://www.fandango.com/sports",                   "#FF4D00","free","Free live streaming — no subscription or account required. All Bundesliga matches streamed free on Fandango starting 2026-27 season under Versant/USA Sports deal. Available on web, iOS, Android, and connected TV apps."],
+  telemundo: ["Telemundo",      "https://www.telemundo.com/deportes",                "#FF3B1E","tv",  "Free over-the-air (OTA antenna) or cable/satellite — Spanish-language. NBCUniversal deal: 100+ Bundesliga matches/season on Telemundo and Universo starting 2026-27. All Bundesliga matches also on Peacock in Spanish. PROVIDERS: cable/satellite or any vMVPD carrying NBC stations."],
   // ── Tennis ────────────────────────────────────────────────────────────────────
   tc:        ["Tennis Channel","https://www.tennischannel.com",                    "#8be9a0","tv",  "Cable/satellite login required"],
   tcplus:    ["TC+",           "https://www.tennischannel.com/plus",               "#8be9a0","sub", "Tennis Channel+ subscription required (~$10/mo)"],
@@ -6577,7 +6579,12 @@ const BUNDLES = {
   EFL:          ["paramount","fubo","hulu"],                               // EFL: CBS/Paramount+
   LALIGA:       ["espnplus","fubo","hulu","sling","youtubetv"],            // La Liga: ESPN+
   SERIE_A:      ["paramount","fubo","hulu"],                               // Serie A: CBS/Paramount+
-  BUNDESLIGA:   ["espnplus","fubo","hulu","sling","youtubetv"],            // Bundesliga: ESPN+
+  // Bundesliga 2026-27: Versant/USA Sports (English) + NBCUniversal Telemundo (Spanish)
+  // Announced July 15-16 2026. ESPN/ESPN+ deal ended. Effective 2026-27 season (~Aug 2026).
+  // English: 30+ matches on USA Network (linear) + ALL matches free on Fandango (no sub req'd)
+  // Spanish: 100+ matches on Telemundo/Universo (OTA) + ALL matches on Peacock
+  BUNDESLIGA:    ["usa","fandango","youtubetv","fubo","sling","hulu","directv"],      // English: USA Network (cable) + Fandango (free, all matches)
+  BUNDESLIGA_ES: ["peacock","telemundo","youtubetv","fubo","sling","hulu","directv"], // Spanish: Peacock stream + Telemundo/Universo OTA
   LIGUE_1:      ["bein","fubo","hulu","sling"],                             // Ligue 1: beIN Sports in US (sub req) — NOT on Peacock or NBC
   MLS_SOCCER:   ["apple"],                                                 // MLS: Apple TV exclusive (2026+, included w/ Apple TV sub — no separate Season Pass)
   MLS_FS1:      ["apple","fs1","fubo","youtubetv","sling","hulu","directv"],   // MLS on FS1: Apple TV + FS1 simulcast (19 of 34 Fox Sports MLS games — cable/streaming only)
@@ -25556,7 +25563,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-17a';
+  const SW_VERSION = '2026-07-17b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
