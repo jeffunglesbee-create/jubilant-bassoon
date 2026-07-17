@@ -1,4 +1,39 @@
 # FIELD HANDOFF
+## CLIENT HEAD: 4bb105b · 2026-07-17 (early AM) · via chat, cross-referencing multiple parallel CC sessions
+
+**Session status: still active, not formally closed. This entry is a mid-session update, not a close-out.**
+
+### DONE since the drama-gateway entry below — real, independently-verified work across both repos
+
+**Amnesty Zone discovery + hold.** A relay CC session's real AST analysis (tree-sitter, zero parse errors) found the "FIELD Presentation Compiler" promise (Drive doc, June 28 2026, Items 4/5) was never built — confirmed live. Deep search + direct verification corrected an initial too-pessimistic read: of the compiler's 4 "assumed built" prerequisites, Context Assembler (`src/context-assembler.js`, relay) and Ambient Panel are genuinely built+wired; Availability Clarity Layer and Card Face Contract are not missing new invention either — both have real infrastructure already live (broadcast chip data since May, the bottom-sheet since 2026-05-21), just never formalized into the specific contract objects the doc proposed. `getDramaGateway` (see below) was dispatched and built specifically as the patent-safety foundation before proceeding. **5 Amnesty Zone CC-CMDs found via a full queue sweep** (arc-poster, bottom-sheet, card-face, leaderboard-client, leaderboard-relay) — one misfile caught+relocated (`leaderboard-relay`, same repo-scoped-docs-write issue as twice before). **All 5 remain explicitly ON HOLD** pending a real sequencing decision — the gateway foundation now exists, but "foundation exists" isn't the same claim as "the other 35 ad-hoc state-check sites all route through it."
+
+**MLS AVV manifest gap closed** (`60171ca`, relay CC). The real MLS proof-mode code (5 Playwright tests, `tests/adapter-visible-value.spec.js`) had already landed July 13 via the Home Run Derby commit — the only genuine gap was `docs/adapter-proof.manifest.json` never being updated alongside it. Chat independently made and caught the identical mistake (checked `smoke.js` only, missed the separate Playwright spec file) before the relay CC's own fix landed — same root cause, found twice, independently.
+
+**`wc_third_place_standings` verified + fixed** (relay, `d3b8d7d`). A carry-forward item propagating across multiple session outboxes ("2 live call sites will throw if hit") was checked directly against real D1 — the view genuinely works, returns real 12-row data. One of two call sites was already safely guarded (`Promise.allSettled`); the other (`handleWCThirdPlace`) was genuinely unguarded — now wrapped in try/catch. The "will throw" framing itself was stale, copy-forwarded without re-verification across at least 2 other session outboxes (MLB series tracking, Gap 7) — worth knowing this specific line item is resolved wherever else it appears.
+
+**MLB series tracking** (relay, `cd7024e`+). Real root cause found: `regular_season_games` had no `importance` column (hardcoded NULL), unlike `postseason_games` — explains why series-clinch detection silently never fired for regular-season MLB. Fixed (`ensureImportanceColumn`, `detectMLBSeriesOutcome`). Honestly staged — cannot live-verify without a real MLB series actually clinching.
+
+**Gap 7 — newspaper Monday-only fields** (relay, `0c1fd44`). 4 real fields added to the Monday analytics bundle; 3 rendered client-side (`THE WEEK IN SPORTS`, `WHAT WE GOT WRONG`, + 1 more), 1 (`broken_record`) correctly left unrendered — it's a structured object needing its own chip/table design, not force-fit into existing prose sections.
+
+**Gemini 3.1 Flash-Lite vs 3.5 Flash — real head-to-head, clean negative result** (relay CC, `CC-CMD-2026-07-16-gemini-model-comparison.md`, 100/100). 5 real games × 2 models, byte-identical real production prompts, scored via FIELD's own `scoreProse` + voice judge (not published benchmarks). **3.5 Flash scored lower (162.4 vs 177.0 avg), failed the voice judge every time (0/5 vs 1/5), ran 5.4x slower, cost 6.05x more.** Clean, unanimous "no" — production stays on 3.1 Flash-Lite. Reusable test infra (`/debug/gemini-model-test`, `X-FIELD-Test-Model` header) left in place, not dead code. Separately checked GPT-4o mini as a possible alternative: cheaper than current ($0.15/$0.60 vs $0.25/$1.50) but legacy/deprecated status and notably lower benchmark quality (19th percentile) — GPT-4.1 nano is the more honest current-model comparison if cost reduction from baseline is the real goal.
+
+**Journalism quality — post-match exemplars added** (relay, `7fd4e34`). Real gap: all 4 prior `FIELD_VOICE_REGISTER` exemplars were pre-match preview prose; the pipeline also generates post-match briefs on the same register with no matching examples. Added 3 real post-match exemplars (soccer, NBA, NHL) labeled distinctly. `voiceExemplarBlock` (curated top-quality-score examples) audited and confirmed already live for slate briefs; game-brief paths still don't get this treatment — real, disclosed, separate-session scope.
+
+**Dropbox save**: `/index-2026-07-16-drama-gateway-complete.html`, 2.41MB, verified byte-exact, HEAD `4bb105b`.
+
+**Tooling note**: `ripgrep` (`rg -F`) installed in this session's sandbox via apt — faster + immune to the regex-metacharacter class of bug that caused the earlier `streams?.[0]?.label` false-negative (both grep and rg still need `-F` for that specific protection; ripgrep's own default mode is not automatically safer than grep's on this axis).
+
+### Still open, unchanged
+- 5 Amnesty Zone CC-CMDs, held (see above)
+- Gap 5/Gap 6 (context/game field name, enrichment brief types) — blocked, no authoritative definition, per prior entry below
+- 35 ad-hoc drama state-check sites not yet migrated to `getDramaGateway`
+- Haiku 4.5 "clinical/surgical efficiency" phrasing pattern — worth a `BANNED_PHRASES` addition, not yet done
+- Game-brief exemplar injection — real, scoped, not yet done
+
+---
+
+## PRIOR ENTRY (2026-07-16, preserved — drama gateway + broadcast chip)
+
 ## CLIENT HEAD: 71e5b09 · SW_VERSION: 2026-07-16f · 2026-07-16 · via Claude Code
 ## Smoke: 958/958
 ## Session doc: outbox/cc-session-2026-07-16-broadcast-chip-verify.md
