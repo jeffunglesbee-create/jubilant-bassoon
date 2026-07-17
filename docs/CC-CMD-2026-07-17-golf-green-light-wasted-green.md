@@ -125,22 +125,26 @@ grep -n "birdiesOnGir\|bogeysOnGir" index.html
 # → results in renderPGALeaderboard function
 ```
 
-## STAGED Status
+## PERMANENTLY BLOCKED — ESPN does not have this data
 
-**STAGED** pending relay CC-CMD execution.
+**Probe date:** 2026-07-17  
+**Probe method:** GitHub Actions runner — ESPN competitor-stats API  
+**Event:** 401811957, Athlete: 10343 (Lucas Herbert)  
+**Probe file:** `outbox/golf-espn-stat-names-20260717T144415Z.txt`
 
-**Blocked by:** Relay enriched endpoint does not serve `birdiesOnGir` or
-`bogeysOnGir` (confirmed probe 2026-07-17: relay `pickStat` calls do not
-include these fields). ESPN stat names unknown — sandbox blocks external HTTP.
+ESPN's `competitor-stats` API full stat name list contains no per-GIR
+birdie/bogey breakdown. Available stats are: `birdies`, `bogeys`,
+`doubleBogeysAndWorse`, `tripleBogeysAndWorse`, `eagles`, `pars` — all raw
+totals, none split by whether the green was hit. There is no API surface in
+ESPN's golf data that combines GIR outcome with scoring outcome.
 
-**Relay CC-CMD written:**
-`field-relay-nba/docs/CC-CMD-2026-07-17-golf-green-light-wasted-green-relay.md`
-(commit `ff70463` on `field-relay-nba/main`)
+**Green Light Rate and Wasted Green cannot be built from ESPN data.**
+The formula (`birdiesOnGir / girHit * 100`) requires a stat ESPN does not
+track. This CC-CMD is closed permanently — not deferred.
 
-**Unblocked when:** That relay CC-CMD is executed (it probes ESPN for stat
-names, adds the fields to `handleGolfCompetitorStats` and the enriched
-endpoint, and deploys). The relay CC-CMD's done-condition probe must print
-`RELAY UNBLOCKED` before executing this client CC-CMD.
+**What IS available:** See `docs/CC-CMD-2026-07-17-golf-scoring-columns.md`
+for a replacement CC-CMD that surfaces `birdies`, `bogeys`, and
+`doubleBogeysAndWorse` as columns using confirmed ESPN stat names.
 
 **Verify when unblocked:**
 ```bash
