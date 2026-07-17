@@ -1,0 +1,189 @@
+name: Golf ESPN EUR League GIR Probe
+
+# Re-probe for per-hole GIR flag on a DP World Tour (EUR league) event.
+# The July 10 Owned Golf Metrics Spec claimed per-hole GIR status is
+# "confirmed available" from ESPN — verified against the Genesis Scottish Open
+# (a DP World Tour event). Our prior probe used PGA league paths (event 401811957).
+# This probe uses EUR league paths to check if the GIR flag appears there.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover Scottish Open event ID from ESPN EUR scoreboard
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/golf-espn-eur-gir-probe-${TS}.txt"
+          echo "ESPN EUR League GIR Probe — $TS" > "$OUT"
+          echo "" >> "$OUT"
+
+          # Find the most recent DP World Tour event via ESPN scoreboard
+          # Try the scoreboard for 20260710 (Scottish Open week per July 10 spec)
+          echo "=== 1. EUR scoreboard for 20260710 ===" >> "$OUT"
+          curl -s "https://site.web.api.espn.com/apis/site/v2/sports/golf/eur/scoreboard?dates=20260710" > /tmp/eur_sb.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/eur_sb.json','utf8'));
+            const evs = d?.events || [];
+            console.log('events count:', evs.length);
+            evs.forEach((e,i) => console.log(i, e.id, e.name, e.shortName));
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # Also try current week scoreboard to get a live EUR event
+          echo "=== 2. EUR scoreboard current ===" >> "$OUT"
+          curl -s "https://site.web.api.espn.com/apis/site/v2/sports/golf/eur/scoreboard" > /tmp/eur_sb_now.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/eur_sb_now.json','utf8'));
+            const evs = d?.events || [];
+            console.log('events count:', evs.length);
+            evs.forEach((e,i) => console.log(i, e.id, e.name, e.shortName));
+            // Write first event ID and first competitor athlete ID
+            const fs = require('fs');
+            if (evs[0]) {
+              fs.writeFileSync('/tmp/eur_event_id.txt', String(evs[0].id||''));
+              const comps = evs[0].competitions?.[0]?.competitors || [];
+              const ath = comps[0]?.athlete?.id || comps[0]?.id || '';
+              fs.writeFileSync('/tmp/eur_athlete_id.txt', String(ath));
+              console.log('selected eventId:', evs[0].id, 'athleteId:', ath);
+            }
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # Persist for later steps
+          echo "OUT=$OUT" >> $GITHUB_ENV
+          echo "EUR_EVENT_ID=$(cat /tmp/eur_event_id.txt 2>/dev/null || echo '')" >> $GITHUB_ENV
+          echo "EUR_ATHLETE_ID=$(cat /tmp/eur_athlete_id.txt 2>/dev/null || echo '')" >> $GITHUB_ENV
+
+      - name: Probe Scottish Open / EUR linescores for GIR flag
+        run: |
+          # Fallback: try known Scottish Open event IDs from 2026 if scoreboard returned nothing
+          # Genesis Scottish Open historically runs second week of July
+          # Try the EUR core API events list for July 2026
+          if [ -z "$EUR_EVENT_ID" ]; then
+            echo "No EUR event from scoreboard — trying ESPN core API EUR events list" >> "$OUT"
+            curl -s "https://sports.core.api.espn.com/v2/sports/golf/leagues/eur/events?dates=20260707-20260714&limit=5" > /tmp/eur_events.json
+            node -e "
+              const d = JSON.parse(require('fs').readFileSync('/tmp/eur_events.json','utf8'));
+              const items = d?.items || [];
+              console.log('items:', items.length);
+              items.forEach(it => console.log(it.id||it['$ref']));
+              const fs = require('fs');
+              if (items[0]) {
+                const id = (items[0].id || (items[0]['\$ref']||'').split('/').pop() || '').split('?')[0];
+                fs.writeFileSync('/tmp/eur_event_id.txt', id);
+                console.log('selected id:', id);
+              }
+            " >> "$OUT" 2>&1
+            EUR_EVENT_ID=$(cat /tmp/eur_event_id.txt 2>/dev/null || echo '')
+            echo "EUR_EVENT_ID=$EUR_EVENT_ID" >> $GITHUB_ENV
+          fi
+
+          echo "=== 3. EUR core linescores (league=eur) ===" >> "$OUT"
+          echo "eventId: $EUR_EVENT_ID  athleteId: $EUR_ATHLETE_ID" >> "$OUT"
+
+          # Linescores via EUR league path
+          LSCORE_URL="https://sports.core.api.espn.com/v2/sports/golf/leagues/eur/events/${EUR_EVENT_ID}/competitions/${EUR_EVENT_ID}/competitors/${EUR_ATHLETE_ID}/linescores"
+          echo "URL: $LSCORE_URL" >> "$OUT"
+          curl -s "$LSCORE_URL" > /tmp/eur_linescores.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/eur_linescores.json','utf8'));
+            console.log('top-level keys:', Object.keys(d||{}).slice(0,20));
+            const items = d?.items || d?.scores || [];
+            console.log('items count:', items.length);
+            if (items.length > 0) {
+              // Dump ALL keys from the first item — this is the critical check
+              console.log('item[0] ALL keys:', JSON.stringify(Object.keys(items[0]||{})));
+              console.log('item[0] full:', JSON.stringify(items[0]).slice(0,600));
+              // Look for any GIR-related key anywhere in the item
+              const flat = JSON.stringify(items);
+              const girMatch = flat.match(/\"[^\"]*gir[^\"]*\"/gi);
+              console.log('GIR-related keys found:', girMatch ? [...new Set(girMatch)] : 'NONE');
+            } else {
+              console.log('no items; raw:', JSON.stringify(d).slice(0,400));
+            }
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # Also probe the EUR-specific tourcast path
+          echo "=== 4. EUR tourcast ===" >> "$OUT"
+          TC_URL="https://site.web.api.espn.com/apis/v2/sports/golf/eur/tourcast?event=${EUR_EVENT_ID}"
+          echo "URL: $TC_URL" >> "$OUT"
+          curl -s "$TC_URL" > /tmp/eur_tourcast.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/eur_tourcast.json','utf8'));
+            console.log('top-level keys:', Object.keys(d||{}).slice(0,15));
+            // Deep scan for any gir field
+            const flat = JSON.stringify(d);
+            const girMatch = flat.match(/\"[^\"]*gir[^\"]*\"/gi);
+            console.log('GIR keys in tourcast:', girMatch ? [...new Set(girMatch)] : 'NONE');
+            // Look for hole-level data
+            const comps = d?.competition?.competitors || d?.competitors || [];
+            const me = comps[0];
+            if (me) {
+              console.log('competitor[0] keys:', Object.keys(me).slice(0,20));
+              const holes = me.holes || me.linescores || me.holeByHole || me.rounds?.[0]?.holes;
+              if (holes && holes.length) {
+                console.log('hole[0] ALL keys:', JSON.stringify(Object.keys(holes[0]||{})));
+                console.log('hole[0] full:', JSON.stringify(holes[0]).slice(0,400));
+              }
+            }
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # EUR summary endpoint — full deep dump looking for GIR
+          echo "=== 5. EUR summary — deep GIR scan ===" >> "$OUT"
+          SUM_URL="https://site.web.api.espn.com/apis/site/v2/sports/golf/eur/summary?event=${EUR_EVENT_ID}"
+          echo "URL: $SUM_URL" >> "$OUT"
+          curl -s "$SUM_URL" > /tmp/eur_summary.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/eur_summary.json','utf8'));
+            console.log('top-level keys:', Object.keys(d||{}).slice(0,20));
+            // Deep GIR scan across entire response
+            const flat = JSON.stringify(d);
+            const girMatch = flat.match(/\"[^\"]*gir[^\"]*\"/gi);
+            console.log('GIR keys anywhere in summary:', girMatch ? [...new Set(girMatch)] : 'NONE');
+            // Check linescores path
+            const comps = d?.scoreboard?.[0]?.competitors || [];
+            const me = comps[0];
+            if (me) {
+              const scores = me.linescores || me.holes || me.scoring;
+              if (scores && scores.length) {
+                console.log('linescore[0] ALL keys:', JSON.stringify(Object.keys(scores[0]||{})));
+                console.log('linescore[0] full:', JSON.stringify(scores[0]).slice(0,400));
+              }
+            }
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # PGA competitor-stats EUR league — does it have per-hole GIR in stats?
+          echo "=== 6. EUR competitor-stats (full field list) ===" >> "$OUT"
+          STATS_URL="https://sports.core.api.espn.com/v2/sports/golf/leagues/eur/events/${EUR_EVENT_ID}/competitions/${EUR_EVENT_ID}/competitors/${EUR_ATHLETE_ID}/statistics/0"
+          echo "URL: $STATS_URL" >> "$OUT"
+          curl -s "$STATS_URL" > /tmp/eur_stats.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/eur_stats.json','utf8'));
+            const flat = [];
+            if (Array.isArray(d?.splits?.categories))
+              for (const cat of d.splits.categories)
+                if (Array.isArray(cat?.stats)) flat.push(...cat.stats.map(s => s.name));
+            if (Array.isArray(d?.stats)) flat.push(...d.stats.map(s => s.name));
+            console.log('All stat names:', JSON.stringify([...new Set(flat)].sort()));
+            const gir = flat.filter(n => /gir|birdie|bogey|green/i.test(n));
+            console.log('GIR/birdie/bogey names:', JSON.stringify(gir));
+          " >> "$OUT" 2>&1
+
+          cat "$OUT"
+
+      - name: Commit probe result
+        run: |
+          git config user.email "claude@field.dev"
+          git config user.name "FIELD CI"
+          git add outbox/
+          git commit -m "probe: ESPN EUR league per-hole GIR flag re-probe (Scottish Open path) [skip ci]" || exit 0
+          git push
