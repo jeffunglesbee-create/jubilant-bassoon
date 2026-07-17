@@ -1,0 +1,124 @@
+name: Golf ESPN Tourcast Hole-Level Probe
+
+# Probes ESPN's tourcast/scorecard endpoints for hole-by-hole data.
+# Looking for per-hole GIR status + score — the inputs needed to compute
+# Green Light Rate (birdie-on-GIR rate) and Wasted Green (bogey-on-GIR rate).
+# These are FIELD-computed metrics, not direct ESPN fields.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get eventId + athleteId from relay
+        run: |
+          curl -s "https://field-relay-nba.jeffunglesbee.workers.dev/v2/golf/enriched" > /tmp/enriched.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/enriched.json','utf8'));
+            const p = (d.leaderboard||[])[0];
+            if (!p) { console.error('no leaderboard'); process.exit(1); }
+            const fs = require('fs');
+            fs.writeFileSync('/tmp/event_id.txt', String(d.eventId||''));
+            fs.writeFileSync('/tmp/athlete_id.txt', String(p.athleteId||''));
+            console.log('eventId:', d.eventId, 'athleteId:', p.athleteId, 'player:', p.name);
+          "
+          echo "EVENT_ID=$(cat /tmp/event_id.txt)" >> $GITHUB_ENV
+          echo "ATHLETE_ID=$(cat /tmp/athlete_id.txt)" >> $GITHUB_ENV
+
+      - name: Probe ESPN tourcast and scorecard endpoints
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/golf-espn-tourcast-probe-${TS}.txt"
+          echo "ESPN Tourcast / Hole-Level Probe — $TS" > "$OUT"
+          echo "eventId: $EVENT_ID  athleteId: $ATHLETE_ID" >> "$OUT"
+          echo "" >> "$OUT"
+
+          # 1. ESPN Tourcast — hole-by-hole scoring data
+          TC_URL="https://site.web.api.espn.com/apis/v2/sports/golf/pga/tourcast?event=${EVENT_ID}"
+          echo "=== 1. Tourcast: $TC_URL ===" >> "$OUT"
+          curl -s "$TC_URL" > /tmp/tourcast.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/tourcast.json','utf8'));
+            const keys = Object.keys(d||{});
+            console.log('top-level keys:', keys.slice(0,15));
+            // Look for holes array
+            const find = (obj, depth=0) => {
+              if (depth > 4 || !obj || typeof obj !== 'object') return;
+              if (Array.isArray(obj) && obj.length > 0 && obj[0]?.number !== undefined && obj[0]?.score !== undefined) {
+                console.log('FOUND holes array (len=' + obj.length + '):', JSON.stringify(obj[0]).slice(0,200));
+              }
+              for (const v of Object.values(obj)) find(v, depth+1);
+            };
+            find(d);
+            // Specifically look for player + hole data
+            const comps = d?.competition?.competitors || d?.competitors || [];
+            const me = comps.find(c => String(c.athlete?.id||c.id) === '${ATHLETE_ID}') || comps[0];
+            if (me) {
+              console.log('competitor keys:', Object.keys(me).slice(0,20));
+              const holes = me.holes || me.linescores || me.holeByHole || me.rounds?.[0]?.holes;
+              if (holes) console.log('holes sample:', JSON.stringify(holes.slice(0,3)));
+              else console.log('no holes array found on competitor');
+            } else console.log('competitor not found; total competitors:', comps.length);
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # 2. ESPN scoring/competitor detail — alternative path
+          SC_URL="https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/${EVENT_ID}/competitions/${EVENT_ID}/competitors/${ATHLETE_ID}/linescores"
+          echo "=== 2. Competitor linescores: $SC_URL ===" >> "$OUT"
+          curl -s "$SC_URL" > /tmp/linescores.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/linescores.json','utf8'));
+            console.log('top-level keys:', Object.keys(d||{}).slice(0,15));
+            const items = d?.items || d?.scores || [];
+            if (items.length) console.log('items[0]:', JSON.stringify(items[0]).slice(0,300));
+            else console.log('no items; raw:', JSON.stringify(d).slice(0,300));
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # 3. ESPN hole scoring detail — known tourcast competitor path
+          HS_URL="https://site.web.api.espn.com/apis/v2/sports/golf/pga/competitors/${ATHLETE_ID}/holeScores?event=${EVENT_ID}"
+          echo "=== 3. Hole scores: $HS_URL ===" >> "$OUT"
+          curl -s "$HS_URL" > /tmp/holescores.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/holescores.json','utf8'));
+            console.log('top-level keys:', Object.keys(d||{}).slice(0,15));
+            console.log('raw (first 500):', JSON.stringify(d).slice(0,500));
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # 4. ESPN summary endpoint — sometimes has GIR per hole
+          SUM_URL="https://site.web.api.espn.com/apis/site/v2/sports/golf/pga/summary?event=${EVENT_ID}"
+          echo "=== 4. Summary top-level keys: $SUM_URL ===" >> "$OUT"
+          curl -s "$SUM_URL" > /tmp/summary.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/summary.json','utf8'));
+            console.log('top-level keys:', Object.keys(d||{}));
+            // Find competitors with hole data
+            const comps = d?.scoreboard?.[0]?.competitors || [];
+            const me = comps.find(c => String(c.athlete?.id||c.id) === '${ATHLETE_ID}') || comps[0];
+            if (me) {
+              console.log('competitor keys:', Object.keys(me).slice(0,20));
+              const scores = me.linescores || me.holes || me.scoring;
+              if (scores) console.log('scoring sample:', JSON.stringify(scores).slice(0,400));
+            }
+            // Check for linescores with GIR field
+            const ls = d?.linescores || d?.scoring?.linescores;
+            if (ls) console.log('linescores sample:', JSON.stringify(ls).slice(0,400));
+          " >> "$OUT" 2>&1
+
+          echo "" >> "$OUT"
+          echo "OUT=$OUT" >> $GITHUB_ENV
+          cat "$OUT"
+
+      - name: Commit probe result
+        run: |
+          git config user.email "claude@field.dev"
+          git config user.name "FIELD CI"
+          git add outbox/
+          git commit -m "probe: ESPN tourcast/hole-level data for green light rate computation [skip ci]" || exit 0
+          git push
