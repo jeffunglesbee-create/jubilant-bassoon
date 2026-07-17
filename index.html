@@ -5142,7 +5142,7 @@ function buildFieldHealthPanel() {
   const err  = (label, detail) => `<div class="fhp-row fhp-err">❌ <b>${label}</b> ${detail}</div>`;
 
   // ── App version ─────────────────────────────────────────────────────────
-  const SW = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '?';
+  const SW = window.SW_VERSION || '?';
   rows.push(ok('Version', SW));
 
   // ── WC Groups pill ───────────────────────────────────────────────────────
@@ -29632,7 +29632,7 @@ function seriesPreviewCacheKey(g){
   // Also include _id for uniqueness within same game number
   const idSuffix=g._id?(('_'+g._id).slice(-8)):'';
   // Include SW_VERSION so every deploy busts stale cached briefs (matches Night Owl pattern A265)
-  const swV=(typeof SW_VERSION!=='undefined'?SW_VERSION:'').replace(/[^a-z0-9]/g,'');
+  const swV=(window.SW_VERSION||'').replace(/[^a-z0-9]/g,'');
   return 'field_series_preview_'+swV+'_'+norm(g.home)+'_'+norm(g.away)+'_'+norm(g.seriesRecord)+gNum+idSuffix;
 }
 function buildSeriesPreviewStatic(g){
@@ -33252,7 +33252,7 @@ async function renderStakesBriefCard(gameCard) {
   if (gameCard.previousElementSibling?.classList.contains('stakes-brief-card')) return;
 
   // Version cache key with SW_VERSION so stale briefs (e.g. "semifinal exit") auto-bust on deploy
-  const _swv = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '0';
+  const _swv = window.SW_VERSION || '0';
   const cacheKey = 'field_stakes_brief_v' + _swv + '_' + gameid;
   const cached = sessionStorage.getItem(cacheKey);
 
@@ -40931,7 +40931,7 @@ async function saveEspnFinal(game, eData){
     try {
       const _owlFinalMargin = Math.abs((eData.homeScore||0) - (eData.awayScore||0));
       if (JOURNALISM_ENQUEUE_RELAY && _owlFinalMargin <= 20) {
-        const _owlQueueSwV = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '0';
+        const _owlQueueSwV = window.SW_VERSION || '0';
         const _owlQueueKey = 'field_owl_job_v' + _owlQueueSwV + '_' + id;
         const _owlBriefKey = 'field_nightowl_v' + _owlQueueSwV + '_' + id;
         // Only enqueue if no cached brief and no pending job
@@ -43343,7 +43343,7 @@ async function renderNightOwlRecap(){
   const currentDrama = parseFloat(sessionStorage.getItem('field_owl_drama_' + _nightOwlGameId) || '0');
   const betterGameAvailable = _nightOwlRendered && _nightOwlGameId !== topGame.id && topDrama > currentDrama + 10;
   if(alreadyRendered && slotHasOwl && !betterGameAvailable) return;
-  const _owlSwV=typeof SW_VERSION!=='undefined'?SW_VERSION:'0';
+  const _owlSwV=window.SW_VERSION||'0';
   const cacheKey='field_nightowl_v'+_owlSwV+'_'+topGame.id; // versioned: busts on deploy
   const cached=sessionStorage.getItem(cacheKey);
   // Story Engine — winner-first scoreLabel
@@ -43471,7 +43471,7 @@ async function renderNightOwlRecap(){
     // Poll the relay result endpoint first (fast if job already done).
     // Falls back to fetchNightOwlFromClaude (full prompt with live context).
     let claudeText = null;
-    const _owlQueueSwV2 = typeof SW_VERSION !== 'undefined' ? SW_VERSION : '0';
+    const _owlQueueSwV2 = window.SW_VERSION || '0';
     const _owlQueueKey2 = 'field_owl_job_v' + _owlQueueSwV2 + '_' + (topGame.id||topGame._id||'');
     const _owlJobId = (() => { try { return sessionStorage.getItem(_owlQueueKey2); } catch(e_) { return null; } })();
     if (_owlJobId && JOURNALISM_RESULT_RELAY) {
