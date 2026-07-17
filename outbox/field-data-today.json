@@ -1,15 +1,15 @@
 {
   "_meta": {
     "schema_version": "2.0",
-    "generated_at": "2026-07-16T09:34:23.332Z",
-    "for_date": "2026-07-16",
+    "generated_at": "2026-07-17T09:27:03.555Z",
+    "for_date": "2026-07-17",
     "source": "field-data workflow (automated)",
     "games_found": {
       "nhl": 0,
       "nba": 0,
-      "mlb": 1,
-      "mls": 4,
-      "wnba": 2
+      "mlb": 15,
+      "mls": 2,
+      "wnba": 4
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -21,10 +21,220 @@
     "mlb": [
       {
         "sport": "MLB",
-        "home": "Philadelphia Phillies",
-        "away": "New York Mets",
-        "start_time": "2026-07-16T23:10:00Z",
-        "venue": "Citizens Bank Park",
+        "home": "Boston Red Sox",
+        "away": "Tampa Bay Rays",
+        "start_time": "2026-07-17T17:35:00Z",
+        "venue": "Fenway Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Boston Red Sox",
+        "away": "Tampa Bay Rays",
+        "start_time": "2026-07-17T23:10:00Z",
+        "venue": "Fenway Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "New York Yankees",
+        "away": "Los Angeles Dodgers",
+        "start_time": "2026-07-17T23:05:00Z",
+        "venue": "Yankee Stadium",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_NETWORK",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": true,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Cleveland Guardians",
+        "away": "Pittsburgh Pirates",
+        "start_time": "2026-07-17T23:10:00Z",
+        "venue": "Progressive Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Atlanta Braves",
+        "away": "Texas Rangers",
+        "start_time": "2026-07-17T23:15:00Z",
+        "venue": "Truist Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": true,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Toronto Blue Jays",
+        "away": "Chicago White Sox",
+        "start_time": "2026-07-17T23:15:00Z",
+        "venue": "Rogers Centre",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_APPLE",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Milwaukee Brewers",
+        "away": "Miami Marlins",
+        "start_time": "2026-07-17T23:40:00Z",
+        "venue": "American Family Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Chicago Cubs",
+        "away": "Minnesota Twins",
+        "start_time": "2026-07-18T00:05:00Z",
+        "venue": "Wrigley Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Houston Astros",
+        "away": "Baltimore Orioles",
+        "start_time": "2026-07-18T00:10:00Z",
+        "venue": "Daikin Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Kansas City Royals",
+        "away": "San Diego Padres",
+        "start_time": "2026-07-18T00:10:00Z",
+        "venue": "Kauffman Stadium",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Colorado Rockies",
+        "away": "Cincinnati Reds",
+        "start_time": "2026-07-18T00:40:00Z",
+        "venue": "Coors Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Los Angeles Angels",
+        "away": "Detroit Tigers",
+        "start_time": "2026-07-18T01:38:00Z",
+        "venue": "Angel Stadium",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Athletics",
+        "away": "Washington Nationals",
+        "start_time": "2026-07-18T01:40:00Z",
+        "venue": "Sutter Health Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Arizona Diamondbacks",
+        "away": "St. Louis Cardinals",
+        "start_time": "2026-07-18T01:40:00Z",
+        "venue": "Chase Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Seattle Mariners",
+        "away": "San Francisco Giants",
+        "start_time": "2026-07-18T02:10:00Z",
+        "venue": "T-Mobile Park",
         "league": "MLB",
         "isPlayoff": false,
         "nationalBundle": null,
@@ -38,10 +248,10 @@
     "soccer": [
       {
         "sport": "Soccer",
-        "home": "CF Montréal",
-        "away": "Toronto FC",
-        "start_time": "2026-07-16T23:30Z",
-        "venue": "Stade Saputo",
+        "home": "Nashville SC",
+        "away": "Atlanta United FC",
+        "start_time": "2026-07-18T00:10Z",
+        "venue": "GEODIS Park",
         "league": "MLS",
         "isPlayoff": false,
         "nationalBundle": null,
@@ -49,32 +259,10 @@
       },
       {
         "sport": "Soccer",
-        "home": "Chicago Fire FC",
-        "away": "Vancouver Whitecaps",
-        "start_time": "2026-07-17T00:30Z",
-        "venue": "Soldier Field",
-        "league": "MLS",
-        "isPlayoff": false,
-        "nationalBundle": null,
-        "confirmed": true
-      },
-      {
-        "sport": "Soccer",
-        "home": "St. Louis CITY SC",
-        "away": "Sporting Kansas City",
-        "start_time": "2026-07-17T00:30Z",
-        "venue": "Energizer Park",
-        "league": "MLS",
-        "isPlayoff": false,
-        "nationalBundle": null,
-        "confirmed": true
-      },
-      {
-        "sport": "Soccer",
-        "home": "Seattle Sounders FC",
-        "away": "Portland Timbers",
-        "start_time": "2026-07-17T02:30Z",
-        "venue": "Lumen Field",
+        "home": "LA Galaxy",
+        "away": "LAFC",
+        "start_time": "2026-07-18T02:25Z",
+        "venue": "Dignity Health Sports Park",
         "league": "MLS",
         "isPlayoff": false,
         "nationalBundle": null,
@@ -84,19 +272,37 @@
     "wnba": [
       {
         "sport": "WNBA",
-        "home": "Washington Mystics",
-        "away": "Portland Fire",
-        "start_time": "2026-07-16T23:00Z",
-        "venue": "CareFirst Arena",
+        "home": "Indiana Fever",
+        "away": "Seattle Storm",
+        "start_time": "2026-07-17T23:30Z",
+        "venue": "Gainbridge Fieldhouse",
         "league": "WNBA",
         "confirmed": true
       },
       {
         "sport": "WNBA",
-        "home": "Dallas Wings",
-        "away": "New York Liberty",
-        "start_time": "2026-07-17T01:00Z",
-        "venue": "College Park Center",
+        "home": "Toronto Tempo",
+        "away": "Atlanta Dream",
+        "start_time": "2026-07-17T23:30Z",
+        "venue": "Coca-Cola Coliseum",
+        "league": "WNBA",
+        "confirmed": true
+      },
+      {
+        "sport": "WNBA",
+        "home": "Chicago Sky",
+        "away": "Los Angeles Sparks",
+        "start_time": "2026-07-17T23:30Z",
+        "venue": "Wintrust Arena",
+        "league": "WNBA",
+        "confirmed": true
+      },
+      {
+        "sport": "WNBA",
+        "home": "Phoenix Mercury",
+        "away": "Connecticut Sun",
+        "start_time": "2026-07-18T02:00Z",
+        "venue": "Mortgage Matchup Center",
         "league": "WNBA",
         "confirmed": true
       }
@@ -104,20 +310,20 @@
   },
   "game_overlays": [
     {
-      "_match_key": "CF Montréal|Toronto FC",
-      "matchupNote": "With both sides hovering on the Eastern Conference playoff bubble, tonight’s 401 Derby is a desperate six-pointer where the loser risks falling into a terminal tailspin. Pride is on the line, but the race for the final postseason berths makes this clash a must-win survival test for both Canadian rivals."
+      "_match_key": "Nashville SC|Atlanta United FC",
+      "matchupNote": "With both clubs clinging to the fringes of the Eastern Conference playoff picture, tonight’s clash at GEODIS Park serves as a high-stakes six-pointer where the loser risks falling into a desperate late-season tailspin. Atlanta and Nashville are deadlocked in the standings, making this a pivotal battle for control of their own postseason destiny."
     },
     {
-      "_match_key": "Chicago Fire FC|Vancouver Whitecaps",
-      "matchupNote": "The Whitecaps head to Soldier Field desperate to solidify their postseason standing, while the Fire face a must-win scenario to keep their fading playoff hopes on life support. With the top-nine cutoff looming, every point is a lifeline in this high-stakes cross-conference clash."
+      "_match_key": "LA Galaxy|LAFC",
+      "matchupNote": "El Tráfico returns with playoff positioning on the line, as both LA giants battle for crucial points to solidify their standing in a crowded Western Conference race. With the postseason cutoff looming, bragging rights are secondary to the desperate need to secure a top-nine finish."
     },
     {
-      "_match_key": "St. Louis CITY SC|Sporting Kansas City",
-      "matchupNote": "Sporting Kansas City travels to St. Louis tonight desperate to salvage their fading playoff hopes against a CITY side looking to solidify their own position in the crowded Western Conference hunt. With the postseason cutoff looming, this rivalry clash serves as a high-stakes desperation match where only three points will suffice for the visitors."
+      "_match_key": "New York Yankees|Los Angeles Dodgers",
+      "matchupNote": "The Dodgers and Yankees collide in a high-stakes heavyweight clash that serves as a potential World Series preview, with both clubs looking to assert dominance in a rare regular-season showdown of titans. All eyes are on the Bronx as baseball’s two most iconic franchises battle for supremacy in a marquee matchup that carries the weight of a postseason atmosphere."
     },
     {
-      "_match_key": "Seattle Sounders FC|Portland Timbers",
-      "matchupNote": "The Cascadia Cup rivalry reaches a fever pitch tonight as the Timbers and Sounders clash with both clubs desperate to solidify their standing in a crowded Western Conference playoff race. With every point critical in the push for the top nine, expect a hostile, high-stakes atmosphere where bragging rights are secondary to postseason survival."
+      "_match_key": "Toronto Blue Jays|Chicago White Sox",
+      "matchupNote": "The reeling White Sox limp into Toronto desperate to snap a historic skid, while the Blue Jays look to feast on a struggling pitching staff to keep their faint postseason pulse alive."
     }
   ]
 }
