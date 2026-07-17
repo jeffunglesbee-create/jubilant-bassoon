@@ -1925,11 +1925,9 @@ assert('A322 — JQ v2: scoreProse accepts game parameter',
   html.includes('async function scoreProse(text, game)'),
   'scoreProse must accept (text, game) for Context Anchoring');
 
-assert('A323 — JQ v2: computeNarrativeArc defined (stakes/tension/resolution)',
-  html.includes('function computeNarrativeArc(text)') &&
-  html.includes('stakes') && html.includes('tension') && html.includes('resolution') &&
-  html.includes('arcScore'),
-  'Narrative Arc dimension must be defined and wired into scoreProse');
+assert('A323 — JQ v2: computeNarrativeArc removed (analytics-only, Dim 6 retired 2026-07-17)',
+  !html.includes('function computeNarrativeArc(text)'),
+  'computeNarrativeArc was analytics-only and has been removed from scoreProse');
 
 assert('A324 — JQ v2: computeContextAnchoring defined',
   html.includes('function computeContextAnchoring(text, game)') &&

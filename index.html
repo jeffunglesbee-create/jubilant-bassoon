@@ -28461,46 +28461,6 @@ const _JQ_STAT_PATTERNS = [
 ];
 const _JQ_STAT_NOUNS = /\b(points?|rebounds?|assists?|blocks?|steals?|ppg|apg|rpg|runs?|hits?|home\s*runs?|rbis?|era|whip|ops|obp|slg|goals?|shots?|saves?|yards?|touchdowns?|sacks?|interceptions?|strikeouts?|innings?|pitches?|pitch\s*count|ft\/s|mph)\b/gi;
 
-// ── JQ Dimension 6: Narrative Arc ─────────────────────────────────────────
-// Measures whether the brief has stakes/tension/resolution structure.
-// Pure syntactic — no API, no game object. Computed from text alone.
-// Returns {stakes, tension, resolution, bonus, score, arcScore}
-function computeNarrativeArc(text) {
-  if (!text) return {stakes:false,tension:false,resolution:false,bonus:false,score:0};
-  const sentences = text.split(/[.!?]+/).map(s=>s.trim()).filter(Boolean);
-  if (!sentences.length) return {stakes:false,tension:false,resolution:false,bonus:false,score:0};
-
-  const first = sentences[0] || '';
-  const last  = sentences[sentences.length-1] || '';
-
-  // STAKES: sentence 1 has series record, consequence term, or temporal milestone
-  const stakes = /\b\d-\d\b/.test(first) ||
-    /\b(finals|championship|eliminated|advance|clinch|sweep|series|title|cup|pennant|playoffs|world series|super bowl|stanley cup)\b/i.test(first) ||
-    /\b(first since|last time|\d+ years?|since \d{4}|first.*since|hasn.t.*since)\b/i.test(first);
-
-  // TENSION: any sentence has player name (cap word not sentence-start) + stat pattern
-  const sentStarts = new Set(sentences.map(s=>s.split(/\s+/)[0]));
-  const tension = sentences.some(s => {
-    const sWords = s.split(/\s+/);
-    const hasPlayer = sWords.some(w => /^[A-Z][a-z]{2,}/.test(w) && !sentStarts.has(w) && w.length > 3);
-    const hasStat   = /\d/.test(s) && (/\d+\.\d/.test(s) || /\d+%/.test(s) || /\d+\s*(pts?|points?|rebounds?|assists?|blocks?|goals?|ppg|apg|rpg|saves?|yards?|rbi|era|ops)\b/i.test(s));
-    return hasPlayer && hasStat;
-  });
-
-  // RESOLUTION: last sentence is forward-looking
-  const resolution = /\b(watch|look for|decide|determine|force|need|must|whether|tonight|expect|key|pivotal|swing)\b/i.test(last) ||
-    /\bif\b/i.test(last) ||
-    /\?/.test(last) ||
-    sentences.length >= 2 && /\b(will|could|may|might)\b/i.test(last);
-
-  // ARC COMPLETE BONUS: all three + correct order (stakes first, resolution last)
-  // Raised to 15 (Jun 8 2026) — structural completeness is the highest-value arc signal.
-  const bonus = stakes && tension && resolution;
-
-  const score = (stakes?10:0) + (tension?10:0) + (resolution?10:0) + (bonus?15:0);
-  return {stakes, tension, resolution, bonus, score};
-}
-
 // ── JQ Dimension 7: Context Anchoring ──────────────────────────────────────
 // Measures whether the brief used the provided game data.
 // Requires game object — returns {available:false} when not provided.
@@ -28754,9 +28714,6 @@ async function scoreProse(text, game){
     freshness   * (W.fresh / 100)
   );
 
-  // Dimension 6: Narrative Arc (0-45) — Stakes(10)+Tension(10)+Resolution(10)+Bonus(15)
-  const arc = computeNarrativeArc(text);
-
   // Dimension 7: Context Anchoring (0-25, N/A when no game)
   const ctx = computeContextAnchoring(text, game || null);
 
@@ -28771,9 +28728,9 @@ async function scoreProse(text, game){
 
   const ctxScore     = ctx.available     ? ctx.score     : 0;
   const matchupScore = matchup.available ? matchup.score : 0;
-  const ceiling = 300 - (!ctx.available ? 25 : 0) - (!matchup.available ? 30 : 0);
+  const ceiling = 255 - (!ctx.available ? 25 : 0) - (!matchup.available ? 30 : 0);
   const total = Math.min(ceiling, Math.max(0,
-    base + arc.score + ctxScore + temporal.score + voice.score + matchupScore
+    base + ctxScore + temporal.score + voice.score + matchupScore
   ));
 
   return {
@@ -28784,7 +28741,6 @@ async function scoreProse(text, game){
     variety:     Math.round(variety * 100),
     density:     Math.round(density * 10) / 10,
     freshness:   Math.round(freshness),
-    arc,
     context:     ctx,
     temporal,
     voice,
