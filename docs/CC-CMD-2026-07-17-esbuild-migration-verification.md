@@ -32,9 +32,13 @@ Install esbuild locally (devDependency, don't commit yet). Attempt the actual Ph
 
 If TASK 3's dry-run produces a real bundled file, run the existing `smoke.js` against it (temporarily, locally). Real pass/fail — if it fails, that's real information about what Phase 1 actually requires beyond "nothing else changes," not a reason to force it green.
 
-## TASK 5 — Both real client-side deploy workflows, not just one
+## TASK 5 — All three real deploy/publish paths, not just the two git-push-based ones
 
-**Correction from this CC-CMD's own first draft: two separate deploy-related workflows exist in this repo, not one** — `.github/workflows/deploy-gate.yml` and `.github/workflows/field-autodeploy.yml`. Confirm what each one genuinely does (which deploys `index.html` to production, which is a gate/check, whether they run on the same trigger or different ones) — don't assume based on the names alone. The earlier discussion's claim ("deploys index.html directly, no bundler in the chain") needs to be verified against *both* real, current files, since a Phase 1 wrap that only accounts for one of two real deploy paths would leave the other silently serving stale, unwrapped content.
+**Second correction, found on a closer pass: a third, structurally different path into production exists.** Beyond `deploy-gate.yml` and `field-autodeploy.yml`'s git-push-triggered behavior, `field-autodeploy.yml` itself also runs on a 30-minute poll against a specific, publicly-shared Google Drive file — if that file's content changes, this workflow auto-commits it to `main` directly, no git push involved at all. This looks purpose-built for an AI without direct git access (Gemini, presumably) to publish changes by saving to Drive.
+
+**This is a real, specific risk for the migration, not just a documentation gap:** after a Phase 1 wrap, `index.html` stops being raw source — the real source moves to `legacy/field.js`. If that monitored Drive file is ever updated with a raw, unwrapped `index.html` after the migration (by a session unaware the structure changed), this workflow would silently auto-commit it straight to `main`, potentially reverting the wrap outside of any git-based safeguard.
+
+Confirm: the real, current Drive file ID this workflow polls. Whether this mechanism is still actively used or dormant/legacy (check real recent commit history for auto-deploy-attributed commits, don't assume from the file's existence alone). If active, this needs its own explicit handling in any real migration plan — not part of this verification-only dispatch, but must be named as a real, open risk in the outbox rather than silently absent from it.
 
 ## DONE CONDITION
 
@@ -48,7 +52,7 @@ A real, complete boot-order dependency map exists (not just the one example alre
 - TASK 1 (25 pts): complete, real inventory, not a sample
 - TASK 2 (20 pts): real practical-risk characterization for the fetch override specifically
 - TASK 3 (25 pts): genuine local dry-run attempted, real evidence of outcome either way
-- TASK 4 (20 pts): real smoke run against the actual wrapped output
-- TASK 5 (10 pts): real current deploy-gate.yml behavior confirmed, not assumed
+- TASK 4 (15 pts): real smoke run against the actual wrapped output
+- TASK 5 (15 pts): all three real deploy/publish paths characterized (both git-push workflows plus the Drive-polling auto-deploy), the Drive-polling mechanism's active/dormant status confirmed with real evidence, the migration risk it poses explicitly named in the outbox
 
 Do not commit unless confidence >= 95. If score < 95, report verbatim and stop. Automate follow-ups. No fallbacks, only fixes.
