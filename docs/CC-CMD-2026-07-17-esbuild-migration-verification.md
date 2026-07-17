@@ -26,6 +26,8 @@ Exact line range of the override itself. Real count of `fetch(` call sites befor
 
 ## TASK 3 — Real esbuild dry-run, local only, not committed
 
+**Real, specific risk to anticipate, not a hypothetical:** esbuild ships a platform-specific native binary (it's written in Go), not pure JS — the same general shape of dependency that hit a genuine sandbox-network wall with `tree-sitter` earlier tonight. Confirmed via direct test tonight that `npm install esbuild` installs cleanly in one sandbox environment — but that doesn't guarantee the same in this session's own environment, since network allowlists have differed between sandboxes on other tasks this same session (the June 22 MLS return-prep CC-CMD hit exactly this shape of issue against a different target). If `npm install esbuild` fails here, check whether it's a genuine network/binary-download block before treating it as a different kind of problem — this is the first thing to rule in or out, not something to debug from scratch.
+
 Install esbuild locally (devDependency, don't commit yet). Attempt the actual Phase 1 wrap structure described (`legacy/field.js` = current script content, `main.js` with a single `import "./legacy/field.js"`) against a real local copy. Confirm esbuild can genuinely parse and bundle a file this size without error. Confirm the bundled output is behaviorally identical — real diff of pre/post script content beyond the wrapper itself, not just "esbuild didn't crash." This is a local proof-of-concept only — do not commit the esbuild dependency or the wrapped files unless TASK 4's smoke check passes cleanly first.
 
 ## TASK 4 — Verify smoke genuinely passes against the wrapped output
