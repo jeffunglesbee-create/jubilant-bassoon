@@ -28542,60 +28542,6 @@ function computeTemporalPrecision(text) {
   return {score, anchored:anchoredSentences, total:statSentences};
 }
 
-// ── JQ Dimension 9: Voice Consistency (0-30) ─────────────────────────────
-// Measures whether the brief's register matches the sport's expected cadence.
-// Basketball: urgent, compressed, Q-and-period framing.
-// Baseball: longitudinal, count/inning language, unhurried.
-// Hockey: physical vocabulary, period/power-play language.
-// Soccer: possession/match framing, no "game" → "match".
-// Computed from sport string (game._sport) + text patterns. Zero API calls.
-function computeVoiceConsistency(text, game) {
-  if (!text) return {score:15, sport:'unknown', signals:0}; // neutral when no text
-  const sport = ((_gameSport(game))).toLowerCase();
-  const tl = text.toLowerCase();
-  let score = 15; // neutral baseline — don't penalize when sport unknown
-  let signals = 0;
-
-  // Basketball: urgency markers, Q-framing, specific possessions
-  if (sport.includes('nba') || sport.includes('basketball')) {
-    const positive = [/quarter/i,/\bq[1-4]\b/i,/crunch time/i,/half-court/i,/\bpace\b/i,/\bspacing\b/i,/pick.and.roll/i,/\bpoints\s+in\s+the\s+paint/i];
-    const negative = [/inning/i,/\bperiod\b/i,/\bpower play/i,/\bpossession\s+%/i]; // wrong sport vocab
-    const pos = positive.filter(r=>r.test(tl)).length;
-    const neg = negative.filter(r=>r.test(tl)).length;
-    score = Math.min(30, Math.max(0, 15 + pos * 4 - neg * 8));
-    signals = pos;
-  }
-  // Hockey: period/PP framing, physical vocab
-  else if (sport.includes('nhl') || sport.includes('hockey')) {
-    const positive = [/\bperiod\b/i,/power play/i,/\bpp\b/i,/\bpk\b/i,/\bsave/i,/\bgoalie/i,/\bslot\b/i,/on the forecheck/i];
-    const negative = [/inning/i,/quarter/i,/\byards\b/i];
-    const pos = positive.filter(r=>r.test(tl)).length;
-    const neg = negative.filter(r=>r.test(tl)).length;
-    score = Math.min(30, Math.max(0, 15 + pos * 3 - neg * 8));
-    signals = pos;
-  }
-  // Baseball: count/inning, pitcher-batter framing
-  else if (sport.includes('mlb') || sport.includes('baseball')) {
-    const positive = [/inning/i,/\bera\b/i,/\bwhip\b/i,/\bops\b/i,/bullpen/i,/rotation/i,/\bat.bats?\b/i,/\bcount\b/i];
-    const negative = [/quarter/i,/\bperiod\b/i,/power play/i];
-    const pos = positive.filter(r=>r.test(tl)).length;
-    const neg = negative.filter(r=>r.test(tl)).length;
-    score = Math.min(30, Math.max(0, 15 + pos * 3 - neg * 8));
-    signals = pos;
-  }
-  // Soccer/WC: match framing, possession language
-  else if (sport.includes('soccer') || sport.includes('football') || sport.includes('mls') || sport.includes('wc26') || sport.includes('fifa')) {
-    const positive = [/\bmatch\b/i,/possession/i,/\bminute\b/i,/\bhalf\b/i,/\bxg\b/i,/\bpressing\b/i,/\bcounter/i];
-    const negative = [/\bgame\b/i,/quarter/i,/inning/i]; // "game" in soccer = wrong register
-    const pos = positive.filter(r=>r.test(tl)).length;
-    const neg = negative.filter(r=>r.test(tl)).length;
-    score = Math.min(30, Math.max(0, 15 + pos * 4 - neg * 5));
-    signals = pos;
-  }
-
-  return {score, sport: sport || 'unknown', signals};
-}
-
 // ── JQ Dimension 10: Matchup Depth (0-30) ────────────────────────────────
 // Rewards briefs that surface a non-star secondary matchup or role-player context
 // beyond the featured scoring leaders. Replaces Originality (which required a
@@ -28720,17 +28666,14 @@ async function scoreProse(text, game){
   // Dimension 8: Temporal Precision (0-20)
   const temporal = computeTemporalPrecision(text);
 
-  // Dimension 9: Voice Consistency (0-30)
-  const voice = computeVoiceConsistency(text, game || null);
-
   // Dimension 10: Matchup Depth (0-30, N/A when no game.matchupNote)
   const matchup = computeMatchupDepth(text, game || null);
 
   const ctxScore     = ctx.available     ? ctx.score     : 0;
   const matchupScore = matchup.available ? matchup.score : 0;
-  const ceiling = 255 - (!ctx.available ? 25 : 0) - (!matchup.available ? 30 : 0);
+  const ceiling = 225 - (!ctx.available ? 25 : 0) - (!matchup.available ? 30 : 0);
   const total = Math.min(ceiling, Math.max(0,
-    base + ctxScore + temporal.score + voice.score + matchupScore
+    base + ctxScore + temporal.score + matchupScore
   ));
 
   return {
@@ -28743,7 +28686,6 @@ async function scoreProse(text, game){
     freshness:   Math.round(freshness),
     context:     ctx,
     temporal,
-    voice,
     matchup,
     cliches:     hasCliche(text),
   };

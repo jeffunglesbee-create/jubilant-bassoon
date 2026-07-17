@@ -1935,14 +1935,13 @@ assert('A324 — JQ v2: computeContextAnchoring defined',
   html.includes('available:false'),
   'Context Anchoring dimension must be defined with N/A handling');
 
-assert('A325 — JQ v3: score ceiling is 300 (10-dimension scale)',
+assert('A325 — JQ v3: score ceiling present (8-dimension scale after Dim 6+9 removal)',
   html.includes('ceiling') &&
   html.includes('const W = { spec:30, statDepth:38') &&
   html.includes('computeTemporalPrecision') &&
-  html.includes('computeVoiceConsistency') &&
   html.includes('computeMatchupDepth') &&
-  html.includes('/300'),
-  'Score ceiling must be 300 (10-dimension scale); displayed as /300 in health panel');
+  !html.includes('function computeVoiceConsistency'),
+  'scoreProse ceiling must be present; computeVoiceConsistency must be removed (Dim 9 retired 2026-07-17)');
 
 assert('A326 — JQ v3: JQ_SCORE_THRESHOLD updated to 135',
   html.includes('const JQ_SCORE_THRESHOLD = 135'),
@@ -4336,13 +4335,9 @@ assert('A517 — JQ v3/temporal: computeTemporalPrecision scores temporal stat a
   html.includes('anchored:anchoredSentences'),
   'computeTemporalPrecision must detect temporally-anchored stat sentences and score 0-20');
 
-assert('A518 — JQ v3/voice: computeVoiceConsistency scores sport register',
-  html.includes('function computeVoiceConsistency') &&
-  html.includes('half-court') &&
-  html.includes('power play') &&
-  html.includes('signals:0') &&
-  html.includes('wc26'),
-  'computeVoiceConsistency must score sport-specific register for NBA/NHL/MLB/Soccer, 0-30');
+assert('A518 — JQ v3/voice: computeVoiceConsistency removed (Dim 9 retired 2026-07-17)',
+  !html.includes('function computeVoiceConsistency'),
+  'computeVoiceConsistency was analytics-only (duplicated Layer 2b) and has been removed from scoreProse');
 
 assert('A519 — JQ v3/matchup: computeMatchupDepth rewards secondary player/role-stat',
   html.includes('function computeMatchupDepth') &&
