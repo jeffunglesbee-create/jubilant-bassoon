@@ -1,0 +1,28 @@
+ESPN Scottish Open GIR Probe — 20260717T150815Z
+
+=== 1. PGA scoreboard 20260707-20260713 ===
+events count: 2
+0 401811955 Genesis Scottish Open | athlete0: 4602673
+1 401811956 ISCO Championship | athlete0: 4426182
+selected: 401811955 Genesis Scottish Open | athleteId: 4602673
+
+=== 2. PGA core API events July 2026 ===
+items: 2
+401811955 
+401811956 
+
+=== 3. Scottish Open linescores (PGA league) ===
+eventId: 401811955  athleteId: 4602673
+URL: https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/401811955/competitions/401811955/competitors/4602673/linescores
+top-level keys: [ 'count', 'pageIndex', 'pageSize', 'pageCount', 'items' ]
+items count: 4
+item[0] ALL keys: ["value","displayValue","period","linescores","inScore","outScore","courseId","hasStream","currentPosition","startTee","groupNumber","teeTime","statistics"]
+item[0] FULL: {"value":65,"displayValue":"-5","period":1,"linescores":[{"value":4,"displayValue":"4","period":10,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":4},{"value":4,"displayValue":"4","period":11,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":4},{"value":4,"displayValue":"4","period":12,"scoreType":{"name":"BIRDIE","displayName":"Birdie","displayValue":"-1"},"par":5},{"value":3,"displayValue":"3","period":13,"scoreType":{"name":"BIRDIE","displayName":"Birdie","displayValue":"-1"},"par":4},{"value":4,"displayValue":"4","period":14,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":4},{"value":3,"displayValue":"3","period":15,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":3},{"value":4,"displayValue":"
+item[1] FULL: {"value":66,"displayValue":"-4","period":2,"linescores":[{"value":5,"displayValue":"5","period":1,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":5},{"value":4,"displayValue":"4","period":2,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":4},{"value":4,"displayValue":"4","period":3,"scoreType":{"name":"BOGEY","displayName":"Bogey","displayValue":"+1"},"par":3},{"value":4,"displayValue":"4","period":4,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":4},{"value":3,"displayValue":"3","period":5,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":3},{"value":4,"displayValue":"4","period":6,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":4},{"value":3,"displayValue":"3","period":7,"
+GIR keys anywhere: NONE
+
+=== 4. Scottish Open competitor-stats (all field names) ===
+URL: https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/401811955/competitions/401811955/competitors/4602673/statistics/0
+All stat names: ["adjustedScoringAverage","adjustment","amount","birdies","bogeys","consecutiveCuts","cupPoints","cutsMade","doubleBogeysAndWorse","doubles","driveAccuracyPct","driveDistAvg","eagles","gir","girPoss","officialAmount","pars","penalties","puttsGirAvg","regScore","sandSaves","sandSavesPoss","scoreToPar","startScore","tournamentsPlayed","tripleBogeysAndWorse"]
+GIR/birdie/bogey: ["birdies","bogeys","doubleBogeysAndWorse","gir","girPoss","puttsGirAvg","tripleBogeysAndWorse"]
+
