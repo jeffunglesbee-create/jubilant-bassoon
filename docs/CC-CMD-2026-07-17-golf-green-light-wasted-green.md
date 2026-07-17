@@ -127,15 +127,20 @@ grep -n "birdiesOnGir\|bogeysOnGir" index.html
 
 ## STAGED Status
 
-**STAGED** pending relay/ESPN field verification.
+**STAGED** pending relay CC-CMD execution.
 
-**Blocked by:** Probe must confirm whether ESPN's `common/v3` athlete stats
-API surfaces per-GIR birdie/bogey counts, and whether the relay enriched
-endpoint already passes those through.
+**Blocked by:** Relay enriched endpoint does not serve `birdiesOnGir` or
+`bogeysOnGir` (confirmed probe 2026-07-17: relay `pickStat` calls do not
+include these fields). ESPN stat names unknown — sandbox blocks external HTTP.
 
-**Unblocked when:** The probe block above returns non-empty `birdiesOnGir`
-in `p.stats` from the live relay, OR a relay CC-CMD is written and merged
-that adds those fields.
+**Relay CC-CMD written:**
+`field-relay-nba/docs/CC-CMD-2026-07-17-golf-green-light-wasted-green-relay.md`
+(commit `ff70463` on `field-relay-nba/main`)
+
+**Unblocked when:** That relay CC-CMD is executed (it probes ESPN for stat
+names, adds the fields to `handleGolfCompetitorStats` and the enriched
+endpoint, and deploys). The relay CC-CMD's done-condition probe must print
+`RELAY UNBLOCKED` before executing this client CC-CMD.
 
 **Verify when unblocked:**
 ```bash
