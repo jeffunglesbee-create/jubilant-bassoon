@@ -1,0 +1,94 @@
+name: Golf ESPN Stat Names Probe
+
+# One-shot: hits relay enriched to get live eventId + athleteId, then
+# probes ESPN competitor-stats and common/v3 player-stats to dump ALL stat
+# names. Used to find ESPN's internal names for birdie-on-GIR / bogey-on-GIR
+# before building Green Light Rate and Wasted Green relay fields.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get eventId + athleteId from relay
+        run: |
+          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
+          curl -s "$RELAY/v2/golf/enriched" > /tmp/enriched.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/enriched.json','utf8'));
+            const p = (d.leaderboard||[])[0];
+            if (!p) { console.error('no leaderboard'); process.exit(1); }
+            const fs = require('fs');
+            fs.writeFileSync('/tmp/event_id.txt', String(d.eventId||''));
+            fs.writeFileSync('/tmp/athlete_id.txt', String(p.athleteId||''));
+            console.log('eventId:', d.eventId);
+            console.log('athleteId:', p.athleteId);
+            console.log('player:', p.name);
+          "
+          echo "EVENT_ID=$(cat /tmp/event_id.txt)" >> $GITHUB_ENV
+          echo "ATHLETE_ID=$(cat /tmp/athlete_id.txt)" >> $GITHUB_ENV
+
+      - name: Probe ESPN competitor-stats stat names
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/golf-espn-stat-names-${TS}.txt"
+          echo "ESPN Stat Name Probe — $TS" > "$OUT"
+          echo "eventId: $EVENT_ID  athleteId: $ATHLETE_ID" >> "$OUT"
+          echo "" >> "$OUT"
+
+          # competitor-stats (sports.core.api) — per-tournament per-athlete
+          URL="https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/${EVENT_ID}/competitions/${EVENT_ID}/competitors/${ATHLETE_ID}/statistics/0"
+          echo "=== competitor-stats URL: $URL ===" >> "$OUT"
+          curl -s "$URL" > /tmp/comp.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/comp.json','utf8'));
+            const flat = [];
+            if (Array.isArray(d?.splits?.categories))
+              for (const cat of d.splits.categories)
+                if (Array.isArray(cat?.stats)) flat.push(...cat.stats);
+            if (Array.isArray(d?.stats)) flat.push(...d.stats);
+            // GIR/birdie/bogey matches — most likely to have our targets
+            const gir = flat.filter(s => /gir|birdie|bogey|green|conversion/i.test(s?.name||''));
+            console.log('--- GIR/birdie/bogey stats ---');
+            gir.forEach(s => console.log(JSON.stringify({name:s.name, value:s.value, displayValue:s.displayValue})));
+            console.log('--- ALL stat names (sorted) ---');
+            [...new Set(flat.map(s=>s.name))].sort().forEach(n => {
+              const s = flat.find(x=>x.name===n);
+              console.log(JSON.stringify({name:n, value:s?.value, displayValue:s?.displayValue}));
+            });
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # common/v3 player-stats (site.web.api) — season history per athlete
+          SEASON=$(date +%Y)
+          STATS_URL="https://site.web.api.espn.com/apis/common/v3/sports/golf/athletes/${ATHLETE_ID}/stats?season=${SEASON}"
+          echo "=== player-stats URL: $STATS_URL ===" >> "$OUT"
+          curl -s "$STATS_URL" > /tmp/pstats.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/pstats.json','utf8'));
+            const ls = Array.isArray(d?.leaguesStats) ? d.leaguesStats[0] : null;
+            const ev = (ls?.eventsStats||[])[0];
+            const stats = Array.isArray(ev?.stats) ? ev.stats : [];
+            const gir = stats.filter(s => /gir|birdie|bogey|green|conversion/i.test(s?.name||''));
+            console.log('--- GIR/birdie/bogey stats ---');
+            gir.forEach(s => console.log(JSON.stringify({name:s.name, value:s.value, displayValue:s.displayValue})));
+            console.log('--- ALL stat names (sorted) ---');
+            stats.sort((a,b)=>(a.name||'').localeCompare(b.name||''))
+              .forEach(s => console.log(JSON.stringify({name:s.name, value:s.value, displayValue:s.displayValue})));
+          " >> "$OUT" 2>&1
+
+          echo "OUT=$OUT" >> $GITHUB_ENV
+          cat "$OUT"
+
+      - name: Commit probe result
+        run: |
+          git config user.email "claude@field.dev"
+          git config user.name "FIELD CI"
+          git add outbox/
+          git commit -m "probe: ESPN golf stat names for birdiesOnGir/bogeysOnGir [skip ci]" || exit 0
+          git push
