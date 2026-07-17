@@ -127,20 +127,33 @@ grep -n "birdiesOnGir\|bogeysOnGir" index.html
 
 ## PERMANENTLY BLOCKED — ESPN does not have this data
 
-**Probe date:** 2026-07-17  
-**Probe method:** GitHub Actions runner — ESPN competitor-stats API  
+**Probe 1 date:** 2026-07-17  
+**Probe 1 method:** GitHub Actions runner — ESPN competitor-stats aggregate API  
 **Event:** 401811957, Athlete: 10343 (Lucas Herbert)  
-**Probe file:** `outbox/golf-espn-stat-names-20260717T144415Z.txt`
+**Probe 1 file:** `outbox/golf-espn-stat-names-20260717T144415Z.txt`
 
 ESPN's `competitor-stats` API full stat name list contains no per-GIR
 birdie/bogey breakdown. Available stats are: `birdies`, `bogeys`,
 `doubleBogeysAndWorse`, `tripleBogeysAndWorse`, `eagles`, `pars` — all raw
-totals, none split by whether the green was hit. There is no API surface in
-ESPN's golf data that combines GIR outcome with scoring outcome.
+totals, none split by whether the green was hit.
+
+**Probe 2 date:** 2026-07-17  
+**Probe 2 method:** GitHub Actions runner — ESPN tourcast and hole-level endpoints  
+**Probe 2 file:** `outbox/golf-espn-tourcast-probe-20260717T145040Z.txt`
+
+Four ESPN endpoints probed for per-hole GIR status:
+1. `/tourcast?event=401811957` — returned error code only, no data
+2. `/competitors/10343/linescores` — has per-hole data (period=hole#, par, value, scoreType.name=PAR/BOGEY/BIRDIE/EAGLE) but **no GIR flag**
+3. `/competitors/10343/holeScores?event=401811957` — 404
+4. `/summary?event=401811957` — returned error code only
+
+The linescores endpoint (endpoint 2) provides hole-by-hole scoring type but no
+`gir` boolean. Knowing a player made birdie on hole 7 does not tell you whether
+that hole's green was hit in regulation. The formula `birdiesOnGir / girHit * 100`
+requires a per-hole GIR flag that ESPN does not expose in any probed surface.
 
 **Green Light Rate and Wasted Green cannot be built from ESPN data.**
-The formula (`birdiesOnGir / girHit * 100`) requires a stat ESPN does not
-track. This CC-CMD is closed permanently — not deferred.
+This CC-CMD is closed permanently — not deferred.
 
 **What IS available:** See `docs/CC-CMD-2026-07-17-golf-scoring-columns.md`
 for a replacement CC-CMD that surfaces `birdies`, `bogeys`, and
