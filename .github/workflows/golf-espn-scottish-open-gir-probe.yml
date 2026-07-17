@@ -1,0 +1,142 @@
+name: Golf ESPN Scottish Open GIR Probe
+
+# The July 10 Owned Golf Metrics Spec claimed per-hole GIR is "confirmed
+# available" from ESPN — verified against the Genesis Scottish Open (July 10-13 2026).
+# The Scottish Open is PGA Tour co-sanctioned, so ESPN likely classifies it under
+# the PGA league (not EUR). This probe finds the Scottish Open event ID from the
+# PGA schedule and dumps ALL linescore item keys looking for any GIR flag.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find Scottish Open event ID from PGA schedule
+        run: |
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="outbox/golf-espn-scottish-open-gir-probe-${TS}.txt"
+          echo "ESPN Scottish Open GIR Probe — $TS" > "$OUT"
+          echo "" >> "$OUT"
+
+          # PGA scoreboard for week of Scottish Open (July 7-13 2026)
+          echo "=== 1. PGA scoreboard 20260707-20260713 ===" >> "$OUT"
+          curl -s "https://site.web.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20260710" > /tmp/pga_sb.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/pga_sb.json','utf8'));
+            const evs = d?.events || [];
+            console.log('events count:', evs.length);
+            evs.forEach((e,i) => {
+              const comps = e.competitions?.[0]?.competitors || [];
+              const ath = comps[0]?.athlete?.id || comps[0]?.id || '';
+              console.log(i, e.id, e.name, '| athlete0:', ath);
+            });
+            const fs = require('fs');
+            // Pick Scottish Open specifically, or fallback to first event
+            const scottish = evs.find(e => /scottish|genesis/i.test(e.name)) || evs[0];
+            if (scottish) {
+              const comps = scottish.competitions?.[0]?.competitors || [];
+              // find first competitor with a valid athlete id
+              const ath = comps.find(c => c.athlete?.id)?.athlete?.id || comps[0]?.id || '';
+              fs.writeFileSync('/tmp/scot_event_id.txt', String(scottish.id||''));
+              fs.writeFileSync('/tmp/scot_athlete_id.txt', String(ath));
+              console.log('selected:', scottish.id, scottish.name, '| athleteId:', ath);
+            }
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          # Also try ESPN core API events for PGA, July 2026
+          echo "=== 2. PGA core API events July 2026 ===" >> "$OUT"
+          curl -s "https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events?dates=20260707-20260713&limit=5" > /tmp/pga_events.json
+          node -e "
+            const d = JSON.parse(require('fs').readFileSync('/tmp/pga_events.json','utf8'));
+            const items = d?.items || [];
+            console.log('items:', items.length);
+            items.forEach(it => {
+              const id = it.id || (it['\$ref']||'').split('/').pop().split('?')[0];
+              console.log(id, it.name||'');
+            });
+            const fs = require('fs');
+            // If no event found yet, use first from this list
+            const existing = (require('fs').readFileSync('/tmp/scot_event_id.txt','utf8') || '').trim();
+            if (!existing && items[0]) {
+              const id = items[0].id || (items[0]['\$ref']||'').split('/').pop().split('?')[0];
+              fs.writeFileSync('/tmp/scot_event_id.txt', id);
+            }
+          " >> "$OUT" 2>&1
+          echo "" >> "$OUT"
+
+          SCOT_EVENT=$(cat /tmp/scot_event_id.txt 2>/dev/null || echo '')
+          SCOT_ATH=$(cat /tmp/scot_athlete_id.txt 2>/dev/null || echo '')
+          echo "SCOT_EVENT=$SCOT_EVENT" >> $GITHUB_ENV
+          echo "SCOT_ATH=$SCOT_ATH" >> $GITHUB_ENV
+          echo "OUT=$OUT" >> $GITHUB_ENV
+
+      - name: Probe Scottish Open linescores — full item dump
+        run: |
+          echo "=== 3. Scottish Open linescores (PGA league) ===" >> "$OUT"
+          echo "eventId: $SCOT_EVENT  athleteId: $SCOT_ATH" >> "$OUT"
+
+          if [ -z "$SCOT_EVENT" ] || [ -z "$SCOT_ATH" ]; then
+            echo "ERROR: missing event or athlete ID — scoreboard returned no data" >> "$OUT"
+          else
+            LS_URL="https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/${SCOT_EVENT}/competitions/${SCOT_EVENT}/competitors/${SCOT_ATH}/linescores"
+            echo "URL: $LS_URL" >> "$OUT"
+            curl -s "$LS_URL" > /tmp/scot_ls.json
+            node -e "
+              const d = JSON.parse(require('fs').readFileSync('/tmp/scot_ls.json','utf8'));
+              console.log('top-level keys:', Object.keys(d||{}).slice(0,20));
+              const items = d?.items || d?.scores || [];
+              console.log('items count:', items.length);
+              if (items.length > 0) {
+                // Dump ALL keys — critical check for GIR flag
+                console.log('item[0] ALL keys:', JSON.stringify(Object.keys(items[0])));
+                console.log('item[0] FULL:', JSON.stringify(items[0]).slice(0,800));
+                if (items.length > 1) {
+                  console.log('item[1] FULL:', JSON.stringify(items[1]).slice(0,800));
+                }
+                // Recursive GIR key scan
+                const flat = JSON.stringify(items);
+                const girMatch = flat.match(/\"[a-zA-Z]*[Gg][Ii][Rr][a-zA-Z]*\"/g);
+                console.log('GIR keys anywhere:', girMatch ? [...new Set(girMatch)] : 'NONE');
+              } else {
+                console.log('raw:', JSON.stringify(d).slice(0,500));
+              }
+            " >> "$OUT" 2>&1
+          fi
+          echo "" >> "$OUT"
+
+          # Probe the competitor-stats for Scottish Open — does EUR event have different stats?
+          echo "=== 4. Scottish Open competitor-stats (all field names) ===" >> "$OUT"
+          if [ -n "$SCOT_EVENT" ] && [ -n "$SCOT_ATH" ]; then
+            STATS_URL="https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/${SCOT_EVENT}/competitions/${SCOT_EVENT}/competitors/${SCOT_ATH}/statistics/0"
+            echo "URL: $STATS_URL" >> "$OUT"
+            curl -s "$STATS_URL" > /tmp/scot_stats.json
+            node -e "
+              const d = JSON.parse(require('fs').readFileSync('/tmp/scot_stats.json','utf8'));
+              const flat = [];
+              if (Array.isArray(d?.splits?.categories))
+                for (const cat of d.splits.categories)
+                  if (Array.isArray(cat?.stats)) flat.push(...cat.stats.map(s => s.name));
+              if (Array.isArray(d?.stats)) flat.push(...d.stats.map(s => s.name));
+              const uniq = [...new Set(flat)].sort();
+              console.log('All stat names:', JSON.stringify(uniq));
+              const gir = uniq.filter(n => /gir|birdie|bogey|green/i.test(n));
+              console.log('GIR/birdie/bogey:', JSON.stringify(gir));
+            " >> "$OUT" 2>&1
+          fi
+          echo "" >> "$OUT"
+
+          cat "$OUT"
+
+      - name: Commit probe result
+        run: |
+          git config user.email "claude@field.dev"
+          git config user.name "FIELD CI"
+          git add outbox/
+          git commit -m "probe: ESPN Scottish Open per-hole GIR flag (PGA co-sanctioned path) [skip ci]" || exit 0
+          git push
