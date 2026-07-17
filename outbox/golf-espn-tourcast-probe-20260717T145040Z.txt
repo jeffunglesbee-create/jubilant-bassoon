@@ -1,0 +1,18 @@
+ESPN Tourcast / Hole-Level Probe — 20260717T145040Z
+eventId: 401811957  athleteId: 10343
+
+=== 1. Tourcast: https://site.web.api.espn.com/apis/v2/sports/golf/pga/tourcast?event=401811957 ===
+top-level keys: [ 'code' ]
+competitor not found; total competitors: 0
+
+=== 2. Competitor linescores: https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/401811957/competitions/401811957/competitors/10343/linescores ===
+top-level keys: [ 'count', 'pageIndex', 'pageSize', 'pageCount', 'items' ]
+items[0]: {"value":70,"displayValue":"E","period":1,"linescores":[{"value":4,"displayValue":"4","period":1,"scoreType":{"name":"PAR","displayName":"Par","displayValue":"E"},"par":4},{"value":5,"displayValue":"5","period":2,"scoreType":{"name":"BOGEY","displayName":"Bogey","displayValue":"+1"},"par":4},{"value
+
+=== 3. Hole scores: https://site.web.api.espn.com/apis/v2/sports/golf/pga/competitors/10343/holeScores?event=401811957 ===
+top-level keys: [ 'code' ]
+raw (first 500): {"code":404}
+
+=== 4. Summary top-level keys: https://site.web.api.espn.com/apis/site/v2/sports/golf/pga/summary?event=401811957 ===
+top-level keys: [ 'code', 'detail' ]
+
