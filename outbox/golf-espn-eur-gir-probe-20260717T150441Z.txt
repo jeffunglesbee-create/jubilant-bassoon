@@ -1,0 +1,31 @@
+ESPN EUR League GIR Probe — 20260717T150441Z
+
+=== 1. EUR scoreboard for 20260710 ===
+events count: 0
+
+=== 2. EUR scoreboard current ===
+events count: 1
+0 401822697 Danish Golf Championship Danish Golf Championship
+selected eventId: 401822697 athleteId: 
+
+=== 3. EUR core linescores (league=eur) ===
+eventId: 401822697  athleteId: 
+URL: https://sports.core.api.espn.com/v2/sports/golf/leagues/eur/events/401822697/competitions/401822697/competitors//linescores
+top-level keys: [ 'timestamp', 'status', 'error', 'message', 'path' ]
+items count: 0
+no items; raw: {"timestamp":"2026-07-17T15:04Z","status":400,"error":"Bad Request","message":"No message available","path":"/v2/sports/golf/leagues/eur/events/401822697/competitions/401822697/competitors//linescores"}
+
+=== 4. EUR tourcast ===
+URL: https://site.web.api.espn.com/apis/v2/sports/golf/eur/tourcast?event=401822697
+top-level keys: [ 'code' ]
+GIR keys in tourcast: NONE
+
+=== 5. EUR summary — deep GIR scan ===
+URL: https://site.web.api.espn.com/apis/site/v2/sports/golf/eur/summary?event=401822697
+top-level keys: [ 'code', 'message' ]
+GIR keys anywhere in summary: NONE
+
+=== 6. EUR competitor-stats (full field list) ===
+URL: https://sports.core.api.espn.com/v2/sports/golf/leagues/eur/events/401822697/competitions/401822697/competitors//statistics/0
+All stat names: []
+GIR/birdie/bogey names: []
