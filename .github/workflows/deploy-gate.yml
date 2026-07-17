@@ -106,7 +106,13 @@ jobs:
         run: |
           echo "Running smoke.js structural assertions..."
           node smoke.js index.html
-          echo "✅ Smoke passed — stripping comments for deploy"
+          echo "✅ Smoke passed against source — building bundle"
+
+      - name: Build esbuild bundle
+        run: |
+          npm ci --prefer-offline 2>/dev/null || npm install --ignore-scripts
+          node scripts/build-bundle.mjs
+          echo "✅ Bundle built — running strip-comments on bundled output"
 
       - name: Strip comments for deploy
         run: |
