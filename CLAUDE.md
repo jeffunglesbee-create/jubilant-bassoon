@@ -92,8 +92,10 @@ Claude's governance obligations are independent of user pace. If the user asks f
 ## Deploy
 - Sole deploy path: `.github/workflows/deploy-gate.yml`
 - Trigger paths: index.html, sw.js, field_utils.js, wrangler.jsonc
-- Pipeline: smoke.js → wrangler deploy (v3.109.0 pinned)
+- Pipeline: smoke(source) → esbuild bundle → strip-comments → wrangler deploy (v3.109.0 pinned)
 - `[skip ci]` in commit message skips ALL workflows
+- **Drive auto-deploy risk (standing):** `field-autodeploy.yml` polls Google Drive every 30 min for a file matching `DRIVE_FILE_ID` secret and commits it to main directly — bypassing the esbuild build step. `DRIVE_FILE_ID` is currently absent (confirmed 2026-07-17); the mechanism is dormant. If this secret is ever added, the raw source HTML would be deployed without the esbuild bundle, silently breaking the Phase 1 pipeline. Any activation of `DRIVE_FILE_ID` requires updating `field-autodeploy.yml` to run `node scripts/build-bundle.mjs` before committing.
+- **Pipeline as of 2026-07-17:** smoke(source) → esbuild bundle → strip-comments → wrangler deploy
 
 ## Pre-commit Hook
 `scripts/pre-commit` runs automatically: smoke + units + lint. Commits blocked on failure. Bypass only with `git commit --no-verify` and `[no-verify: reason]` in message.
