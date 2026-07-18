@@ -4,7 +4,7 @@
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole) + jeffunglesbee-create/field-relay-nba (push send path)
 **Branch:** main — commit directly. No PRs.
 
-**BLOCKED until The Debrief (assembleDebrief, fillDebriefSlots, .card-debrief) exists and is deployed. Do not attempt this CC-CMD before confirming that directly — a real check, not an assumption based on this doc's own age.**
+**UNBLOCKED as of 2026-07-18: The Debrief is confirmed live (Phase 3a relay + Phase 3b client, both independently verified via real CI logs and live content checks). Note the real function names differ from this doc's original probe check — Phase 3b built `buildDebrief`/`injectDebriefCards`, not `assembleDebrief`/`fillDebriefSlots` as originally assumed. The probe block below is corrected to check the real names. Re-confirm live at execution time regardless — don't trust this note alone.**
 
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO"; exit 1; }; git log --oneline -5.
 
@@ -26,7 +26,7 @@ Source spec: Drive doc "FIELD — Circadian System + Compound Gap Closers" (June
 
 ```bash
 # Confirm The Debrief genuinely exists before proceeding — do not assume from doc age
-grep -c "function assembleDebrief\|function fillDebriefSlots\|card-debrief" index.html
+grep -c "function buildDebrief\b\|function injectDebriefCards\|card-debrief" src/legacy/field.js
 # If zero: STOP. Report that The Debrief still doesn't exist. Do not proceed.
 
 git log --oneline -5
@@ -52,7 +52,7 @@ On notification click, open the URL with the debrief parameter. Confirm the real
 
 ## TASK 4 — Client: read ?debrief=gameId on load
 
-App reads the URL parameter on load and scrolls to that card with Debrief slots open — using the real `assembleDebrief`/`fillDebriefSlots` functions confirmed present in the probe block, not assumed interfaces.
+App reads the URL parameter on load and scrolls to that card. Since `injectDebriefCards` (Phase 3b) already runs 600ms after every render and populates `.card-debrief` for all final games automatically, this task's real job is narrower than originally scoped: scroll to the right card and ensure its Debrief content is visible (it likely already is, given the automatic injection) — confirm this via real code inspection rather than assuming a manual trigger is still needed.
 
 ## TASK 5 — Real verification
 
