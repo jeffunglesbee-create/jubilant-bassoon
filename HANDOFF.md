@@ -1,11 +1,11 @@
 ## SESSION CLOSE-OUT — 2026-07-18, via chat (supersedes the "still open" list further below, which is stale)
 
-**HEAD:** 27fcae1
+**HEAD:** 5894720
 **Smoke count:** 958/0
 **SW version:** 2026-07-17b
-**Session doc:** docs/outbox/cc-session-2026-07-18-esbuild-phase6.md
+**Session doc:** docs/outbox/cc-session-2026-07-18-esbuild-phase7-corrected.md
 
-**esbuild Phase 6 complete:** VENUE_COORDS + isOutdoorVenue + getVenueCoords → src/utils/venues.js (f98747d). 22 symbols extracted across 15 modules total. Two functions are independent consumers of the constant (do not call each other). All 4 call sites in field.js resolve via globalThis bridge. CI fully green.
+**esbuild thread COMPLETE (Phases 1–7):** 23 symbols extracted across 16 modules. Final extraction: isFeaturedTierGame → src/utils/tier-game.js (4506c27). MY_TEAMS explicitly out of scope (live mutable user preference state). CI fully green. smoke.js A-FTO-2 updated to read body from module file.
 
 **esbuild thread status:** Phase 1 through Phase 5 complete and independently verified (every single one via real, directly-inspected job logs, not trusted from a local dry-run alone — this discipline exists specifically because Phase 1's own build script had a real wrong-script-block bug that reached production once and survived by luck, not design). 19 functions extracted across 13 modules (Phase 3 series) + 1 constant/function pair (Phase 5, `WX_DIR`+`cardinalDir`) — the constant-extraction pattern is confirmed to extend cleanly, not just theorized.
 
