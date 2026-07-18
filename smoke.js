@@ -374,7 +374,9 @@ if (require('fs').existsSync(utilsPath)) {
   allJs = utilsJs + '\n' + allJs;
 }
 let syntaxOk = true;
-try { new Function(allJs); } catch(e) { syntaxOk = false; }
+// Strip import/export declarations — invalid in Function constructor (module syntax).
+const allJsForCheck = allJs.split('\n').filter(l => !/^(?:import|export)\b/.test(l)).join('\n');
+try { new Function(allJsForCheck); } catch(e) { syntaxOk = false; }
 assert('JavaScript syntax valid', syntaxOk);
 
 // 7. Bundle registry
@@ -964,7 +966,9 @@ const gameDoSrc = (() => {
 const utilsFnNames = [...fieldUtilsSrc.matchAll(/^function (\w+)\(/gm)].map(m => m[1]);
 const missingFromHtml = utilsFnNames.filter(fn => {
   const usedInHtml = new RegExp('\\b' + fn + '\\(').test(html);
-  const definedInHtml = html.includes('function ' + fn + '(');
+  // Accept inline definition OR module import (Phase 3+ extraction path)
+  const definedInHtml = html.includes('function ' + fn + '(') ||
+    new RegExp('import\\s*\\{[^}]*\\b' + fn + '\\b').test(html);
   return usedInHtml && !definedInHtml;
 });
 assert('A191 — field_utils.js functions used in index.html must be defined there',
@@ -6876,7 +6880,9 @@ assert('A-FTO-2 — isFeaturedTierGame() checks all three promotion signals (ran
       /rank <= 25/.test(tierGame) &&
       /MY_TEAMS\.has\(g\.home\) \|\| MY_TEAMS\.has\(g\.away\)/.test(tierGame) &&
       tierGame.includes('isScoutsPick(g)');
-    return html.includes('function isFeaturedTierGame(g)') && bodyOk;
+    const presentInHtml = html.includes('function isFeaturedTierGame(g)') ||
+      /import\s*\{[^}]*\bisFeaturedTierGame\b/.test(html);
+    return presentInHtml && bodyOk;
   })(),
   'isFeaturedTierGame must check homeCuratedRank/awayCuratedRank <= 25, MY_TEAMS, and isScoutsPick — ranking is one promotion signal, not a hard filter');
 

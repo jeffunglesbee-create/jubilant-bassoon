@@ -54,8 +54,9 @@ const scriptMatches = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)];
 if (!scriptMatches.length) { log('FATAL: no <script> tag found'); process.exit(1); }
 const js = scriptMatches.map(x => x[1]).join('\n');
 
-// 1. Syntax check
-try { new Function(js); pass('Syntax: parses cleanly'); }
+// 1. Syntax check — strip import/export (module syntax invalid in Function constructor)
+const jsForCheck = js.split('\n').filter(l => !/^(?:import|export)\b/.test(l)).join('\n');
+try { new Function(jsForCheck); pass('Syntax: parses cleanly'); }
 catch(e) { fail('Syntax: ' + e.message); }
 
 // 2. console.log gating check — MOVED to smoke.js (A234, single source of truth).
@@ -132,7 +133,7 @@ const utilsJs = (() => {
 let bootstrapError = null;
 let evalThis;
 try {
-  const wrapped = utilsJs + '\n' + js + ';\n;return {' +
+  const wrapped = utilsJs + '\n' + jsForCheck + ';\n;return {' +
     'renderBetting: typeof renderBetting==="function"?renderBetting:null,' +
     'renderMedia:   typeof renderMedia==="function"?renderMedia:null,' +
     'renderStreaming: typeof renderStreaming==="function"?renderStreaming:null' +
@@ -784,11 +785,11 @@ else fail('Assertion 55 — Story Score wiring missing (score-status/_n.statusLi
 // ── Weather Intelligence (Session K) ────────────────────────────────────
 if(html.includes('const PARK_ORIENTATION =')) pass('PARK_ORIENTATION defined');
 else fail('PARK_ORIENTATION defined');
-if(html.includes('function isOutdoorVenue(') &&
-  html.includes('function getVenueCoords(') &&
+if((html.includes('function isOutdoorVenue(') || /import\s*\{[^}]*\bisOutdoorVenue\b/.test(html)) &&
+  (html.includes('function getVenueCoords(') || /import\s*\{[^}]*\bgetVenueCoords\b/.test(html)) &&
   html.includes('function wxBadge(') &&
-  html.includes('function wxAlert(') &&
-  html.includes('function weatherDramaModifier(')) pass('weather helper functions defined');
+  (html.includes('function wxAlert(') || /import\s*\{[^}]*\bwxAlert\b/.test(html)) &&
+  (html.includes('function weatherDramaModifier(') || /import\s*\{[^}]*\bweatherDramaModifier\b/.test(html))) pass('weather helper functions defined');
 else fail('weather helper functions defined');
 if(html.includes('async function fetchAQI(')) pass('fetchAQI defined');
 else fail('fetchAQI defined');

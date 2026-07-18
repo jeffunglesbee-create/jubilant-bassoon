@@ -1,4 +1,21 @@
 
+import { fmtGolfToPar } from '../utils/golf-format.js';
+import { fieldTierRank, fieldTierLabel } from '../utils/tier.js';
+import { inferSport, golfRoundLabel } from '../utils/sport-format.js';
+import { fmtESPNClock } from '../utils/espn-clock.js';
+import { _normWCName } from '../utils/wc-name.js';
+import { isNationalGame } from '../utils/national-game.js';
+import { wxDescription, wxIcon, wxAlert, weatherDramaModifier } from '../utils/weather.js';
+import { isVolatileMatchup, _upsetDogPrice } from '../utils/odds.js';
+import { _chipsHTML } from '../utils/chips.js';
+import { urlBase64ToUint8Array } from '../utils/push.js';
+import { _raiQualityBar } from '../utils/rai.js';
+import { _srSitToYL100 } from '../utils/nfl.js';
+import { _otwSigTierRank } from '../utils/otw.js';
+import { WX_DIR, cardinalDir } from '../utils/wind.js';
+import { VENUE_COORDS, isOutdoorVenue, getVenueCoords } from '../utils/venues.js';
+import { isFeaturedTierGame } from '../utils/tier-game.js';
+
 'use strict';
 // ═══════════════════════════════════════════════════════════════
 // FIELD — Global Sports Intelligence
@@ -4173,11 +4190,6 @@ function _buildAnalyticsChips(game) {
   return chips;
 }
 
-// Render chips as HTML string (for both Option A footer and Option C desk card)
-function _chipsHTML(chips) {
-  // _chipsHTML extracted to src/utils/chips.js (Phase 3-final).
-}
-
 // ── MLB Probable Pitcher Init — two-phase ────────────────────────────────────
 // Phase 1 (T+4100ms): Schedule call → pitcher IDs keyed by home team name.
 // Phase 2 (T+4300ms): Parallel stats calls → ERA/K9/WHIP per pitcher ID.
@@ -5139,9 +5151,6 @@ document.getElementById("settings-btn").addEventListener("click", openSetup);
 // decides whether to surface a notification -- no dial, no scalar.
 const VAPID_PUBLIC_KEY = 'BA94Jhq_0-6Hm07vN40MkakAdW4EMqMbiQh3ZkoWlvOnoes4Ds-IhKoLSe39BhL6vR8HAE2KLClmHyaLaldqFXg';
 const PUSH_SUBSCRIBE_URL = 'https://field-relay-nba.jeffunglesbee.workers.dev/push/subscribe';
-function urlBase64ToUint8Array(b64){
-  // urlBase64ToUint8Array extracted to src/utils/push.js (Phase 3-final).
-}
 // Create the push subscription and register it with the relay. Idempotent:
 // pushManager.subscribe returns the existing subscription if one already exists.
 async function subscribeToPush(btn){
@@ -5938,9 +5947,6 @@ function detectArcType(g) {
   }
   return null;
 }
-function isNationalGame(g){
-  // isNationalGame extracted to src/utils/national-game.js (Phase 3f).
-}
 // BUG-09 fix: _gameImportance is often absent on Conference Finals entries.
 // Detect by league string to catch NYK @ CLE, VGK @ COL, conference|cup final|series, etc.
 const isPlayoffGame = g => g._gameImportance || /playoff|final|semifinal|conference|cup final|series/i.test(g.league||'');
@@ -6323,10 +6329,6 @@ function _epLookup(down,ytg,yl100){
   const ytgB=nearest(Math.min(Math.max(ytg,1),25),ytgBuckets);
   const yl100B=nearest(Math.max(1,Math.min(99,yl100)),yl100Buckets);
   return _epTable[`${down}_${ytgB}_${yl100B}`]??0;
-}
-
-function _srSitToYL100(sit){
-  // _srSitToYL100 extracted to src/utils/nfl.js (Phase 3-final).
 }
 
 function _computeSRPlayEPA(evt){
@@ -7343,9 +7345,6 @@ const FEATURED_TIER_OVERFLOW_THRESHOLD = 30;
 // rank would be exactly the kind of field-name collision this codebase
 // has already found and fixed multiple times tonight (WC label
 // fragmentation, league mislabel).
-// isFeaturedTierGame extracted to src/utils/tier-game.js (Phase 7).
-function isFeaturedTierGame(g){}
-
 // Ranking badge — small #N tag(s) for featured cards with a ranked team,
 // reusing buildRoundBadge's existing small-chip badge pattern (same visual
 // family as .round-badge/.importance-badge) rather than inventing new
@@ -10518,10 +10517,6 @@ function _isUpset(g) {
   return homeWon ? homeIsDog : !homeIsDog;
 }
 
-function _upsetDogPrice(g) {
-  // _upsetDogPrice extracted to src/utils/odds.js (Phase 3-final).
-}
-
 function renderUpsets(games) {
   const target = document.getElementById('jrn-upsets');
   if (!target) return;
@@ -11538,17 +11533,11 @@ const WX_TTL  = 3600000; // 1-hour cache
 const wxCache = {}; // "lat_lon" → weather object
 const wxCacheTime = {}; // "lat_lon" → timestamp
 
-// All venue coordinates. getVenueCoords() fuzzy-matches against this table.
-// outdoor:false = retractable-roof / dome / indoor arena — no weather badge shown.
-const VENUE_COORDS = {}; // extracted to src/utils/venues.js (Phase 6).;
-
 // Fuzzy venue lookup — matches "Fenway Park, Boston" and "Fenway Park"
 // Returns true for outdoor venues — uses VENUE_COORDS[2] flag
 // Falls back to keyword heuristic for unlisted venues
 const INDOOR_KEYWORDS = ["arena","garden","center","centre","dome","coliseum",
   "fieldhouse","forum","palace","pavilion","theater","theatre"];
-// Cardinal direction from degrees
-// WX_DIR extracted to src/utils/wind.js (Phase 5).
 // ── PARK_ORIENTATION: degrees (true north) that center field faces ────────
 // Used by windContextNote() to determine "out to CF" vs "in from CF" context
 // Wind delta < -30° = blowing OUT toward CF (hitter's park)
@@ -11575,9 +11564,6 @@ const PARK_ORIENTATION = {
   'Globe Life Field':        355,  // N (retractable but included for outdoor mode)
 };
 
-// cardinalDir extracted to src/utils/wind.js (Phase 5).
-function cardinalDir(deg){}
-
 // Wind context note for MLB parks: combines live wind with park geometry
 // Returns: "18mph out to CF — hitter's conditions" or null
 function windContextNote(venue, windDir, windSpeed){
@@ -11594,33 +11580,6 @@ function windContextNote(venue, windDir, windSpeed){
   if(delta < -30) return `${spd}mph out to CF — hitter's conditions`;
   if(delta >  30) return `${spd}mph in from CF — pitcher's conditions`;
   return `${spd}mph crosswind`;
-}
-
-// isOutdoorVenue extracted to src/utils/venues.js (Phase 6).
-function isOutdoorVenue(venue){}
-
-// getVenueCoords extracted to src/utils/venues.js (Phase 6).
-function getVenueCoords(venue){}
-
-// wxDescription: human-readable conditions string
-function wxDescription(wx){
-  // wxDescription extracted to src/utils/weather.js (Phase 3-final).
-}
-
-// wxIcon: emoji for current conditions
-function wxIcon(wx){
-  // wxIcon extracted to src/utils/weather.js (Phase 3-final).
-}
-
-// wxAlert: true if conditions materially affect gameplay
-function wxAlert(wx){
-  // wxAlert extracted to src/utils/weather.js (Phase 3-final).
-}
-
-// weatherDramaModifier: signed drama delta for outdoor games (replaces flat +10)
-// Positive = conditions intensify drama. Negative = conditions hurt watchability.
-function weatherDramaModifier(wx){
-  // weatherDramaModifier extracted to src/utils/weather.js (Phase 3-final).
 }
 
 // wxBadge: compact HTML badge for game cards
@@ -30611,10 +30570,6 @@ const _WC_MATCH_WP_TTL_MS    = 60 * 1000;       // re-fetch at most every 60s
 let _wcMatchWPInflight = null;
 let _wcMatchWPLastFetch = 0;
 
-function _normWCName(s) {
-  // _normWCName extracted to src/utils/wc-name.js (Phase 3e).
-}
-
 // Predicate: is the odds-sourced live WP missing OR older than the staleness
 // window? Used to decide whether to overlay the MC fallback.
 function _isLiveOddsWPStale(score) {
@@ -33520,10 +33475,6 @@ async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
   }
 }
 
-function _raiQualityBar(q) {
-  // _raiQualityBar extracted to src/utils/rai.js (Phase 3-final).
-}
-
 function buildRaiCardLine(rai, homeLabel, awayLabel) {
   if (!rai) return '';
   // Only show if we had actual quality data (at least 1 player matched in BDL)
@@ -34077,10 +34028,6 @@ function _otwGetLiveTier(eData, sport) {
 // returns -- confirmed by reading both functions, not assumed. Reusing
 // fieldTierRank() directly here would silently rank both to its default
 // case (0), collapsing two of the four real tiers to no distinction.
-function _otwSigTierRank(tier) {
-  // _otwSigTierRank extracted to src/utils/otw.js (Phase 3-final).
-}
-
 // Named label for the OTW header chip — factual condition string, never a score.
 // Callers: renderOneToWatch FIRE state header chip.
 function _otwTierLabel(tier) {
@@ -34730,11 +34677,6 @@ function buildOTWStateLabel(g, ed, sport) {
 }
 
 const OTW_TIER_LABELS = { fire:'FIRE GAME', hot:'MUST WATCH', warm:'COMPELLING' };
-
-// Format ESPN clock value — handles both "9:05" and ISO "PT09M05.00S" formats
-function fmtESPNClock(clock) {
-  // fmtESPNClock extracted to src/utils/espn-clock.js (Phase 3d).
-}
 
 function buildOTWWhyLine(g, ed, sport, isPreGame){
   if(isPreGame){
@@ -36039,12 +35981,6 @@ function isAloneOnScreen(game) {
     if ((g._id||g) === (game._id||game)) return false;
     return Math.abs(new Date(g.start_time).getTime() - gameTime) < 45 * 60 * 1000;
   });
-}
-
-// isVolatileMatchup: large pre-game odds gap = high variance signal.
-// Financial market data (not game statistics) — no RUWT concern.
-function isVolatileMatchup(game) {
-  // isVolatileMatchup extracted to src/utils/odds.js (Phase 3-final).
 }
 
 // buildVibeChips: returns [{label, cls}] for .ganalytics strip.
