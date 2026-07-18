@@ -2169,6 +2169,141 @@ function getStatus(iso, opts){
 // entries below, each resolveBundle("NHL_ABC") directly) -- zero real
 // callers, and the 2026 NHL postseason already concluded June 14.
 
+// ── UI Primitives (CC-CMD-2026-07-18-debrief-phase1-primitives) ──
+// Five standalone primitives every surface in the app composes from.
+// Spec: Drive doc 1cWgNEs3uanFh_PDi2ISSrIBTINdousbHcE1VQphvZ2I Part 2.
+// Not yet wired into existing surfaces — that is Phase 2 (Schedule Compound).
+
+// Primitive 1: fieldChip(text, tier, opts)
+// Tier color mapping verified against COLOUR-SYS-A tokens in index.html:
+//   #ef4444 = --angle-elim  #f59e0b = --caution  #2dd4bf = --access-free
+//   #60a5fa = --sport-nhl
+function fieldChip(text, tier, opts = {}) {
+  const el = document.createElement('span');
+  el.className = 'field-chip field-chip--' + tier;
+  el.textContent = text;
+  if (opts.icon) el.dataset.icon = opts.icon;
+  if (opts.small) el.classList.add('field-chip--sm');
+  return el;
+}
+
+// Primitive 2: card slot template + fillSlot(card, name, content)
+// cardTemplate is used by Phase 2 (Schedule Compound) renderCard().
+// The data-slot="debrief" slot is reserved for Phase 3 (The Debrief).
+const _cardTemplate = (() => {
+  const t = document.createElement('div');
+  t.className = 'game-card';
+  t.innerHTML = `
+    <div class="card-stripe" data-slot="stripe"></div>
+    <div class="card-header">
+      <span data-slot="time-score"></span>
+      <span data-slot="drama" hidden></span>
+    </div>
+    <div class="card-body">
+      <span data-slot="home-name"></span>
+      <span data-slot="away-name"></span>
+      <span data-slot="series" hidden></span>
+    </div>
+    <div class="card-streams">
+      <span data-slot="bundle"></span>
+      <span data-slot="crew" hidden></span>
+    </div>
+    <div class="card-enrichment" data-slot="enrichment" hidden></div>
+    <div class="card-brief" data-slot="brief" hidden></div>
+    <div class="card-debrief" data-slot="debrief" hidden></div>
+    <div class="card-conflict" data-slot="conflict" hidden></div>
+  `;
+  return t;
+})();
+
+function fillSlot(card, name, content) {
+  const slot = card.querySelector(`[data-slot="${name}"]`);
+  if (!slot) return;
+  if (content == null || content === '') {
+    slot.hidden = true;
+  } else if (typeof content === 'string') {
+    slot.textContent = content;
+    slot.hidden = false;
+  } else if (content instanceof Element) {
+    slot.replaceChildren(content);
+    slot.hidden = false;
+  }
+}
+
+// Primitive 3: fieldSection(title, opts)
+function fieldSection(title, opts = {}) {
+  const section = document.createElement('section');
+  section.className = 'field-section';
+  if (opts.collapsible) section.classList.add('field-section--collapsible');
+
+  const header = document.createElement('header');
+  header.className = 'field-section__header';
+  const h3 = document.createElement('h3');
+  h3.className = 'field-section__title';
+  h3.textContent = title;
+  header.appendChild(h3);
+  if (opts.count != null) header.appendChild(fieldChip(String(opts.count), 'QUIET', { small: true }));
+  if (opts.badge) h3.after(opts.badge);
+  if (opts.collapsible) {
+    header.style.cursor = 'pointer';
+    header.addEventListener('click', () => section.classList.toggle('collapsed'));
+  }
+
+  const content = document.createElement('div');
+  content.className = 'field-section__content';
+
+  section.append(header, content);
+  section._content = content;
+  return section;
+}
+
+// Primitive 4: fieldState(status, content)
+// status: 'loading' | 'empty' | 'partial' | 'ready' | 'error'
+function fieldState(status, content) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'field-state field-state--' + status;
+
+  if (status === 'loading') {
+    const pulse = document.createElement('div');
+    pulse.className = 'field-state__pulse';
+    wrapper.appendChild(pulse);
+  } else if (status === 'empty') {
+    const msg = document.createElement('span');
+    msg.className = 'field-state__empty';
+    msg.textContent = 'No data yet';
+    wrapper.appendChild(msg);
+  } else if (status === 'partial') {
+    if (content) wrapper.appendChild(content);
+    wrapper.appendChild(fieldChip('partial', 'QUIET', { small: true }));
+  } else if (status === 'ready') {
+    if (content) wrapper.appendChild(content);
+  }
+  // status === 'error' → return empty wrapper (silent per fire-and-forget)
+
+  return wrapper;
+}
+
+// Primitive 5: fieldRow(label, value, opts)
+function fieldRow(label, value, opts = {}) {
+  const row = document.createElement('div');
+  row.className = 'field-row';
+
+  const labelEl = document.createElement('span');
+  labelEl.className = 'field-row__label';
+  labelEl.textContent = label;
+
+  const valueEl = document.createElement('span');
+  valueEl.className = 'field-row__value';
+  valueEl.textContent = value;
+
+  if (opts.trend === 'up') valueEl.classList.add('field-row__value--up');
+  if (opts.trend === 'down') valueEl.classList.add('field-row__value--down');
+  if (opts.chip) row.appendChild(opts.chip);
+
+  row.append(labelEl, valueEl);
+  return row;
+}
+
 // ── Per-game Circadian State (CC-CMD-2026-07-04-circadian-client-phase-v2) ──
 // v2.2: cross-sport, per-adapter field awareness — confirmed via live
 // browser inspection 2026-07-04 that getCardCircadian's v2.1 version only
@@ -2218,6 +2353,50 @@ function getCardCircadian(game) {
   // CFL, Golf, and anything else with no recognized field: explicit,
   // documented fallback — not a silent gap.
   return 'LATE';
+}
+
+// ── Cross-Sport Circadian System (CC-CMD-2026-07-18-gap5-circadian) ──
+// Document-level circadian mode (global + per-sport). Distinct from per-game
+// circadian (above). Uses cross-adapter state detection same as isGameOver() /
+// getCardCircadian() — not spec's g.status-only approach which only covers V2.
+let _circadianMode = 'PREVIEW';
+let _circadianBySport = {};
+
+function computeCircadianContext(now, games) {
+  const liveCount = games.filter(g =>
+    g.state === 'live' || g.state === 'in' ||
+    g.status === 'live' ||
+    (typeof g._aflComplete === 'number' && g._aflComplete > 0 && g._aflComplete < 100)
+  ).length;
+  const finalCount = games.filter(g => isGameOver(g)).length;
+  const upcomingCount = games.filter(g =>
+    g.state === 'pre' || g.status === 'pregame' || g._aflComplete === 0
+  ).length;
+  if (liveCount > 0 && liveCount >= finalCount) return 'PRIME';
+  if (finalCount > 0 && liveCount === 0 && upcomingCount === 0) return 'LATE';
+  if (finalCount > liveCount && finalCount > upcomingCount) return 'NIGHT';
+  const hour = now.getHours();
+  if (hour >= 5 && hour < 12) return 'DAWN';
+  if (hour >= 12 && hour < 18) return 'PREVIEW';
+  if (hour >= 18 && hour < 22) return 'PRIME';
+  if (hour >= 22 || hour < 2) return 'NIGHT';
+  return 'LATE';
+}
+
+function computeSportCircadian(now, allSports) {
+  const allGames = allSports.flatMap(s => s.games || []);
+  const global = computeCircadianContext(now, allGames);
+  const bySport = {};
+  for (const sec of allSports) {
+    if ((sec.games || []).length > 0) {
+      bySport[sec.sport] = computeCircadianContext(now, sec.games);
+    }
+  }
+  return { global, bySport };
+}
+
+function applyCircadian(mode) {
+  document.documentElement.dataset.circadian = mode;
 }
 
 // _bundleFinalizedAt: cross-session-accurate finalized_at lookup for
@@ -6821,7 +7000,19 @@ function renderAll(skipUnchanged){
     games.sort((a, b) => {
       const aTier = getCachedCircadianTier(a);
       const bTier = getCachedCircadianTier(b);
-      return (_CIRCADIAN_SORT_RANK[aTier] ?? 4) - (_CIRCADIAN_SORT_RANK[bTier] ?? 4);
+      const primary = (_CIRCADIAN_SORT_RANK[aTier] ?? 4) - (_CIRCADIAN_SORT_RANK[bTier] ?? 4);
+      if (primary !== 0) return primary;
+      if ((_circadianMode === 'PRIME' || _circadianMode === 'LATE') && aTier === bTier) {
+        const _impScore = g => ({series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0);
+        return _impScore(b) - _impScore(a);
+      }
+      if (_circadianMode === 'NIGHT' && aTier === 'NIGHT') {
+        return minutesSinceFinal(a) - minutesSinceFinal(b);
+      }
+      if (_circadianMode === 'PREVIEW' && aTier === 'PREVIEW') {
+        return (a.start_time || '').localeCompare(b.start_time || '');
+      }
+      return 0;
     });
     const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
@@ -6946,7 +7137,7 @@ function renderAll(skipUnchanged){
       return _html;
       } catch(_cardErr) { captureFieldError(`card:${sec.sport}:${g._id||gi}`, _cardErr); return ''; }
     }).join("");
-    return `<div class="sport-section" data-sport="${sec.sport}" style="--i:${si}">
+    return `<div class="sport-section" data-sport="${sec.sport}" data-sport-circadian="${_circadianBySport[sec.sport] || 'PREVIEW'}" style="--i:${si}">
       <div class="section-head" style="border-left:3px solid ${sportColor};padding-left:.75rem">
         <div class="s-icon" style="background:${sportColor}1a;border-color:${sportColor}40">${icon}</div>
         <span class="s-name">${sec.sport}</span>
@@ -14295,6 +14486,12 @@ async function fetchV2AllScores() {
 
   if (_roundDataNewThisPoll) scheduleRenderAll(); // cards re-render when round data first arrives
   renderESPNScores(); // re-render with fresh V2 data
+  try {
+    const _circResult = computeSportCircadian(new Date(), allData?.sports || []);
+    applyCircadian(_circResult.global);
+    _circadianMode = _circResult.global;
+    _circadianBySport = _circResult.bySport;
+  } catch(_) {}
   scheduleV2Poll(anyLive ? 30000 : 60000);
 }
 
