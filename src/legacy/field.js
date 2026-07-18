@@ -34172,14 +34172,7 @@ const OTW_TIER_LABELS = { fire:'FIRE GAME', hot:'MUST WATCH', warm:'COMPELLING' 
 
 // Format ESPN clock value — handles both "9:05" and ISO "PT09M05.00S" formats
 function fmtESPNClock(clock) {
-  if (!clock) return '';
-  const iso = clock.match(/^PT(\d+)M([\d.]+)S$/);
-  if (iso) {
-    const m = parseInt(iso[1]);
-    const s = Math.floor(parseFloat(iso[2]));
-    return `${m}:${String(s).padStart(2,'0')}`;
-  }
-  return clock; // already formatted (e.g. "9:05")
+  // fmtESPNClock extracted to src/utils/espn-clock.js (Phase 3d).
 }
 
 function buildOTWWhyLine(g, ed, sport, isPreGame){

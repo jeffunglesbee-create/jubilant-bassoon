@@ -15,4 +15,7 @@ import { inferSport, golfRoundLabel } from './utils/sport-format.js';
 globalThis.inferSport = inferSport;
 globalThis.golfRoundLabel = golfRoundLabel;
 
+import { fmtESPNClock } from './utils/espn-clock.js';
+globalThis.fmtESPNClock = fmtESPNClock;
+
 import './legacy/field.js';
