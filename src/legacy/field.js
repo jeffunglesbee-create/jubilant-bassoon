@@ -2753,6 +2753,15 @@ function applyCircadian(mode) {
   document.documentElement.dataset.circadian = mode;
 }
 
+// Gap 4: within-tier My Teams boost for the circadian sort comparator.
+// Returns 0 for games with a followed team, 1 for others — lower wins.
+// Uses MY_TEAMS (existing Set, source of truth). No-ops when MY_TEAMS is
+// empty so the sort is unchanged for users with no followed teams.
+function myTeamsBoost(g) {
+  if (typeof MY_TEAMS === 'undefined' || !MY_TEAMS.size) return 0;
+  return (MY_TEAMS.has(g.home) || MY_TEAMS.has(g.away)) ? 0 : 1;
+}
+
 // Gap 11: show "Show all sports" suggestion chip when circadian mode transitions
 // to LATE/DAWN and the active sport filter has all games finished.
 // Never auto-clears the filter — only suggests via a dismissible chip.
@@ -7423,6 +7432,13 @@ function renderAll(skipUnchanged){
       const bTier = getCachedCircadianTier(b);
       const primary = (_CIRCADIAN_SORT_RANK[aTier] ?? 4) - (_CIRCADIAN_SORT_RANK[bTier] ?? 4);
       if (primary !== 0) return primary;
+      // Gap 4: My Teams boost — within each circadian tier, games with a
+      // followed team sort first. Compounds with circadian sort, does not
+      // replace it. Secondary sorts below still apply within each group.
+      {
+        const _mb = myTeamsBoost(a) - myTeamsBoost(b);
+        if (_mb !== 0) return _mb;
+      }
       if ((_circadianMode === 'PRIME' || _circadianMode === 'LATE') && aTier === bTier) {
         const _impScore = g => ({series_deciding:30,elimination:20,clinch:15,playoff_impl:10}[g._gameImportance]||0);
         return _impScore(b) - _impScore(a);
