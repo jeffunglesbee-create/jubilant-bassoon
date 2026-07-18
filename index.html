@@ -19388,15 +19388,27 @@ async function fetchV2AllScores() {
         };
         if (fg.state === 'live' || v2Entry.state === 'in') anyLive = true;
 
-        // ── Round/Series propagation to allData.sports game objects ──────────
+        // ── Round/Series/_gameId propagation to allData.sports game objects ─────
         // V2 relay populates fg.round (from postseason_games) and fg.series
         // (from ESPN /soccer/xg for two-legged ties). Propagate to allData.sports
         // so the card template's buildRoundBadge(g) can display them.
-        if (fg.round || fg.series) {
+        // Also propagate _gameId so injectDebriefCards uses the ESPN event ID as
+        // contextId instead of the internal g{n} fallback for hardcoded-schedule
+        // sports (MLB, NHL, etc.). Without this, /context/game/g18 is fetched
+        // instead of /context/game/espn:401816164 — returning a pre-game brief
+        // even after the game is final.
+        if (fg.round || fg.series || v2Entry._gameId) {
           const _rGame = (allData?.sports || []).flatMap(s => s.games || []).find(g => `${g.home}|${g.away}` === key);
           if (_rGame) {
             if (fg.round && _rGame.round !== fg.round) { _rGame.round = fg.round; _roundDataNewThisPoll = true; }
             if (fg.series) _rGame.series = fg.series;
+            if (v2Entry._gameId && !_rGame._gameId) {
+              _rGame._gameId = v2Entry._gameId;
+              // If the card was already injected with the wrong contextId (g{n}),
+              // clear the stamp so injectDebriefCards re-fetches with the correct one.
+              const _dCard = document.querySelector(`.game-card[data-gameid="${_rGame._id}"][data-debrief-injected]`);
+              if (_dCard) { _dCard.removeAttribute('data-debrief-injected'); setTimeout(() => injectDebriefCards().catch(() => {}), 0); }
+            }
           }
         }
 
