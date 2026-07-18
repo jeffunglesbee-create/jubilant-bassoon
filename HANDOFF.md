@@ -1,5 +1,18 @@
 # FIELD HANDOFF
-## CLIENT HEAD: 45ffa95 · 2026-07-18 · CC session (esbuild Phase 3b)
+## CLIENT HEAD: 856d348 · 2026-07-18 · CC session (esbuild Phase 3c)
+Session doc: outbox/cc-session-2026-07-18-esbuild-phase3c.md
+
+**esbuild Phase 3c COMPLETE — third real ES module extraction.**
+- `src/utils/sport-format.js` (new): `export function inferSport(league)` + `export function golfRoundLabel(tourn)` — pure formatters, zero external deps
+- `src/legacy/field.js`: both bodies replaced with stub comments; file remains import-free
+- `src/main.js`: imports sport-format.js, sets `globalThis.inferSport` + `globalThis.golfRoundLabel` before field.js runs
+- 1 call site each (L2620 inferSport, L11711 golfRoundLabel) resolve as plain global reads
+- Smoke: 958/0 local + CI. Live CI run `29626880274` all steps green. Deployed. Live site smoke: 895.
+- **Note:** Phase 3d CC-CMD already committed to main (d899559) — next extraction ready to execute.
+
+---
+
+## PREVIOUS HEAD: 45ffa95 · 2026-07-18 · CC session (esbuild Phase 3b)
 Session doc: outbox/cc-session-2026-07-18-esbuild-phase3b.md
 
 **esbuild Phase 3b COMPLETE — second real ES module extraction.**
