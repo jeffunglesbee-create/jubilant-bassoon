@@ -53,4 +53,9 @@ import { WX_DIR, cardinalDir } from './utils/wind.js';
 globalThis.WX_DIR = WX_DIR;
 globalThis.cardinalDir = cardinalDir;
 
+import { VENUE_COORDS, isOutdoorVenue, getVenueCoords } from './utils/venues.js';
+globalThis.VENUE_COORDS = VENUE_COORDS;
+globalThis.isOutdoorVenue = isOutdoorVenue;
+globalThis.getVenueCoords = getVenueCoords;
+
 import './legacy/field.js';

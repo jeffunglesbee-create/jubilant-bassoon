@@ -1,5 +1,9 @@
 ## SESSION CLOSE-OUT — 2026-07-18, via chat (supersedes the "still open" list further below, which is stale)
 
+**HEAD:** f772e66
+**Smoke count:** 957/1 (A704 fixed below; will be 958/0 after Phase 6 HANDOFF update)
+**SW version:** 2026-07-17b
+
 **esbuild thread status:** Phase 1 through Phase 5 complete and independently verified (every single one via real, directly-inspected job logs, not trusted from a local dry-run alone — this discipline exists specifically because Phase 1's own build script had a real wrong-script-block bug that reached production once and survived by luck, not design). 19 functions extracted across 13 modules (Phase 3 series) + 1 constant/function pair (Phase 5, `WX_DIR`+`cardinalDir`) — the constant-extraction pattern is confirmed to extend cleanly, not just theorized.
 
 **Dispatched this session, not yet executed:**
