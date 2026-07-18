@@ -10161,10 +10161,10 @@ function renderJournalism() {
     const fbText = fbKey ? sessionStorage.getItem(fbKey) : null;
     if (fbText && fbText.length > 30) {
       const safe = fbText.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      sections.push(`<article class="jrn-editorial-block">
+      sections.push({ type: 'j3-editorial', html: `<article class="jrn-editorial-block">
         <div class="jrn-editorial-label">J3 · The Editorial</div>
         <div class="jrn-editorial">${safe}</div>
-      </article>`);
+      </article>` });
       briefCount++;
     }
   } catch(_) {}
@@ -10203,14 +10203,14 @@ function renderJournalism() {
         tonightHtml = `<div class="jrn-series-tonight"><span class="jrn-series-tonight-label">J1 · Tonight</span>${safeJ1}</div>`;
         gameBriefCount++;
       }
-      sections.push(`<section class="jrn-series" data-gameid="${g._id||''}">
+      sections.push({ type: 'j2-series', html: `<section class="jrn-series" data-gameid="${g._id||''}">
         <div class="jrn-eyebrow">J2 · Series Preview</div>
         <div class="jrn-series-marker">◆ ${marker}</div>
         <div class="jrn-series-game">${matchup}${metaParts.length?' · '+metaParts.join(' · '):''}</div>
         <div class="jrn-series-text">${safe}</div>
         ${tonightHtml}
         ${g._id ? `<a class="jrn-card-link" href="#" onclick="event.preventDefault();jumpToGameCard('${g._id}')">View card →</a>` : ''}
-      </section>`);
+      </section>` });
       seriesCount++;
     });
   } catch(_) {}
@@ -10245,14 +10245,26 @@ function renderJournalism() {
         gameBriefCount++;
       });
       if (slateItems.length) {
-        sections.push(`<section class="jrn-slate">
+        sections.push({ type: 'j1-slate', html: `<section class="jrn-slate">
           <div class="jrn-eyebrow">J1 · Tonight's Briefs</div>
           <div class="jrn-slate-marker">◆ Regular-Season Slate</div>
           <ul class="jrn-slate-list">${slateItems.join('')}</ul>
-        </section>`);
+        </section>` });
       }
     }
   } catch(_) {}
+
+  // Gap 8: sort sections by circadian mode priority, then tag each with data-journal-priority
+  const _JOURNAL_PRIORITY = {
+    PREVIEW: { 'j3-editorial': 1, 'j2-series': 0, 'j1-slate': 2 },
+    PRIME:   { 'j3-editorial': 0, 'j2-series': 1, 'j1-slate': 2 },
+    NIGHT:   { 'j3-editorial': 1, 'j2-series': 2, 'j1-slate': 0 },
+    LATE:    { 'j3-editorial': 0, 'j2-series': 2, 'j1-slate': 1 },
+    DAWN:    { 'j3-editorial': 0, 'j2-series': 2, 'j1-slate': 1 },
+  };
+  const _jMode = (typeof _circadianMode !== 'undefined' && _JOURNAL_PRIORITY[_circadianMode]) ? _circadianMode : 'PRIME';
+  const _jPri = _JOURNAL_PRIORITY[_jMode];
+  sections.sort((a, b) => ((_jPri[a.type] !== undefined ? _jPri[a.type] : 99) - (_jPri[b.type] !== undefined ? _jPri[b.type] : 99)));
 
   if (!sections.length) {
     content.innerHTML = '<div class="jrn-empty">Tonight\'s editorial is loading. Briefs render as the journalism pipeline completes — usually within the first minute after page load.</div>';
@@ -10260,7 +10272,16 @@ function renderJournalism() {
     const interleaved = [];
     sections.forEach((s, i) => {
       if (i > 0) interleaved.push('<div class="jrn-section-divider"></div>');
-      interleaved.push(s);
+      const pri = _jPri[s.type] !== undefined ? _jPri[s.type] : i;
+      let tagged = s.html;
+      if (s.type === 'j3-editorial') {
+        tagged = tagged.replace('<article class="jrn-editorial-block">', `<article class="jrn-editorial-block" data-journal-priority="${pri}">`);
+      } else if (s.type === 'j2-series') {
+        tagged = tagged.replace(/(<section class="jrn-series"[^>]*)>/, `$1 data-journal-priority="${pri}">`);
+      } else if (s.type === 'j1-slate') {
+        tagged = tagged.replace('<section class="jrn-slate">', `<section class="jrn-slate" data-journal-priority="${pri}">`);
+      }
+      interleaved.push(tagged);
     });
     interleaved.push('<div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalismArchive()">Yesterday\'s FIELD →</a></div>');
     content.innerHTML = interleaved.join('');
@@ -14934,6 +14955,10 @@ async function fetchV2AllScores() {
     _prevCircadianMode = _circPrev;
     // Gap 11: check if mode transitioned to LATE/DAWN with an active sport filter
     try { _checkFilterSuggestionChip(_circPrev, _circResult.global); } catch(_gp11) {}
+    // Gap 8: re-render Journal tab when circadian mode changes (re-sorts sections)
+    if (_circPrev !== _circResult.global && document.body.classList.contains('journalism-mode')) {
+      try { renderJournalism(); } catch(_gp8) {}
+    }
   } catch(_) {}
   scheduleV2Poll(anyLive ? 30000 : 60000);
 }
@@ -20810,30 +20835,64 @@ function buildStreamingDiscovery() {
   const familyGameCount = {};
   const familyLiveCount = {};
   const familyPlayoffCount = {};
+  // Gap 9: debrief-available count — final/post games with Debrief ready
+  const familyDebriefCount = {};
 
   (allData.sports || []).forEach(sec => {
     (sec.games || []).forEach(g => {
-      const isLive = (g._espnState || g.state || '') === 'in';
+      const st = g._espnState || g.state || '';
+      const isLive = st === 'in';
+      const isFinal = st === 'post' || st === 'final';
       const isPlayoff = !!(g.seriesRecord || /playoff|final|series/i.test(g.league || ''));
+      // Debrief available = final game + data-debrief-injected card in DOM
+      const hasDebrief = isFinal && !!(g._id && document.querySelector(
+        '.game-card[data-gameid="' + (g._id || '').replace(/"/g,'') + '"][data-debrief-injected="1"]'
+      ));
       (g.streams || []).forEach(s => {
         if (!s.key) return;
         const fam = SERVICE_FAMILIES[s.key];
         if (!fam) return;
         familyGameCount[fam] = (familyGameCount[fam] || 0) + 1;
-        if (isLive)    familyLiveCount[fam]   = (familyLiveCount[fam]   || 0) + 1;
-        if (isPlayoff) familyPlayoffCount[fam] = (familyPlayoffCount[fam] || 0) + 1;
+        if (isLive)    familyLiveCount[fam]    = (familyLiveCount[fam]    || 0) + 1;
+        if (isPlayoff) familyPlayoffCount[fam]  = (familyPlayoffCount[fam] || 0) + 1;
+        if (hasDebrief) familyDebriefCount[fam] = (familyDebriefCount[fam] || 0) + 1;
       });
     });
   });
 
+  // Gap 9: mode-specific scoring. Each mode surfaces a different signal.
+  // PREVIEW: games scheduled tonight (what can I watch?)
+  // PRIME:   live games right now (what's on now?)
+  // NIGHT:   Debriefs available (what finished with a story?)
+  // LATE/DAWN: total tonight coverage as archive-coverage proxy
+  const mode = (typeof _circadianMode !== 'undefined') ? _circadianMode : 'PRIME';
+  function _scoreForMode(games, live, debriefs, playoffs) {
+    if (mode === 'PREVIEW') return (games * 10) + (playoffs * 2);
+    if (mode === 'PRIME')   return (live  * 10) + (games   * 3);
+    if (mode === 'NIGHT')   return (debriefs * 10) + (games * 2);
+    // LATE / DAWN: archive coverage proxy — volume + historical significance
+    return (games * 5) + (playoffs * 4);
+  }
+  function _badgeForMode(games, live, debriefs) {
+    if (mode === 'PREVIEW' && games > 0)    return games    + (games    === 1 ? ' game tonight'       : ' games tonight');
+    if (mode === 'PRIME'   && live > 0)     return live     + (live     === 1 ? ' live now'           : ' live now');
+    if (mode === 'NIGHT'   && debriefs > 0) return debriefs + (debriefs === 1 ? ' Debrief available'  : ' Debriefs available');
+    if ((mode === 'LATE' || mode === 'DAWN') && games > 0)
+                                            return games    + (games    === 1 ? ' game tracked'       : ' games tracked');
+    return '';
+  }
+
   // Step 3: score each STREAMING_APPS card
   const scored = STREAMING_APPS.map(app => {
     const fam = app.key;
-    const games    = familyGameCount[fam]   || 0;
-    const live     = familyLiveCount[fam]   || 0;
-    const playoffs = familyPlayoffCount[fam]|| 0;
-    const score = (games * 3) + (live * 5) + (playoffs * 2);
-    return { ...app, _tonightScore: score, _tonightGames: games, _tonightLive: live };
+    const games    = familyGameCount[fam]    || 0;
+    const live     = familyLiveCount[fam]    || 0;
+    const playoffs = familyPlayoffCount[fam] || 0;
+    const debriefs = familyDebriefCount[fam] || 0;
+    const score = _scoreForMode(games, live, debriefs, playoffs);
+    const badge = _badgeForMode(games, live, debriefs);
+    return { ...app, _tonightScore: score, _tonightGames: games, _tonightLive: live,
+             _tonightDebriefs: debriefs, _circadianBadge: badge };
   });
 
   // Step 4: stable sort — highest score first, preserve original order within same score
@@ -20863,6 +20922,7 @@ function renderStreaming(){
         <div class="app-logo" style="${logoStyle}">${app.emoji}</div>
         <div>
           <div class="app-name">${app.name}</div>
+          ${app._circadianBadge ? `<span class="app-circadian-badge">${app._circadianBadge}</span>` : ''}
         </div>
         <span class="app-price">${app.price}</span>
       </div>
