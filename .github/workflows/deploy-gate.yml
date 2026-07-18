@@ -81,8 +81,9 @@ jobs:
           NEW_VERSION="${DEPLOY_DATE}${SUFFIX}"
           sed -i "s/const SW_VERSION *= *'[^']*'/const SW_VERSION = '${NEW_VERSION}'/" sw.js
           # Also sync index.html so A190 (sw.js === index.html) passes
-          sed -i "s/const SW_VERSION = '[^']*'/const SW_VERSION = '${NEW_VERSION}'/" index.html
-          echo "✅ SW_VERSION synced to ${NEW_VERSION} in sw.js + index.html (ET)"
+          sed -i "s/const SW_VERSION = '[^']*'/const SW_VERSION = '${NEW_VERSION}'/" src/legacy/field.js
+          node scripts/sync-source.mjs
+          echo "✅ SW_VERSION synced to ${NEW_VERSION} in sw.js + src/legacy/field.js → index.html (ET)"
 
       - name: Commit SW_VERSION sync back to repo
         run: |
@@ -93,8 +94,8 @@ jobs:
           # [skip ci] prevents a deploy loop.
           git config user.email "deploy-gate@field"
           git config user.name "Deploy-Gate"
-          git diff --quiet sw.js index.html && echo "SW_VERSION already in sync — no commit needed" && exit 0
-          git add sw.js index.html
+          git diff --quiet sw.js src/legacy/field.js index.html && echo "SW_VERSION already in sync — no commit needed" && exit 0
+          git add sw.js src/legacy/field.js index.html
           git commit -m "chore: sync SW_VERSION $(TZ='America/New_York' date +%Y-%m-%d) — A190 auto-fix [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
