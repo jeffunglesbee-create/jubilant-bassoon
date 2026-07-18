@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, Gap 7 client bracket delta (supersedes previous)
+
+**HEAD:** 97d6577
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (unchanged)
+**Session doc:** outbox/cc-session-2026-07-18-gap7-bracket-delta-client.md
+
+**Gap 7 client COMPLETE:** `buildBracketDeltaLayer` (Layer 5) added to `buildDebrief`. Reads `ctx.bracketDelta` from `/context/game/{id}` (relay `79f950e`), renders top-3 WC championship shift movers with `champDelta.toFixed(1)pp` and `champAfter.toFixed(1)%`. CSS `.debrief-bracket*` added to index.html. 958/0. CI triggered on 97d6577.
+
+**OPEN (STAGED):** E2E requires WC match to complete (BracketDO fires → `bracket_delta` brief written → Debrief card Layer 5 visible). WC Final 2026-07-19 is the expected trigger. Verify: D1 `SELECT * FROM briefs WHERE brief_type='bracket_delta' LIMIT 5`, then open Debrief card for that game.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Gap 12 offline Debrief caching (supersedes previous)
 
 **HEAD:** 324c107
