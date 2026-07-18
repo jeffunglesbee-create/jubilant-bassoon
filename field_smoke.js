@@ -112,6 +112,13 @@ global.requestAnimationFrame = cb => 0;
 global.setTimeout = ()=>0;
 global.setInterval = ()=>0;
 global.maybeShowSetup = ()=>{};
+// Stubs for functions extracted to src/identity/index.ts (Phase 4).
+// Import lines are stripped before new Function() execution, so bare-name
+// call sites in field.js would throw without these no-op stubs.
+global.initIdentityModule = ()=>{};
+global.findGameById = ()=>undefined;
+global._resolveRealGameId = ()=>null;
+global.resolveGameIdByHome = ()=>null;
 
 process.env.TZ = 'America/New_York';
 const RealDate = Date;
@@ -486,7 +493,7 @@ try {
   // A52 — espnScores._gameId stored + used in ticker trend sort
   const espnStoresGameId =
     html.includes('_gameId: resolveGameIdByHome') &&
-    html.includes('function resolveGameIdByHome') &&
+    (html.includes('function resolveGameIdByHome') || /import\s*\{[^}]*\bresolveGameIdByHome\b/.test(html)) &&
     html.includes('e._gameId || gid');
   if(espnStoresGameId) pass('A52 — espnScores._gameId stored + ticker uses it');
   else fail('A52 — espnScores._gameId missing — trend sort always returns 0');

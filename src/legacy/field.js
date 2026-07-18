@@ -15,8 +15,18 @@ import { _otwSigTierRank } from '../utils/otw.js';
 import { WX_DIR, cardinalDir } from '../utils/wind.js';
 import { VENUE_COORDS, isOutdoorVenue, getVenueCoords } from '../utils/venues.js';
 import { isFeaturedTierGame } from '../utils/tier-game.js';
+import { findGameById, _resolveRealGameId, resolveGameIdByHome, initIdentityModule } from '../identity/index.ts';
 
 'use strict';
+// Identity module — inject live state getters so the extracted functions
+// can read allGamesFlat, espnScores, allData without circular imports.
+// allGamesFlat is a hoisted function declaration; espnScores/allData use
+// closures so each call sees the current value after reassignment.
+initIdentityModule({
+  games: allGamesFlat,
+  scores: () => espnScores,
+  data: () => allData,
+});
 // ═══════════════════════════════════════════════════════════════
 // FIELD — Global Sports Intelligence
 // Debug logging: set FIELD_DEBUG=1 in localStorage to enable
@@ -6525,11 +6535,7 @@ function allGamesFlat() {
   return (allData?.sports || []).flatMap(s => s.games || []);
 }
 
-// findGameById: find a game object by _id across all sport sections.
-function findGameById(id) {
-  return allGamesFlat().find(g => g._id === id);
-}
-
+// findGameById extracted to src/identity/index.ts (Phase 4 — Identity domain).
 // gameNetwork(g, defaultLabel) lives in field_utils.js (pure).
 // getDramaPeak: read peak drama score for a game from localStorage.
 // Optional `game` param (CC-CMD-2026-07-08-pick-cross-session-resolution
@@ -6585,53 +6591,7 @@ function findEspnEntry(game, { requireSameDate = true } = {}) {
   return entry;
 }
 
-// _resolveRealGameId: one-time fuzzy match to bridge a game object (built
-// by the static schedule / ESPN fixtures path) to its real external ID
-// (api-sports.io fg.id, carried on the matching espnScores entry, from the
-// independent V2/mapV2ToESPN path) -- CC-CMD-2026-07-09-realid-fix-and-
-// generalize. Game construction and espnScores construction were confirmed
-// NOT unified (buildTodaySchedule/fetchESPNFixturesForDate assign game._id
-// as FIELD's own per-load counter via "g"+_gid fallback stamping; V2
-// entries carry fg.id separately, keyed by team name in espnScores) -- so
-// this cannot be a construction-time stamp, only a lookup-then-cache.
-// Caches onto game._gameId so repeat calls for the same game object (and
-// any other findEspnEntry()/_eDataMatchesGame() caller that later receives
-// this same game) get the real-ID fast path for free.
-// Unambiguous-candidacy guard (CC-CMD-2026-07-09-realid-bootstrap-
-// collision-check): requireSameDate guards a wrong DATE, not a same-day
-// collision between two DISTINCT real games whose home AND away suffixes
-// both happen to match under findEspnEntry's matcher (e.g. two different
-// real franchises sharing a >=6-letter mascot -- "Panthers", "Giants",
-// "Rangers" -- on both sides at once; confirmed empirically possible:
-// a constructed Carolina Panthers/New York Giants vs Florida Panthers/
-// San Francisco Giants collision genuinely caches the wrong ID today,
-// and with both candidates present Array.find() picks by iteration
-// order, not correctness). Re-implements the same fuzzy predicate
-// findEspnEntry() uses (not a call to it) because this needs the full
-// candidate COUNT, not just the first match, to detect ambiguity before
-// caching anything permanent.
-function _resolveRealGameId(game) {
-  if (!game) return null;
-  if (game._gameId) return game._gameId;
-  if (typeof espnScores === 'undefined') return null;
-  const h = (game.home || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
-  const a = (game.away || '').toLowerCase().replace(/[^a-z]/g, '').slice(-6);
-  const candidates = Object.values(espnScores).filter(v => {
-    const vh = (v.homeName || '').toLowerCase().replace(/[^a-z]/g, '');
-    const va = (v.awayName || '').toLowerCase().replace(/[^a-z]/g, '');
-    return vh.endsWith(h) && va.endsWith(a);
-  });
-  if (candidates.length !== 1) return null; // 0 = no match yet; 2+ = ambiguous, don't guess
-  const entry = candidates[0];
-  if (!entry._gameId) return null;
-  if (entry.state === 'post' && game.start_time &&
-      new Date(game.start_time).getTime() > Date.now()) {
-    return null; // stale-final guard, same as findEspnEntry()
-  }
-  game._gameId = entry._gameId;
-  return entry._gameId;
-}
-
+// _resolveRealGameId extracted to src/identity/index.ts (Phase 4 — Identity domain).
 // rankGamesByDrama: sort games by preGameScore, excluding non-games (ATP field entries).
 // Replaces 4 inline filter/sort patterns.
 function rankGamesByDrama(games) {
@@ -17174,20 +17134,7 @@ async function fetchSavantGameFeed(sourceId) {
 }
 
 // Fuzzy match: does the ESPN team name match a FIELD game team name?
-// Helper: resolve game._id from allData by home team name slug
-// Used when building espnScores entries — stores _gameId so drama history
-// functions (getDramaTrend, getSmoothedDrama) can use the correct key.
-function resolveGameIdByHome(homeName){
-  try{
-    const slug=(homeName||'').toLowerCase().replace(/[^a-z]/g,'').slice(-6);
-    for(const sec of (allData?.sports||[])){
-      for(const g of (sec.games||[])){
-        if(g._id&&g.home&&(g.home||'').toLowerCase().replace(/[^a-z]/g,'').endsWith(slug)) return g._id;
-      }
-    }
-  }catch(e_){}
-  return null;
-}
+// resolveGameIdByHome extracted to src/identity/index.ts (Phase 4 — Identity domain).
 
 // Find matching ESPN score for a FIELD game object
 //

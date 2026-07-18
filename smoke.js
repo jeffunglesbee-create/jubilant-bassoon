@@ -509,7 +509,7 @@ assert('A51 — weather bonus uses wxCache (not _weatherCache)',
 
 assert('A52 — espnScores._gameId stored + used in ticker trend sort',
   html.includes('_gameId: resolveGameIdByHome') &&
-  html.includes('function resolveGameIdByHome') &&
+  (html.includes('function resolveGameIdByHome') || /import\s*\{[^}]*\bresolveGameIdByHome\b/.test(html)) &&
   html.includes('e._gameId || gid'));
 
 assert('A53 — bdlInjuryContextSync function retained but no live call sites (replaced by ESPN injuries feed)',
@@ -6656,16 +6656,24 @@ assert('A-REALID-1 — findEspnEntry tries real external-ID equality first when 
     if (idx === -1) return false;
     const block = html.slice(idx, idx + 1200);
     return block.includes('v._gameId && v._gameId === game._gameId') &&
-      html.includes('function _resolveRealGameId(game)');
+      (html.includes('function _resolveRealGameId(game)') || /import\s*\{[^}]*\b_resolveRealGameId\b/.test(html));
   })(),
   'Per CC-CMD-2026-07-09-realid-fix-and-generalize: scoreSMTCard\'s live-state suppression compared FIELD\'s internal game._id against api-sports.io\'s external fg.id -- two namespaces that could never be equal, so suppression plausibly never worked. Verified live on a real Pittsburgh Pirates @ Atlanta Braves game that the OLD comparison would NOT have matched ("g14" !== "espn:401816084") while the NEW fast path correctly resolves and matches.');
 
 assert('A-REALIDCOLLISION-1 — _resolveRealGameId requires exactly one fuzzy candidate before caching a real ID, declining on ambiguity',
   (() => {
+    const hasRef = html.includes('function _resolveRealGameId(game)') || /import\s*\{[^}]*\b_resolveRealGameId\b/.test(html);
+    if (!hasRef) return false;
+    // After extraction, function body lives in src/identity/index.ts rather than html
     const idx = html.indexOf('function _resolveRealGameId(game)');
-    if (idx === -1) return false;
-    const block = html.slice(idx, idx + 900);
-    return block.includes('if (candidates.length !== 1) return null');
+    if (idx !== -1) {
+      const block = html.slice(idx, idx + 900);
+      return block.includes('if (candidates.length !== 1) return null');
+    }
+    try {
+      const ts = require('fs').readFileSync('./src/identity/index.ts', 'utf8');
+      return ts.includes('if (candidates.length !== 1) return null');
+    } catch(_) { return false; }
   })(),
   'Per CC-CMD-2026-07-09-realid-bootstrap-collision-check: an unguarded first-match would cache a wrong ID permanently on a genuine same-day suffix collision -- empirically reproduced with real franchise names (Carolina/Florida Panthers, NY/SF Giants) before this guard existed. Verified the guard leaves game._gameId unset (not a guess) under 2-candidate ambiguity, and self-heals once the ambiguity clears.');
 
