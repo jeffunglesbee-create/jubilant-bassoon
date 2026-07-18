@@ -8244,8 +8244,18 @@ async function fetchESPNFixturesForDate(iso){
         const away = comps.find(t=>t.homeAway==="away")||comps[1];
         if(!home||!away) return null;
         _gid++;
+        // For MLB, build the canonical MLB_{homeAbbr}_{awayAbbr}_{YYYYMMDD} ID so
+        // findBriefs() in the Context Graph can match game_id values written by
+        // renderMLBGameBriefCard. The generic g${_gid} counter produced IDs that
+        // never matched, making all mlb_game briefs permanently unfindable.
+        const _homeAbbr = section==="Baseball (MLB)" ? (home.team?.abbreviation||home.team?.displayName||"?") : null;
+        const _awayAbbr = section==="Baseball (MLB)" ? (away.team?.abbreviation||away.team?.displayName||"?") : null;
+        const _dateStr  = section==="Baseball (MLB)" ? iso.replace(/-/g,'') : null;
+        const _id = section==="Baseball (MLB)"
+          ? `MLB_${_homeAbbr}_${_awayAbbr}_${_dateStr}`
+          : `g${_gid}`;
         return {
-          _id:`g${_gid}`, _sport:section,
+          _id, _sport:section,
           home: home.team?.displayName||"?",
           away: away.team?.displayName||"?",
           league:section,
