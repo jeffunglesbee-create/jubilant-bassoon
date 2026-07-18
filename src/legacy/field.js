@@ -11988,12 +11988,7 @@ function computeCutLineProjection(pgaData) {
   };
 }
 
-// Format a toPar value for display: 0 → "E", positive → "+N", negative → "-N".
-function fmtGolfToPar(v) {
-  if (v == null || !Number.isFinite(v)) return '';
-  if (v === 0) return 'E';
-  return (v > 0 ? '+' : '') + v;
-}
+// fmtGolfToPar extracted to src/utils/golf-format.js (Phase 3).
 
 // Pack-density signal — how many players sit within 3 strokes of the leader.
 // A dense pack signals field compression (more dramatic than a runaway).
