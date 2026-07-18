@@ -1,3 +1,18 @@
+## SESSION CLOSE-OUT — 2026-07-18, Gap 8 + Gap 9 circadian surfaces (supersedes previous)
+
+**HEAD:** aa5d693
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-gap8-gap9-circadian-surfaces.md
+
+**Gap 8 COMPLETE:** `renderJournalism()` sections converted to `{type,html}` objects. `_JOURNAL_PRIORITY` table sorts sections by `_circadianMode`: PREVIEW=series-first, PRIME=editorial-first, NIGHT=slate-first, LATE/DAWN=editorial-first. Each section tagged with `data-journal-priority`. V2 poll re-calls `renderJournalism()` on mode change when `journalism-mode` active. 958/0. CI triggered on aa5d693.
+
+**Gap 9 COMPLETE:** `buildStreamingDiscovery()` gains mode-specific scoring (`_scoreForMode`) and contextual badge text (`_badgeForMode`): PREVIEW="X games tonight", PRIME="X live now", NIGHT="X Debriefs available", LATE/DAWN="X games tracked". `renderStreaming()` renders `_circadianBadge` span after `app-name`. CSS `.app-circadian-badge` added. 958/0.
+
+**OPEN:** None from this session.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Gap 4 MyTeams sort boost (supersedes previous)
 
 **HEAD:** 573d448
