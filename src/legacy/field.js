@@ -2304,6 +2304,168 @@ function fieldRow(label, value, opts = {}) {
   return row;
 }
 
+// ── Schedule Compound (CC-CMD-2026-07-18-debrief-phase2-schedule-compound) ──
+// Phase 2 of 3. Builds on Phase 1 UI Primitives. Phase 3 (The Debrief) depends
+// on this. renderCard/updateCard are STAGED for Phase 3 use — they are called
+// by The Debrief rendering path once assembleDebrief/fillDebriefSlots are built.
+// buildEnrichedGame and shouldShowCard are wired into renderAll and renderESPNScores.
+
+// STAGED: renderCard called by Phase 3 (The Debrief rendering)
+// STAGED: updateCard called by Phase 3 and eventually by renderESPNScores once
+//         renderAll-produced cards carry data-slot attributes (full compound migration)
+// STAGED journalism brief wiring (path 3): brief injection uses .card-brief-inline
+//         class elements, not data-slot attrs. Requires renderCard to replace renderAll
+//         card generation before fillSlot-based wiring is possible.
+
+function buildEnrichedGame(rawGame, sources) {
+  const _src = sources || {};
+  const espnScore = _src.espnScore !== undefined
+    ? _src.espnScore
+    : (typeof findESPNScore === 'function' ? findESPNScore(rawGame) : null);
+  return {
+    // Identity
+    _id:            rawGame._id,
+    home:           rawGame.home            || '',
+    away:           rawGame.away            || '',
+    league:         rawGame.league          || '',
+    _sport:         rawGame._sport          || '',
+    // Time / state
+    start_time:     rawGame.start_time      || '',
+    state:          espnScore ? (espnScore.state ?? rawGame.state ?? null) : (rawGame.state ?? null),
+    status:         rawGame.status          ?? null,
+    _aflComplete:   rawGame._aflComplete,
+    // Live scores (ESPN overlay merged over raw)
+    homeScore:      espnScore ? (espnScore.homeScore ?? rawGame.homeScore ?? null) : (rawGame.homeScore ?? null),
+    awayScore:      espnScore ? (espnScore.awayScore ?? rawGame.awayScore ?? null) : (rawGame.awayScore ?? null),
+    period:         espnScore ? (espnScore.period    ?? null) : null,
+    clock:          espnScore ? (espnScore.clock     ?? null) : null,
+    // Broadcast / streams
+    streams:        rawGame.streams         || null,
+    gotdStreams:    rawGame.gotdStreams      || null,
+    crew:           rawGame.crew            || '',
+    espnGOTD:       rawGame.espnGOTD        || false,
+    peacockGOTD:    rawGame.peacockGOTD     || false,
+    mlbnShowcase:   rawGame.mlbnShowcase    || false,
+    localNote:      rawGame.localNote       || '',
+    // Context
+    venue:          rawGame.venue           || '',
+    seriesRecord:   rawGame.seriesRecord    || '',
+    narrative:      rawGame.narrative       || null,
+    _gameImportance: rawGame._gameImportance || '',
+    _importanceIcon: rawGame._importanceIcon || '',
+    wp:             rawGame.wp              ?? null,
+    // Analytics
+    _insights:      rawGame._insights       || null,
+    confirmed:      rawGame.confirmed       === true,
+    // Debrief placeholder — all null until Phase 3 assembleDebrief is built
+    debrief: {
+      dramaSealed:  null,
+      oddsOutcome:  null,
+      preGameBrief: _src.journalismBrief   ?? null,
+      seriesArc:    null,
+    },
+    // Pass-throughs for downstream consumers
+    _raw:       rawGame,
+    _espnScore: espnScore,
+  };
+}
+
+// STAGED — called by Phase 3 (The Debrief). Renders a slot-based card DOM element
+// using Phase 1's _cardTemplate and fillSlot. Not yet wired into renderAll's main
+// schedule render path (that migration requires a dedicated Phase 2b session once
+// renderAll card feature-parity is established in the slot model).
+function renderCard(enrichedGame, sport) {
+  const card = _cardTemplate.cloneNode(true);
+  card.dataset.gameid = enrichedGame._id || '';
+  card.dataset.sport  = sport || enrichedGame._sport || '';
+  card.dataset.home   = (enrichedGame.home || '').replace(/"/g, '');
+  card.dataset.away   = (enrichedGame.away || '').replace(/"/g, '');
+
+  const isLive  = enrichedGame.state === 'in' || enrichedGame.state === 'live' ||
+                  enrichedGame.state === 'halftime';
+  const isFinal = typeof isGameOver === 'function'
+    ? isGameOver(enrichedGame._raw || enrichedGame)
+    : (enrichedGame.state === 'post');
+  if (isLive)  card.classList.add('live');
+  if (isFinal) card.classList.add('is-final');
+
+  // time-score: live/final score line or formatted start time
+  const _scoreText = (isLive || isFinal) && enrichedGame.homeScore != null
+    ? `${enrichedGame.away} ${enrichedGame.awayScore ?? ''} – ${enrichedGame.homeScore ?? ''} ${enrichedGame.home}`
+    : (typeof fmtTime === 'function' ? fmtTime(enrichedGame.start_time) : enrichedGame.start_time);
+  fillSlot(card, 'time-score', _scoreText);
+
+  fillSlot(card, 'home-name', enrichedGame.home || null);
+  fillSlot(card, 'away-name', enrichedGame.away || null);
+
+  const _sr = enrichedGame.seriesRecord;
+  fillSlot(card, 'series', (_sr && _sr !== '0-0') ? _sr : null);
+
+  if (enrichedGame.streams && enrichedGame.streams.length) {
+    const _bundleEl = document.createElement('span');
+    _bundleEl.textContent = enrichedGame.streams[0]?.key || enrichedGame.streams[0] || '';
+    fillSlot(card, 'bundle', _bundleEl);
+  }
+
+  fillSlot(card, 'crew', enrichedGame.crew || null);
+
+  // debrief slot — Phase 3 populates; null keeps it hidden
+  fillSlot(card, 'debrief', enrichedGame.debrief && enrichedGame.debrief.dramaSealed
+    ? String(enrichedGame.debrief.dramaSealed) : null);
+
+  return card;
+}
+
+// STAGED — called by Phase 3 and future renderESPNScores once cards have data-slot attrs.
+// Updates only changed slots in a renderCard-produced card element.
+function updateCard(cardEl, enrichedGame) {
+  if (!cardEl || !enrichedGame) return;
+
+  const isLive  = enrichedGame.state === 'in' || enrichedGame.state === 'live' ||
+                  enrichedGame.state === 'halftime';
+  const isFinal = typeof isGameOver === 'function'
+    ? isGameOver(enrichedGame._raw || enrichedGame)
+    : (enrichedGame.state === 'post');
+
+  // time-score slot (only exists in renderCard-produced cards)
+  if (cardEl.querySelector('[data-slot="time-score"]')) {
+    const _scoreText = (isLive || isFinal) && enrichedGame.homeScore != null
+      ? `${enrichedGame.away} ${enrichedGame.awayScore ?? ''} – ${enrichedGame.homeScore ?? ''} ${enrichedGame.home}`
+      : (typeof fmtTime === 'function' ? fmtTime(enrichedGame.start_time) : enrichedGame.start_time);
+    fillSlot(cardEl, 'time-score', _scoreText);
+  }
+
+  // debrief slot — Phase 3; no-op if null (keeps slot hidden)
+  fillSlot(cardEl, 'debrief', enrichedGame.debrief && enrichedGame.debrief.dramaSealed
+    ? String(enrichedGame.debrief.dramaSealed) : null);
+
+  // State class sync
+  cardEl.classList.toggle('live',     isLive);
+  cardEl.classList.toggle('is-final', isFinal);
+}
+
+// Single-game filter predicate — encapsulates the three game-level filter modes.
+// Sport filter (activeFilter) is section-level and remains in renderAll's section loop.
+function shouldShowCard(g) {
+  if (myTeamsFilter)  return MY_TEAMS.has(g.home) || MY_TEAMS.has(g.away);
+  if (rivalsFilter)   return typeof isRivalGame === 'function' && isRivalGame(g);
+  if (freeOnlyFilter) return gameHasFreeStream(g);
+  return true;
+}
+
+// Higher-debounce render coordinator — 500ms window for V2+ESPN merge.
+// Wraps scheduleRenderAll; use this when a data path arrives asynchronously
+// and should coalesce with other in-flight updates before a structural render.
+let _renderDebounceTimer = null;
+function scheduleRenderDebounced(delay) {
+  const _d = (delay != null && delay >= 0) ? delay : 500;
+  if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
+  _renderDebounceTimer = setTimeout(function() {
+    _renderDebounceTimer = null;
+    scheduleRenderAll();
+  }, _d);
+}
+
 // ── Per-game Circadian State (CC-CMD-2026-07-04-circadian-client-phase-v2) ──
 // v2.2: cross-sport, per-adapter field awareness — confirmed via live
 // browser inspection 2026-07-04 that getCardCircadian's v2.1 version only
@@ -6963,12 +7125,14 @@ function renderAll(skipUnchanged){
 
 
   const visible=activeFilter==="all"?sports:sports.filter(s=>s.sport===activeFilter);
-  const filtered = myTeamsFilter
-    ? visible.map(s=>({...s, games:(s.games||[]).filter(g=>MY_TEAMS.has(g.home)||MY_TEAMS.has(g.away))})).filter(s=>s.games.length)
-    : rivalsFilter
-      ? visible.map(s=>({...s, games:(s.games||[]).filter(g=>typeof isRivalGame==="function"&&isRivalGame(g))})).filter(s=>s.games.length)
+  // Phase 2 compound: shouldShowCard encapsulates game-level filter logic.
+  // Section-level filter (activeFilter/sport) remains above. Empty-section
+  // removal behavior is preserved: myTeams+rivals strip empty sections,
+  // freeOnly keeps them (matches pre-compound behavior exactly).
+  const filtered = (myTeamsFilter || rivalsFilter)
+    ? visible.map(s=>({...s, games:(s.games||[]).filter(shouldShowCard)})).filter(s=>s.games.length)
     : freeOnlyFilter
-      ? visible.map(s=>({...s, games:(s.games||[]).filter(gameHasFreeStream)}))
+      ? visible.map(s=>({...s, games:(s.games||[]).filter(shouldShowCard)}))
       : visible;
   if(!filtered.length||filtered.every(s=>!(s.games||[]).length)){ applyMainHTML('<div class="empty-note">No '+(freeOnlyFilter?"free ":"")+'events found for this filter</div>'); return; }
   // J3 FIELD Brief supersedes Tonight Summary Card — rendered in #field-brief above main
@@ -7071,6 +7235,7 @@ function renderAll(skipUnchanged){
       // through; missing/unrecognized shapes (CFL, Golf) degrade to LATE
       // per the CC-CMD's own SCOPE BOUNDARY (no clock-based fallback).
       const _circEData=typeof findESPNScore==='function'?findESPNScore(g):null;
+      const _enriched = buildEnrichedGame(g, { espnScore: _circEData });
       // home/away/_sport/league added (CC-CMD-2026-07-08-truth-is-night-
       // stars-client-fix): minutesSinceFinal()'s new bundle lookup needs
       // them to match against the newspaper bundle's completed_games; this
@@ -18538,6 +18703,7 @@ function renderESPNScores(){
       }
 
       // Build score HTML — Story Engine (Pipeline Stage 2)
+      const _enrichedForScore = buildEnrichedGame(game, { espnScore: score });
       const _sc = classifySport(game, score);
       const _n  = computeGameNarrative(game, score, _sc);
       const isLive    = _n.state==='in';
