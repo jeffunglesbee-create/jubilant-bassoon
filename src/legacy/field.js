@@ -11670,6 +11670,9 @@ function renderPGALeaderboard(data) {
     const gir    = (stats.gir != null) ? `${Math.round(stats.gir)}%` : "";
     const drive  = (stats.drivingDistance != null) ? `${Math.round(stats.drivingDistance)}yd` : "";
     const sand   = (stats.sandSaves != null && stats.sandSaves > 0) ? `${Math.round(stats.sandSaves)}%` : "";
+    const birds  = (stats.birdies != null) ? String(stats.birdies) : "";
+    const bogs   = (stats.bogeys != null)  ? String(stats.bogeys)  : "";
+    const dubs   = (stats.doublesOrWorse != null && stats.doublesOrWorse > 0) ? String(stats.doublesOrWorse) : "";
     return `<tr class="pga-row">
       <td class="pga-pos">${pos}</td>
       <td class="pga-name">${name}</td>
@@ -11679,12 +11682,15 @@ function renderPGALeaderboard(data) {
       <td class="pga-gir">${gir}</td>
       <td class="pga-drive">${drive}</td>
       <td class="pga-sand">${sand}</td>
+      <td class="pga-birds">${birds}</td>
+      <td class="pga-bogs">${bogs}</td>
+      <td class="pga-dubs">${dubs}</td>
     </tr>`;
   }).join("");
 
   const table = `<table class="pga-leaderboard">
     <thead><tr>
-      <th>Pos</th><th>Player</th><th>To Par</th><th>Today</th><th>Thru</th><th>GIR</th><th>Drive</th><th>Sand</th>
+      <th>Pos</th><th>Player</th><th>To Par</th><th>Today</th><th>Thru</th><th>GIR</th><th>Drive</th><th>Sand</th><th>B</th><th>Bo</th><th>D+</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
