@@ -24,4 +24,29 @@ globalThis._normWCName = _normWCName;
 import { isNationalGame } from './utils/national-game.js';
 globalThis.isNationalGame = isNationalGame;
 
+import { wxDescription, wxIcon, wxAlert, weatherDramaModifier } from './utils/weather.js';
+globalThis.wxDescription = wxDescription;
+globalThis.wxIcon = wxIcon;
+globalThis.wxAlert = wxAlert;
+globalThis.weatherDramaModifier = weatherDramaModifier;
+
+import { isVolatileMatchup, _upsetDogPrice } from './utils/odds.js';
+globalThis.isVolatileMatchup = isVolatileMatchup;
+globalThis._upsetDogPrice = _upsetDogPrice;
+
+import { _chipsHTML } from './utils/chips.js';
+globalThis._chipsHTML = _chipsHTML;
+
+import { urlBase64ToUint8Array } from './utils/push.js';
+globalThis.urlBase64ToUint8Array = urlBase64ToUint8Array;
+
+import { _raiQualityBar } from './utils/rai.js';
+globalThis._raiQualityBar = _raiQualityBar;
+
+import { _srSitToYL100 } from './utils/nfl.js';
+globalThis._srSitToYL100 = _srSitToYL100;
+
+import { _otwSigTierRank } from './utils/otw.js';
+globalThis._otwSigTierRank = _otwSigTierRank;
+
 import './legacy/field.js';

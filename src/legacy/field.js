@@ -3526,10 +3526,7 @@ function _buildAnalyticsChips(game) {
 
 // Render chips as HTML string (for both Option A footer and Option C desk card)
 function _chipsHTML(chips) {
-  if (!chips || !chips.length) return '';
-  return chips.map(c =>
-    `<span class="dac ${c.cls}"${c.tip ? ` title="${c.tip}"` : ''}>${c.label}</span>`
-  ).join('');
+  // _chipsHTML extracted to src/utils/chips.js (Phase 3-final).
 }
 
 // ── MLB Probable Pitcher Init — two-phase ────────────────────────────────────
@@ -4494,12 +4491,7 @@ document.getElementById("settings-btn").addEventListener("click", openSetup);
 const VAPID_PUBLIC_KEY = 'BA94Jhq_0-6Hm07vN40MkakAdW4EMqMbiQh3ZkoWlvOnoes4Ds-IhKoLSe39BhL6vR8HAE2KLClmHyaLaldqFXg';
 const PUSH_SUBSCRIBE_URL = 'https://field-relay-nba.jeffunglesbee.workers.dev/push/subscribe';
 function urlBase64ToUint8Array(b64){
-  const pad = '='.repeat((4 - b64.length % 4) % 4);
-  const s = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
-  const raw = atob(s);
-  const out = new Uint8Array(raw.length);
-  for (let i=0;i<raw.length;i++) out[i] = raw.charCodeAt(i);
-  return out;
+  // urlBase64ToUint8Array extracted to src/utils/push.js (Phase 3-final).
 }
 // Create the push subscription and register it with the relay. Idempotent:
 // pushManager.subscribe returns the existing subscription if one already exists.
@@ -5685,9 +5677,7 @@ function _epLookup(down,ytg,yl100){
 }
 
 function _srSitToYL100(sit){
-  if(!sit?.location?.yardline) return null;
-  const ownTerritory=sit.location.id===sit.possession?.id||sit.location.name===sit.possession?.name;
-  return Math.max(1,Math.min(99,ownTerritory?(100-sit.location.yardline):sit.location.yardline));
+  // _srSitToYL100 extracted to src/utils/nfl.js (Phase 3-final).
 }
 
 function _computeSRPlayEPA(evt){
@@ -9836,12 +9826,7 @@ function _isUpset(g) {
 }
 
 function _upsetDogPrice(g) {
-  const ml = (g.opening_odds && g.opening_odds.moneyline) || g.opening_odds || g.odds?.moneyline;
-  if (!ml) return null;
-  const mlH = Number(ml.home);
-  const mlA = Number(ml.away);
-  if (!isFinite(mlH) || !isFinite(mlA)) return null;
-  return Math.max(mlH, mlA); // The positive (dog) price
+  // _upsetDogPrice extracted to src/utils/odds.js (Phase 3-final).
 }
 
 function renderUpsets(games) {
@@ -11093,54 +11078,23 @@ function getVenueCoords(venue){
 
 // wxDescription: human-readable conditions string
 function wxDescription(wx){
-  if((wx.rain||0)>5||(wx.precip||0)>5) return `Heavy rain · ${wx.temp}°F`;
-  if((wx.rain||0)>1||(wx.precip||0)>1) return `Rain · ${wx.temp}°F`;
-  if((wx.snowfall||0)>0.3) return `Snow · ${wx.temp}°F`;
-  if((wx.gusts||wx.wind||0)>25) return `Windy · ${wx.temp}°F`;
-  if(wx.temp < 32) return `Cold · ${wx.temp}°F`;
-  if(wx.temp > 95) return `Hot · ${wx.temp}°F`;
-  return `${wx.temp}°F`;
+  // wxDescription extracted to src/utils/weather.js (Phase 3-final).
 }
 
 // wxIcon: emoji for current conditions
 function wxIcon(wx){
-  if((wx.snowfall||0)>0.3) return '❄️';
-  if((wx.rain||0)>5||(wx.precip||0)>5) return '⛈️';
-  if((wx.rain||0)>1||(wx.precip||0)>1) return '🌧️';
-  if((wx.aqi||0)>150) return '🌫️';
-  if((wx.gusts||wx.wind||0)>25) return '💨';
-  if(wx.temp < 32) return '🌡️';
-  if(wx.temp > 95) return '☀️';
-  return wx.isDay ? '⛅' : '🌙';
+  // wxIcon extracted to src/utils/weather.js (Phase 3-final).
 }
 
 // wxAlert: true if conditions materially affect gameplay
 function wxAlert(wx){
-  return (wx.rain||0) > 5
-      || (wx.gusts||wx.wind||0) > 30
-      || wx.temp < 28
-      || wx.temp > 100
-      || (wx.snowfall||0) > 0.5
-      || (wx.aqi||0) > 150;
+  // wxAlert extracted to src/utils/weather.js (Phase 3-final).
 }
 
 // weatherDramaModifier: signed drama delta for outdoor games (replaces flat +10)
 // Positive = conditions intensify drama. Negative = conditions hurt watchability.
 function weatherDramaModifier(wx){
-  if(!wx) return 0;
-  let mod = 0;
-  const feels = wx.feelsLike !== undefined ? wx.feelsLike : wx.temp;
-  const gusts  = wx.gusts || wx.wind || 0;
-  if(feels < 0)           mod += 8;   // extreme cold
-  if(feels < 28)          mod += 8;   // near/below freezing (stacks)
-  if(gusts > 20)          mod += 6;   // high wind
-  if(gusts > 30)          mod += 4;   // dangerous gusts (stacks)
-  if((wx.snowfall||0)>0.5) mod += 10; // snow
-  if((wx.rain||0)>2)      mod += 8;   // heavy rain
-  if((wx.precip||0)>5)    mod += 4;   // very heavy (stacks)
-  if((wx.aqi||0)>150)     mod -= 15;  // unhealthy air (wildfire/smoke)
-  if((wx.aqi||0)>200)     mod -= 10;  // very unhealthy (stacks)
-  return mod;
+  // weatherDramaModifier extracted to src/utils/weather.js (Phase 3-final).
 }
 
 // wxBadge: compact HTML badge for game cards
@@ -32954,8 +32908,7 @@ async function fetchRosterAdvantage(espnGameId, homeLabel, awayLabel) {
 }
 
 function _raiQualityBar(q) {
-  const filled = Math.max(0, Math.min(5, Math.round((q + 8) / 3.2)));
-  return '●'.repeat(filled) + '○'.repeat(5 - filled);
+  // _raiQualityBar extracted to src/utils/rai.js (Phase 3-final).
 }
 
 function buildRaiCardLine(rai, homeLabel, awayLabel) {
@@ -33512,13 +33465,7 @@ function _otwGetLiveTier(eData, sport) {
 // fieldTierRank() directly here would silently rank both to its default
 // case (0), collapsing two of the four real tiers to no distinction.
 function _otwSigTierRank(tier) {
-  switch (tier) {
-    case 'CRUNCH':       return 4;
-    case 'EXTRA_TIME':   return 3;
-    case 'CLOSE_FINISH': return 2;
-    case 'LIVE_GAME':    return 1;
-    default:              return 0;
-  }
+  // _otwSigTierRank extracted to src/utils/otw.js (Phase 3-final).
 }
 
 // Named label for the OTW header chip — factual condition string, never a score.
@@ -35484,8 +35431,7 @@ function isAloneOnScreen(game) {
 // isVolatileMatchup: large pre-game odds gap = high variance signal.
 // Financial market data (not game statistics) — no RUWT concern.
 function isVolatileMatchup(game) {
-  if (!game.odds?.moneyline) return false;
-  return Math.abs((game.odds.moneyline.home||0) - (game.odds.moneyline.away||0)) >= 200;
+  // isVolatileMatchup extracted to src/utils/odds.js (Phase 3-final).
 }
 
 // buildVibeChips: returns [{label, cls}] for .ganalytics strip.
