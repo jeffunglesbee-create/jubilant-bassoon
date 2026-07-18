@@ -44534,6 +44534,26 @@ function markFreshnessLive(){
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSnapshot(); });
 window.addEventListener('beforeunload', saveSnapshot);
 
+// ── Explicit window bridges for inline HTML event handlers ──
+// These functions are called by onclick/onchange/etc. attributes in index.html.
+// Under the current IIFE + classic-script setup they resolve automatically via
+// implicit globals. These assignments make them explicit window properties —
+// prerequisite for Scenario B (true ES module conversion) where implicit globals
+// would no longer exist. Additive only: existing behavior is unchanged.
+window._deskCardToggle       = _deskCardToggle;
+window.closeBottomSheet      = closeBottomSheet;
+window.fetchMCPStatus        = fetchMCPStatus;
+window.goToDate              = goToDate;
+window.openJournalismForGame = openJournalismForGame;
+window.pinGame               = pinGame;
+window.scrollToGame          = scrollToGame;
+window.setViewerIntelMode    = setViewerIntelMode;
+window.switchWCTab           = switchWCTab;
+window.toggleJournalismView  = toggleJournalismView;
+window.togglePickEmView      = togglePickEmView;
+window.toggleWCView          = toggleWCView;
+window.unpinGame             = unpinGame;
+
 // ── P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026) ──
 // On-device behavioral inference. The pattern stays on this phone — never sent
 // to a server, never used for advertising, never linked to identity. FIELD
