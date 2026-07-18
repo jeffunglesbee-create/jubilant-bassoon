@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, Phase 3b The Debrief client (supersedes previous)
+
+**HEAD:** 0505b18
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-debrief-phase3b-client.md
+
+**Phase 3b COMPLETE:** `buildDramaUnsealed`, `buildFieldWasWatching`, `buildOddsStory`, `buildSeriesArc`, `buildDebrief`, `injectDebriefCards` implemented and wired. `buildEnrichedGame` extended with `contextGame` source (populates `debrief.dramaSealed/dramaArc/oddsOutcome/preGameBrief/seriesArc`). `renderCard` debrief slot now uses `buildDebrief(enrichedGame)` Element. `injectDebriefCards` fires 600ms after every `renderAll`, replaces string-rendered final-game cards with DOM cards via `renderCard`, wires touch/click/keyboard handlers. CSS `.game-card.is-final .card-debrief{display:block}` was pre-existing; debrief layer CSS added. All CI green on 0505b18. 958/0.
+
+**OPEN:** Night Owl / Context Graph prompt integration (Layer 5) requires relay-side changes to journalism prompt builder — needs separate relay CC-CMD. `archive.gameBriefs[]` currently empty for most games (buildFieldWasWatching renders when populated, relay work needed). Series arc shape unknown for playoff games (null-guarded, will render when playoff data available).
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Phase 2 Schedule Compound (supersedes previous)
 
 **HEAD:** 880ebc6
