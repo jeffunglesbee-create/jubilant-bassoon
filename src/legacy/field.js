@@ -2957,8 +2957,7 @@ function teamNick(name){
 const getTeamNick=teamNick; // alias for existing references
 
 function getDramaDial(){
-  const v=parseInt(localStorage.getItem('field_drama_dial'));
-  return(v>=45&&v<=90)?v:65;
+  try{const v=parseInt(localStorage.getItem('field_drama_dial'));return(v>=45&&v<=90)?v:65;}catch(_){return 65;}
 }
 function setDramaDial(value){
   // Display-filter only (2026-07-06) -- no longer synced to the SW. The SW's
@@ -13656,7 +13655,7 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(opts.timeout || 12000), // Night Owl passes 25000; others default 12s
+      signal: AbortSignal.timeout(opts.timeout || 25000), // quality chain runs 6+ LLM retries; 25s default
     });
     if (!r.ok) {
       if (FIELD_DEBUG) console.warn('[JQ Gate] relay returned', r.status);
@@ -20963,7 +20962,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18i';
+  const SW_VERSION = '2026-07-18j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
