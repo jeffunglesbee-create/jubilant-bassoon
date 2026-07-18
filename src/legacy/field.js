@@ -2536,11 +2536,15 @@ function buildSeriesArc(debrief) {
   wrap.className = 'debrief-arc';
   const dots = document.createElement('div');
   dots.className = 'debrief-arc__dots';
-  games.forEach(g => {
+  games.forEach((g, i) => {
     const dot = document.createElement('span');
     dot.className = 'debrief-arc__dot';
-    if (g.winner) dot.dataset.winner = g.winner;
-    if (g.margin != null) dot.title = `${g.margin > 0 ? '+' : ''}${g.margin}`;
+    const winner = (g.home_score != null && g.away_score != null)
+      ? (g.home_score > g.away_score ? 'home' : 'away')
+      : null;
+    if (winner) dot.dataset.winner = winner;
+    const margin = Array.isArray(arc.margins) ? arc.margins[i] : null;
+    if (margin != null) dot.title = `${margin > 0 ? '+' : ''}${margin}`;
     dots.appendChild(dot);
   });
   wrap.appendChild(dots);
