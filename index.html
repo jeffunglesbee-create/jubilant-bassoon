@@ -30713,6 +30713,12 @@ document.addEventListener('visibilitychange', () => {
   // exposed as window._sseScoreTs so per-card consumers (Pulse Chip) can
   // inspect the recent event stream without re-subscribing to the bus.
   const _sseScoreTs = new Map();
+  // Gap 2 dedup: tracks gameIds for which the SSE 'final' event has already
+  // triggered injectDebriefCards, so multiple 'final' arrivals for the same
+  // game don't each queue a redundant call. Also guards against double-
+  // processing alongside the natural 600ms-after-renderAll poll cycle (that
+  // cycle checks data-debrief-injected, so it's a belt-and-suspenders guard).
+  const _debriefTriggeredIds = new Set();
 
   // Scoring velocity: events in last 8 minutes / 8 (events per minute).
   // Used by multiview and any velocity-dependent feature. Accepts the
@@ -30903,6 +30909,17 @@ document.addEventListener('visibilitychange', () => {
             period: 0, state: 'post', isFinal: true,
             source: 'sse',
           });
+        }
+      } catch (_e) {}
+      // Gap 2: trigger Debrief assembly immediately on SSE 'final' event,
+      // rather than waiting for the next 600ms-after-renderAll poll cycle.
+      // Fire-and-forget: if this fetch fails, the natural cycle is the fallback.
+      // _debriefTriggeredIds prevents re-triggering on duplicate 'final' events.
+      try {
+        if (data.gameId && typeof injectDebriefCards === 'function' &&
+            !_debriefTriggeredIds.has(data.gameId)) {
+          _debriefTriggeredIds.add(data.gameId);
+          setTimeout(function() { injectDebriefCards().catch(function() {}); }, 300);
         }
       } catch (_e) {}
     }
