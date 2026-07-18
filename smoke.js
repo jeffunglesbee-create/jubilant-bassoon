@@ -6857,11 +6857,15 @@ assert('A-FTO-1 — FEATURED_TIER_OVERFLOW_THRESHOLD exists and is a real number
   'FEATURED_TIER_OVERFLOW_THRESHOLD must exist and sit strictly between typical low-volume sports and CFB\'s real confirmed volume range');
 
 assert('A-FTO-2 — isFeaturedTierGame() checks all three promotion signals (rank, MY_TEAMS, Scout\'s Pick)',
-  html.includes('function isFeaturedTierGame(g)') &&
-  /Math\.min\(g\.homeCuratedRank \?\? 99, g\.awayCuratedRank \?\? 99\)/.test(html) &&
-  /rank <= 25/.test(html) &&
-  /MY_TEAMS\.has\(g\.home\) \|\| MY_TEAMS\.has\(g\.away\)/.test(html) &&
-  html.includes('isScoutsPick(g)'),
+  (() => {
+    // Body extracted to src/utils/tier-game.js (Phase 7) — check stub in html + real body in module.
+    const tierGame = (() => { try { return require('fs').readFileSync('./src/utils/tier-game.js', 'utf8'); } catch(_) { return ''; } })();
+    const bodyOk = /Math\.min\(g\.homeCuratedRank \?\? 99, g\.awayCuratedRank \?\? 99\)/.test(tierGame) &&
+      /rank <= 25/.test(tierGame) &&
+      /MY_TEAMS\.has\(g\.home\) \|\| MY_TEAMS\.has\(g\.away\)/.test(tierGame) &&
+      tierGame.includes('isScoutsPick(g)');
+    return html.includes('function isFeaturedTierGame(g)') && bodyOk;
+  })(),
   'isFeaturedTierGame must check homeCuratedRank/awayCuratedRank <= 25, MY_TEAMS, and isScoutsPick — ranking is one promotion signal, not a hard filter');
 
 assert('A-FTO-3 — renderAll() split is inert below threshold (cardGames falls back to the full games array unchanged)',

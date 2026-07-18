@@ -6687,15 +6687,8 @@ const FEATURED_TIER_OVERFLOW_THRESHOLD = 30;
 // rank would be exactly the kind of field-name collision this codebase
 // has already found and fixed multiple times tonight (WC label
 // fragmentation, league mislabel).
-function isFeaturedTierGame(g) {
-  const rank = Math.min(g.homeCuratedRank ?? 99, g.awayCuratedRank ?? 99);
-  if (rank <= 25) return true;
-  if (MY_TEAMS.has(g.home) || MY_TEAMS.has(g.away)) return true;
-  if (typeof isScoutsPick === 'function') {
-    try { if (isScoutsPick(g)) return true; } catch(_e) {}
-  }
-  return false;
-}
+// isFeaturedTierGame extracted to src/utils/tier-game.js (Phase 7).
+function isFeaturedTierGame(g){}
 
 // Ranking badge — small #N tag(s) for featured cards with a ranked team,
 // reusing buildRoundBadge's existing small-chip badge pattern (same visual

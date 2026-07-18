@@ -58,4 +58,7 @@ globalThis.VENUE_COORDS = VENUE_COORDS;
 globalThis.isOutdoorVenue = isOutdoorVenue;
 globalThis.getVenueCoords = getVenueCoords;
 
+import { isFeaturedTierGame } from './utils/tier-game.js';
+globalThis.isFeaturedTierGame = isFeaturedTierGame;
+
 import './legacy/field.js';
