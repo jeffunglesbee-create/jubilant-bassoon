@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, Gap 6 push notification → Debrief link (supersedes previous)
+
+**HEAD:** cab85fb (jubilant-bassoon) / 1b4c6c1 (field-relay-nba)
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-gap6-push-debrief.md
+
+**Gap 6 COMPLETE (both repos):** GameDO final-state hook now fires `POST /push/game-final` (fire-and-forget) alongside existing `/archive/game` and `/journalism/game-complete`. Relay `handleGameFinalPush` fans out `GAME_FINAL` push to all PUSH_SUBS subscribers. SW handles `GAME_FINAL` type — shows Final notification with `watchUrl='/?debrief=gameId'`. Existing `notificationclick` handler navigates to debrief URL — no click handler changes needed. `field.js` reads `?debrief=` param on load and scrolls to card at 1500ms (after injectDebriefCards cycle). Patent-safety confirmed: `drama_peak` absent from all send conditions — send triggers on `isCompleted(facts.state)` only. 958/0. CI triggered on both commits.
+
+**OPEN:** Live push E2E not verifiable in sandbox — requires active PUSH_SUBS subscriber + real game reaching final state. Verify via: (1) subscribe a device, (2) wait for a game to complete, (3) confirm GAME_FINAL notification appears with score + "Tap for Debrief", (4) confirm tap opens `/?debrief=gameId` and scrolls to card.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, fix dual MLB game-ID paths (supersedes previous)
 
 **HEAD:** d4bf941
