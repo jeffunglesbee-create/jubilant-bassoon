@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, Gap 12 offline Debrief caching (supersedes previous)
+
+**HEAD:** 324c107
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (bumped from a — sw.js change)
+**Session doc:** outbox/cc-session-2026-07-18-gap12-offline-cache.md
+
+**Gap 12 COMPLETE:** `injectDebriefCards` now reads Context Graph responses from `field-debriefs` Cache API before fetching (cache-first). On network hit, writes Response with `X-Cache-Time` header. sw.js activate event sweeps `field-debriefs` and evicts entries older than 7 days. Cache key: `https://field-local/debrief/${encodeURIComponent(gameId)}`. SW_VERSION bumped to `2026-07-18b` in both `sw.js` and `field.js`. 958/0. CI triggered on 324c107.
+
+**OPEN (STAGED):** Offline survival E2E requires browser runtime post-deploy. Verify via DevTools → Offline → reload → Debrief card renders from cache. See session doc for exact unblock criteria.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Gap 8 + Gap 9 circadian surfaces (supersedes previous)
 
 **HEAD:** aa5d693
