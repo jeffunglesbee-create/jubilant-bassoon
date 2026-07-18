@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, Gap 2 AmbientDO SSE → Debrief instant transition (supersedes previous)
+
+**HEAD:** 56903bf
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-gap2-sse-debrief.md
+
+**Gap 2 COMPLETE:** `_onMessage(evt, 'final')` in the ambient SSE closure now fires `injectDebriefCards()` at 300ms after the `final` SSE event for the specific `gameId`, rather than waiting for the next 600ms-after-renderAll poll cycle. `_debriefTriggeredIds` Set prevents re-triggering on duplicate `final` events. Fire-and-forget: failure is silent, the natural poll-cycle path remains the fallback unchanged. 958/0. CI triggered on 56903bf.
+
+**OPEN:** None from this session. Live E2E verification requires a real game going final during active SSE session.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Gap 6 push notification → Debrief link (supersedes previous)
 
 **HEAD:** cab85fb (jubilant-bassoon) / 1b4c6c1 (field-relay-nba)
