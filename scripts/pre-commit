@@ -45,6 +45,9 @@ if [ -n "$_HTML_SWV" ] && [ "$_HTML_SWV" != "$_SW_SWV" ]; then
   exit 1
 fi
 
+echo "🔄 Syncing src/legacy/field.js → index.html..."
+node "$REPO/scripts/sync-source.mjs" >/dev/null 2>&1 && git add "$REPO/index.html"
+
 echo "🔍 Smoke test (structural)..."
 node "$REPO/smoke.js" "$REPO/index.html" >/dev/null 2>&1; SMOKE_S=$?
 
