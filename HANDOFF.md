@@ -1,5 +1,17 @@
 # FIELD HANDOFF
-## CLIENT HEAD: b4bf1ee · 2026-07-18 · CC session (esbuild Phase 2b)
+## CLIENT HEAD: cc35b4b · 2026-07-18 · CC session (esbuild Phase 3)
+Session doc: outbox/cc-session-2026-07-18-esbuild-phase3.md
+
+**esbuild Phase 3 COMPLETE — first real ES module extraction.**
+- `src/utils/golf-format.js` (new): `export function fmtGolfToPar(v)` — 5-line pure utility
+- `src/legacy/field.js`: fmtGolfToPar body replaced with stub comment; file remains import-free
+- `src/main.js`: imports golf-format.js, sets `globalThis.fmtGolfToPar` before field.js runs
+- Smoke: 958/0. Live CI run `29625736816` confirmed all steps clean. Deployed.
+- **Pattern for future extractions:** new module → `src/utils/` or `src/sports/`; wire via `src/main.js` globalThis assignment; field.js stays import-free. See session doc for full rationale.
+
+---
+
+## PREVIOUS HEAD: b4bf1ee · 2026-07-18 · CC session (esbuild Phase 2b)
 Session doc: outbox/cc-session-2026-07-18-esbuild-phase2b.md
 
 **esbuild Phase 2b COMPLETE — src/legacy/field.js is now the sole edit target.**
@@ -7,8 +19,7 @@ Session doc: outbox/cc-session-2026-07-18-esbuild-phase2b.md
 - `scripts/pre-commit` — auto-syncs field.js → index.html before smoke on every commit
 - `scripts/build-bundle.mjs` — GENERATED comment warns against editing index.html directly
 - `.github/workflows/deploy-gate.yml` — SW_VERSION sync targets src/legacy/field.js
-- Smoke: 958/0. No SW_VERSION bump (no trigger-path commit).
-- Live CI verification pending: next code push to index.html/sw.js will confirm new pipeline.
+- Smoke: 958/0. Live CI verification: run `29625262959` (cleanup) confirmed all 6 steps clean.
 
 ---
 
