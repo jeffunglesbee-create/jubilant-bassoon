@@ -22021,7 +22021,8 @@ function findESPNScore(game){
   // DO NOT exclude 1H/2H — fetchSoccerFixtures stores soccer scores with those prefixes
   const sc = typeof classifySport==='function' ? classifySport(game,null) : {};
   // Individual-sport and non-ESPN-indexed leagues have no team-score entry in espnScores.
-  if (sc.isCFL || sc.isAFL || sc.isGolf || sc.isTennis || sc.isCricket || sc.isRugby) return null;
+  // isSoccer: SOCCER_LEAGUES=[] so espnScores never has soccer; all soccer served via findScore()→_scoresBySource.apisports
+  if (sc.isCFL || sc.isAFL || sc.isGolf || sc.isTennis || sc.isCricket || sc.isRugby || sc.isSoccer) return null;
   const gameSoccer = sc.isSoccer;
   for(const [key, score] of Object.entries(espnScores)){
     const pp = score.periodPrefix||'';
@@ -25919,7 +25920,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18j';
+  const SW_VERSION = '2026-07-18k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
