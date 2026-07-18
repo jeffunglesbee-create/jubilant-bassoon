@@ -1,3 +1,14 @@
+## SESSION CLOSE-OUT — 2026-07-18, Module Script Scenario A (supersedes previous)
+
+**HEAD:** 7181061
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (unchanged — no SW change)
+**Session doc:** outbox/cc-session-2026-07-18-module-script-scenarioA.md
+
+**Module Script Scenario A COMPLETE:** `build-bundle.mjs` now emits `<script type="module">` wrapping the existing IIFE bundle (one-line change: `html.slice(0, scriptStart) + '<script type="module">'` instead of passing through the original tag). IIFE unchanged — Scenario B (true ES module conversion) is separate, unauthorized work. Source smoke 958/0 before and after. Bundled regression check: 576/382 (identical to pre-change baseline, 0 new failures). All CI workflows green: deploy-gate, Desktop Chrome, Desktop Safari, Smoke+Verify. `get_smoke_count` (895) counts `assert(` call sites in smoke.js source — not pass/fail count; 958 pass count from local source smoke is the real gate.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Gap 7 client bracket delta (supersedes previous)
 
 **HEAD:** 97d6577
