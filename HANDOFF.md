@@ -1,3 +1,14 @@
+## SESSION CLOSE-OUT — 2026-07-18, extract-identity-domain (supersedes previous)
+
+**HEAD:** 923f426
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (unchanged — no SW change)
+**Session doc:** outbox/cc-session-2026-07-18-extract-identity-domain.md
+
+**Identity domain extracted:** `src/identity/index.ts` — first real TypeScript module in the codebase. Extracts findGameById, _resolveRealGameId, resolveGameIdByHome from field.js into typed TS with FieldInternalId/ExternalGameId/FieldGame/EspnScoreEntry/FieldData types derived from actual observed shapes. Dependency injection via initIdentityModule() bridges module scope — espnScores/allData as live closures, allGamesFlat direct. Scope narrowed to 3 of 7 candidates (getDramaPeak, normalizeNBAGameRelay, normalizeMLBGame, resolveGameBroadcast correctly excluded). esbuild TS transpilation confirmed: identity functions inline at bundle time (lines 5379-5420). smoke.js/field_smoke.js updated for import-pattern acceptance. All CI green. Proof-of-pattern for future TS extractions.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, retire-globalthis-bridge (supersedes previous)
 
 **HEAD:** 81f1abb
