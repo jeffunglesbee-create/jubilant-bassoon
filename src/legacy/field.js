@@ -20972,7 +20972,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18e';
+  const SW_VERSION = '2026-07-18f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -37003,32 +37003,10 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       scoreProse(_owlRelayScored, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));
       return _owlRelayScored.trim();
     }
-    // Fallback: legacy direct-proxy path + browser-side quality chain
-    const r=await fetch(CLAUDE_PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    if(!r.ok) return null;
-    const data=await r.json();
-    let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    if(text&&text.length>40){
-      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);
-      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL); // P3: lead check on J5
-      // Layer 2b: sport vocab — catches "one-possession game" for baseball etc.
-      const _sp=topGame._sport||'';
-      text=await retryWithSportVocab(prompt,text,_sp,CLAUDE_PROXY_URL,'J5 Night Owl');
-      // Layer 2c: hard strip — last resort if AI retry still contains violations
-      const _spCls=detectSportClass(_sp);
-      if(_spCls&&_spCls!=='basketball'){
-        const _voc=SPORT_VOCAB_VIOLATIONS[_spCls];
-        if(_voc?.forbidden?.length&&_voc.forbidden.some(t=>text.toLowerCase().includes(t))){
-          const _sents=text.split(/(?<=[.!?])\s+/);
-          const _cln=_sents.filter(s=>!_voc.forbidden.some(t=>s.toLowerCase().includes(t)));
-          // Accept even 1 clean sentence — anything is better than all-basketball baseball recap
-          if(_cln.length>=1)text=_cln.join(' ');
-          if(FIELD_DEBUG)console.warn('[JQ Layer 2c] Hard-stripped sport vocab from',_sp);
-        }
-      }
-      budget.inc();text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J5 Night Owl',topGame||null);scoreProse(text, topGame||null).then(s=>renderProseScore(s,'J5 Night Owl'));return stripPromptLeaks(text.trim());
-    }
-  }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] proxy error:',e.message);captureFieldError('journalism:night-owl',e,true);}
+    // Relay is the canonical path. If it returned null (quality rejection, relay down,
+    // or score below threshold), return null silently — the direct-proxy fallback is
+    // unreachable from the browser and only generates "Load failed" errors.
+  }catch(e){if(FIELD_DEBUG)console.error('[J5 Night Owl] relay error:',e.message);captureFieldError('journalism:night-owl',e,true);}
   return null;
 }
 

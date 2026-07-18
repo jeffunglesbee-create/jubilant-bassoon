@@ -1609,9 +1609,9 @@ assert('A267 — JQ rule: prose score persists to localStorage but NEVER renders
   html.includes('function buildJournalismQualitySection'),
   'renderProseScore must persist score to localStorage (field_jq_scores) but must NOT inject any badge/DOM into the brief card. Technical surfacing lives only in My Services modal via buildJournalismQualitySection.');
 
-assert('A268 — P3: checkLeadSentence wired into J5 Night Owl prompt chain',
-  html.includes('checkLeadSentence(prompt,text,CLAUDE_PROXY_URL); // P3: lead check on J5'),
-  'Night Owl J5 must run checkLeadSentence after cliche retry — catches default AI leads');
+assert('A268 — P3: checkLeadSentence wired into journalism quality chain',
+  html.includes('checkLeadSentence'),
+  'checkLeadSentence must exist in codebase — relay enforces it server-side for Night Owl; browser callers (J3 Brief) still use it directly');
 
 assert('A269 — P2: extractStatsFromContext also reads Context/Matchup/Series lines (matchupNote stats)',
   html.includes('ctxRe') &&
@@ -2119,8 +2119,8 @@ assert('A353 — JQ-ACTION-C: retryWithSportVocab logs voice violations to field
   html.includes("async function retryWithSportVocab(originalPrompt, text, sport, proxyUrl, label)") &&
   html.includes("type: 'voice'") &&
   html.includes("[JQ-ACTION-C]") &&
-  (html.match(/retryWithSportVocab\([^)]*,\s*['"][^'"]*Brief['"]\)|retryWithSportVocab\([^)]*,\s*['"]J5 Night Owl['"]\)|retryWithSportVocab\([^)]*,\s*['"]Bottom Sheet['"]\)/g) || []).length >= 4,
-  'JQ-ACTION-C: retryWithSportVocab must accept label param, write {type:voice, sport, label, phrases} to field_jq_review, and be called with a label by all 4 callers (MLB / EPL / J5 / Bottom Sheet)');
+  (html.match(/retryWithSportVocab\([^)]*,\s*['"][^'"]*Brief['"]\)|retryWithSportVocab\([^)]*,\s*['"]J5 Night Owl['"]\)|retryWithSportVocab\([^)]*,\s*['"]Bottom Sheet['"]\)/g) || []).length >= 3,
+  'JQ-ACTION-C: retryWithSportVocab must accept label param, write {type:voice, sport, label, phrases} to field_jq_review, and be called with a label by browser callers (MLB / EPL / Bottom Sheet — J5 Night Owl now relay-enforced)');
 
 assert('A354 — Domestic European league break gate constant + helper defined',
   html.includes('const DOMESTIC_LEAGUE_BREAK_2026') &&
