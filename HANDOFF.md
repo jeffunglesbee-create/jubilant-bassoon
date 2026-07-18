@@ -1,5 +1,18 @@
 # FIELD HANDOFF
-## CLIENT HEAD: 4bb105b · 2026-07-17 (early AM) · via chat, cross-referencing multiple parallel CC sessions
+## CLIENT HEAD: b4bf1ee · 2026-07-18 · CC session (esbuild Phase 2b)
+Session doc: outbox/cc-session-2026-07-18-esbuild-phase2b.md
+
+**esbuild Phase 2b COMPLETE — src/legacy/field.js is now the sole edit target.**
+- `scripts/sync-source.mjs` — new script: field.js → index.html propagation
+- `scripts/pre-commit` — auto-syncs field.js → index.html before smoke on every commit
+- `scripts/build-bundle.mjs` — GENERATED comment warns against editing index.html directly
+- `.github/workflows/deploy-gate.yml` — SW_VERSION sync targets src/legacy/field.js
+- Smoke: 958/0. No SW_VERSION bump (no trigger-path commit).
+- Live CI verification pending: next code push to index.html/sw.js will confirm new pipeline.
+
+---
+
+## PREVIOUS HEAD: 4bb105b · 2026-07-17 (early AM) · via chat, cross-referencing multiple parallel CC sessions
 
 **Session status: still active, not formally closed. This entry is a mid-session update, not a close-out.**
 
