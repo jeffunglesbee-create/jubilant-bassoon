@@ -4237,7 +4237,7 @@ async function nbaPlayerCluichInit() {
     });
     const r = await fetch(
       `${NBA_STATS_RELAY}/leaguedashplayerclutch?${params}`,
-      { signal: AbortSignal.timeout(6000) }
+      { signal: AbortSignal.timeout(12000) }
     );
     if (!r.ok) { _recordRelayInit('nbaPlayerCluichInit', false, `HTTP ${r.status}`); return; }
     const data = await r.json();
@@ -17025,6 +17025,9 @@ async function fetchSavantGameFeed(sourceId) {
 // guard working correctly, not a genuine failure) at all 3 sites where it
 // fires -- purely additive, zero change to the return contract, zero
 // caller updates needed.
+// Dedup set: stale-final blocks are expected per guard design — only record once per matchup.
+const _staleFinalRecorded = new Set();
+
 function findESPNScore(game){
   // ── STALE-FINAL GUARD (June 10 2026) ─────────────────────────────────────
   // Problem: api-sports.io returns late games (e.g. June 9 8:40pm ET =
@@ -17041,6 +17044,9 @@ function findESPNScore(game){
   };
   const _recordStaleFinalBlock = (path) => {
     if (FIELD_DEBUG) console.warn('[FIELD] stale-final blocked:', game.away, '@', game.home, game.start_time, '('+path+')');
+    const _sfKey = `${game.away}|${game.home}|${game.start_time}`;
+    if (_staleFinalRecorded.has(_sfKey)) return;
+    _staleFinalRecorded.add(_sfKey);
     if (typeof FIELD_OPERATIONS !== 'undefined') {
       FIELD_OPERATIONS.recordFailure({
         subsystem: 'scores', operation: 'find-espn-score-stale-final-guard',
@@ -17069,6 +17075,8 @@ function findESPNScore(game){
   // EXCLUDE clearly non-soccer: Q=basketball, H=college-bball, P=hockey, T=baseball
   // DO NOT exclude 1H/2H — fetchSoccerFixtures stores soccer scores with those prefixes
   const sc = typeof classifySport==='function' ? classifySport(game,null) : {};
+  // CFL (and other non-ESPN-indexed leagues) will never match espnScores — skip silently.
+  if (sc.isCFL) return null;
   const gameSoccer = sc.isSoccer;
   for(const [key, score] of Object.entries(espnScores)){
     const pp = score.periodPrefix||'';
@@ -20964,7 +20972,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18d';
+  const SW_VERSION = '2026-07-18e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
