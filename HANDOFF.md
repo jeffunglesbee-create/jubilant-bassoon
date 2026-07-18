@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, fix buildSeriesArc data-shape mismatch (supersedes previous)
+
+**HEAD:** 7aa3876
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-fix-series-arc-shape.md
+
+**buildSeriesArc FIXED:** `g.winner`/`g.margin` per-game reads replaced with derived winner from `home_score`/`away_score` comparison and `arc.margins[i]` index lookup. Matches confirmed `findSeries()` relay shape. Null-score edge case (unplayed game) correctly produces no data-winner, no tooltip. All assertions pass. 958/0. CI triggered on 7aa3876.
+
+**OPEN:** Night Owl/Context Graph prompt integration (Layer 5) relay-side. `archive.gameBriefs[]` relay work. Series arc will render correctly when playoff data is available.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Phase 3b The Debrief client (supersedes previous)
 
 **HEAD:** 0505b18
