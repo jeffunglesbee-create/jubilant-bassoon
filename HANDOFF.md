@@ -1,5 +1,18 @@
 # FIELD HANDOFF
-## CLIENT HEAD: 91b3d6d · 2026-07-18 · CC session (esbuild Phase 3e)
+## CLIENT HEAD: 22640cd · 2026-07-18 · CC session (esbuild Phase 3f)
+Session doc: outbox/cc-session-2026-07-18-esbuild-phase3f.md
+
+**esbuild Phase 3f COMPLETE — sixth real ES module extraction.**
+- `src/utils/national-game.js` (new): `export function isNationalGame(g)` — pure 1-liner national broadcast predicate, zero external deps
+- `src/legacy/field.js`: body replaced with stub comment; file remains import-free
+- `src/main.js`: imports national-game.js, sets `globalThis.isNationalGame` before field.js runs
+- 8 real call sites in field.js (L5293, L5357, L5374, L23823, L27474, L32278, L33603, L33855) resolve as plain global reads; 3 use typeof guard (resolves true with globalThis bridge)
+- Smoke: 958/0 local + CI Deploy gate success. Live site smoke: 895.
+- **Remaining viable candidates for Phase 3g:** `_raiQualityBar` (2 callers), `urlBase64ToUint8Array` (1 caller), `_chipsHTML` (3 callers). All pure, zero smoke coverage.
+
+---
+
+## PREVIOUS HEAD: 91b3d6d · 2026-07-18 · CC session (esbuild Phase 3e)
 Session doc: outbox/cc-session-2026-07-18-esbuild-phase3e.md
 
 **esbuild Phase 3e COMPLETE — fifth real ES module extraction.**
@@ -8,7 +21,6 @@ Session doc: outbox/cc-session-2026-07-18-esbuild-phase3e.md
 - `src/main.js`: imports wc-name.js, sets `globalThis._normWCName` before field.js runs
 - 4 real call sites in field.js (L30064, L30107, L30144, L30154) resolve as plain global reads
 - Smoke: 958/0 local + CI. Live CI run `29627340319` all steps green. Deployed. Live site smoke: 895.
-- **Remaining viable candidates for Phase 3f:** `_raiQualityBar` (2 callers), `isNationalGame` (8 callers), `urlBase64ToUint8Array` (1 caller), `_chipsHTML` (3 callers). All pure, zero smoke coverage. Pool is thin but not exhausted.
 
 ---
 
