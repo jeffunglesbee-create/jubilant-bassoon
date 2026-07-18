@@ -2547,31 +2547,18 @@ async function injectDebriefCards() {
         espnScore:   typeof findESPNScore === 'function' ? findESPNScore(rawGame) : null,
         contextGame: ctx,
       });
-      const newCard = renderCard(enriched, sport);
-      newCard.dataset.debriefInjected = '1';
-      // Wire card-body click/touch handlers for the new DOM card
-      const cb = newCard.querySelector('.card-body');
-      if (cb) {
-        cb.dataset.open = gameId;
-        let _tx = 0, _ty = 0, _tMoved = false, _touched = false;
-        cb.addEventListener('touchstart', e => {
-          _tx = e.touches[0].clientX; _ty = e.touches[0].clientY;
-          _tMoved = false; _touched = true;
-        }, { passive: true });
-        cb.addEventListener('touchmove', e => {
-          if (Math.abs(e.touches[0].clientX-_tx)>10 || Math.abs(e.touches[0].clientY-_ty)>10)
-            _tMoved = true;
-        }, { passive: true });
-        cb.addEventListener('touchend', e => {
-          if (_touched && !_tMoved) { e.preventDefault(); openBottomSheet(gameId); }
-          _touched = false;
-        }, { passive: false });
-        cb.addEventListener('click', () => { if (!_touched) openBottomSheet(gameId); });
-        cb.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBottomSheet(gameId); }
-        });
+      const debriefEl = buildDebrief(enriched);
+      if (debriefEl) {
+        let debriefDiv = cardEl.querySelector('.card-debrief');
+        if (!debriefDiv) {
+          debriefDiv = document.createElement('div');
+          debriefDiv.className = 'card-debrief';
+          cardEl.appendChild(debriefDiv);
+        }
+        debriefDiv.replaceChildren(debriefEl);
+        cardEl.classList.add('is-final');
       }
-      cardEl.replaceWith(newCard);
+      cardEl.dataset.debriefInjected = '1';
     } catch (_e) {
       captureFieldError('debrief:inject', _e, true);
     }
@@ -20977,7 +20964,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18c';
+  const SW_VERSION = '2026-07-18d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
