@@ -285,6 +285,25 @@ async function handlePush(data) {
     return;
   }
 
+  // ── GAME_FINAL: game-completion push with Debrief deep-link (Gap 6) ──
+  // Relay fires on game-final state — objective event, no drama gating.
+  // watchUrl = '/?debrief=gameId' so the existing notificationclick handler
+  // navigates directly to the right card without additional routing logic.
+  if (payload.type === 'GAME_FINAL') {
+    const { gameId, sport, home, away, homeScore, awayScore, watchUrl } = payload;
+    const scoreStr = (homeScore != null && awayScore != null)
+      ? `${away||''} ${awayScore}–${homeScore} ${home||''}`
+      : `${away||''} @ ${home||''}`;
+    await self.registration.showNotification(`${sport ? sport.toUpperCase() + ' · ' : ''}Final`, {
+      body: scoreStr + ' · Tap for Debrief',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: `field-final-${gameId}`,
+      data: { gameId, watchUrl: watchUrl || '/?debrief=' + encodeURIComponent(gameId), type: 'GAME_FINAL' },
+    });
+    return;
+  }
+
   if (payload.type === 'DECISIVE_MOMENT') {
     const { seriesState, home, away, broadcast, gameId, watchUrl } = payload;
     await self.registration.showNotification(`⚡ ${seriesState || 'Overtime'}`, {

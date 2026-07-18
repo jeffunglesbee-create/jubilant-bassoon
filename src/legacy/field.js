@@ -20493,6 +20493,20 @@ function maybePushAFLFinals(sections){
 
 goToDate(TODAY_ISO);
 
+// ── Gap 6: Debrief deep-link param (?debrief=gameId) ─────────────────────────
+// Service worker click on a GAME_FINAL notification opens /?debrief=gameId.
+// After the first renderAll + injectDebriefCards cycle (~1200ms), scroll the
+// matching card into view. injectDebriefCards already auto-populates .card-debrief
+// for all final games, so no manual trigger is needed — scroll only.
+(function handleDebriefDeepLink() {
+  const _debriefGid = new URLSearchParams(location.search).get('debrief');
+  if (!_debriefGid) return;
+  setTimeout(() => {
+    const card = document.querySelector('.game-card[data-gameid="' + CSS.escape(_debriefGid) + '"]');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 1500);
+})();
+
 // ── Streaming Discovery data (what's on each app beyond headline games) ───────
 // Verified from ESPN, Apple TV, Peacock app pages — May 11, 2026.
 // Structure: { appKey, name, emoji, color, price, url, items[] }
