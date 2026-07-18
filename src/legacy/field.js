@@ -13656,7 +13656,7 @@ async function generateJournalismViaRelay(prompt, opts = {}) {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(12000), // 12s — relay quality chain can take 6+ retries
+      signal: AbortSignal.timeout(opts.timeout || 12000), // Night Owl passes 25000; others default 12s
     });
     if (!r.ok) {
       if (FIELD_DEBUG) console.warn('[JQ Gate] relay returned', r.status);
@@ -17065,7 +17065,7 @@ function findESPNScore(game){
   // DO NOT exclude 1H/2H — fetchSoccerFixtures stores soccer scores with those prefixes
   const sc = typeof classifySport==='function' ? classifySport(game,null) : {};
   // Individual-sport and non-ESPN-indexed leagues have no team-score entry in espnScores.
-  if (sc.isCFL || sc.isGolf || sc.isTennis || sc.isCricket || sc.isRugby) return null;
+  if (sc.isCFL || sc.isAFL || sc.isGolf || sc.isTennis || sc.isCricket || sc.isRugby) return null;
   const gameSoccer = sc.isSoccer;
   for(const [key, score] of Object.entries(espnScores)){
     const pp = score.periodPrefix||'';
@@ -20963,7 +20963,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18h';
+  const SW_VERSION = '2026-07-18i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36985,6 +36985,7 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       sport: _sportHint,
       briefType: 'night-owl',
       max_tokens: 1000,
+      timeout: 25000, // quality chain runs 6+ LLM retries; 12s default too tight on busy nights
       game: topGame || null,
       matchupNote: topGame?.matchupNote || null,
     });
