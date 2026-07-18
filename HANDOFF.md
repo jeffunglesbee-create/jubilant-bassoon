@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, fix dual MLB game-ID paths (supersedes previous)
+
+**HEAD:** d4bf941
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-fix-mlb-dual-id-paths.md
+
+**MLB dual-ID fix COMPLETE:** `fetchESPNFixturesForDate` (date-picker path) now builds canonical `MLB_{homeAbbr}_{awayAbbr}_{YYYYMMDD}` IDs for MLB games instead of the generic `g${_gid}` counter. Confirmed two distinct legitimate MLB paths: `normalizeMLBGame` (boot/today) and `fetchESPNFixturesForDate` (date-picker/any date). 13 pre-existing `g${n}` briefs are known unmatchable — explicit backfill decision deferred as a separate task. After fix, `archiveBrief` and `findBriefs` will use the same canonical ID. 958/0. CI triggered on d4bf941.
+
+**OPEN (from this session):** Pre-existing 13+ `g${n}` mlb_game briefs in ARCHIVE_DB need a backfill to canonical IDs — separate explicit decision/CC-CMD required. Verify first live post-fix brief via D1 query.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, fix buildSeriesArc data-shape mismatch (supersedes previous)
 
 **HEAD:** 7aa3876
