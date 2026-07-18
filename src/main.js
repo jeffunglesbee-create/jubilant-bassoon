@@ -7,4 +7,8 @@
 import { fmtGolfToPar } from './utils/golf-format.js';
 globalThis.fmtGolfToPar = fmtGolfToPar;
 
+import { fieldTierRank, fieldTierLabel } from './utils/tier.js';
+globalThis.fieldTierRank = fieldTierRank;
+globalThis.fieldTierLabel = fieldTierLabel;
+
 import './legacy/field.js';

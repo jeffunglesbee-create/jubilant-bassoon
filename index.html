@@ -38563,35 +38563,9 @@ function _isCloseAndLate(eData, sport) {
 
 // Numeric rank for sort comparisons ONLY. Higher = higher priority.
 // Never thresholded against display — use the named tier directly for that.
-function fieldTierRank(tier) {
-  switch (tier) {
-    case 'FINALS':           return 10;
-    case 'ELIMINATION':      return 9;
-    case 'CRUNCH':           return 8;
-    case 'EXTRA_TIME':       return 7;
-    case 'CLOSE_LATE':       return 6;
-    case 'PLAYOFF_SERIES':   return 5;
-    case 'MARQUEE_NATIONAL': return 4;
-    case 'LIVE':             return 3;
-    case 'UPCOMING':         return 2;
-    default:                 return 0;
-  }
-}
+// fieldTierRank extracted to src/utils/tier.js (Phase 3b).
 
-// User-visible label for a tier. Factual condition string, never a number.
-function fieldTierLabel(tier) {
-  switch (tier) {
-    case 'FINALS':           return 'FINALS';
-    case 'ELIMINATION':      return 'ELIMINATION';
-    case 'CRUNCH':           return 'CRUNCH TIME';
-    case 'EXTRA_TIME':       return 'OT / EXTRA';
-    case 'CLOSE_LATE':       return 'CLOSE GAME';
-    case 'PLAYOFF_SERIES':   return 'PLAYOFF';
-    case 'MARQUEE_NATIONAL': return 'MARQUEE';
-    case 'LIVE':             return 'LIVE';
-    default:                 return '';
-  }
-}
+// fieldTierLabel extracted to src/utils/tier.js (Phase 3b).
 
 // V4: card tier resolver — maps fieldGameTier to one of three CSS scaffold
 // classes used by .game-card. Spec lines 48 + 75-86: featured carries the
