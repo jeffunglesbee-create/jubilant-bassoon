@@ -7544,11 +7544,31 @@ async function injectDebriefCards() {
     try {
       let ctx = _debriefContextCache.get(gameId);
       if (!ctx) {
-        const r = await fetch(`${base}/context/game/${encodeURIComponent(gameId)}`,
-          { signal: AbortSignal.timeout(8000) });
-        if (!r.ok) return;
-        ctx = await r.json();
-        _debriefContextCache.set(gameId, ctx);
+        // Gap 12: cache-first read from field-debriefs Cache API
+        const _debriefCacheKey = `https://field-local/debrief/${encodeURIComponent(gameId)}`;
+        try {
+          if (typeof caches !== 'undefined') {
+            const _dc = await caches.open('field-debriefs');
+            const _hit = await _dc.match(_debriefCacheKey);
+            if (_hit) { ctx = await _hit.json(); _debriefContextCache.set(gameId, ctx); }
+          }
+        } catch(_) {}
+        if (!ctx) {
+          const r = await fetch(`${base}/context/game/${encodeURIComponent(gameId)}`,
+            { signal: AbortSignal.timeout(8000) });
+          if (!r.ok) return;
+          ctx = await r.json();
+          _debriefContextCache.set(gameId, ctx);
+          // Gap 12: write to Cache API with timestamp for 7-day eviction
+          try {
+            if (typeof caches !== 'undefined') {
+              const _dc = await caches.open('field-debriefs');
+              await _dc.put(_debriefCacheKey, new Response(JSON.stringify(ctx), {
+                headers: { 'Content-Type': 'application/json', 'X-Cache-Time': String(Date.now()) }
+              }));
+            }
+          } catch(_) {}
+        }
       }
       if (!cardEl.isConnected) return;
       const enriched = buildEnrichedGame(rawGame, {
@@ -26094,7 +26114,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18a';
+  const SW_VERSION = '2026-07-18b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

@@ -11,7 +11,7 @@
 //
 // Bump SW_VERSION on every deploy. CI smoke.js verifies it matches index.html.
 
-const SW_VERSION = '2026-07-18a';
+const SW_VERSION = '2026-07-18b';
 const SHELL_CACHE = `field-shell-${SW_VERSION}`;
 const API_CACHE   = 'field-api-v4';
 const SHELL_URL   = '/';
@@ -39,6 +39,17 @@ self.addEventListener('activate', e => {
               .map(k => caches.delete(k))
         )
       ),
+      // Gap 12: evict field-debriefs entries older than 7 days
+      caches.open('field-debriefs').then(dc => dc.keys().then(keys =>
+        Promise.all(keys.map(async req => {
+          const resp = await dc.match(req);
+          if (!resp) return;
+          const cacheTime = Number(resp.headers.get('X-Cache-Time') || 0);
+          if (cacheTime && (Date.now() - cacheTime) > 7 * 24 * 60 * 60 * 1000) {
+            return dc.delete(req);
+          }
+        }))
+      )).catch(() => {}),
       // P4 — pre-warm API cache on activation so the page's first schedule
       // fetch hits cache instead of round-tripping. statsapi.mlb.com is in
       // the API_CACHE allowlist (see fetch handler isAPI gate) and the URL
