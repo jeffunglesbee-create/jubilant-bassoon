@@ -17025,9 +17025,8 @@ async function fetchSavantGameFeed(sourceId) {
 // guard working correctly, not a genuine failure) at all 3 sites where it
 // fires -- purely additive, zero change to the return contract, zero
 // caller updates needed.
-// Dedup sets: each fires at most once per matchup per session load.
-const _staleFinalRecorded = new Set();
-const _noMatchRecorded    = new Set();
+// Dedup set: no-match fires at most once per matchup per session load.
+const _noMatchRecorded = new Set();
 
 function findESPNScore(game){
   // ── STALE-FINAL GUARD (June 10 2026) ─────────────────────────────────────
@@ -17044,19 +17043,8 @@ function findESPNScore(game){
     return new Date(g.start_time).getTime() > Date.now();
   };
   const _recordStaleFinalBlock = (path) => {
+    // Guard working as designed — not a failure, just debug noise.
     if (FIELD_DEBUG) console.warn('[FIELD] stale-final blocked:', game.away, '@', game.home, game.start_time, '('+path+')');
-    const _sfKey = `${game.away}|${game.home}|${game.start_time}`;
-    if (_staleFinalRecorded.has(_sfKey)) return;
-    _staleFinalRecorded.add(_sfKey);
-    if (typeof FIELD_OPERATIONS !== 'undefined') {
-      FIELD_OPERATIONS.recordFailure({
-        subsystem: 'scores', operation: 'find-espn-score-stale-final-guard',
-        severity: 'trace', retryable: false,
-        context: { home: game.home, away: game.away, start_time: game.start_time, path },
-        error: new Error(`stale-final blocked (${path}): ${game.away} @ ${game.home}, start_time ${game.start_time}`),
-        at: Date.now(),
-      });
-    }
   };
 
   // PM-20: try source-tagged store first (returns confidence-aware view)
@@ -17076,8 +17064,8 @@ function findESPNScore(game){
   // EXCLUDE clearly non-soccer: Q=basketball, H=college-bball, P=hockey, T=baseball
   // DO NOT exclude 1H/2H — fetchSoccerFixtures stores soccer scores with those prefixes
   const sc = typeof classifySport==='function' ? classifySport(game,null) : {};
-  // CFL (and other non-ESPN-indexed leagues) will never match espnScores — skip silently.
-  if (sc.isCFL) return null;
+  // Individual-sport and non-ESPN-indexed leagues have no team-score entry in espnScores.
+  if (sc.isCFL || sc.isGolf || sc.isTennis || sc.isCricket || sc.isRugby) return null;
   const gameSoccer = sc.isSoccer;
   for(const [key, score] of Object.entries(espnScores)){
     const pp = score.periodPrefix||'';
@@ -20975,7 +20963,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18g';
+  const SW_VERSION = '2026-07-18h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
