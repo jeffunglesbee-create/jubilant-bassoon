@@ -1,5 +1,18 @@
 # FIELD HANDOFF
-## CLIENT HEAD: da429d49 · 2026-07-18 · CC session (esbuild Phase 3-final)
+## CLIENT HEAD: 3d1c4b0 · 2026-07-18 · CC session (esbuild Phase 5)
+Session doc: outbox/cc-session-2026-07-18-esbuild-phase5.md
+
+**esbuild Phase 5 COMPLETE — first constant+function pair extraction.**
+- `src/utils/wind.js` (new): `export const WX_DIR` + `export function cardinalDir`
+- `src/legacy/field.js`: both stubs in place; file remains import-free
+- `src/main.js`: imports wind.js, sets `globalThis.WX_DIR` + `globalThis.cardinalDir`
+- 1 real call site: `cardinalDir` at L11108 in `wxBadge`, resolves via globalThis bridge
+- Smoke: 958/0 local + CI all steps green. Live site: 895.
+- **Pattern extension confirmed:** constant+function co-extraction works identically to pure-function pattern. Remaining pairs (`VENUE_COORDS`+`isOutdoorVenue`+`getVenueCoords`, `MY_TEAMS`+`isFeaturedTierGame`) can use the exact same CC-CMD template.
+
+---
+
+## PREVIOUS HEAD: da429d49 · 2026-07-18 · CC session (esbuild Phase 3-final)
 Session doc: outbox/cc-session-2026-07-18-esbuild-phase3-final.md
 
 **esbuild Phase 3-final COMPLETE — 11 functions extracted in batch, Phase 3 series finished.**
