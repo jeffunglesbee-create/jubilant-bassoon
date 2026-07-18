@@ -1,5 +1,18 @@
 # FIELD HANDOFF
-## CLIENT HEAD: cc35b4b · 2026-07-18 · CC session (esbuild Phase 3)
+## CLIENT HEAD: 45ffa95 · 2026-07-18 · CC session (esbuild Phase 3b)
+Session doc: outbox/cc-session-2026-07-18-esbuild-phase3b.md
+
+**esbuild Phase 3b COMPLETE — second real ES module extraction.**
+- `src/utils/tier.js` (new): `export function fieldTierRank(tier)` + `export function fieldTierLabel(tier)` — pure switch statements, zero external deps
+- `src/legacy/field.js`: both bodies replaced with stub comments; file remains import-free
+- `src/main.js`: imports tier.js, sets `globalThis.fieldTierRank` + `globalThis.fieldTierLabel` before field.js runs
+- 22 fieldTierRank + 6 fieldTierLabel call sites in field.js resolve as plain global reads (unchanged)
+- Smoke: 958/0 local + 958/0 CI (fast smoke step). Live CI run `29626362882` all steps green. Deployed. Live site smoke: 895.
+- **Smoke coverage note:** neither function appears in any smoke `html.includes()` assertion — smoke passes via JS syntax validity only, not behavioral assertion. Runtime behavior unchanged (global reads work in strict mode).
+
+---
+
+## PREVIOUS HEAD: cc35b4b · 2026-07-18 · CC session (esbuild Phase 3)
 Session doc: outbox/cc-session-2026-07-18-esbuild-phase3.md
 
 **esbuild Phase 3 COMPLETE — first real ES module extraction.**
