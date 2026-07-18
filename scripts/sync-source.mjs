@@ -16,7 +16,7 @@ const fieldJsPath = join(rootDir, 'src', 'legacy', 'field.js');
 const fieldJs = readFileSync(fieldJsPath, 'utf8');
 const html = readFileSync(htmlPath, 'utf8');
 
-const OPEN_TAG = '<script>';
+const OPEN_TAG = '<script type="module">';
 const CLOSE_TAG = '</script>';
 const scriptStart = html.lastIndexOf(OPEN_TAG);
 if (scriptStart === -1) throw new Error('No <script> tag found in index.html');

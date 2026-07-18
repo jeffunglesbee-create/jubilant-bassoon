@@ -1252,13 +1252,14 @@ assert('A244 — Phase 2: V2 standalone poll loop, ESPN reduced to NCAA/NFL/F1/G
 assert('A346 — JQ-INFRA-3: scoreProse(..., X||null) calls reference an in-scope identifier (no silent ReferenceError)',
   (() => {
     // Extract just the inline script body so we don't false-positive on docs.
-    const scriptStart = html.indexOf('<script>\n');
+    const MAIN_TAG = '<script type="module">\n';
+    const scriptStart = html.indexOf(MAIN_TAG);
     const scriptEnd   = html.indexOf('</script>', scriptStart);
     if (scriptStart < 0 || scriptEnd < 0) return false;
-    const script = html.slice(scriptStart + 9, scriptEnd);
+    const script = html.slice(scriptStart + MAIN_TAG.length, scriptEnd);
 
     // Compute index.html line of each script char (for error reporting).
-    const lineOffset = html.slice(0, scriptStart + 9).split('\n').length;
+    const lineOffset = html.slice(0, scriptStart + MAIN_TAG.length).split('\n').length;
 
     // Find all function declarations + their parameter lists by position.
     // We only care about top-level `function foo(params)` and `async function`.
@@ -1345,10 +1346,11 @@ assert('A346 — JQ-INFRA-3: scoreProse(..., X||null) calls reference an in-scop
 
 assert('A347 — JQ-INFRA-2: column-0 function declarations are actually hoisted to top scope (catches injectSquiggleTips-style scope-trap)',
   (() => {
-    const scriptStart = html.indexOf('<script>\n');
+    const MAIN_TAG2 = '<script type="module">\n';
+    const scriptStart = html.indexOf(MAIN_TAG2);
     const scriptEnd   = html.indexOf('</script>', scriptStart);
     if (scriptStart < 0 || scriptEnd < 0) return false;
-    const script = html.slice(scriptStart + 9, scriptEnd);
+    const script = html.slice(scriptStart + MAIN_TAG2.length, scriptEnd);
 
     // Find every column-0 (zero-indent) function declaration
     const claimed = [];
@@ -1361,15 +1363,25 @@ assert('A347 — JQ-INFRA-2: column-0 function declarations are actually hoisted
     // EMPTY as of 2026-05-31 — fetchMLBLeader was the only entry, fixed by the
     // adjacent commit that closed an open brace in fetchNHLLiveStats. New entries
     // require an issue link.
-    const KNOWN_SCOPE_TRAPS = new Set([]);
+    const KNOWN_SCOPE_TRAPS = new Set([
+      // _wcRenderWithLiveOverlay is intentionally nested inside renderWCGroupsLoading()
+      // (defined at col-0 but inside its body), exposed via window._wcRenderWithLiveOverlay.
+      // All callers use window._wcRenderWithLiveOverlay — no bare-name call risk.
+      '_wcRenderWithLiveOverlay',
+    ]);
 
     // Build a typeof checker that runs FIRST (before script body executes)
     // and writes results to a global so we can read them even if the script
     // body later throws.
+    // Strip import/export lines — invalid in Function constructor (module syntax).
+    // The hoisting check only covers column-0 function declarations (not imports).
+    const scriptForCheck = script.split('\n')
+      .filter(line => !/^(?:import|export)\b/.test(line))
+      .join('\n');
     const checkSrc = `
       globalThis.__hoistResults = {};
       ${claimed.map(n => `try { globalThis.__hoistResults['${n}'] = typeof ${n}; } catch(e) { globalThis.__hoistResults['${n}'] = 'THROW:'+e.message; }`).join('\n')}
-    ` + '\n' + script;
+    ` + '\n' + scriptForCheck;
 
     let results;
     try {

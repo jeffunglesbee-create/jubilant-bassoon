@@ -50,7 +50,7 @@ const html = fs.readFileSync(INDEX_PATH, 'utf8');
 // etc.) actually lives. Every js.includes(...) check below was silently
 // searching only the small, mostly-irrelevant first block -- concatenating
 // all bare <script> blocks fixes every affected assertion at once.
-const scriptMatches = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+const scriptMatches = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)];
 if (!scriptMatches.length) { log('FATAL: no <script> tag found'); process.exit(1); }
 const js = scriptMatches.map(x => x[1]).join('\n');
 

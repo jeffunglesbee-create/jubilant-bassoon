@@ -31,7 +31,7 @@ const bundled = readFileSync(tmpOut, 'utf8');
 // Use lastIndexOf — the main app script is the last <script> in the file (line ~4895).
 // There is an earlier <script> at line ~4108 (16KB) that must not be touched.
 const html = readFileSync(htmlPath, 'utf8');
-const OPEN_TAG = '<script>';
+const OPEN_TAG = '<script type="module">';
 const CLOSE_TAG = '</script>';
 const scriptStart = html.lastIndexOf(OPEN_TAG);
 if (scriptStart === -1) throw new Error('No <script> tag found in index.html');
