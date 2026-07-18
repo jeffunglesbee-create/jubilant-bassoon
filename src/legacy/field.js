@@ -11004,7 +11004,7 @@ const VENUE_COORDS = {
 const INDOOR_KEYWORDS = ["arena","garden","center","centre","dome","coliseum",
   "fieldhouse","forum","palace","pavilion","theater","theatre"];
 // Cardinal direction from degrees
-const WX_DIR = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+// WX_DIR extracted to src/utils/wind.js (Phase 5).
 // ── PARK_ORIENTATION: degrees (true north) that center field faces ────────
 // Used by windContextNote() to determine "out to CF" vs "in from CF" context
 // Wind delta < -30° = blowing OUT toward CF (hitter's park)
@@ -11031,8 +11031,8 @@ const PARK_ORIENTATION = {
   'Globe Life Field':        355,  // N (retractable but included for outdoor mode)
 };
 
-// cardinalDir uses WX_DIR already defined earlier in the weather engine
-function cardinalDir(deg){ return WX_DIR[Math.round(((deg%360)+360)%360/22.5)%16]; }
+// cardinalDir extracted to src/utils/wind.js (Phase 5).
+function cardinalDir(deg){}
 
 // Wind context note for MLB parks: combines live wind with park geometry
 // Returns: "18mph out to CF — hitter's conditions" or null

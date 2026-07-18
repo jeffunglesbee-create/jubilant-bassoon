@@ -49,4 +49,8 @@ globalThis._srSitToYL100 = _srSitToYL100;
 import { _otwSigTierRank } from './utils/otw.js';
 globalThis._otwSigTierRank = _otwSigTierRank;
 
+import { WX_DIR, cardinalDir } from './utils/wind.js';
+globalThis.WX_DIR = WX_DIR;
+globalThis.cardinalDir = cardinalDir;
+
 import './legacy/field.js';
