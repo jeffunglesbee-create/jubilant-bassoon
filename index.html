@@ -10191,7 +10191,9 @@ function detectArcType(g) {
   }
   return null;
 }
-function isNationalGame(g){return !!(g.nationalBundle);}
+function isNationalGame(g){
+  // isNationalGame extracted to src/utils/national-game.js (Phase 3f).
+}
 // BUG-09 fix: _gameImportance is often absent on Conference Finals entries.
 // Detect by league string to catch NYK @ CLE, VGK @ COL, conference|cup final|series, etc.
 const isPlayoffGame = g => g._gameImportance || /playoff|final|semifinal|conference|cup final|series/i.test(g.league||'');

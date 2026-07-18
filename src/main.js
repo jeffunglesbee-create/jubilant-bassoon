@@ -21,4 +21,7 @@ globalThis.fmtESPNClock = fmtESPNClock;
 import { _normWCName } from './utils/wc-name.js';
 globalThis._normWCName = _normWCName;
 
+import { isNationalGame } from './utils/national-game.js';
+globalThis.isNationalGame = isNationalGame;
+
 import './legacy/field.js';
