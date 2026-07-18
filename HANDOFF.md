@@ -1,3 +1,14 @@
+## SESSION CLOSE-OUT — 2026-07-18, retire-globalthis-bridge (supersedes previous)
+
+**HEAD:** 81f1abb
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (unchanged — no SW change)
+**Session doc:** outbox/cc-session-2026-07-18-retire-globalthis-bridge.md
+
+**globalThis bridge RETIRED:** `src/main.js` reduced from 65 lines to 5. All 25 `globalThis.X = X` bridge lines removed. 16 extracted util modules are now imported directly at the top of `src/legacy/field.js` (one import per util). 19 empty stub function/const definitions removed from field.js (they shadowed the imports). smoke.js A191 + A-FTO-2 + field_smoke.js weather assertion updated to accept `import { fn }` as valid function presence (not just inline `function fn(`). ESLint `sourceType: module` added. Deploy gate: success. Bundle 1567 KB (2 KB smaller). This completes the module thread: Scenario A (type="module" tag) → bridge inline handlers → Scenario B (ESM format) → module source tag infrastructure → retire globalThis bridge.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Module Script Scenario B (supersedes previous)
 
 **HEAD:** fe3dd4b
