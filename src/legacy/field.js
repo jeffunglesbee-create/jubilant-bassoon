@@ -1,6 +1,5 @@
 
 'use strict';
-// Phase 2b live-CI verification trigger, 2026-07-18 — safe to remove after confirmed
 // ═══════════════════════════════════════════════════════════════
 // FIELD — Global Sports Intelligence
 // Debug logging: set FIELD_DEBUG=1 in localStorage to enable
