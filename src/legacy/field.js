@@ -30043,8 +30043,7 @@ let _wcMatchWPInflight = null;
 let _wcMatchWPLastFetch = 0;
 
 function _normWCName(s) {
-  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  // _normWCName extracted to src/utils/wc-name.js (Phase 3e).
 }
 
 // Predicate: is the odds-sourced live WP missing OR older than the staleness

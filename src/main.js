@@ -18,4 +18,7 @@ globalThis.golfRoundLabel = golfRoundLabel;
 import { fmtESPNClock } from './utils/espn-clock.js';
 globalThis.fmtESPNClock = fmtESPNClock;
 
+import { _normWCName } from './utils/wc-name.js';
+globalThis._normWCName = _normWCName;
+
 import './legacy/field.js';
