@@ -18,8 +18,8 @@ const tmpOut = join(rootDir, '.build-tmp-output.js');
 await build({
   entryPoints: [entryPoint],
   outfile: tmpOut,
-  bundle: true,         // resolves import './legacy/field.js' into a single IIFE
-  format: 'iife',
+  bundle: true,         // resolves import './legacy/field.js' into a single ESM bundle
+  format: 'esm',
   platform: 'browser',
   minify: false,        // strip-comments.js handles comment removal after this step
   logLevel: 'warning',  // surface pre-existing warnings (duplicate keys etc.)
@@ -53,4 +53,4 @@ writeFileSync(htmlPath, result, 'utf8');
 import { unlinkSync } from 'fs';
 try { unlinkSync(tmpOut); } catch {}
 
-console.log(`✅ build-bundle: esbuild IIFE (${(bundled.length / 1024).toFixed(0)} KB) injected into index.html`);
+console.log(`✅ build-bundle: esbuild ESM (${(bundled.length / 1024).toFixed(0)} KB) injected into index.html`);
