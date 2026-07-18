@@ -1,9 +1,9 @@
-## SESSION CLOSE-OUT — 2026-07-18, module-script investigation (supersedes previous)
+## SESSION CLOSE-OUT — 2026-07-18, golf scoring columns (supersedes previous)
 
-**HEAD:** 61028f6
+**HEAD:** ff5e052
 **Smoke count:** 958/0
 **SW version:** 2026-07-18a
-**Session doc:** docs/outbox/cc-session-2026-07-18-module-script-investigation.md
+**Session doc:** docs/outbox/cc-session-2026-07-18-golf-scoring-columns.md
 **Session doc:** docs/outbox/cc-session-2026-07-18-esbuild-phase7-corrected.md
 
 **esbuild thread COMPLETE (Phases 1–7):** 23 symbols extracted across 16 modules. Final extraction: isFeaturedTierGame → src/utils/tier-game.js (4506c27). MY_TEAMS explicitly out of scope (live mutable user preference state). CI fully green. smoke.js A-FTO-2 updated to read body from module file.
