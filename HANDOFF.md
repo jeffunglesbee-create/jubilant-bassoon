@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, Gap 11 filter × circadian interaction (supersedes previous)
+
+**HEAD:** 080be28
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-gap11-filter-circadian.md
+
+**Gap 11 COMPLETE:** Rules 1/3/4 implemented. Rule 1: `activeFilter` confirmed to persist across mode changes — no code change needed. Rule 3: `_checkFilterSuggestionChip()` added — on LATE/DAWN transition, if a sport filter is active and all its games are final, shows a dismissible "Show all sports" suggestion chip (never auto-clears). Rule 4: `updateConflictChip()` now gated on PREVIEW/PRIME — hides conflict chips during NIGHT/LATE/DAWN since conflicts are moot once games are over. Rule 2 (My Teams compounding): Gap 4 not yet landed — explicitly outstanding. 958/0. CI triggered on 080be28.
+
+**OPEN:** Rule 2 (My Teams + circadian compounding) — awaiting Gap 4 (myTeamsBoost) to land first.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Gap 2 AmbientDO SSE → Debrief instant transition (supersedes previous)
 
 **HEAD:** 56903bf
