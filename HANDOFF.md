@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, Gap 4 MyTeams sort boost (supersedes previous)
+
+**HEAD:** 573d448
+**Smoke count:** 958/0
+**SW version:** 2026-07-18a
+**Session doc:** outbox/cc-session-2026-07-18-gap4-userdo.md
+
+**Gap 4 COMPLETE:** `myTeamsBoost(g)` function added (L2760). Called within `games.sort()` in `renderAll` after primary circadian tier sort — within each tier, games where `MY_TEAMS.has(home)||MY_TEAMS.has(away)` sort first. No-ops when MY_TEAMS is empty. Falls through to existing secondary sorts within each group. Uses `MY_TEAMS` (existing Set, confirmed source of truth — NOT `_userState.watchHistory`). Gap 11 Rule 2 (My Teams compounding with circadian) is now satisfied. 958/0. CI triggered on 573d448.
+
+**OPEN:** None from this session.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Gap 11 filter × circadian interaction (supersedes previous)
 
 **HEAD:** 080be28
