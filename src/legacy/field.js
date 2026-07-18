@@ -17025,8 +17025,9 @@ async function fetchSavantGameFeed(sourceId) {
 // guard working correctly, not a genuine failure) at all 3 sites where it
 // fires -- purely additive, zero change to the return contract, zero
 // caller updates needed.
-// Dedup set: stale-final blocks are expected per guard design — only record once per matchup.
+// Dedup sets: each fires at most once per matchup per session load.
 const _staleFinalRecorded = new Set();
+const _noMatchRecorded    = new Set();
 
 function findESPNScore(game){
   // ── STALE-FINAL GUARD (June 10 2026) ─────────────────────────────────────
@@ -17092,7 +17093,9 @@ function findESPNScore(game){
       return score;
     }
   }
-  if (typeof FIELD_OPERATIONS !== 'undefined') {
+  const _nmKey = `${game.away}|${game.home}`;
+  if (!_noMatchRecorded.has(_nmKey) && typeof FIELD_OPERATIONS !== 'undefined') {
+    _noMatchRecorded.add(_nmKey);
     FIELD_OPERATIONS.recordFailure({
       subsystem: 'scores', operation: 'find-espn-score-no-match',
       severity: 'trace', retryable: false,
@@ -20972,7 +20975,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18f';
+  const SW_VERSION = '2026-07-18g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
