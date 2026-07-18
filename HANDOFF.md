@@ -1,3 +1,14 @@
+## SESSION CLOSE-OUT — 2026-07-18, extract-debrief-domain (supersedes previous)
+
+**HEAD:** 2d6508c
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (unchanged — no SW change)
+**Session doc:** outbox/cc-session-2026-07-18-extract-debrief-domain.md
+
+**Debrief domain extracted:** `src/debrief/index.ts` — second real TypeScript module. Extracts buildDramaUnsealed, buildFieldWasWatching, buildOddsStory, buildSeriesArc, buildBracketDeltaLayer, buildDebrief from field.js into typed TS with DebriefData/SeriesArc/SeriesGame/OddsOutcome/BracketDelta/BracketShift/EnrichedGameForDebrief types. SeriesArc shape enforces corrected home_score/away_score per-game + top-level margins[] (the previously-fixed bug shape). fieldChip injected via initDebriefModule() — same DI pattern as Identity. field_smoke.js updated with 7 global stubs (initDebriefModule + 6 builders). All CI green: Desktop Chrome Viewport Audit, Code Map (L3), Client Live Invariant.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, extract-identity-domain (supersedes previous)
 
 **HEAD:** 923f426
