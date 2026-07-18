@@ -1,14 +1,18 @@
 # FIELD HANDOFF
-## CLIENT HEAD: 22640cd · 2026-07-18 · CC session (esbuild Phase 3f)
-Session doc: outbox/cc-session-2026-07-18-esbuild-phase3f.md
+## CLIENT HEAD: da429d49 · 2026-07-18 · CC session (esbuild Phase 3-final)
+Session doc: outbox/cc-session-2026-07-18-esbuild-phase3-final.md
 
-**esbuild Phase 3f COMPLETE — sixth real ES module extraction.**
-- `src/utils/national-game.js` (new): `export function isNationalGame(g)` — pure 1-liner national broadcast predicate, zero external deps
-- `src/legacy/field.js`: body replaced with stub comment; file remains import-free
-- `src/main.js`: imports national-game.js, sets `globalThis.isNationalGame` before field.js runs
-- 8 real call sites in field.js (L5293, L5357, L5374, L23823, L27474, L32278, L33603, L33855) resolve as plain global reads; 3 use typeof guard (resolves true with globalThis bridge)
+**esbuild Phase 3-final COMPLETE — 11 functions extracted in batch, Phase 3 series finished.**
+- `src/utils/weather.js` (new): wxDescription, wxIcon, wxAlert, weatherDramaModifier
+- `src/utils/odds.js` (new): isVolatileMatchup, _upsetDogPrice
+- `src/utils/chips.js` (new): _chipsHTML
+- `src/utils/push.js` (new): urlBase64ToUint8Array
+- `src/utils/rai.js` (new): _raiQualityBar
+- `src/utils/nfl.js` (new): _srSitToYL100
+- `src/utils/otw.js` (new): _otwSigTierRank
+- Total Phase 3 extractions: **19 functions across 13 modules**
 - Smoke: 958/0 local + CI Deploy gate success. Live site smoke: 895.
-- **Remaining viable candidates for Phase 3g:** `_raiQualityBar` (2 callers), `urlBase64ToUint8Array` (1 caller), `_chipsHTML` (3 callers). All pure, zero smoke coverage.
+- **"Easy category" exhausted.** All remaining functions in field.js are either smoke-asserted, constant-dependent, or state-dependent. Phase 4 (co-extracting constants + their dependent functions, or tree-shaking) is the next natural step if further modularization is wanted.
 
 ---
 
