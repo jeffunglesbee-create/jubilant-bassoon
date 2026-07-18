@@ -1981,6 +1981,21 @@ body.wf-mode .np-inner{max-width:100%}
 .card-debrief{display:none}
 .game-card.is-final .card-debrief{display:block}
 .game-card.is-final [data-slot="brief"]{display:none}
+/* Debrief inner layers */
+.card-debrief-inner{padding:.5rem 0;display:flex;flex-direction:column;gap:.5rem}
+.debrief-drama__bar-track{height:4px;background:rgba(128,128,128,.2);border-radius:2px;overflow:hidden;margin-bottom:.3rem}
+.debrief-drama__bar{height:100%;border-radius:2px;background:#6b7280;transition:width .4s}
+.debrief-drama__bar[data-tier="HEATING"]{background:#f59e0b}
+.debrief-drama__bar[data-tier="HOT"]{background:#ef4444}
+.debrief-drama__bar[data-tier="MUST"]{background:#dc2626}
+.debrief-drama__chips{display:flex;flex-wrap:wrap;gap:.25rem}
+.debrief-prediction__text{font-size:.72rem;line-height:1.5;opacity:.6;font-style:italic;margin:0}
+.debrief-odds__scenario{margin-bottom:.2rem}
+.debrief-odds__line{font-size:.68rem;opacity:.55}
+.debrief-arc__dots{display:flex;gap:.3rem;flex-wrap:wrap}
+.debrief-arc__dot{width:10px;height:10px;border-radius:50%;background:#6b7280}
+.debrief-arc__dot[data-winner="home"]{background:#22c55e}
+.debrief-arc__dot[data-winner="away"]{background:#ef4444}
 
 .live-badge{
   display:inline-flex;align-items:center;gap:4px;
@@ -7251,6 +7266,8 @@ function buildEnrichedGame(rawGame, sources) {
   const espnScore = _src.espnScore !== undefined
     ? _src.espnScore
     : (typeof findESPNScore === 'function' ? findESPNScore(rawGame) : null);
+  const _ctx  = _src.contextGame ?? null;
+  const _ctxG = _ctx?.game ?? null;
   return {
     // Identity
     _id:            rawGame._id,
@@ -7286,12 +7303,21 @@ function buildEnrichedGame(rawGame, sources) {
     // Analytics
     _insights:      rawGame._insights       || null,
     confirmed:      rawGame.confirmed       === true,
-    // Debrief placeholder — all null until Phase 3 assembleDebrief is built
+    // Debrief — populated from Context Graph when contextGame source is provided
     debrief: {
-      dramaSealed:  null,
-      oddsOutcome:  null,
-      preGameBrief: _src.journalismBrief   ?? null,
-      seriesArc:    null,
+      dramaSealed:  _ctxG?.drama_peak         ?? null,
+      dramaArc:     _ctxG?.drama_arc_parsed   ?? null,
+      oddsOutcome:  _ctxG?.opening_odds_parsed ? {
+        opening:    _ctxG.opening_odds_parsed,
+        closing:    _ctxG.closing_odds_parsed  ?? null,
+        homeScore:  _ctxG.home_score           ?? null,
+        awayScore:  _ctxG.away_score           ?? null,
+        home:       _ctxG.home                 ?? rawGame.home ?? '',
+        away:       _ctxG.away                 ?? rawGame.away ?? '',
+        wentToOT:   !!_ctxG.went_to_ot,
+      } : null,
+      preGameBrief: (_ctx?.archive?.gameBriefs?.[0]?.text) ?? (_src.journalismBrief ?? null),
+      seriesArc:    _ctx?.series               ?? null,
     },
     // Pass-throughs for downstream consumers
     _raw:       rawGame,
@@ -7338,9 +7364,8 @@ function renderCard(enrichedGame, sport) {
 
   fillSlot(card, 'crew', enrichedGame.crew || null);
 
-  // debrief slot — Phase 3 populates; null keeps it hidden
-  fillSlot(card, 'debrief', enrichedGame.debrief && enrichedGame.debrief.dramaSealed
-    ? String(enrichedGame.debrief.dramaSealed) : null);
+  // debrief slot — Phase 3: buildDebrief assembles Layers 1-4 into an Element
+  fillSlot(card, 'debrief', buildDebrief(enrichedGame));
 
   return card;
 }
@@ -7371,6 +7396,183 @@ function updateCard(cardEl, enrichedGame) {
   // State class sync
   cardEl.classList.toggle('live',     isLive);
   cardEl.classList.toggle('is-final', isFinal);
+}
+
+// ── Phase 3b: The Debrief — Layer functions ──────────────────────────────────
+
+// Layer 1: Drama Unsealed — horizontal bar + tier chip + arc-derived duration
+function buildDramaUnsealed(debrief) {
+  const peak = debrief?.dramaSealed;
+  if (peak == null) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'debrief-drama';
+  const barTrack = document.createElement('div');
+  barTrack.className = 'debrief-drama__bar-track';
+  const bar = document.createElement('div');
+  bar.className = 'debrief-drama__bar';
+  bar.style.width = `${Math.min(100, Math.max(0, Math.round(peak)))}%`;
+  const tier = peak >= 85 ? 'MUST' : peak >= 65 ? 'HOT' : peak >= 45 ? 'HEATING' : 'QUIET';
+  bar.dataset.tier = tier;
+  barTrack.appendChild(bar);
+  wrap.appendChild(barTrack);
+  const chips = document.createElement('div');
+  chips.className = 'debrief-drama__chips';
+  chips.appendChild(fieldChip(tier, tier, { small: true }));
+  const arc = debrief.dramaArc;
+  if (Array.isArray(arc) && arc.length) {
+    const highMins = Math.round(arc.filter(v => v >= 65).length * 15 / 60);
+    if (highMins >= 1) chips.appendChild(fieldChip(`${highMins}m high`, 'HEATING', { small: true }));
+  }
+  wrap.appendChild(chips);
+  return wrap;
+}
+
+// Layer 2: FIELD Was Watching — journalism brief text (dim/italic)
+function buildFieldWasWatching(debrief) {
+  const brief = debrief?.preGameBrief;
+  if (!brief) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'debrief-prediction';
+  const p = document.createElement('p');
+  p.className = 'debrief-prediction__text';
+  p.textContent = String(brief).slice(0, 300);
+  wrap.appendChild(p);
+  return wrap;
+}
+
+// Layer 3: The Odds Story — CHALK / UPSET / SWEAT from opening moneyline + result
+function buildOddsStory(debrief) {
+  const odds = debrief?.oddsOutcome;
+  if (!odds?.opening) return null;
+  const { opening, home, away, homeScore, awayScore, wentToOT } = odds;
+  const ml = opening.moneyline || {};
+  const homeFav = (ml.home ?? 0) < (ml.away ?? 0);
+  const homeWon = (homeScore ?? 0) > (awayScore ?? 0);
+  const favWon  = homeFav === homeWon;
+  const margin  = Math.abs((homeScore ?? 0) - (awayScore ?? 0));
+  const scenario = !favWon ? 'UPSET' : (margin <= 1 || wentToOT) ? 'SWEAT' : 'CHALK';
+  const wrap = document.createElement('div');
+  wrap.className = 'debrief-odds';
+  const labelRow = document.createElement('div');
+  labelRow.className = 'debrief-odds__scenario';
+  labelRow.appendChild(fieldChip(scenario,
+    scenario === 'UPSET' ? 'MUST' : scenario === 'SWEAT' ? 'HOT' : 'QUIET',
+    { small: true }));
+  wrap.appendChild(labelRow);
+  const favTeam = homeFav ? (home || 'Home') : (away || 'Away');
+  const favMl   = homeFav ? ml.home : ml.away;
+  const dogMl   = homeFav ? ml.away : ml.home;
+  const dogTeam = homeFav ? (away || 'Away') : (home || 'Home');
+  const line = document.createElement('div');
+  line.className = 'debrief-odds__line';
+  line.textContent = `${favTeam} ${favMl > 0 ? '+' : ''}${favMl} · ${dogTeam} +${Math.abs(dogMl)}`;
+  wrap.appendChild(line);
+  return wrap;
+}
+
+// Layer 4: Series Arc — playoff-only dots (guards null for regular-season games)
+function buildSeriesArc(debrief) {
+  const arc = debrief?.seriesArc;
+  if (!arc) return null;
+  const games = Array.isArray(arc.games) ? arc.games : [];
+  if (!games.length) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'debrief-arc';
+  const dots = document.createElement('div');
+  dots.className = 'debrief-arc__dots';
+  games.forEach(g => {
+    const dot = document.createElement('span');
+    dot.className = 'debrief-arc__dot';
+    if (g.winner) dot.dataset.winner = g.winner;
+    if (g.margin != null) dot.title = `${g.margin > 0 ? '+' : ''}${g.margin}`;
+    dots.appendChild(dot);
+  });
+  wrap.appendChild(dots);
+  return wrap;
+}
+
+// Assembles Layers 1-4 into the card-debrief container Element
+function buildDebrief(enrichedGame) {
+  const debrief = enrichedGame?.debrief;
+  if (!debrief) return null;
+  const l1 = buildDramaUnsealed(debrief);
+  const l2 = buildFieldWasWatching(debrief);
+  const l3 = buildOddsStory(debrief);
+  const l4 = buildSeriesArc(debrief);
+  if (!l1 && !l2 && !l3 && !l4) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'card-debrief-inner';
+  if (l1) wrap.appendChild(l1);
+  if (l2) wrap.appendChild(l2);
+  if (l3) wrap.appendChild(l3);
+  if (l4) wrap.appendChild(l4);
+  return wrap;
+}
+
+// Session-level cache for Context Graph responses (final games are immutable)
+const _debriefContextCache = new Map();
+
+// Post-render pass: replaces string-rendered final-game cards with DOM cards via
+// renderCard (which wires the debrief slot). Fires ~600ms after every renderAll.
+// Fetches Context Graph per final game, cached after first fetch.
+async function injectDebriefCards() {
+  const base = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  const cards = Array.from(
+    document.querySelectorAll('.game-card[data-gameid]:not([data-debrief-injected])')
+  );
+  await Promise.allSettled(cards.map(async cardEl => {
+    if (!cardEl.isConnected) return;
+    const gameId = cardEl.dataset.gameid;
+    let rawGame = null, sport = '';
+    for (const s of (allData?.sports || [])) {
+      const g = (s.games || []).find(g => g._id === gameId);
+      if (g) { rawGame = g; sport = s.sport; break; }
+    }
+    if (!rawGame || (typeof isGameOver === 'function' && !isGameOver(rawGame))) return;
+    try {
+      let ctx = _debriefContextCache.get(gameId);
+      if (!ctx) {
+        const r = await fetch(`${base}/context/game/${encodeURIComponent(gameId)}`,
+          { signal: AbortSignal.timeout(8000) });
+        if (!r.ok) return;
+        ctx = await r.json();
+        _debriefContextCache.set(gameId, ctx);
+      }
+      if (!cardEl.isConnected) return;
+      const enriched = buildEnrichedGame(rawGame, {
+        espnScore:   typeof findESPNScore === 'function' ? findESPNScore(rawGame) : null,
+        contextGame: ctx,
+      });
+      const newCard = renderCard(enriched, sport);
+      newCard.dataset.debriefInjected = '1';
+      // Wire card-body click/touch handlers for the new DOM card
+      const cb = newCard.querySelector('.card-body');
+      if (cb) {
+        cb.dataset.open = gameId;
+        let _tx = 0, _ty = 0, _tMoved = false, _touched = false;
+        cb.addEventListener('touchstart', e => {
+          _tx = e.touches[0].clientX; _ty = e.touches[0].clientY;
+          _tMoved = false; _touched = true;
+        }, { passive: true });
+        cb.addEventListener('touchmove', e => {
+          if (Math.abs(e.touches[0].clientX-_tx)>10 || Math.abs(e.touches[0].clientY-_ty)>10)
+            _tMoved = true;
+        }, { passive: true });
+        cb.addEventListener('touchend', e => {
+          if (_touched && !_tMoved) { e.preventDefault(); openBottomSheet(gameId); }
+          _touched = false;
+        }, { passive: false });
+        cb.addEventListener('click', () => { if (!_touched) openBottomSheet(gameId); });
+        cb.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBottomSheet(gameId); }
+        });
+      }
+      cardEl.replaceWith(newCard);
+    } catch (_e) {
+      captureFieldError('debrief:inject', _e, true);
+    }
+  }));
 }
 
 // Single-game filter predicate — encapsulates the three game-level filter modes.
@@ -12454,6 +12656,7 @@ function renderAll(skipUnchanged){
   if(!window._phoneTierInit){initPhoneTier();window._phoneTierInit=true;}
   if(!window._dramaIdxInit){initDramaLineIndexer();window._dramaIdxInit=true;}
   setTimeout(indexDramaLines,250);
+  setTimeout(() => injectDebriefCards().catch(() => {}), 600);
   // Right Now section — surface highest-drama game above schedule on phones
   renderRightNow(filtered);
   // CC-CMD-2026-07-13-media-special-right-now: separate, additive promotion
