@@ -17,6 +17,8 @@ A 34,000+ line single-file PWA (index.html) for global sports intelligence. Depl
 
 ## Key Files
 - `index.html` — the entire app (HTML + CSS + JS)
+- `src/legacy/field.js` — **THE ONLY CORRECT EDIT TARGET FOR JS CHANGES.** The pre-commit hook runs `scripts/sync-source.mjs` which replaces `index.html`'s `<script>` block with `field.js` content. Editing `index.html`'s script block directly is now caught and blocked by `sync-source.mjs` (guard added 2026-07-18) — if the guard fires, the correct fix is to move the edit into `field.js`, not to bypass the guard. CSS edits go directly to `index.html` (CSS is outside the script block and is not overwritten by sync).
+- `scripts/sync-source.mjs` — syncs field.js → index.html script block; includes divergence guard
 - `sw.js` — service worker (SW_VERSION must match index.html)
 - `smoke.js` — 648+ structural assertions (Layer 0, blocks deploy)
 - `field_smoke.js` — per-day invariant tests
