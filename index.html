@@ -4973,6 +4973,7 @@ import { WX_DIR, cardinalDir } from '../utils/wind.js';
 import { VENUE_COORDS, isOutdoorVenue, getVenueCoords } from '../utils/venues.js';
 import { isFeaturedTierGame } from '../utils/tier-game.js';
 import { findGameById, _resolveRealGameId, resolveGameIdByHome, initIdentityModule } from '../identity/index.ts';
+import { buildDramaUnsealed, buildFieldWasWatching, buildOddsStory, buildSeriesArc, buildBracketDeltaLayer, buildDebrief, initDebriefModule } from '../debrief/index.ts';
 
 'use strict';
 // Identity module — inject live state getters so the extracted functions
@@ -4984,6 +4985,8 @@ initIdentityModule({
   scores: () => espnScores,
   data: () => allData,
 });
+// Debrief module — inject fieldChip (DOM primitive defined in this scope).
+initDebriefModule({ fieldChip });
 // ═══════════════════════════════════════════════════════════════
 // FIELD — Global Sports Intelligence
 // Debug logging: set FIELD_DEBUG=1 in localStorage to enable
@@ -7442,145 +7445,8 @@ function updateCard(cardEl, enrichedGame) {
 // ── Phase 3b: The Debrief — Layer functions ──────────────────────────────────
 
 // Layer 1: Drama Unsealed — horizontal bar + tier chip + arc-derived duration
-function buildDramaUnsealed(debrief) {
-  const peak = debrief?.dramaSealed;
-  if (peak == null) return null;
-  const wrap = document.createElement('div');
-  wrap.className = 'debrief-drama';
-  const barTrack = document.createElement('div');
-  barTrack.className = 'debrief-drama__bar-track';
-  const bar = document.createElement('div');
-  bar.className = 'debrief-drama__bar';
-  bar.style.width = `${Math.min(100, Math.max(0, Math.round(peak)))}%`;
-  const tier = peak >= 85 ? 'MUST' : peak >= 65 ? 'HOT' : peak >= 45 ? 'HEATING' : 'QUIET';
-  bar.dataset.tier = tier;
-  barTrack.appendChild(bar);
-  wrap.appendChild(barTrack);
-  const chips = document.createElement('div');
-  chips.className = 'debrief-drama__chips';
-  chips.appendChild(fieldChip(tier, tier, { small: true }));
-  const arc = debrief.dramaArc;
-  if (Array.isArray(arc) && arc.length) {
-    const highMins = Math.round(arc.filter(v => v >= 65).length * 15 / 60);
-    if (highMins >= 1) chips.appendChild(fieldChip(`${highMins}m high`, 'HEATING', { small: true }));
-  }
-  wrap.appendChild(chips);
-  return wrap;
-}
-
-// Layer 2: FIELD Was Watching — journalism brief text (dim/italic)
-function buildFieldWasWatching(debrief) {
-  const brief = debrief?.preGameBrief;
-  if (!brief) return null;
-  const wrap = document.createElement('div');
-  wrap.className = 'debrief-prediction';
-  const p = document.createElement('p');
-  p.className = 'debrief-prediction__text';
-  p.textContent = String(brief).slice(0, 300);
-  wrap.appendChild(p);
-  return wrap;
-}
-
-// Layer 3: The Odds Story — CHALK / UPSET / SWEAT from opening moneyline + result
-function buildOddsStory(debrief) {
-  const odds = debrief?.oddsOutcome;
-  if (!odds?.opening) return null;
-  const { opening, home, away, homeScore, awayScore, wentToOT } = odds;
-  const ml = opening.moneyline || {};
-  const homeFav = (ml.home ?? 0) < (ml.away ?? 0);
-  const homeWon = (homeScore ?? 0) > (awayScore ?? 0);
-  const favWon  = homeFav === homeWon;
-  const margin  = Math.abs((homeScore ?? 0) - (awayScore ?? 0));
-  const scenario = !favWon ? 'UPSET' : (margin <= 1 || wentToOT) ? 'SWEAT' : 'CHALK';
-  const wrap = document.createElement('div');
-  wrap.className = 'debrief-odds';
-  const labelRow = document.createElement('div');
-  labelRow.className = 'debrief-odds__scenario';
-  labelRow.appendChild(fieldChip(scenario,
-    scenario === 'UPSET' ? 'MUST' : scenario === 'SWEAT' ? 'HOT' : 'QUIET',
-    { small: true }));
-  wrap.appendChild(labelRow);
-  const favTeam = homeFav ? (home || 'Home') : (away || 'Away');
-  const favMl   = homeFav ? ml.home : ml.away;
-  const dogMl   = homeFav ? ml.away : ml.home;
-  const dogTeam = homeFav ? (away || 'Away') : (home || 'Home');
-  const line = document.createElement('div');
-  line.className = 'debrief-odds__line';
-  line.textContent = `${favTeam} ${favMl > 0 ? '+' : ''}${favMl} · ${dogTeam} +${Math.abs(dogMl)}`;
-  wrap.appendChild(line);
-  return wrap;
-}
-
-// Layer 4: Series Arc — playoff-only dots (guards null for regular-season games)
-function buildSeriesArc(debrief) {
-  const arc = debrief?.seriesArc;
-  if (!arc) return null;
-  const games = Array.isArray(arc.games) ? arc.games : [];
-  if (!games.length) return null;
-  const wrap = document.createElement('div');
-  wrap.className = 'debrief-arc';
-  const dots = document.createElement('div');
-  dots.className = 'debrief-arc__dots';
-  games.forEach((g, i) => {
-    const dot = document.createElement('span');
-    dot.className = 'debrief-arc__dot';
-    const winner = (g.home_score != null && g.away_score != null)
-      ? (g.home_score > g.away_score ? 'home' : 'away')
-      : null;
-    if (winner) dot.dataset.winner = winner;
-    const margin = Array.isArray(arc.margins) ? arc.margins[i] : null;
-    if (margin != null) dot.title = `${margin > 0 ? '+' : ''}${margin}`;
-    dots.appendChild(dot);
-  });
-  wrap.appendChild(dots);
-  return wrap;
-}
-
-// Layer 5: WC Bracket Shift — top movers after this match's projection recompute
-function buildBracketDeltaLayer(debrief) {
-  const bd = debrief?.bracketDelta;
-  if (!bd || !Array.isArray(bd.shifts) || !bd.shifts.length) return null;
-  const top = bd.shifts.slice(0, 3);
-  const wrap = document.createElement('div');
-  wrap.className = 'debrief-bracket';
-  const label = document.createElement('div');
-  label.className = 'debrief-bracket__label';
-  label.textContent = 'WC Bracket Shift';
-  if (bd.significant) label.appendChild(fieldChip('SIG', 'HOT', { small: true }));
-  wrap.appendChild(label);
-  const movers = document.createElement('div');
-  movers.className = 'debrief-bracket__movers';
-  for (const s of top) {
-    const row = document.createElement('div');
-    row.className = 'debrief-bracket__mover';
-    const dir = s.champDelta > 0 ? '+' : '';
-    row.textContent = `${s.name}  ${dir}${s.champDelta.toFixed(1)}pp (${s.champAfter.toFixed(1)}%)`;
-    row.dataset.dir = s.champDelta > 0 ? 'up' : 'down';
-    movers.appendChild(row);
-  }
-  wrap.appendChild(movers);
-  return wrap;
-}
-
-// Assembles Layers 1-5 into the card-debrief container Element
-function buildDebrief(enrichedGame) {
-  const debrief = enrichedGame?.debrief;
-  if (!debrief) return null;
-  const l1 = buildDramaUnsealed(debrief);
-  const l2 = buildFieldWasWatching(debrief);
-  const l3 = buildOddsStory(debrief);
-  const l4 = buildSeriesArc(debrief);
-  const l5 = buildBracketDeltaLayer(debrief);
-  if (!l1 && !l2 && !l3 && !l4 && !l5) return null;
-  const wrap = document.createElement('div');
-  wrap.className = 'card-debrief-inner';
-  if (l1) wrap.appendChild(l1);
-  if (l2) wrap.appendChild(l2);
-  if (l3) wrap.appendChild(l3);
-  if (l4) wrap.appendChild(l4);
-  if (l5) wrap.appendChild(l5);
-  return wrap;
-}
+// buildDramaUnsealed, buildFieldWasWatching, buildOddsStory, buildSeriesArc,
+// buildBracketDeltaLayer, buildDebrief extracted to src/debrief/index.ts (Phase 4 — Debrief domain).
 
 // Session-level cache for Context Graph responses (final games are immutable)
 const _debriefContextCache = new Map();

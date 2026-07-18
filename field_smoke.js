@@ -119,6 +119,14 @@ global.initIdentityModule = ()=>{};
 global.findGameById = ()=>undefined;
 global._resolveRealGameId = ()=>null;
 global.resolveGameIdByHome = ()=>null;
+// Stubs for functions extracted to src/debrief/index.ts (Phase 4 — Debrief domain).
+global.initDebriefModule = ()=>{};
+global.buildDramaUnsealed = ()=>null;
+global.buildFieldWasWatching = ()=>null;
+global.buildOddsStory = ()=>null;
+global.buildSeriesArc = ()=>null;
+global.buildBracketDeltaLayer = ()=>null;
+global.buildDebrief = ()=>null;
 
 process.env.TZ = 'America/New_York';
 const RealDate = Date;
