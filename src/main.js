@@ -11,4 +11,8 @@ import { fieldTierRank, fieldTierLabel } from './utils/tier.js';
 globalThis.fieldTierRank = fieldTierRank;
 globalThis.fieldTierLabel = fieldTierLabel;
 
+import { inferSport, golfRoundLabel } from './utils/sport-format.js';
+globalThis.inferSport = inferSport;
+globalThis.golfRoundLabel = golfRoundLabel;
+
 import './legacy/field.js';
