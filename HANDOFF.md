@@ -1,3 +1,14 @@
+## SESSION CLOSE-OUT — 2026-07-18, Module Script Scenario B (supersedes previous)
+
+**HEAD:** fe3dd4b
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (unchanged — no SW change)
+**Session doc:** outbox/cc-session-2026-07-18-module-script-scenarioB.md
+
+**Scenario B COMPLETE:** `build-bundle.mjs` now emits `format: 'esm'` (was `'iife'`). The IIFE wrapper `(() => { ... })()` is removed from the deployed bundle. Bundled output is genuine module-top-level code inside the existing `<script type="module">` tag (Scenario A). Bundle size: 1569 KB (vs 1631 KB IIFE — 62 KB smaller). Bundled smoke regression: 586/372 vs IIFE baseline 578/380 — 0 new failures, 8 fewer. Source smoke 958/0. All CI green: Desktop Chrome, Desktop Safari, Smoke+Verify, Browser runtime tests (Playwright live URL). globalThis bridge in main.js (25 lines) NOT retired — not necessary for correctness under bundled ESM; retirement is a separate, larger scope requiring its own CC-CMD.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Bridge Inline-Handler Implicit Globals (supersedes previous)
 
 **HEAD:** 5b603c0
