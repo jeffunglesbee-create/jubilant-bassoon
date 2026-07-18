@@ -1,3 +1,14 @@
+## SESSION CLOSE-OUT — 2026-07-18, Bridge Inline-Handler Implicit Globals (supersedes previous)
+
+**HEAD:** 5b603c0
+**Smoke count:** 958/0
+**SW version:** 2026-07-18b (unchanged — no SW change)
+**Session doc:** outbox/cc-session-2026-07-18-bridge-inline-handlers.md
+
+**Bridge inline handlers COMPLETE:** 13 explicit `window.X=` bridges added to `src/legacy/field.js` after `window.addEventListener('beforeunload', saveSnapshot)`. Functions: `_deskCardToggle`, `closeBottomSheet`, `fetchMCPStatus`, `goToDate`, `openJournalismForGame`, `pinGame`, `scrollToGame`, `setViewerIntelMode`, `switchWCTab`, `toggleJournalismView`, `togglePickEmView`, `toggleWCView`, `unpinGame`. All confirmed defined in field.js, all confirmed called from inline HTML event handlers, zero overlap with existing 54 window assignments. Purely additive. Smoke 958/0 before and after. All CI green: deploy-gate, Desktop Chrome Viewport Audit, Client Live Invariant. This is Scenario B prerequisite — Scenario B itself (true ES module conversion, removing IIFE) remains separate, unauthorized work.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, Module Script Scenario A (supersedes previous)
 
 **HEAD:** 7181061
