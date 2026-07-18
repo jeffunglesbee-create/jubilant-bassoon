@@ -1,8 +1,9 @@
-## SESSION CLOSE-OUT — 2026-07-18, via chat (supersedes the "still open" list further below, which is stale)
+## SESSION CLOSE-OUT — 2026-07-18, module-script investigation (supersedes previous)
 
-**HEAD:** 5894720
+**HEAD:** 61028f6
 **Smoke count:** 958/0
-**SW version:** 2026-07-17b
+**SW version:** 2026-07-18a
+**Session doc:** docs/outbox/cc-session-2026-07-18-module-script-investigation.md
 **Session doc:** docs/outbox/cc-session-2026-07-18-esbuild-phase7-corrected.md
 
 **esbuild thread COMPLETE (Phases 1–7):** 23 symbols extracted across 16 modules. Final extraction: isFeaturedTierGame → src/utils/tier-game.js (4506c27). MY_TEAMS explicitly out of scope (live mutable user preference state). CI fully green. smoke.js A-FTO-2 updated to read body from module file.
