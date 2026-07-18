@@ -1,3 +1,20 @@
+## SESSION CLOSE-OUT — 2026-07-18, runtime-errors-img9604-img9605 (supersedes previous)
+
+**HEAD:** 42f98bc
+**Smoke count:** 958/0
+**SW version:** 2026-07-18k
+**Session doc:** outbox/cc-session-2026-07-18-runtime-errors.md
+
+**IMG_9604 fixes (commit 2d87152):**
+- `getDramaDial()` wrapped in try/catch → eliminates `initFIELDBrief:null is not an object` on iOS Safari private/standalone (window.localStorage===null)
+- `generateJournalismViaRelay` default timeout raised 12s→25s → eliminates `journalism:generate:j3-brief:Load failed` (quality chain 6+ retries routinely exceeded 12s)
+
+**IMG_9605 fix (commit 42f98bc):**
+- `findESPNScore` early-exit guard: added `sc.isSoccer` → eliminates `scores:find-espn-score-no-match` for all soccer games. Root cause: `SOCCER_LEAGUES=[]` so `espnScores` never has soccer; all soccer served via `findScore()→_scoresBySource.apisports`.
+- NBA relay 403 (×2): no fix — transient CDN issue, already guarded by `retryable:true` + `RELAY_HEALTHY`.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, browser-verify-debrief-gap12 (supersedes previous)
 
 **HEAD:** b7f1f26

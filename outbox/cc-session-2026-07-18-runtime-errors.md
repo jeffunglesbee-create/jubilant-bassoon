@@ -60,6 +60,33 @@ CSS: added `grid-column:1/-1` to `.card-debrief` so it spans all three grid colu
 - VERIFIED (structurally): Runtime error suppression — cannot E2E verify without live CFL game
   and stale-final condition; fixes are correct by inspection and match the error signatures
 
+---
+
+### 2d87152 — fix: getDramaDial null-localStorage guard + raise relay timeout default to 25s
+**Problems (from IMG_9604):**
+1. `initFIELDBrief:null is not an object (evaluating 'localStorage.getItem')` — `getDramaDial()` called `localStorage.getItem()` without null guard. `window.localStorage===null` in iOS Safari private/standalone. Error tagged `initFIELDBrief` because outer `.catch()` at line 7620 catches the entire `.then(()=>renderAmbientPanel())` chain.
+2. `journalism:generate:j3-brief:Load failed` — `generateJournalismViaRelay` default `AbortSignal.timeout` was 12s. Quality chain runs 6+ LLM retries; routinely >12s on busy evenings.
+
+**Fixes:**
+- `getDramaDial()`: wrapped body in try/catch, returns 65 on error
+- `generateJournalismViaRelay`: raised default timeout 12000→25000ms
+
+**SW_VERSION:** 2026-07-18j
+
+---
+
+### 42f98bc — fix: skip findESPNScore for soccer games (SOCCER_LEAGUES=[])
+**Problem (from IMG_9605):**
+`scores:find-espn-score-no-match:no match found: England @ France (×17)` — `SOCCER_LEAGUES=[]` (all soccer migrated to V2). `fetchSoccerFixtures` is a no-op; `espnScores` never contains soccer entries. `findESPNScore` lacked `isSoccer` in early-exit guard, running full key-scan and always missing.
+
+**Why safe:** `findScore()` reads from `_scoresBySource.apisports` directly — independent of `findESPNScore`. Soccer scores unaffected.
+
+**Fix:** Added `|| sc.isSoccer` to `findESPNScore` early-exit guard (~line 17067).
+
+**NBA relay 403 (×2):** No fix — transient NBA CDN issue, already guarded by `retryable:true` + `RELAY_HEALTHY`.
+
+**SW_VERSION:** 2026-07-18k
+
 ## Open carry-forwards
 - Phrase Review warning: 25 low-score briefs · "points, points, points" repeated phrases.
   Journalism quality issue, separate concern — not addressed this session.
