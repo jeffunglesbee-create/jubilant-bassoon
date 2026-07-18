@@ -1947,6 +1947,14 @@ body.wf-mode .np-inner{max-width:100%}
 .game-card.circadian-preview .card-accent{background:var(--gold)}
 .game-card.circadian-night .card-accent{background:var(--drama-watch)}
 
+/* Cross-sport circadian mode — chip opacity by mode (CC-CMD-2026-07-18-gap5-circadian).
+   Custom properties forward-compatible: consumed by .field-chip--* rules when UI Primitives ship. */
+:root[data-circadian="PREVIEW"]{--chip-must-opacity:.4;--chip-watch-opacity:1;--chip-discovery-opacity:1;--chip-quiet-opacity:.6}
+:root[data-circadian="PRIME"]{--chip-must-opacity:1;--chip-watch-opacity:.8;--chip-discovery-opacity:.6;--chip-quiet-opacity:.5}
+:root[data-circadian="NIGHT"]{--chip-must-opacity:.5;--chip-watch-opacity:.6;--chip-discovery-opacity:.8;--chip-quiet-opacity:1}
+:root[data-circadian="LATE"]{--chip-must-opacity:.3;--chip-watch-opacity:.5;--chip-discovery-opacity:.5;--chip-quiet-opacity:1}
+:root[data-circadian="DAWN"]{--chip-must-opacity:.3;--chip-watch-opacity:.8;--chip-discovery-opacity:.7;--chip-quiet-opacity:.8}
+
 .live-badge{
   display:inline-flex;align-items:center;gap:4px;
   font-family:var(--ff-cond);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;
