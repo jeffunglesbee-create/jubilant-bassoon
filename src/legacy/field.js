@@ -2374,6 +2374,7 @@ function buildEnrichedGame(rawGame, sources) {
       } : null,
       preGameBrief: (_ctx?.archive?.gameBriefs?.[0]?.text) ?? (_src.journalismBrief ?? null),
       seriesArc:    _ctx?.series               ?? null,
+      bracketDelta: _ctx?.bracketDelta         ?? null,
     },
     // Pass-throughs for downstream consumers
     _raw:       rawGame,
@@ -2551,7 +2552,33 @@ function buildSeriesArc(debrief) {
   return wrap;
 }
 
-// Assembles Layers 1-4 into the card-debrief container Element
+// Layer 5: WC Bracket Shift — top movers after this match's projection recompute
+function buildBracketDeltaLayer(debrief) {
+  const bd = debrief?.bracketDelta;
+  if (!bd || !Array.isArray(bd.shifts) || !bd.shifts.length) return null;
+  const top = bd.shifts.slice(0, 3);
+  const wrap = document.createElement('div');
+  wrap.className = 'debrief-bracket';
+  const label = document.createElement('div');
+  label.className = 'debrief-bracket__label';
+  label.textContent = 'WC Bracket Shift';
+  if (bd.significant) label.appendChild(fieldChip('SIG', 'HOT', { small: true }));
+  wrap.appendChild(label);
+  const movers = document.createElement('div');
+  movers.className = 'debrief-bracket__movers';
+  for (const s of top) {
+    const row = document.createElement('div');
+    row.className = 'debrief-bracket__mover';
+    const dir = s.champDelta > 0 ? '+' : '';
+    row.textContent = `${s.name}  ${dir}${s.champDelta.toFixed(1)}pp (${s.champAfter.toFixed(1)}%)`;
+    row.dataset.dir = s.champDelta > 0 ? 'up' : 'down';
+    movers.appendChild(row);
+  }
+  wrap.appendChild(movers);
+  return wrap;
+}
+
+// Assembles Layers 1-5 into the card-debrief container Element
 function buildDebrief(enrichedGame) {
   const debrief = enrichedGame?.debrief;
   if (!debrief) return null;
@@ -2559,13 +2586,15 @@ function buildDebrief(enrichedGame) {
   const l2 = buildFieldWasWatching(debrief);
   const l3 = buildOddsStory(debrief);
   const l4 = buildSeriesArc(debrief);
-  if (!l1 && !l2 && !l3 && !l4) return null;
+  const l5 = buildBracketDeltaLayer(debrief);
+  if (!l1 && !l2 && !l3 && !l4 && !l5) return null;
   const wrap = document.createElement('div');
   wrap.className = 'card-debrief-inner';
   if (l1) wrap.appendChild(l1);
   if (l2) wrap.appendChild(l2);
   if (l3) wrap.appendChild(l3);
   if (l4) wrap.appendChild(l4);
+  if (l5) wrap.appendChild(l5);
   return wrap;
 }
 
