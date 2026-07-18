@@ -2714,6 +2714,7 @@ function getCardCircadian(game) {
 // getCardCircadian() — not spec's g.status-only approach which only covers V2.
 let _circadianMode = 'PREVIEW';
 let _circadianBySport = {};
+let _prevCircadianMode = null;
 
 function computeCircadianContext(now, games) {
   const liveCount = games.filter(g =>
@@ -2750,6 +2751,54 @@ function computeSportCircadian(now, allSports) {
 
 function applyCircadian(mode) {
   document.documentElement.dataset.circadian = mode;
+}
+
+// Gap 11: show "Show all sports" suggestion chip when circadian mode transitions
+// to LATE/DAWN and the active sport filter has all games finished.
+// Never auto-clears the filter — only suggests via a dismissible chip.
+function _checkFilterSuggestionChip(prevMode, newMode) {
+  if (newMode !== 'LATE' && newMode !== 'DAWN') return;
+  if (prevMode === 'LATE' || prevMode === 'DAWN') return;
+  if (!activeFilter || activeFilter === 'all') return;
+  if (!allData || !Array.isArray(allData.sports)) return;
+  const sportSec = allData.sports.find(function(s) { return s.sport === activeFilter; });
+  if (!sportSec || !Array.isArray(sportSec.games) || !sportSec.games.length) return;
+  const allFinal = sportSec.games.every(function(g) {
+    const st = g._espnState || g.state || '';
+    return st === 'post' || st === 'final';
+  });
+  if (!allFinal) return;
+  if (document.getElementById('filter-suggestion-chip')) return;
+  const filtersEl = document.getElementById('sport-filters');
+  if (!filtersEl) return;
+  const chip = document.createElement('div');
+  chip.id = 'filter-suggestion-chip';
+  chip.className = 'filter-suggestion-chip';
+  const label = document.createElement('span');
+  label.className = 'filter-suggestion-text';
+  label.textContent = 'All ' + activeFilter + ' games are final — ';
+  const actionBtn = document.createElement('button');
+  actionBtn.type = 'button';
+  actionBtn.className = 'filter-suggestion-action';
+  actionBtn.textContent = 'Show all sports';
+  actionBtn.addEventListener('click', function() {
+    activeFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+    if (allBtn) allBtn.classList.add('active');
+    renderAll();
+    chip.remove();
+  });
+  const dismissBtn = document.createElement('button');
+  dismissBtn.type = 'button';
+  dismissBtn.className = 'filter-suggestion-dismiss';
+  dismissBtn.setAttribute('aria-label', 'Dismiss');
+  dismissBtn.textContent = '✕';
+  dismissBtn.addEventListener('click', function() { chip.remove(); });
+  chip.appendChild(label);
+  chip.appendChild(actionBtn);
+  chip.appendChild(dismissBtn);
+  filtersEl.insertAdjacentElement('afterend', chip);
 }
 
 // _bundleFinalizedAt: cross-session-accurate finalized_at lookup for
@@ -7108,6 +7157,13 @@ function renderConflictChip(conflicts) {
 // Run after renderAll() — derives the conflicts from the same flat game
 // list the filter pipeline already uses. Idempotent.
 function updateConflictChip() {
+  // Gap 11: conflict chips are only meaningful during PREVIEW/PRIME when games
+  // haven't started yet. Hide them during NIGHT/LATE/DAWN — conflicts are moot
+  // once games are underway or finished.
+  if (_circadianMode !== 'PREVIEW' && _circadianMode !== 'PRIME') {
+    renderConflictChip([]);
+    return;
+  }
   if (!allData || !Array.isArray(allData.sports)) {
     renderConflictChip([]);
     return;
@@ -14856,8 +14912,12 @@ async function fetchV2AllScores() {
   try {
     const _circResult = computeSportCircadian(new Date(), allData?.sports || []);
     applyCircadian(_circResult.global);
+    const _circPrev = _circadianMode;
     _circadianMode = _circResult.global;
     _circadianBySport = _circResult.bySport;
+    _prevCircadianMode = _circPrev;
+    // Gap 11: check if mode transitioned to LATE/DAWN with an active sport filter
+    try { _checkFilterSuggestionChip(_circPrev, _circResult.global); } catch(_gp11) {}
   } catch(_) {}
   scheduleV2Poll(anyLive ? 30000 : 60000);
 }
