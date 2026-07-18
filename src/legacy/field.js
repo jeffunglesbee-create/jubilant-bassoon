@@ -2402,7 +2402,7 @@ function buildEnrichedGame(rawGame, sources) {
         away:       _ctxG.away                 ?? rawGame.away ?? '',
         wentToOT:   !!_ctxG.went_to_ot,
       } : null,
-      preGameBrief: (_ctx?.archive?.gameBriefs?.[0]?.text) ?? (_src.journalismBrief ?? null),
+      preGameBrief: (_ctx?.archive?.gameBriefs?.[0]?.brief_text) ?? (_src.journalismBrief ?? null),
       seriesArc:    _ctx?.series               ?? null,
       bracketDelta: _ctx?.bracketDelta         ?? null,
     },
@@ -2512,24 +2512,25 @@ async function injectDebriefCards() {
       if (g) { rawGame = g; sport = s.sport; break; }
     }
     if (!rawGame || (typeof isGameOver === 'function' && !isGameOver(rawGame))) return;
+    const contextId = rawGame._gameId || gameId;
     try {
-      let ctx = _debriefContextCache.get(gameId);
+      let ctx = _debriefContextCache.get(contextId);
       if (!ctx) {
         // Gap 12: cache-first read from field-debriefs Cache API
-        const _debriefCacheKey = `https://field-local/debrief/${encodeURIComponent(gameId)}`;
+        const _debriefCacheKey = `https://field-local/debrief/${encodeURIComponent(contextId)}`;
         try {
           if (typeof caches !== 'undefined') {
             const _dc = await caches.open('field-debriefs');
             const _hit = await _dc.match(_debriefCacheKey);
-            if (_hit) { ctx = await _hit.json(); _debriefContextCache.set(gameId, ctx); }
+            if (_hit) { ctx = await _hit.json(); _debriefContextCache.set(contextId, ctx); }
           }
         } catch(_) {}
         if (!ctx) {
-          const r = await fetch(`${base}/context/game/${encodeURIComponent(gameId)}`,
+          const r = await fetch(`${base}/context/game/${encodeURIComponent(contextId)}`,
             { signal: AbortSignal.timeout(8000) });
           if (!r.ok) return;
           ctx = await r.json();
-          _debriefContextCache.set(gameId, ctx);
+          _debriefContextCache.set(contextId, ctx);
           // Gap 12: write to Cache API with timestamp for 7-day eviction
           try {
             if (typeof caches !== 'undefined') {
