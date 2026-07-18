@@ -1,3 +1,16 @@
+## SESSION CLOSE-OUT — 2026-07-18, browser-verify-debrief-gap12 (supersedes previous)
+
+**HEAD:** b7f1f26
+**Smoke count:** 958/0
+**SW version:** 2026-07-18c (bumped in b7f1f26)
+**Session doc:** outbox/cc-session-2026-07-18-browser-verify-debrief-gap12.md
+
+**Debrief card V2 _gameId fix:** `fetchV2AllScores` now propagates `v2Entry._gameId` to `allData.sports` game objects (commit 22dd4fe). Previously MLB cards in `allData.sports` had no `_gameId`, so `injectDebriefCards` fell back to internal `g{n}` IDs → wrong relay endpoint → pre-game brief served. Fix: extended round/series propagation block to also write `_gameId`; adds re-injection trigger if card already stamped with wrong contextId. Post-deploy verification: Cubs/Twins card (espn:401816164) serves correct post-game brief. Gap 12 cache key confirmed correct (`espn%3A401816164`). Full Playwright setOffline test STAGED (requires direct Playwright access — MCP browser tool does not support setOffline). CI: Smoke Test + Live Verify success on b7f1f26.
+
+**STAGED:** Gap 12 strict offline page-reload test. Blocked by: MCP browser tool lacks `setOffline(true)`. Unblocked when: Playwright direct access available. Verify: `context.setOffline(true)` → reload → assert `.card-debrief[data-slot="debrief"]` visible with cached post-game brief text.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, extract-debrief-domain (supersedes previous)
 
 **HEAD:** 2d6508c
