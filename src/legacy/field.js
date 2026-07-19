@@ -20963,7 +20963,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18l';
+  const SW_VERSION = '2026-07-18m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -29813,13 +29813,35 @@ function renderPickEmSection() {
       }
     });
   });
-  if (!games.length) {
+
+  // Resolved picks — from localStorage cache, rendered below upcoming picks.
+  // The cache stores home/away/sport per entry so we can display without the
+  // original game object. Only shows entries that have been resolved.
+  const resolvedHTML = (() => {
+    const cache = typeof _getPickCache === 'function' ? _getPickCache() : {};
+    const resolved = Object.entries(cache).filter(([, p]) => p.resolved);
+    if (!resolved.length) return '';
+    const rows = resolved.map(([key, p]) => {
+      const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      const matchup = (p.away && p.home) ? `${esc(p.away)} @ ${esc(p.home)}` : '';
+      const widgetHTML = typeof buildPickWidgetHTML === 'function'
+        ? buildPickWidgetHTML({ _id: key, home: p.home || '', away: p.away || '' }, p.sport || '')
+        : '';
+      return `<div class="pickem-row">${matchup ? `<div class="pickem-matchup">${matchup}</div>` : ''}${widgetHTML}</div>`;
+    }).join('');
+    return `<div class="pickem-results-head">Results</div>${rows}`;
+  })();
+
+  if (!games.length && !resolvedHTML) {
     content.innerHTML = '<div class="pickem-empty">No upcoming games to pick right now — check back closer to game time.</div>';
     return;
   }
-  content.innerHTML = games.map(({ g, sport }) =>
-    `<div class="pickem-row"><div class="pickem-matchup">${(g.away||'').replace(/</g,'&lt;')} @ ${(g.home||'').replace(/</g,'&lt;')}</div>${typeof buildPickWidgetHTML === 'function' ? buildPickWidgetHTML(g, sport) : ''}</div>`
-  ).join('');
+  const upcomingHTML = games.length
+    ? games.map(({ g, sport }) =>
+        `<div class="pickem-row"><div class="pickem-matchup">${(g.away||'').replace(/</g,'&lt;')} @ ${(g.home||'').replace(/</g,'&lt;')}</div>${typeof buildPickWidgetHTML === 'function' ? buildPickWidgetHTML(g, sport) : ''}</div>`
+      ).join('')
+    : '<div class="pickem-empty">No upcoming games to pick right now.</div>';
+  content.innerHTML = upcomingHTML + resolvedHTML;
 }
 
 // ── BSD pitch helpers (2026-06-25) ────────────────────────────────────────
