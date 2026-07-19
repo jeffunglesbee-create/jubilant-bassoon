@@ -20963,7 +20963,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-18m';
+  const SW_VERSION = '2026-07-18n';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -29814,22 +29814,60 @@ function renderPickEmSection() {
     });
   });
 
-  // Resolved picks — from localStorage cache, rendered below upcoming picks.
-  // The cache stores home/away/sport per entry so we can display without the
-  // original game object. Only shows entries that have been resolved.
-  const resolvedHTML = (() => {
+  // Stats + resolved picks from localStorage cache.
+  // Cache stores predictedWinner/home/away/sport/wasCorrect per resolved entry.
+  const { statsHTML, resolvedHTML } = (() => {
+    const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
     const cache = typeof _getPickCache === 'function' ? _getPickCache() : {};
     const resolved = Object.entries(cache).filter(([, p]) => p.resolved);
-    if (!resolved.length) return '';
+    if (!resolved.length) return { statsHTML: '', resolvedHTML: '' };
+
+    // Aggregate overall, by sport, by team
+    const overall = { w: 0, l: 0 };
+    const bySport = {};
+    const byTeam  = {};
+    resolved.forEach(([, p]) => {
+      const w = p.wasCorrect;
+      overall[w ? 'w' : 'l']++;
+      const sp = (p.sport || 'Other').replace(/\s*\(.*\)/, '').trim(); // strip "(MLB)" suffixes
+      bySport[sp] = bySport[sp] || { w: 0, l: 0 };
+      bySport[sp][w ? 'w' : 'l']++;
+      const tm = p.predictedWinner || '';
+      if (tm) {
+        byTeam[tm] = byTeam[tm] || { w: 0, l: 0 };
+        byTeam[tm][w ? 'w' : 'l']++;
+      }
+    });
+
+    const rec = (o) => {
+      const pct = o.w + o.l > 0 ? Math.round(100 * o.w / (o.w + o.l)) : 0;
+      return `<span class="pickem-stat-rec">${o.w}-${o.l}</span><span class="pickem-stat-pct">${pct}%</span>`;
+    };
+    const overallLine = `<div class="pickem-stat-row pickem-stat-overall"><span class="pickem-stat-label">Overall</span>${rec(overall)}</div>`;
+
+    const sportLines = Object.entries(bySport).sort((a,b) => (b[1].w+b[1].l)-(a[1].w+a[1].l))
+      .map(([sp, o]) => `<div class="pickem-stat-row"><span class="pickem-stat-label">${esc(sp)}</span>${rec(o)}</div>`).join('');
+
+    const teamLines = Object.entries(byTeam).sort((a,b) => (b[1].w+b[1].l)-(a[1].w+a[1].l))
+      .map(([tm, o]) => `<div class="pickem-stat-row"><span class="pickem-stat-label">${esc(tm)}</span>${rec(o)}</div>`).join('');
+
+    const statsHTML = `<div class="pickem-results-head">Record</div>
+      <div class="pickem-stats-block">
+        ${overallLine}
+        ${sportLines ? `<div class="pickem-stat-group-head">By Sport</div>${sportLines}` : ''}
+        ${teamLines  ? `<div class="pickem-stat-group-head">By Team</div>${teamLines}`   : ''}
+      </div>`;
+
     const rows = resolved.map(([key, p]) => {
-      const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
       const matchup = (p.away && p.home) ? `${esc(p.away)} @ ${esc(p.home)}` : '';
       const widgetHTML = typeof buildPickWidgetHTML === 'function'
         ? buildPickWidgetHTML({ _id: key, home: p.home || '', away: p.away || '' }, p.sport || '')
         : '';
       return `<div class="pickem-row">${matchup ? `<div class="pickem-matchup">${matchup}</div>` : ''}${widgetHTML}</div>`;
     }).join('');
-    return `<div class="pickem-results-head">Results</div>${rows}`;
+    const resolvedHTML = `<div class="pickem-results-head">Results</div>${rows}`;
+
+    return { statsHTML, resolvedHTML };
   })();
 
   if (!games.length && !resolvedHTML) {
@@ -29841,7 +29879,7 @@ function renderPickEmSection() {
         `<div class="pickem-row"><div class="pickem-matchup">${(g.away||'').replace(/</g,'&lt;')} @ ${(g.home||'').replace(/</g,'&lt;')}</div>${typeof buildPickWidgetHTML === 'function' ? buildPickWidgetHTML(g, sport) : ''}</div>`
       ).join('')
     : '<div class="pickem-empty">No upcoming games to pick right now.</div>';
-  content.innerHTML = upcomingHTML + resolvedHTML;
+  content.innerHTML = upcomingHTML + statsHTML + resolvedHTML;
 }
 
 // ── BSD pitch helpers (2026-06-25) ────────────────────────────────────────
