@@ -21167,7 +21167,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-19b';
+  const SW_VERSION = '2026-07-19c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -30084,6 +30084,210 @@ function renderPickEmSection() {
       ).join('')
     : '<div class="pickem-empty">No upcoming games to pick right now.</div>';
   content.innerHTML = upcomingHTML + statsHTML + resolvedHTML;
+}
+
+// ── Stats tab — cross-sport analytics surface ─────────────────────────────
+function toggleStatsView() {
+  const isStats = document.body.classList.toggle('stats-mode');
+  const navLink = document.getElementById('stats-nav-link');
+  const section = document.getElementById('stats-section');
+  if (isStats) {
+    navLink?.classList.add('active');
+    section?.removeAttribute('hidden');
+    if (section) section.style.display = 'block';
+    if (document.body.classList.contains('journalism-mode')) {
+      document.body.classList.remove('journalism-mode');
+      const _jrnNavLnk = document.getElementById('jrn-nav-link');
+      if (_jrnNavLnk) _jrnNavLnk.classList.remove('active');
+    }
+    const _jrnSec = document.getElementById('field-journalism-section');
+    if (_jrnSec) { _jrnSec.setAttribute('hidden', ''); _jrnSec.style.display = ''; }
+    if (document.body.classList.contains('wc-mode')) {
+      document.body.classList.remove('wc-mode');
+      const _wcNavLnk = document.getElementById('wc-nav-link');
+      if (_wcNavLnk) _wcNavLnk.classList.remove('active');
+    }
+    const _wcSec = document.getElementById('wc-section');
+    if (_wcSec) { _wcSec.setAttribute('hidden', ''); _wcSec.style.display = ''; }
+    if (document.body.classList.contains('pickem-mode')) {
+      document.body.classList.remove('pickem-mode');
+      const _pkNavLnk = document.getElementById('pickem-nav-link');
+      if (_pkNavLnk) _pkNavLnk.classList.remove('active');
+    }
+    const _pkSec = document.getElementById('pickem-section');
+    if (_pkSec) { _pkSec.setAttribute('hidden', ''); _pkSec.style.display = ''; }
+    renderStatsSection();
+  } else {
+    navLink?.classList.remove('active');
+    section?.setAttribute('hidden', '');
+    if (section) section.style.display = '';
+  }
+}
+
+function renderStatsSection() {
+  const content = document.getElementById('stats-content');
+  if (!content) return;
+
+  const esc = s => (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const row = (rank, name, val, valCls, sub) =>
+    `<div class="stats-row"><span class="stats-row-rank">${rank}</span><span class="stats-row-name">${esc(name)}</span><span class="stats-row-val${valCls ? ' '+valCls : ''}">${val}</span>${sub ? `<span class="stats-row-sub">${sub}</span>` : ''}</div>`;
+
+  const blocks = [];
+
+  // ── MLB ──────────────────────────────────────────────────────────────────
+  const mlbRows = [];
+
+  // Pythagorean gap leaderboard (MLB_TEAM_PYTHAG)
+  const pythagEntries = Object.entries(MLB_TEAM_PYTHAG);
+  if (pythagEntries.length) {
+    const sorted = pythagEntries
+      .map(([abbr, d]) => ({ abbr, ...d }))
+      .filter(d => typeof d.actual === 'number' && typeof d.expected === 'number')
+      .sort((a, b) => Math.abs(b.actual - b.expected) - Math.abs(a.actual - a.expected))
+      .slice(0, 6);
+    if (sorted.length) {
+      const pRows = sorted.map((d, i) => {
+        const gap = d.actual - d.expected;
+        const cls = gap > 0 ? 'pos' : 'neg';
+        return row(i+1, d.abbr, `${gap > 0 ? '+' : ''}${gap.toFixed(1)} W`, cls, `${d.actual}W actual · ${d.expected.toFixed(1)} exp`);
+      }).join('');
+      mlbRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Pythagorean Gap (actual − expected wins)</div>${pRows}</div>`);
+    }
+  }
+
+  // xwOBA divergence leaderboard (PLAYER_EXPECTED_STATS)
+  const xwobaEntries = Object.entries(PLAYER_EXPECTED_STATS);
+  if (xwobaEntries.length) {
+    const sorted = xwobaEntries
+      .filter(([, d]) => d.pa >= 50 && typeof d.woba === 'number' && typeof d.xwoba === 'number')
+      .map(([name, d]) => ({ name, div: d.woba - d.xwoba, woba: d.woba, xwoba: d.xwoba, pa: d.pa }))
+      .sort((a, b) => Math.abs(b.div) - Math.abs(a.div))
+      .slice(0, 8);
+    if (sorted.length) {
+      const xRows = sorted.map((d, i) => {
+        const cls = d.div > 0 ? 'pos' : 'neg';
+        return row(i+1, d.name, `${d.div > 0 ? '+' : ''}${d.div.toFixed(3)}`, cls, `${d.woba.toFixed(3)} wOBA · ${d.xwoba.toFixed(3)} xwOBA · ${d.pa} PA`);
+      }).join('');
+      mlbRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">xwOBA Divergence (wOBA − xwOBA, 50+ PA)</div>${xRows}</div>`);
+    }
+  }
+
+  if (mlbRows.length) {
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚾ MLB</div>${mlbRows.join('')}</div>`);
+  }
+
+  // ── NFL ──────────────────────────────────────────────────────────────────
+  const nflRows = [];
+
+  // QB CPOE leaderboard
+  const qbEntries = Object.entries(NFL_NGS_PASSING);
+  if (qbEntries.length) {
+    const sorted = qbEntries
+      .sort((a, b) => (b[1].cpoe || 0) - (a[1].cpoe || 0))
+      .slice(0, 8);
+    const qbRows = sorted.map(([ name, d ], i) => {
+      const cls = d.cpoe >= 0 ? 'pos' : 'neg';
+      return row(i+1, name, `${d.cpoe >= 0 ? '+' : ''}${d.cpoe.toFixed(1)}% CPOE`, cls, `${(d.xCompPct*100).toFixed(1)}% xComp · ${d.attempts} att · ${d.team}`);
+    }).join('');
+    nflRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">QB Completion % Over Expected (CPOE)</div>${qbRows}</div>`);
+  }
+
+  // WR air yard share + YAC above expected
+  const wrEntries = Object.entries(NFL_NGS_RECEIVING);
+  if (wrEntries.length) {
+    const sorted = wrEntries
+      .sort((a, b) => (b[1].airYardShare || 0) - (a[1].airYardShare || 0))
+      .slice(0, 8);
+    const wrRows = sorted.map(([ name, d ], i) => {
+      const yac = d.yacAboveExp;
+      const yasCls = yac >= 0 ? 'pos' : 'neg';
+      return row(i+1, name, `${(d.airYardShare*100).toFixed(1)}% AYS`, '', `YAC+Exp: <span class="stats-row-val ${yasCls}">${yac >= 0 ? '+' : ''}${yac.toFixed(1)}</span> · ${d.targets} tgt · ${d.team}`);
+    }).join('');
+    nflRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">WR Air Yard Share + YAC Above Expected (30+ tgt)</div>${wrRows}</div>`);
+  }
+
+  if (nflRows.length) {
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">🏈 NFL</div>${nflRows.join('')}</div>`);
+  }
+
+  // ── NBA ──────────────────────────────────────────────────────────────────
+  const nbaEntries = Object.entries(NBA_TEAM_ANALYTICS).filter(([k]) => k !== '_AVG');
+  if (nbaEntries.length) {
+    const avg = NBA_TEAM_ANALYTICS['_AVG'];
+    // Clutch Debt: teams with clutchDrtg populated, sorted by delta vs regular drtg
+    const clutchTeams = nbaEntries
+      .filter(([, d]) => typeof d.clutchDrtg === 'number')
+      .map(([abbr, d]) => ({ abbr, delta: d.clutchDrtg - d.drtg, clutchDrtg: d.clutchDrtg, drtg: d.drtg }))
+      .sort((a, b) => b.delta - a.delta);
+
+    let nbaContent = '';
+    if (clutchTeams.length) {
+      const cRows = clutchTeams.map((d, i) => {
+        const cls = d.delta > 0 ? 'neg' : 'pos'; // positive delta = worse clutch D = bad
+        return row(i+1, d.abbr, `${d.delta > 0 ? '+' : ''}${d.delta.toFixed(1)} DRTG`, cls, `${d.clutchDrtg.toFixed(1)} clutch · ${d.drtg.toFixed(1)} reg`);
+      }).join('');
+      nbaContent += `<div class="stats-subsection"><div class="stats-subsection-label">Clutch DRTG vs Regular Season DRTG (Δ)</div>${cRows}</div>`;
+    }
+
+    // Best regular-season DRTG
+    const drtgSorted = nbaEntries.sort((a, b) => a[1].drtg - b[1].drtg).slice(0, 6);
+    const dRows = drtgSorted.map(([ abbr, d ], i) => {
+      const vsAvg = avg ? (d.drtg - avg.drtg).toFixed(1) : '';
+      const cls = d.drtg < (avg?.drtg || 114.7) ? 'pos' : 'neg';
+      return row(i+1, abbr, `${d.drtg.toFixed(1)} DRTG`, cls, vsAvg ? `${vsAvg > 0 ? '+' : ''}${vsAvg} vs avg` : '');
+    }).join('');
+    nbaContent += `<div class="stats-subsection"><div class="stats-subsection-label">Defensive Rating (lower = better)</div>${dRows}</div>`;
+
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">🏀 NBA</div>${nbaContent}</div>`);
+  }
+
+  // ── NHL ──────────────────────────────────────────────────────────────────
+  const nhlEntries = Object.entries(NHL_GOALIE_RATINGS);
+  if (nhlEntries.length) {
+    // GSAx leaders (only if _gsax populated by nhlGSAXInit)
+    const gsaxEntries = nhlEntries.filter(([, d]) => typeof d._gsax === 'number');
+    let nhlContent = '';
+    if (gsaxEntries.length) {
+      const sorted = gsaxEntries.sort((a, b) => b[1]._gsax - a[1]._gsax).slice(0, 8);
+      const gsaxRows = sorted.map(([name, d], i) => {
+        const cls = d._gsax >= 0 ? 'pos' : 'neg';
+        return row(i+1, name, `${d._gsax >= 0 ? '+' : ''}${d._gsax.toFixed(2)} GSAx`, cls, `${d._gsaxP60 !== undefined ? d._gsaxP60.toFixed(2)+'/60 · ' : ''}${d.sv.toFixed(3)} SV% · ${d.team}`);
+      }).join('');
+      nhlContent += `<div class="stats-subsection"><div class="stats-subsection-label">Goals Saved Above Expected (GSAx)</div>${gsaxRows}</div>`;
+    }
+
+    // Goalie tiers (from static map)
+    const eliteTier = nhlEntries.filter(([, d]) => d.tier === 'elite').map(([n, d]) => `${n} (${d.team})`).join(', ');
+    if (eliteTier) {
+      nhlContent += `<div class="stats-subsection"><div class="stats-subsection-label">Elite Tier Goalies</div><div class="stats-row"><span class="stats-row-name" style="color:var(--gold2)">${esc(eliteTier)}</span></div></div>`;
+    }
+
+    if (nhlContent) {
+      blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">🏒 NHL</div>${nhlContent}</div>`);
+    }
+  }
+
+  // ── EPL ──────────────────────────────────────────────────────────────────
+  const fplEntries = Object.entries(FPL_PLAYER_ANALYTICS);
+  if (fplEntries.length) {
+    // xGI/90 leaders (attackers + midfielders, element_type >= 3)
+    const sorted = fplEntries
+      .filter(([, d]) => d.element_type >= 3 && typeof d.xGI90 === 'number')
+      .sort((a, b) => b[1].xGI90 - a[1].xGI90)
+      .slice(0, 10);
+    if (sorted.length) {
+      const fplRows = sorted.map(([name, d], i) => {
+        return row(i+1, name, `${d.xGI90.toFixed(2)} xGI/90`, '', `${d.xG90 !== undefined ? d.xG90.toFixed(2)+'xG · ' : ''}${d.xA90 !== undefined ? d.xA90.toFixed(2)+'xA' : ''}`);
+      }).join('');
+      blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚽ EPL</div><div class="stats-subsection"><div class="stats-subsection-label">xGoal Involvement per 90 (xGI/90)</div>${fplRows}</div></div>`);
+    }
+  }
+
+  if (!blocks.length) {
+    content.innerHTML = '<div class="stats-empty">Analytics loading… check back after boot completes (~5s)</div>';
+    return;
+  }
+  content.innerHTML = blocks.join('');
 }
 
 // ── BSD pitch helpers (2026-06-25) ────────────────────────────────────────
@@ -39586,6 +39790,7 @@ window.setViewerIntelMode    = setViewerIntelMode;
 window.switchWCTab           = switchWCTab;
 window.toggleJournalismView  = toggleJournalismView;
 window.togglePickEmView      = togglePickEmView;
+window.toggleStatsView       = toggleStatsView;
 window.toggleWCView          = toggleWCView;
 window.unpinGame             = unpinGame;
 
