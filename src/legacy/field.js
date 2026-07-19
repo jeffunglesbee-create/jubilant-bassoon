@@ -497,7 +497,7 @@ function buildFieldHealthPanel() {
   // for debugging. This section makes it visible without touching any of
   // the 9 functions' existing try/catch or fallback logic.
   {
-    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit'];
+    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit','nflNGSInit','mlbPythagInit'];
     const _riStatus = window._relayInitStatus || {};
     const _riFailLines = [];
     let _riOkCount = 0, _riFailCount = 0;
@@ -4176,16 +4176,31 @@ function getMLBProbablePitchers(homeTeamName) {
 const _MLB_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev';
 let _mlbStatsLoaded = false;
 
+// Savant expected stats per batter (lastName key, same as PITCHER_ARSENAL).
+// Loaded by mlbStatsInit; enables xwOBA divergence display in scouting report.
+const PLAYER_EXPECTED_STATS = {};
+
+// MLB team Pythagorean expected W% (abbr key → {pythagWpct, wins, losses, rs, ra}).
+// Loaded by mlbPythagInit from /mlb-stats/standings relay proxy.
+const MLB_TEAM_PYTHAG = {};
+
+// NFL NGS analytics keyed by player last name (suffix-stripped via _mlbPlayerKey).
+const NFL_NGS_PASSING   = {};  // cpoe, aggressiveness, avgTimeToThrow, attempts, xCompPct
+const NFL_NGS_RECEIVING = {};  // avgYACAboveExp, avgSeparation, pctShareIntendedAirYards, targets
+
+// FPL per-player xG/xA/form/ICT analytics keyed by web_name.
+// Populated by fplLoadBootstrap() alongside the existing team/player name maps.
+const FPL_PLAYER_ANALYTICS = {};
+
 async function mlbStatsInit() {
   if (_mlbStatsLoaded) return;
-  // team_abs/expected_stats/sprint_speed removed 2026-07-12 (Rule 63 dead-
-  // code cleanup): their sole consumers (getTeamABSRanking, getRegressionAlert,
-  // getSprintSpeed) had zero call sites anywhere in the file -- confirmed via
-  // direct grep, not assumed. TEAM_ABS_RANKINGS/PLAYER_EXPECTED_STATS/
-  // PLAYER_SPEED and their getters removed together with these fetch entries.
   const FILES = [
     ['pitch_tempo',    d => { Object.assign(PITCHER_TEMPO,         d); }],
     ['pitch_arsenals', d => { Object.assign(PITCHER_ARSENAL,       d); }],
+    // expected_stats: xBA, xSLG, xwOBA per batter — drives xwOBA divergence
+    // in buildScoutingReport. Removed 2026-07-12 (no callers), re-added 2026-07-19
+    // with getXwobaDivergence() as the caller in buildScoutingReport MLB section.
+    ['expected_stats', d => { Object.assign(PLAYER_EXPECTED_STATS, d); }],
   ];
   let loaded = 0;
   await Promise.allSettled(FILES.map(async ([name, apply]) => {
@@ -4205,8 +4220,113 @@ async function mlbStatsInit() {
   // freshness now comes solely from the weekly CI regeneration
   // (scripts/sync-umpire-abs-ratings.js) into the static constant.
   _mlbStatsLoaded = true;
-  _recordRelayInit('mlbStatsInit', loaded > 0, loaded > 0 ? null : 'both Savant tables failed');
-  if (loaded > 0 && FIELD_DEBUG) console.log(`[FIELD] MLB stats loaded: ${loaded}/2 tables (Savant)`);
+  _recordRelayInit('mlbStatsInit', loaded > 0, loaded > 0 ? null : 'all Savant tables failed');
+  if (loaded > 0 && FIELD_DEBUG) console.log(`[FIELD] MLB stats loaded: ${loaded}/3 tables (Savant)`);
+}
+
+// Return xwOBA divergence (actual wOBA - expected xwOBA) for a batter.
+// Positive = outperforming expected output. Negative = regression candidate.
+// Used in buildScoutingReport MLB section.
+function getXwobaDivergence(lastName) {
+  const d = PLAYER_EXPECTED_STATS[_mlbPlayerKey(lastName)];
+  if (!d || d.woba == null || d.xwoba == null || (d.pa || 0) < 50) return null;
+  return { divergence: +(d.woba - d.xwoba).toFixed(3), woba: d.woba, xwoba: d.xwoba, pa: d.pa };
+}
+
+// ── mlbPythagInit: Pythagorean expected record from MLB Stats API standings ───
+// Computes W% = RS^1.83 / (RS^1.83 + RA^1.83) per team.
+// Requires /standings added to relay allowlist (MLB_STATS_API_ALLOWED_PREFIXES).
+// Keyed by 2-3 char team abbreviation matching game._homeAbbr / game._awayAbbr.
+let _mlbPythagLoaded = false;
+async function mlbPythagInit() {
+  if (_mlbPythagLoaded) return;
+  try {
+    const url = `${_MLB_RELAY}/mlb-stats/standings?leagueId=103,104&season=2026&standingsTypes=regularSeason&fields=records,teamRecords,team,abbreviation,wins,losses,runsScored,runsAllowed`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) { _recordRelayInit('mlbPythagInit', false, `HTTP ${r.status}`); return; }
+    const data = await r.json();
+    let count = 0;
+    for (const record of (data.records || [])) {
+      for (const tr of (record.teamRecords || [])) {
+        const abbr = tr.team?.abbreviation;
+        const rs = tr.runsScored, ra = tr.runsAllowed;
+        if (!abbr || rs == null || ra == null || ra === 0) continue;
+        const rs183 = Math.pow(rs, 1.83), ra183 = Math.pow(ra, 1.83);
+        const pythagWpct = +(rs183 / (rs183 + ra183)).toFixed(3);
+        MLB_TEAM_PYTHAG[abbr] = { pythagWpct, wins: tr.wins, losses: tr.losses, rs, ra };
+        count++;
+      }
+    }
+    _mlbPythagLoaded = true;
+    _recordRelayInit('mlbPythagInit', count > 0, count > 0 ? null : 'no team records');
+    if (FIELD_DEBUG) console.log(`[FIELD] MLB Pythagorean loaded: ${count} teams`);
+  } catch(e) { _recordRelayInit('mlbPythagInit', false, e?.message || 'error'); }
+}
+
+function getMLBTeamPythag(abbr) {
+  return abbr ? (MLB_TEAM_PYTHAG[abbr] || null) : null;
+}
+
+// ── nflNGSInit: NFL Next Gen Stats from nflverse R2 pipeline ─────────────────
+// Loads ngs-passing.json (QB cpoe, aggressiveness, avgTimeToThrow) and
+// ngs-receiving.json (WR/TE avgYACAboveExp, avgSeparation) from relay R2.
+// Keyed by player last name using _mlbPlayerKey() suffix-stripping convention.
+const _NFL_NGS_RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/nflverse';
+let _nflNGSLoaded = false;
+async function nflNGSInit() {
+  if (_nflNGSLoaded) return;
+  try {
+    const [passResp, recResp] = await Promise.all([
+      fetch(`${_NFL_NGS_RELAY}/ngs-passing.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/ngs-receiving.json`, { signal: AbortSignal.timeout(8000) }),
+    ]);
+    let loaded = 0;
+    if (passResp.ok) {
+      const j = await passResp.json();
+      for (const [, p] of Object.entries(j.data || {})) {
+        if (p.attempts < 100) continue; // min sample
+        const key = _mlbPlayerKey(lastNameOf(p));
+        NFL_NGS_PASSING[key] = { cpoe: p.cpoe, aggressiveness: p.aggressiveness,
+          avgTimeToThrow: p.avgTimeToThrow, team: p.team, attempts: p.attempts, xCompPct: p.xCompPct };
+      }
+      loaded++;
+    }
+    if (recResp.ok) {
+      const j = await recResp.json();
+      for (const [, p] of Object.entries(j.data || {})) {
+        if (p.targets < 30) continue; // min sample
+        const key = _mlbPlayerKey(lastNameOf(p));
+        NFL_NGS_RECEIVING[key] = { yacAboveExp: p.avgYACAboveExp, separation: p.avgSeparation,
+          airYardShare: p.pctShareIntendedAirYards, team: p.team, targets: p.targets };
+      }
+      loaded++;
+    }
+    _nflNGSLoaded = true;
+    _recordRelayInit('nflNGSInit', loaded > 0, loaded > 0 ? null : 'both NGS files failed');
+    if (FIELD_DEBUG) console.log(`[FIELD] NFL NGS loaded: passing=${Object.keys(NFL_NGS_PASSING).length} QBs, receiving=${Object.keys(NFL_NGS_RECEIVING).length} WRs`);
+  } catch(e) { _recordRelayInit('nflNGSInit', false, e?.message || 'error'); }
+}
+
+function getNGSPassingProfile(lastName) {
+  return NFL_NGS_PASSING[_mlbPlayerKey(lastNameOf(lastName))] || null;
+}
+
+function getNGSReceivingProfile(lastName) {
+  return NFL_NGS_RECEIVING[_mlbPlayerKey(lastNameOf(lastName))] || null;
+}
+
+// Find all NGS profiles for a given NFL team abbreviation.
+function getNGSTeamQBs(teamAbbr) {
+  if (!teamAbbr) return [];
+  return Object.values(NFL_NGS_PASSING).filter(p => p.team === teamAbbr);
+}
+
+function getNGSTeamReceivers(teamAbbr) {
+  if (!teamAbbr) return [];
+  return Object.values(NFL_NGS_RECEIVING)
+    .filter(p => p.team === teamAbbr)
+    .sort((a, b) => b.airYardShare - a.airYardShare)
+    .slice(0, 3);
 }
 
 // ── nbaPlayerCluichInit: fetches live playoff clutch stats per player ─────────
@@ -15966,6 +16086,49 @@ function buildScoutingReport(game, sport) {
     }
   }
 
+  // ── NFL ────────────────────────────────────────────────────────────────────
+  if (sp.includes('nfl') || (sp.includes('football') && !sp.includes('afl') && !sp.includes('cfl'))) {
+    const toNGSAbbr = name => (espnTeamAbbrevs[(name||'').toLowerCase()]?.abbrev||'').toUpperCase();
+    const ha = toNGSAbbr(game.home), aa = toNGSAbbr(game.away);
+    const hQBs = ha ? getNGSTeamQBs(ha) : [];
+    const aQBs = aa ? getNGSTeamQBs(aa) : [];
+    // Show QB with most attempts from each team
+    const hQB = hQBs.sort((a,b) => b.attempts - a.attempts)[0];
+    const aQB = aQBs.sort((a,b) => b.attempts - a.attempts)[0];
+    if (hQB || aQB) {
+      const fmtQB = (qb, team) => {
+        if (!qb) return team || '—';
+        const cpoe = qb.cpoe != null ? (qb.cpoe >= 0 ? `<em>+${qb.cpoe.toFixed(1)}% CPOE</em>` : `<span class="scout-warn">${qb.cpoe.toFixed(1)}% CPOE</span>`) : '';
+        const att = `${qb.attempts} att`;
+        return `${team} ${cpoe}${cpoe ? ' · ' : ''}${att}`;
+      };
+      rows.push({ lbl: 'QB CPOE', val: `${fmtQB(hQB, teamNick(game.home||''))} | ${fmtQB(aQB, teamNick(game.away||''))}` });
+    }
+    const hRecs = ha ? getNGSTeamReceivers(ha) : [];
+    const aRecs = aa ? getNGSTeamReceivers(aa) : [];
+    if (hRecs.length || aRecs.length) {
+      const fmtRec = recs => recs.map(r => {
+        const yac = r.yacAboveExp != null ? (r.yacAboveExp >= 0 ? `+${r.yacAboveExp.toFixed(1)}` : r.yacAboveExp.toFixed(1)) : '?';
+        return `${Math.round((r.airYardShare||0)*100)}% AYS · <em>${yac} YAC+</em>`;
+      }).join(' · ');
+      if (hRecs.length) rows.push({ lbl: `${teamNick(game.home||'')} WR`, val: fmtRec(hRecs) });
+      if (aRecs.length) rows.push({ lbl: `${teamNick(game.away||'')} WR`, val: fmtRec(aRecs) });
+    }
+  }
+
+  // ── EPL / Premier League ───────────────────────────────────────────────────
+  if (sp.includes('premier league') || sp.includes('epl')) {
+    const hLeaders = getFPLTeamLeaders(game.home);
+    const aLeaders = getFPLTeamLeaders(game.away);
+    const fmtFPL = leaders => leaders.map(p => {
+      const xgi = p.xGI90 != null ? `<em>${p.xGI90} xGI/90</em>` : '';
+      const fm  = p.form  != null ? ` · form ${p.form}` : '';
+      return `${p.name}${xgi ? ' ' + xgi : ''}${fm}`;
+    }).join(' | ');
+    if (hLeaders.length) rows.push({ lbl: `${teamNick(game.home||'')} xG`, val: fmtFPL(hLeaders) });
+    if (aLeaders.length) rows.push({ lbl: `${teamNick(game.away||'')} xG`, val: fmtFPL(aLeaders) });
+  }
+
   if (!rows.length) return '';
   const rowsHTML = rows.map(r =>
     `<div class="bs-scout-row"><span class="bs-scout-lbl">${r.lbl}</span><span class="bs-scout-val">${r.val}</span></div>`
@@ -15999,11 +16162,16 @@ function buildScoutingReport(game, sport) {
         ? ` · <em>${pArsenal.topWhiff.type}</em> ${Math.round(pArsenal.topWhiff.whiffRate * 100)}% whiff`
         : '';
       const tempoStr = pTempo ? ` · <em>${pTempo.tempoClass}</em> tempo` : '';
+      const xwDiv = p.batterName ? getXwobaDivergence(lastNameOf(p.batterName)) : null;
+      const xwLine = xwDiv
+        ? `<div class="rai-row"><span class="rai-lbl">xwOBA</span><span style="font-size:.67rem">${xwDiv.divergence >= 0 ? '<em>+' : '<span class="scout-warn">'}${xwDiv.divergence.toFixed(3)}${xwDiv.divergence >= 0 ? '</em>' : '</span>'} vs xpct · ${xwDiv.woba.toFixed(3)} wOBA · ${xwDiv.pa} PA</span></div>`
+        : '';
       raiSection = `<div class="bs-section">
         <div class="bs-section-label">At-Bat Edge</div>
         <div class="bs-section-body">
           <div class="rai-row"><span class="rai-lbl">Matchup</span><span class="rai-val ${edgeCls}">${p.platoonLabel}</span></div>
           ${p.batterName ? `<div class="rai-row"><span class="rai-lbl">Batter</span><span style="font-size:.67rem">${p.batterName}</span></div>` : ''}
+          ${xwLine}
           ${p.pitcherName ? `<div class="rai-row"><span class="rai-lbl">Pitcher</span><span style="font-size:.67rem">${p.pitcherName}${arsenalStr}${tempoStr}</span></div>` : ''}
           ${countLine}
         </div>
@@ -17988,6 +18156,7 @@ const FPL_SHORT_NAME_MAP = {
 
 // In-memory team map {fplId → fieldTeamName}, current GW
 let _fplTeamMap = null;
+let _fplTeamNameToId = null; // reverse: lowercase team name → fplId
 let _fplPlayerMap = null;
 let _fplCurrentGW = null;
 let _fplLastFetch = 0; // timestamp of last successful fixtures fetch — skip relay if <28s ago
@@ -18017,11 +18186,30 @@ async function fplLoadBootstrap() {
       map[t.id] = FPL_SHORT_NAME_MAP[t.short_name] || FPL_SHORT_NAME_MAP[t.name] || t.name;
     }
     _fplTeamMap = map;
+    _fplTeamNameToId = {};
+    for (const [id, name] of Object.entries(map)) _fplTeamNameToId[name.toLowerCase()] = +id;
 
     // {elementId → web_name} — e.g. 302 → "Salah"
     const players = {};
     for (const p of (data.elements || [])) {
       players[p.id] = p.web_name;
+      // xG/xA analytics: normalize to per-90 using minutes played.
+      // FPL bootstrap provides season totals; min 450 min filter avoids small samples.
+      const mins = parseFloat(p.minutes) || 0;
+      if (mins >= 450 && p.web_name) {
+        const per90 = v => v != null ? +(parseFloat(v) / mins * 90).toFixed(2) : null;
+        FPL_PLAYER_ANALYTICS[p.web_name] = {
+          xG90:    per90(p.expected_goals),
+          xA90:    per90(p.expected_assists),
+          xGI90:   per90(p.expected_goal_involvements),
+          xGC90:   per90(p.expected_goals_conceded),
+          form:    parseFloat(p.form) || null,
+          ict:     parseFloat(p.ict_index) || null,
+          mins,
+          teamId:       p.team,
+          element_type: p.element_type, // 1=GK,2=DEF,3=MID,4=FWD
+        };
+      }
     }
     _fplPlayerMap = players;
 
@@ -18032,6 +18220,20 @@ async function fplLoadBootstrap() {
     sessionStorage.setItem(_FPL_BOOTSTRAP_KEY, JSON.stringify({ map, players, gw: _fplCurrentGW, ts: Date.now() }));
     return true;
   } catch(e) { captureFieldError('fpl:bootstrap-fetch', e, true); return false; }
+}
+
+function getFPLPlayerAnalytics(webName) { return FPL_PLAYER_ANALYTICS[webName] || null; }
+
+// Top attackers/midfielders by xGI90 for an EPL team (team name as it appears in game.home/away).
+function getFPLTeamLeaders(teamName) {
+  if (!teamName || !_fplTeamNameToId) return [];
+  const teamId = _fplTeamNameToId[(teamName||'').toLowerCase()];
+  if (!teamId) return [];
+  return Object.entries(FPL_PLAYER_ANALYTICS)
+    .filter(([, d]) => d.teamId === teamId && d.element_type >= 3)
+    .map(([name, d]) => ({ name, ...d }))
+    .sort((a, b) => (b.xGI90 || 0) - (a.xGI90 || 0))
+    .slice(0, 3);
 }
 
 // Extract goalscorer names from a fixture's stats array → store in _fplScorerCache
@@ -19899,6 +20101,8 @@ async function fetchSchedule(){
   setTimeout(nbaCluichInit, 4700);        // NBA clutch DRTG from R2 (fills null fields in NBA_TEAM_ANALYTICS)
   setTimeout(nbaPlayerCluichInit, 4750);    // NBA player clutch (live /leaguedashplayerclutch → patches NBA_CLUTCH_PLAYERS)
   setTimeout(nhlGSAXInit, 4800);          // NHL GSAX from MoneyPuck R2 (upgrades NHL_GOALIE_RATINGS from save% proxy)
+  setTimeout(mlbPythagInit, 4900);        // MLB Pythagorean expected record from standings API
+  setTimeout(nflNGSInit, 5000);           // NFL NGS: QB CPOE + WR YAC Above Expected from R2
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
   setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
@@ -20963,7 +21167,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-19a';
+  const SW_VERSION = '2026-07-19b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
