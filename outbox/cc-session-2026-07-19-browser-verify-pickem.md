@@ -99,3 +99,28 @@ Seattle Storm @ Las Vegas Aces
 - TASK 3 (15/15): No bug found — no code change required
 
 ## Integration status: VERIFIED (all three Pick 'em fixes)
+
+---
+
+## Re-verification — 2026-07-19 (later session)
+
+**HEAD at re-verification:** 7bacacd
+**Reason:** HEAD had advanced since original verification (SW_VERSION bump `7b82073`, data syncs, MLS tournament sync). No Pick 'em code changes between `fd90b2d` and `7bacacd` — confirmed via `git show 7b82073 --stat`.
+
+**TASK 1 re-run:**
+- Navigated to live app, called `togglePickEmView()` — 42 pick buttons rendered (MLB, WNBA, etc.)
+- `localStorage.removeItem('field_picks_v1')` confirmed null before click
+- `.click()` on first button (Chicago White Sox, `baseballmlb_2026-07-19T16_torontobluejays_chicagowhitesox`)
+- localStorage entry created immediately: `{ predictedWinner: "Chicago White Sox", sport: "MLB", home: "Toronto Blue Jays", away: "Chicago White Sox", resolved: false, wasCorrect: null, ... }`
+- Schema correct ✓
+
+**TASK 2 re-run:**
+- Seeded 2 resolved entries (MLB Yankees correct, WNBA Aces incorrect)
+- `.pickem-stat-overall` → "Overall 1-1 50%" ✓
+- `.pickem-results-head` → ["Record", "Results"] ✓
+- `.pickem-stat-group-head` → ["By Sport", "By Team"] ✓
+- Resolved widget classes: `pick-widget pick-resolved pick-correct` + `pick-widget pick-resolved pick-incorrect` ✓
+
+**TASK 3:** No bugs. No code change.
+
+**Re-verification confidence: 100/100 — VERIFIED at 7bacacd**
