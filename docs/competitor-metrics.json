@@ -1,11 +1,14 @@
 {
   "note": "Competitor surface audit. Probes public HTML only — paywalled pages return challenge/login content. Re-run weekly. Claims about uniqueness must cite a run of this probe, not training data.",
+  "relay_base": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "metrics": [
     {
       "id": "pythagorean_record",
       "display": "Pythagorean Record / Expected Record",
       "sport": "cross",
       "terms": ["pythagorean", "pythag", "expected record", "expected wins"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. Could be derived from /v2/games win/loss data.",
       "probes": [
         { "name": "FanGraphs Standings", "url": "https://www.fangraphs.com/standings/wild-card", "paywall": false },
         { "name": "Baseball Reference Standings", "url": "https://www.baseball-reference.com/leagues/majors/2026-standings.shtml", "paywall": false },
@@ -18,6 +21,8 @@
       "display": "Leverage Index (live / in-game)",
       "sport": "mlb",
       "terms": ["leverage index", "high leverage", "clutch situation", "leverage"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. Requires RE matrix + live state; no relay endpoint.",
       "probes": [
         { "name": "FanGraphs Glossary", "url": "https://library.fangraphs.com/misc/li/", "paywall": false },
         { "name": "FanGraphs Live Scoreboard", "url": "https://www.fangraphs.com/livescoreboard.aspx", "paywall": false },
@@ -30,6 +35,8 @@
       "display": "Run Expectancy / RE24 (live)",
       "sport": "mlb",
       "terms": ["run expectancy", "re24", "re288", "expected runs"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. Savant pipeline has expected_stats.json but not RE24.",
       "probes": [
         { "name": "FanGraphs", "url": "https://www.fangraphs.com/livescoreboard.aspx", "paywall": false },
         { "name": "Baseball Savant", "url": "https://baseballsavant.mlb.com/gamefeed", "paywall": false },
@@ -41,6 +48,8 @@
       "display": "Stuff+",
       "sport": "mlb",
       "terms": ["stuff+", "stuff plus", "stuff_plus"],
+      "field_relay_endpoint": "/mlb-stats/pitch_arsenals.json",
+      "field_relay_note": "Relay serves Savant pitch arsenal data (pitch mix, velo, spin, movement). Stuff+ itself is FanGraphs-licensed — relay has related pitch quality data.",
       "probes": [
         { "name": "FanGraphs Pitching", "url": "https://www.fangraphs.com/leaders/major-league?pos=P&stats=pit&lg=all&qual=y&type=36", "paywall": false },
         { "name": "Baseball Savant", "url": "https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats", "paywall": false },
@@ -52,6 +61,8 @@
       "display": "Barrel Rate",
       "sport": "mlb",
       "terms": ["barrel rate", "barrel%", "barrels/pa", "barrels per"],
+      "field_relay_endpoint": "/mlb-stats/expected_stats.json",
+      "field_relay_note": "Relay serves Savant expected stats including barrel data (barrel%, xBA, xSLG, xwOBA).",
       "probes": [
         { "name": "Baseball Savant", "url": "https://baseballsavant.mlb.com/leaderboard/statcast", "paywall": false },
         { "name": "FanGraphs", "url": "https://www.fangraphs.com/leaders/major-league?pos=all&stats=bat&lg=all&qual=y&type=24", "paywall": false },
@@ -63,6 +74,8 @@
       "display": "Field Tilt / Territory Control (soccer)",
       "sport": "soccer",
       "terms": ["field tilt", "territory", "territory control", "possession zones", "attacking third"],
+      "field_relay_endpoint": "/soccer-fbref/mls.json",
+      "field_relay_note": "Relay serves FBref squad possession stats including territorial data. Field tilt term itself not labeled but possession zone data present.",
       "probes": [
         { "name": "FBref Match", "url": "https://fbref.com/en/comps/22/schedule/Major-League-Soccer-Scores-and-Fixtures", "paywall": false },
         { "name": "Sofascore", "url": "https://www.sofascore.com/football/mls", "paywall": false },
@@ -75,6 +88,8 @@
       "display": "PPDA (Passes Allowed Per Defensive Action)",
       "sport": "soccer",
       "terms": ["ppda", "passes allowed per defensive", "pressing intensity", "pressing metrics"],
+      "field_relay_endpoint": "/soccer-fbref/mls.json",
+      "field_relay_note": "Relay serves FBref squad stats (possession table includes press stats). PPDA not explicitly labeled but pressing data is present.",
       "probes": [
         { "name": "FBref", "url": "https://fbref.com/en/comps/22/possession/Major-League-Soccer-Stats", "paywall": false },
         { "name": "Understat", "url": "https://understat.com/league/MLS", "paywall": false },
@@ -86,6 +101,8 @@
       "display": "Post-Shot xG",
       "sport": "soccer",
       "terms": ["post-shot xg", "post shot xg", "psxg", "shot quality"],
+      "field_relay_endpoint": "/soccer/xg",
+      "field_relay_note": "Relay serves per-game xG from ESPN Core API. WC2026 + premium leagues verified. Returns _hasXG:false when not available.",
       "probes": [
         { "name": "FBref Keepers", "url": "https://fbref.com/en/comps/22/keepersadv/Major-League-Soccer-Stats", "paywall": false },
         { "name": "Understat", "url": "https://understat.com/league/MLS", "paywall": false },
@@ -97,6 +114,8 @@
       "display": "Zone Entry Differential (hockey)",
       "sport": "nhl",
       "terms": ["zone entry", "zone entries", "controlled entry", "dump in", "entry differential"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. Natural Stat Trick tracks this but no relay endpoint.",
       "probes": [
         { "name": "Natural Stat Trick", "url": "https://www.naturalstattrick.com/teamtable.php", "paywall": false },
         { "name": "MoneyPuck", "url": "https://moneypuck.com/teams.htm", "paywall": false },
@@ -108,6 +127,8 @@
       "display": "Transition Frequency / Fast Break Points (basketball)",
       "sport": "nba",
       "terms": ["transition", "fast break", "transition frequency", "transition points", "pace off turnover"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. NBA.com hustle stats blocked by bot-gate in Workers; no relay endpoint.",
       "probes": [
         { "name": "NBA.com Advanced Stats", "url": "https://www.nba.com/stats/teams/hustle", "paywall": false },
         { "name": "Cleaning the Glass", "url": "https://cleaningtheglass.com/stats/league/efficiency", "paywall": true },
@@ -119,6 +140,8 @@
       "display": "Points Per Possession by Half (basketball)",
       "sport": "nba",
       "terms": ["points per possession", "ppp", "half efficiency", "first half efficiency", "second half efficiency"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. No relay endpoint for per-half PPP splits.",
       "probes": [
         { "name": "Cleaning the Glass", "url": "https://cleaningtheglass.com/stats/league/efficiency", "paywall": true },
         { "name": "NBA.com Tracking", "url": "https://www.nba.com/stats/teams/scoring-efficiency", "paywall": false },
@@ -130,6 +153,8 @@
       "display": "Air Yards vs YAC split (NFL)",
       "sport": "nfl",
       "terms": ["air yards", "yards after catch", "yac", "air yards vs yac", "intended air yards"],
+      "field_relay_endpoint": "/nflverse/ngs-receiving.json",
+      "field_relay_note": "Relay serves NFL Next Gen Stats receiving data (air yards, YAC, separation) from nflverse R2 pipeline.",
       "probes": [
         { "name": "NFL Next Gen Stats", "url": "https://nextgenstats.nfl.com/stats/receiving", "paywall": false },
         { "name": "PFF", "url": "https://www.pff.com/nfl/grades/position/wr", "paywall": true },
@@ -141,6 +166,8 @@
       "display": "Success Rate (NFL)",
       "sport": "nfl",
       "terms": ["success rate", "successful play", "epa success"],
+      "field_relay_endpoint": "/nflverse/player-stats.json",
+      "field_relay_note": "Relay serves nflverse player stats including EPA/play from which success rate is derivable.",
       "probes": [
         { "name": "Football Outsiders", "url": "https://www.footballoutsiders.com/stats/nfl/team-efficiency/2025", "paywall": false },
         { "name": "PFF", "url": "https://www.pff.com/nfl/grades", "paywall": true },
@@ -152,6 +179,8 @@
       "display": "Pressure Rate / QB Pressure (NFL)",
       "sport": "nfl",
       "terms": ["pressure rate", "qb pressure", "pressures", "times pressured", "blitz rate"],
+      "field_relay_endpoint": "/nflverse/ngs-passing.json",
+      "field_relay_note": "Relay serves NFL Next Gen Stats passing data including time to throw and pressure metrics.",
       "probes": [
         { "name": "PFF", "url": "https://www.pff.com/nfl/grades/position/qb", "paywall": true },
         { "name": "NFL Next Gen Stats", "url": "https://nextgenstats.nfl.com/stats/passing", "paywall": false },
@@ -163,6 +192,8 @@
       "display": "Schedule-Adjusted Record / SOS-corrected W-L",
       "sport": "cross",
       "terms": ["schedule adjusted", "strength of schedule", "sos adjusted", "adjusted record", "expected record vs sos"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. Requires SOS data + standings computation; no relay endpoint.",
       "probes": [
         { "name": "ESPN Power Index", "url": "https://www.espn.com/nfl/standings/_/view/power", "paywall": false },
         { "name": "FanGraphs Standings", "url": "https://www.fangraphs.com/standings/wild-card", "paywall": false },
@@ -174,6 +205,8 @@
       "display": "Breakeven Pace (games needed at X win-rate to hit target)",
       "sport": "cross",
       "terms": ["breakeven pace", "pace to make playoffs", "games remaining pace", "required pace", "magic number pace"],
+      "field_relay_endpoint": null,
+      "field_relay_note": "Not yet built. Novel FIELD metric — no competitor serves this, no relay endpoint yet.",
       "probes": [
         { "name": "FanGraphs Standings", "url": "https://www.fangraphs.com/standings/wild-card", "paywall": false },
         { "name": "ESPN Playoffs Picture", "url": "https://www.espn.com/nfl/standings/_/view/playoff", "paywall": false },
@@ -185,6 +218,8 @@
       "display": "Clutch Net Rating (NBA)",
       "sport": "nba",
       "terms": ["clutch net rating", "clutch rating", "clutch efficiency", "late and close"],
+      "field_relay_endpoint": "/nba-clutch/clutch_regular.json",
+      "field_relay_note": "Relay serves NBA.com clutch stats (last 5 min, within 5 pts) from R2 pipeline. Regular season and playoffs available.",
       "probes": [
         { "name": "NBA.com Clutch Stats", "url": "https://www.nba.com/stats/teams/clutch-summary", "paywall": false },
         { "name": "Cleaning the Glass", "url": "https://cleaningtheglass.com/stats/league/efficiency", "paywall": true },
@@ -196,6 +231,8 @@
       "display": "GSAx — Goals Saved Above Expected (NHL)",
       "sport": "nhl",
       "terms": ["gsax", "goals saved above expected", "goals saved above average", "gsaa"],
+      "field_relay_endpoint": "/nhl-gsax/regular.json",
+      "field_relay_note": "Relay serves MoneyPuck GSAX from R2 pipeline. Regular season and playoffs available.",
       "probes": [
         { "name": "Natural Stat Trick", "url": "https://www.naturalstattrick.com/playerteams.php?stdoi=g", "paywall": false },
         { "name": "MoneyPuck", "url": "https://moneypuck.com/goalies.htm", "paywall": false },

@@ -37,7 +37,7 @@ jobs:
         run: |
           git config user.name  "FIELD CI"
           git config user.email "ci@field.app"
-          git add outbox/competitor-probe-*.md
+          git add outbox/competitor-probe-*.md outbox/competitor-probe-*.json outbox/metric-gaps-*.md
           git diff --staged --quiet && echo "No changes" || \
             git commit -m "feat: competitor probe $(date -u '+%Y-%m-%d') [skip ci]"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
