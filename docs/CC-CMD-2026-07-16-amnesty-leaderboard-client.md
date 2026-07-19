@@ -18,6 +18,28 @@ Reuse existing patterns: this codebase already has an established live-fetch-wit
 
 **Compliance constraint, same as the card-face CC-CMD:** the percentile/leaderboard display must be gated to genuinely post-game-only code paths (see `docs/ADR-002-CONTEXT.md` L95-104, L260-262 — read it directly, don't rely on this summary). The *relay-side computation* of these values is governed separately by ADR-002's corrected push-vs-pull reading (Rules A/B/E — see `CC-CMD-2026-07-16-amnesty-leaderboard-relay.md`'s own CONTEXT for the full citation); that CC-CMD's pull-only guardrail is the relay's responsibility, but this client CC-CMD must not add anything that turns this data into a push trigger either (e.g. do not wire a "you're #1 on the leaderboard" moment into any client-side notification-request flow).
 
+## ⚠️ UPDATE (2026-07-19) — real render target now exists, was undefined when this was written
+
+This CC-CMD was originally written 2026-07-16, before the Stats tab
+existed. Its original Task 3 said to render "wherever the arc badge /
+bottom sheet already renders drama data" — that target is now resolved:
+**render into the Stats tab** (`renderStatsSection`), not the bottom
+sheet or card face. Direct review confirmed this is compliant: the
+governing constraint (ADR-002 Rules A/B/E) is pull vs. push, not which UI
+surface displays the data — a season leaderboard is inherently post-game
+data by nature (only finished games have a final drama score), and the
+Stats tab is a pull-based, user-initiated surface exactly like the
+bottom sheet. The original "gated to post-game-only" language is
+satisfied automatically by a season ranking's own nature, not something
+requiring extra gating logic in the Stats tab context.
+
+**Real, mechanical note:** the Stats tab (`renderStatsSection`) already
+has real, pending work from other CC-CMDs tonight (`mls-sub-impact-metric`,
+`mls-novel-metrics`, `bottom-sheet-stats-reconciliation`, all touching
+the same function). Re-pull and re-read the real, current state of that
+function immediately before adding this block — do not assume the shape
+this doc originally investigated is still current.
+
 ## TASK 1 — Probe
 
 Confirm the real, deployed relay endpoint shape (fetch it directly, don't assume the field names from the paired CC-CMD's own spec — that spec's OWN implementation may have adjusted the shape during its build). Confirm the current arc-badge rendering location (from `CC-CMD-2026-07-16-amnesty-card-face.md`, if landed) or the bottom sheet (from `CC-CMD-2026-07-16-amnesty-bottom-sheet.md`, if landed) — check `git log` for whether either has actually shipped yet, don't assume from this doc's own sequencing intent.
@@ -28,7 +50,7 @@ A fetch helper matching the established `sessionStorage` cache-then-fetch-then-`
 
 ## TASK 3 — Render
 
-Leaderboard position line (e.g. "#3 of 47 games this season") and percentile line, added to wherever the arc badge / bottom sheet already renders drama data (from the two prerequisite CC-CMDs) — do not create a new, separate card region if one of those has already landed and has a natural slot for this.
+Leaderboard position line (e.g. "#3 of 47 games this season") and percentile line, rendered as a new sub-section in the **Stats tab** (`renderStatsSection`) — per the 2026-07-19 update note above, not the bottom sheet or card face this doc originally pointed at. Reuse the established `row()` helper pattern already used by other Stats tab blocks.
 
 ## TASK 4 — Verify
 
