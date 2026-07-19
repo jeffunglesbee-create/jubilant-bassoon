@@ -100,6 +100,26 @@ own line numbers may have drifted since tonight's investigation.
 
 ## TASK 1 — Move Scouting Report + Standings + milestone to a new "Today's Games" Stats tab sub-section
 
+**⚠️ SEQUENCING NOTE — real, mechanical race with two sibling CC-CMDs,
+read before starting this task:** `docs/CC-CMD-2026-07-19-mls-sub-impact-metric.md`
+(its own Task 4) and `docs/CC-CMD-2026-07-19-mls-novel-metrics.md`
+(its own Task 3) both also add real, new content to this exact same
+`renderStatsSection()` function. This is a mechanical overlap, not a
+logical dependency — none of the three sub-sections depend on each
+other's actual content — but all three editing the same function body in
+parallel risks a real merge conflict or one session's changes silently
+overwriting another's. **Execute these three sequentially, not in
+parallel — re-pull and re-read the real, current state of
+`renderStatsSection()` immediately before starting this task, even if
+this doc's own probe block was run earlier the same session.** If either
+sibling CC-CMD's commit has already landed, build on top of its real,
+current diff rather than the version of the function this doc originally
+investigated. This task is also the most structurally different of the
+three (a new "Today's Games" per-game pattern, distinct from the other
+two's leaderboard-style blocks) — if either sibling has already landed,
+review how it's structured before adding a third, potentially
+inconsistent pattern to the same function.
+
 Real, per-game context for each game on the current slate, grouped
 separately from the existing leaderboard blocks. Reuse
 `buildScoutingReport` and the existing standings-lookup logic directly —
