@@ -1,0 +1,206 @@
+{
+  "note": "Competitor surface audit. Probes public HTML only — paywalled pages return challenge/login content. Re-run weekly. Claims about uniqueness must cite a run of this probe, not training data.",
+  "metrics": [
+    {
+      "id": "pythagorean_record",
+      "display": "Pythagorean Record / Expected Record",
+      "sport": "cross",
+      "terms": ["pythagorean", "pythag", "expected record", "expected wins"],
+      "probes": [
+        { "name": "FanGraphs Standings", "url": "https://www.fangraphs.com/standings/wild-card", "paywall": false },
+        { "name": "Baseball Reference Standings", "url": "https://www.baseball-reference.com/leagues/majors/2026-standings.shtml", "paywall": false },
+        { "name": "ESPN MLB Standings", "url": "https://www.espn.com/mlb/standings", "paywall": false },
+        { "name": "ESPN NBA Standings", "url": "https://www.espn.com/nba/standings", "paywall": false }
+      ]
+    },
+    {
+      "id": "leverage_index",
+      "display": "Leverage Index (live / in-game)",
+      "sport": "mlb",
+      "terms": ["leverage index", "high leverage", "clutch situation", "leverage"],
+      "probes": [
+        { "name": "FanGraphs Glossary", "url": "https://library.fangraphs.com/misc/li/", "paywall": false },
+        { "name": "FanGraphs Live Scoreboard", "url": "https://www.fangraphs.com/livescoreboard.aspx", "paywall": false },
+        { "name": "Baseball Reference Play Index", "url": "https://www.baseball-reference.com/leagues/majors/2026-schedule.shtml", "paywall": false },
+        { "name": "ESPN Gamecast", "url": "https://www.espn.com/mlb/scoreboard", "paywall": false }
+      ]
+    },
+    {
+      "id": "run_expectancy",
+      "display": "Run Expectancy / RE24 (live)",
+      "sport": "mlb",
+      "terms": ["run expectancy", "re24", "re288", "expected runs"],
+      "probes": [
+        { "name": "FanGraphs", "url": "https://www.fangraphs.com/livescoreboard.aspx", "paywall": false },
+        { "name": "Baseball Savant", "url": "https://baseballsavant.mlb.com/gamefeed", "paywall": false },
+        { "name": "Baseball Reference", "url": "https://www.baseball-reference.com/leagues/majors/2026-schedule.shtml", "paywall": false }
+      ]
+    },
+    {
+      "id": "stuff_plus",
+      "display": "Stuff+",
+      "sport": "mlb",
+      "terms": ["stuff+", "stuff plus", "stuff_plus"],
+      "probes": [
+        { "name": "FanGraphs Pitching", "url": "https://www.fangraphs.com/leaders/major-league?pos=P&stats=pit&lg=all&qual=y&type=36", "paywall": false },
+        { "name": "Baseball Savant", "url": "https://baseballsavant.mlb.com/leaderboard/pitch-arsenal-stats", "paywall": false },
+        { "name": "ESPN Stats", "url": "https://www.espn.com/mlb/stats/pitching", "paywall": false }
+      ]
+    },
+    {
+      "id": "barrel_rate",
+      "display": "Barrel Rate",
+      "sport": "mlb",
+      "terms": ["barrel rate", "barrel%", "barrels/pa", "barrels per"],
+      "probes": [
+        { "name": "Baseball Savant", "url": "https://baseballsavant.mlb.com/leaderboard/statcast", "paywall": false },
+        { "name": "FanGraphs", "url": "https://www.fangraphs.com/leaders/major-league?pos=all&stats=bat&lg=all&qual=y&type=24", "paywall": false },
+        { "name": "ESPN", "url": "https://www.espn.com/mlb/stats/batting", "paywall": false }
+      ]
+    },
+    {
+      "id": "field_tilt",
+      "display": "Field Tilt / Territory Control (soccer)",
+      "sport": "soccer",
+      "terms": ["field tilt", "territory", "territory control", "possession zones", "attacking third"],
+      "probes": [
+        { "name": "FBref Match", "url": "https://fbref.com/en/comps/22/schedule/Major-League-Soccer-Scores-and-Fixtures", "paywall": false },
+        { "name": "Sofascore", "url": "https://www.sofascore.com/football/mls", "paywall": false },
+        { "name": "ESPN Soccer", "url": "https://www.espn.com/soccer/scoreboard/_/league/usa.1", "paywall": false },
+        { "name": "Opta / Stats Perform", "url": "https://www.statsperform.com/opta/", "paywall": false }
+      ]
+    },
+    {
+      "id": "ppda",
+      "display": "PPDA (Passes Allowed Per Defensive Action)",
+      "sport": "soccer",
+      "terms": ["ppda", "passes allowed per defensive", "pressing intensity", "pressing metrics"],
+      "probes": [
+        { "name": "FBref", "url": "https://fbref.com/en/comps/22/possession/Major-League-Soccer-Stats", "paywall": false },
+        { "name": "Understat", "url": "https://understat.com/league/MLS", "paywall": false },
+        { "name": "ESPN Soccer Stats", "url": "https://www.espn.com/soccer/stats/_/league/usa.1", "paywall": false }
+      ]
+    },
+    {
+      "id": "post_shot_xg",
+      "display": "Post-Shot xG",
+      "sport": "soccer",
+      "terms": ["post-shot xg", "post shot xg", "psxg", "shot quality"],
+      "probes": [
+        { "name": "FBref Keepers", "url": "https://fbref.com/en/comps/22/keepersadv/Major-League-Soccer-Stats", "paywall": false },
+        { "name": "Understat", "url": "https://understat.com/league/MLS", "paywall": false },
+        { "name": "ESPN", "url": "https://www.espn.com/soccer/stats/_/league/usa.1", "paywall": false }
+      ]
+    },
+    {
+      "id": "zone_entry_differential",
+      "display": "Zone Entry Differential (hockey)",
+      "sport": "nhl",
+      "terms": ["zone entry", "zone entries", "controlled entry", "dump in", "entry differential"],
+      "probes": [
+        { "name": "Natural Stat Trick", "url": "https://www.naturalstattrick.com/teamtable.php", "paywall": false },
+        { "name": "MoneyPuck", "url": "https://moneypuck.com/teams.htm", "paywall": false },
+        { "name": "ESPN NHL Stats", "url": "https://www.espn.com/nhl/stats/team", "paywall": false }
+      ]
+    },
+    {
+      "id": "transition_frequency",
+      "display": "Transition Frequency / Fast Break Points (basketball)",
+      "sport": "nba",
+      "terms": ["transition", "fast break", "transition frequency", "transition points", "pace off turnover"],
+      "probes": [
+        { "name": "NBA.com Advanced Stats", "url": "https://www.nba.com/stats/teams/hustle", "paywall": false },
+        { "name": "Cleaning the Glass", "url": "https://cleaningtheglass.com/stats/league/efficiency", "paywall": true },
+        { "name": "ESPN NBA Stats", "url": "https://www.espn.com/nba/stats/team/_/stat/scoring", "paywall": false }
+      ]
+    },
+    {
+      "id": "points_per_possession_half",
+      "display": "Points Per Possession by Half (basketball)",
+      "sport": "nba",
+      "terms": ["points per possession", "ppp", "half efficiency", "first half efficiency", "second half efficiency"],
+      "probes": [
+        { "name": "Cleaning the Glass", "url": "https://cleaningtheglass.com/stats/league/efficiency", "paywall": true },
+        { "name": "NBA.com Tracking", "url": "https://www.nba.com/stats/teams/scoring-efficiency", "paywall": false },
+        { "name": "ESPN", "url": "https://www.espn.com/nba/stats/team", "paywall": false }
+      ]
+    },
+    {
+      "id": "air_yards_vs_yac",
+      "display": "Air Yards vs YAC split (NFL)",
+      "sport": "nfl",
+      "terms": ["air yards", "yards after catch", "yac", "air yards vs yac", "intended air yards"],
+      "probes": [
+        { "name": "NFL Next Gen Stats", "url": "https://nextgenstats.nfl.com/stats/receiving", "paywall": false },
+        { "name": "PFF", "url": "https://www.pff.com/nfl/grades/position/wr", "paywall": true },
+        { "name": "ESPN NFL Stats", "url": "https://www.espn.com/nfl/stats/player/_/stat/receiving", "paywall": false }
+      ]
+    },
+    {
+      "id": "success_rate_nfl",
+      "display": "Success Rate (NFL)",
+      "sport": "nfl",
+      "terms": ["success rate", "successful play", "epa success"],
+      "probes": [
+        { "name": "Football Outsiders", "url": "https://www.footballoutsiders.com/stats/nfl/team-efficiency/2025", "paywall": false },
+        { "name": "PFF", "url": "https://www.pff.com/nfl/grades", "paywall": true },
+        { "name": "ESPN", "url": "https://www.espn.com/nfl/stats/team", "paywall": false }
+      ]
+    },
+    {
+      "id": "pressure_rate",
+      "display": "Pressure Rate / QB Pressure (NFL)",
+      "sport": "nfl",
+      "terms": ["pressure rate", "qb pressure", "pressures", "times pressured", "blitz rate"],
+      "probes": [
+        { "name": "PFF", "url": "https://www.pff.com/nfl/grades/position/qb", "paywall": true },
+        { "name": "NFL Next Gen Stats", "url": "https://nextgenstats.nfl.com/stats/passing", "paywall": false },
+        { "name": "ESPN", "url": "https://www.espn.com/nfl/stats/player/_/stat/passing", "paywall": false }
+      ]
+    },
+    {
+      "id": "schedule_adjusted_record",
+      "display": "Schedule-Adjusted Record / SOS-corrected W-L",
+      "sport": "cross",
+      "terms": ["schedule adjusted", "strength of schedule", "sos adjusted", "adjusted record", "expected record vs sos"],
+      "probes": [
+        { "name": "ESPN Power Index", "url": "https://www.espn.com/nfl/standings/_/view/power", "paywall": false },
+        { "name": "FanGraphs Standings", "url": "https://www.fangraphs.com/standings/wild-card", "paywall": false },
+        { "name": "Baseball Reference", "url": "https://www.baseball-reference.com/leagues/majors/2026-standings.shtml", "paywall": false }
+      ]
+    },
+    {
+      "id": "breakeven_pace",
+      "display": "Breakeven Pace (games needed at X win-rate to hit target)",
+      "sport": "cross",
+      "terms": ["breakeven pace", "pace to make playoffs", "games remaining pace", "required pace", "magic number pace"],
+      "probes": [
+        { "name": "FanGraphs Standings", "url": "https://www.fangraphs.com/standings/wild-card", "paywall": false },
+        { "name": "ESPN Playoffs Picture", "url": "https://www.espn.com/nfl/standings/_/view/playoff", "paywall": false },
+        { "name": "Baseball Reference", "url": "https://www.baseball-reference.com/leagues/majors/2026-standings.shtml", "paywall": false }
+      ]
+    },
+    {
+      "id": "clutch_net_rating",
+      "display": "Clutch Net Rating (NBA)",
+      "sport": "nba",
+      "terms": ["clutch net rating", "clutch rating", "clutch efficiency", "late and close"],
+      "probes": [
+        { "name": "NBA.com Clutch Stats", "url": "https://www.nba.com/stats/teams/clutch-summary", "paywall": false },
+        { "name": "Cleaning the Glass", "url": "https://cleaningtheglass.com/stats/league/efficiency", "paywall": true },
+        { "name": "ESPN", "url": "https://www.espn.com/nba/stats/team", "paywall": false }
+      ]
+    },
+    {
+      "id": "gsax",
+      "display": "GSAx — Goals Saved Above Expected (NHL)",
+      "sport": "nhl",
+      "terms": ["gsax", "goals saved above expected", "goals saved above average", "gsaa"],
+      "probes": [
+        { "name": "Natural Stat Trick", "url": "https://www.naturalstattrick.com/playerteams.php?stdoi=g", "paywall": false },
+        { "name": "MoneyPuck", "url": "https://moneypuck.com/goalies.htm", "paywall": false },
+        { "name": "ESPN NHL Stats", "url": "https://www.espn.com/nhl/stats/player/_/position/goaltender", "paywall": false }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+name: Competitor Metrics Probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_paywalled:
+        description: 'Attempt paywalled URLs (will mostly get login pages)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+  schedule:
+    # Every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    name: Probe competitor pages for metric terms
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run probe
+        run: |
+          FLAGS=""
+          if [ "${{ github.event.inputs.include_paywalled }}" = "true" ]; then
+            FLAGS="--include-paywalled"
+          fi
+          node scripts/probe-competitors.mjs $FLAGS
+
+      - name: Commit results
+        run: |
+          git config user.name  "FIELD CI"
+          git config user.email "ci@field.app"
+          git add outbox/competitor-probe-*.md
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "feat: competitor probe $(date -u '+%Y-%m-%d') [skip ci]"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
