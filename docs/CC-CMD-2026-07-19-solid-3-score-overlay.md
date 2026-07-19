@@ -194,4 +194,15 @@ Verify: open deployed app during live games, open DevTools MutationObserver, con
 | CC-CMD-2 | CC-CMD-1 merged | Ambient panel scroll position preserved across poll cycles |
 | CC-CMD-3 | CC-CMD-1 + CC-CMD-2 merged | Score text updates without card DOM replacement |
 
-CC-CMD-2 and CC-CMD-3 can execute in parallel sessions once CC-CMD-1 is merged.
+**⚠️ Correction (found via direct review before either executed):** CC-CMD-3
+is not actually safe to run in parallel with CC-CMD-2, despite an earlier
+draft of this table implying otherwise. Task 3a of this doc explicitly
+says to add its import "alongside CC-CMD-2 imports" — that instruction only
+makes sense if CC-CMD-2's own import has already landed in `field.js`.
+Both CC-CMDs also modify the same file (`src/legacy/field.js`), in
+different functions but the same module-scope import block. **Real,
+correct order: CC-CMD-1, then CC-CMD-2 fully merged, then CC-CMD-3 —
+strictly sequential, not parallel.** Before starting CC-CMD-3, confirm via
+`git log --oneline -5` that CC-CMD-2's commit has actually landed, and
+re-read the real, current state of `field.js`'s import block rather than
+assuming the shape this doc originally described.
