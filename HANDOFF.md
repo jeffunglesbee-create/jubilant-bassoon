@@ -1,3 +1,26 @@
+## SESSION CLOSE-OUT — 2026-07-19, cross-sport-analytics (supersedes previous)
+
+**HEAD:** 4a211dc
+**Smoke count:** 958/0
+**SW version:** 2026-07-19b
+**Session doc:** outbox/cc-session-2026-07-19-cross-sport-analytics.md
+
+**Cross-sport analytics layer (4a211dc):**
+New metrics wired from relay-confirmed data sources:
+- MLB: xwOBA divergence (woba−xwoba) live in At-Bat Edge per current batter; Pythagorean expected W% from MLB Stats API /standings
+- NFL: NGS QB CPOE + WR YAC Above Expected / Air Yard Share in Scouting Report
+- EPL: FPL per-90 xGI leaders per team in Scouting Report
+- Boot: `mlbPythagInit` T+4.9s, `nflNGSInit` T+5.0s
+- Relay (field-relay-nba 9be0604): added `/standings` to MLB Stats API allowlist
+
+All features STAGED (relay data confirmed, E2E requires live seasons).
+
+**Competitor probe (12689ee + CI run 29698804764):**
+- 4 confirmed gaps: Pythagorean record, Leverage Index, RE24, Schedule-Adjusted Record
+- Reports at outbox/metric-gaps-2026-07-19.md, outbox/competitor-probe-2026-07-19.md
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-18, runtime-errors-img9604-img9605 (supersedes previous)
 
 **HEAD:** 42f98bc
