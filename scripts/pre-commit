@@ -63,6 +63,9 @@ node "$REPO/field_smoke.js" "$REPO/index.html" >/dev/null 2>&1; SMOKE_D=$?
 echo "🧪 Unit tests..."
 node "$REPO/field_unit.js" >/dev/null 2>&1; UNIT=$?
 
+echo "🔎 Lint (auto-fix pass)..."
+"$REPO/node_modules/.bin/eslint" --plugin html --fix "$REPO/index.html" >/dev/null 2>&1 && git add "$REPO/index.html"
+
 echo "🔎 Lint (ESLint — blocks on errors, not warnings)..."
 LINT_OUT=$("$REPO/node_modules/.bin/eslint" --cache --plugin html "$REPO/index.html" 2>&1)
 LINT_ERRORS=$(echo "$LINT_OUT" | grep -c " error ")

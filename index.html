@@ -2920,6 +2920,49 @@ body.pickem-mode .main{margin-right:0 !important}
 .pickem-stat-rec{color:var(--platinum,#e0e0e8);font-weight:600;font-variant-numeric:tabular-nums}
 .pickem-stat-pct{color:var(--smoke,#888);font-size:.68rem;font-variant-numeric:tabular-nums}
 .pickem-stat-group-head{font-size:.58rem;letter-spacing:.08em;color:var(--smoke);text-transform:uppercase;margin-top:.6rem;opacity:.6}
+/* ── STATS mode (body.stats-mode) ─────────────────────────────────────────
+   Fourth mode, mirroring pickem-mode's full-viewport-swap pattern. */
+body.stats-mode #ambient-panel{display:none !important}
+body.stats-mode .main,
+body.stats-mode #night-owl,
+body.stats-mode #field-desk-section,
+body.stats-mode #media-section,
+body.stats-mode #field-journalism-section,
+body.stats-mode #wc-section,
+body.stats-mode .page-divider,
+body.stats-mode .legend-section,
+body.stats-mode #field-right-now{display:none !important}
+body.stats-mode #upper-slots>*:not(header.masthead):not(nav.controls){display:none !important}
+body.stats-mode #stats-section{display:block}
+body.stats-mode #stats-section[hidden]{display:block}
+body:not(.stats-mode) #stats-section{display:none}
+body.stats-mode nav.controls{margin-right:0 !important}
+body.stats-mode header.masthead{margin-right:0 !important}
+body.stats-mode .main{margin-right:0 !important}
+@media(max-width:1199px){
+  body.stats-mode .stats-back-pill{display:inline-block;position:sticky;top:calc(env(safe-area-inset-top,0px) + .5rem);z-index:50;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(20,20,28,.78)}
+}
+@media(min-width:1200px){
+  body.stats-mode #stats-section{max-width:1400px;margin:0 auto}
+}
+.stats-back-pill{display:none;align-self:flex-start;padding:.4rem .75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:18px;font-size:.66rem;color:var(--gold2);cursor:pointer;margin-bottom:1rem;letter-spacing:.04em;transition:.15s}
+.stats-back-pill:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.38)}
+.stats-section{padding:.75rem .75rem 2rem;min-height:60vh}
+.stats-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--gold2);text-transform:uppercase;margin-bottom:.3rem}
+.stats-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white);margin:0 0 .2rem}
+.stats-meta{font-size:.62rem;color:var(--smoke);letter-spacing:.04em;margin-bottom:1.25rem}
+.stats-sport-block{margin-bottom:1.75rem;border-top:1px solid var(--edge);padding-top:.75rem}
+.stats-sport-label{font-size:.62rem;font-weight:700;letter-spacing:.12em;color:var(--gold2);text-transform:uppercase;margin-bottom:.5rem}
+.stats-subsection{margin-bottom:1rem}
+.stats-subsection-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--smoke);text-transform:uppercase;margin-bottom:.3rem}
+.stats-row{display:flex;align-items:baseline;gap:.4rem;padding:.2rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.73rem}
+.stats-row-rank{min-width:1.4rem;color:var(--smoke);font-size:.6rem;font-weight:700}
+.stats-row-name{flex:1;color:var(--platinum);font-weight:600}
+.stats-row-val{color:var(--white);font-weight:700;font-variant-numeric:tabular-nums}
+.stats-row-val.pos{color:#4ec94e}
+.stats-row-val.neg{color:var(--orange,#f5a623)}
+.stats-row-sub{font-size:.6rem;color:var(--smoke)}
+.stats-empty{color:var(--smoke);font-size:.72rem;padding:.5rem 0;font-style:italic}
 
 /* ── WHOLE FIELD mode (body.wf-mode) ─────────────────────────────────────
    Toggle: ESSENTIALS (default) ↔ WHOLE FIELD
@@ -4694,6 +4737,7 @@ var _DOM = null;
     <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading">📖 Journal</a>
     <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" style="display:none">⚽ Groups</a>
     <a class="desk-jump-link pickem-nav-link" id="pickem-nav-link" href="#pickem-section" title="Pick 'em — your cross-sport predictions">🎯 Picks</a>
+    <a class="desk-jump-link stats-nav-link" id="stats-nav-link" href="#stats-section" title="Stats — cross-sport analytics">📊 Stats</a>
     <button id="wf-toggle" title="Toggle between ESSENTIALS (schedule only) and WHOLE FIELD (schedule + ambient panel)">ESSENTIALS</button>
   </div>
 </nav>
@@ -4858,6 +4902,21 @@ var _DOM = null;
   </header>
   <div class="pickem-content" id="pickem-content">
     <!-- Populated by renderPickEmSection() -->
+  </div>
+</section>
+
+<section class="stats-section" id="stats-section" aria-label="Stats — cross-sport analytics" hidden>
+  <div class="stats-back-pill" id="stats-back-pill"
+       onclick="toggleStatsView()" role="button" tabindex="0" aria-label="Back to schedule">
+    ← Back to Schedule
+  </div>
+  <header class="pickem-head">
+    <div class="stats-eyebrow">ANALYTICS</div>
+    <h1 class="stats-title">Cross-Sport Stats</h1>
+    <div class="stats-meta">Advanced metrics — MLB xwOBA · NFL NGS · NBA Clutch · NHL GSAx · EPL xGI</div>
+  </header>
+  <div class="stats-content" id="stats-content">
+    <!-- Populated by renderStatsSection() -->
   </div>
 </section>
 
@@ -12700,6 +12759,9 @@ function renderAll(skipUnchanged){
   });
   attachNavLinkOnce('pickem-nav-link', () => {
     if(typeof togglePickEmView==='function') togglePickEmView();
+  });
+  attachNavLinkOnce('stats-nav-link', () => {
+    if(typeof toggleStatsView==='function') toggleStatsView();
   });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(sports).then(()=>renderAmbientPanel()).catch(e=>{

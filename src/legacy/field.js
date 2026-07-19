@@ -7735,6 +7735,9 @@ function renderAll(skipUnchanged){
   attachNavLinkOnce('pickem-nav-link', () => {
     if(typeof togglePickEmView==='function') togglePickEmView();
   });
+  attachNavLinkOnce('stats-nav-link', () => {
+    if(typeof toggleStatsView==='function') toggleStatsView();
+  });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(sports).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
