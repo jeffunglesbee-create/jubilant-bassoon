@@ -1,3 +1,21 @@
+## SESSION CLOSE-OUT — 2026-07-19, stats-tab (supersedes previous)
+
+**HEAD:** 4469111
+**Smoke count:** 958/0
+**SW version:** 2026-07-19c
+**Session doc:** outbox/cc-session-2026-07-19-stats-tab.md
+
+**Stats tab — fourth full-viewport mode (4469111):**
+- `📊 Stats` nav link added to nav bar
+- `stats-mode` CSS (body toggle, hide/show sections, max-width 1400px desktop)
+- `<section id="stats-section">` with back-pill, header, content div
+- `toggleStatsView()` — mutual exclusion vs journalism/wc/pickem; mirrors `togglePickEmView()` exactly
+- `renderStatsSection()` — five sport blocks: MLB (Pythagorean gap + xwOBA divergence), NFL (QB CPOE + WR AYS/YAC), NBA (clutch DRTG delta + best DRTG), NHL (GSAx leaders + elite tier), EPL (xGI/90 top 10)
+- All sport blocks gracefully empty if data map unpopulated at render time
+- SW_VERSION: 2026-07-19b → 2026-07-19c
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-19, cross-sport-analytics (supersedes previous)
 
 **HEAD:** 4a211dc
