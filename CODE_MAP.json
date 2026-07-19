@@ -1,7 +1,7 @@
 {
   "file": "index.html",
-  "lineCount": 44379,
-  "generatedAt": "2026-07-18T23:42:16.940Z",
+  "lineCount": 44380,
+  "generatedAt": "2026-07-19T02:00:00.600Z",
   "summary": {
     "functionCount": 986,
     "sectionCount": 732,
@@ -4516,13 +4516,13 @@
     {
       "name": "Explicit window bridges for inline HTML event handlers",
       "startLine": 44264,
-      "endLine": 44283,
-      "lineCount": 20
+      "endLine": 44284,
+      "lineCount": 21
     },
     {
       "name": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)",
-      "startLine": 44284,
-      "endLine": 44379,
+      "startLine": 44285,
+      "endLine": 44380,
       "lineCount": 96
     }
   ],
@@ -11410,21 +11410,21 @@
     },
     {
       "name": "recordOpenHour",
-      "line": 44294,
+      "line": 44295,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "predictNextOpenHour",
-      "line": 44304,
+      "line": 44305,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "registerAnticipatoryPrefetch",
-      "line": 44319,
+      "line": 44320,
       "params": "",
       "async": true,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
@@ -13248,17 +13248,17 @@
     },
     {
       "call": "setTimeout",
-      "line": 44350,
+      "line": 44351,
       "context": "setTimeout(registerAnticipatoryPrefetch, 4000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 44363,
+      "line": 44364,
       "context": "// Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh)."
     },
     {
       "call": "fetchSchedule",
-      "line": 44365,
+      "line": 44366,
       "context": "restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });"
     }
   ]
