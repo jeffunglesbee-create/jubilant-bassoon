@@ -24,6 +24,25 @@ CC-CMD executes the first two:
 - The milestone alert (`milestoneStr`, inline — "player needs N more X")
 - BSD Pitch visual (`_bsBsdEventId` block — confirmed by Jeff directly as
   stats/metrics, not narrative)
+
+**Real, important distinction on the Pitch specifically (raised directly
+by Jeff, not to be lost in execution):** the Pitch is real, raw,
+data-driven visualization (shot locations, possession events) — that is
+what it *is*, and that's why it belongs in the Stats tab. But raw data
+being real and factual doesn't mean it's journalism, nor does it mean it
+can't *feed* journalism. This is the same, already-established FIELD
+pattern as matchupNote and xG: verified facts flow into the journalism
+prompt as factual context; the AI handles narrative framing, not the raw
+data itself. The Pitch's real, raw event data is a real, legitimate
+candidate for that same role. **Explicitly out of scope for this
+CC-CMD** — wiring raw pitch data into the journalism-prompt pipeline
+needs its own real investigation (the actual shape of the raw BSD event
+data, and the existing prompt-assembly structure) that hasn't been done
+yet, and shouldn't be bolted onto this already-scoped UI move without
+that groundwork. Note this as a real, separate, later follow-on — do
+not attempt it here, and do not let moving the Pitch to the Stats tab be
+read as foreclosing it either; they're independent, non-conflicting real
+changes.
 - Comeback Probability (`buildComebackProbability`, part of "Live
   Intelligence") — real, objective win-probability-style computation,
   factually analogous to xG/WP already treated as non-patent-sensitive
