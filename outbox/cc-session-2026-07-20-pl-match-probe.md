@@ -86,4 +86,4 @@ The textstream event types (`goal`, `substitution`, `miss`, `corner`, `offside`)
 ## Open carry-forwards
 - **Bottom sheet PL wiring** — when a user taps a PL game card, `openBottomSheet()` should call `/pl/match/:id` and surface starting XI, formation, and key events (goals, cards, subs). This is the highest-value next step.
 - **`halfTimeScore`** — trivial add to `/pl/fixtures` normalization or bottom sheet.
-- **Card event types** — not observed in this match (clean sheet). `yellow card` / `red card` types presumed standard but not confirmed. Verify against a match with bookings before building card display.
+- **Card event types** — RESOLVED 2026-07-20. See `cc-session-2026-07-20-pl-card-event-types.md`.

@@ -1,3 +1,19 @@
+## SESSION CLOSE-OUT — 2026-07-20, pl-card-event-types (supersedes previous)
+
+**HEAD:** 689d17b (jubilant-bassoon) / 8b2ec22 (field-relay-nba)
+**Smoke count:** 963/0 (unchanged)
+**SW version:** 2026-07-20a (unchanged)
+**Session doc:** outbox/cc-session-2026-07-20-pl-card-event-types.md
+
+**PulseLive card event type probe — all types confirmed:**
+- Probed fixtures 124837 (Man Utd 2-1 Chelsea GW5) and 125053 (Chelsea 1-1 Burnley GW27) via new `/pl/events/:id` relay endpoint.
+- field-relay-nba `8b2ec22`: Added `/pl/events/:id` — returns `{ count, types[], events[] }` (textstream only, no fixture object). Fits in ~20KB, fully visible via probe_relay_route. Probe-only; no client consumer.
+- Confirmed: `"red card"` (direct dismissal), `"secondyellow card"` (second yellow → dismissal, no space between "second" and "yellow").
+- jubilant-bassoon `689d17b`: Key Moments filter at `field.js:39241` now includes all confirmed dismissal types: `red card`, `secondyellow card`.
+- Prior open carry-forward (card types unconfirmed) — CLOSED.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-20, pl-client-verify (supersedes previous)
 
 **HEAD:** 8d288e0 (jubilant-bassoon) / 45329db (field-relay-nba, unchanged)
