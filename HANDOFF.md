@@ -1,4 +1,21 @@
-## SESSION CLOSE-OUT — 2026-07-20, bottom-sheet-stats-reconciliation (supersedes previous)
+## SESSION CLOSE-OUT — 2026-07-20, adr002-rule-f (supersedes previous)
+
+**HEAD:** f07a26b
+**Smoke count:** 962/0
+**SW version:** 2026-07-20a
+**Session doc:** outbox/cc-session-2026-07-20-bottom-sheet-stats-reconciliation.md (same session, docs addendum)
+
+**ADR-002 Rule F (docs-only, [skip ci]):**
+- Added Rule F to `docs/ADR-002-CONTEXT.md`: commodity/proprietary governing test for relay computation
+- "Arithmetic and classification ONLY" is imprecise (soccer-wp.js is already a statistical model on relay). Actual rule: relay may compute anything a neutral data vendor could publish; may never compute outputs that function as watch recommendations.
+- Added neutral-vendor test, soccer-wp.js rationale, close-game-push prohibition
+- Added PERMITTED item 8 (commodity statistical models on relay)
+- Updated jubilant-bassoon CLAUDE.md Rule 6 shorthand to reference Rule F
+- Updated field-relay-nba CLAUDE.md Rule 1 with the commodity/proprietary test (8088b74)
+
+---
+
+## SESSION CLOSE-OUT — 2026-07-20, bottom-sheet-stats-reconciliation
 
 **HEAD:** 8c501b4
 **Smoke count:** 962/0
