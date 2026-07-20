@@ -39238,7 +39238,7 @@ function openBottomSheet(gameId) {
       const htS = plData.fixture?.halfTimeScore;
       const htStr = (htS?.homeScore != null && htS?.awayScore != null) ? `HT: ${htS.homeScore}–${htS.awayScore}` : '';
       const keyEvents = (plData.events || [])
-        .filter(e => e.type === 'goal' || e.type === 'substitution')
+        .filter(e => e.type === 'goal' || e.type === 'own goal' || e.type === 'penalty goal' || e.type === 'VAR cancelled goal' || e.type === 'yellow card' || e.type === 'substitution')
         .sort((a, b) => (a.time?.secs ?? 0) - (b.time?.secs ?? 0));
       if (!htStr && !keyEvents.length) { anchor.remove(); return; }
       const htLine = htStr ? `<div style="opacity:.65;margin-bottom:.25rem">${_plEsc(htStr)}</div>` : '';
