@@ -685,6 +685,7 @@ assert('A56 — field_utils.js loaded in index.html',
     ['A112', 'relay-fd: FD_RELAY present',                             'FD_RELAY'],
     ['A113', 'relay-fpl: FPL_RELAY_BASE present',                      'FPL_RELAY_BASE'],
     ['A114', 'relay-nhl: NHL_RELAY_BASE present',                      'NHL_RELAY_BASE'],
+    ['A124', 'relay-pl: PL_RELAY_BASE + fetchPLFixtures wired',        ['PL_RELAY_BASE', /async function fetchPLFixtures\s*\(/, 'fetchPLFixtures();']],
     // ── A115-A123: Misc features ─────────────────────────────────────────────
     ['A115', 'mlb-stats-adapter: fetchMLBSchedule + MLB_STATS_BASE',   [/function fetchMLBSchedule\s*\(/, 'MLB_STATS_BASE']],
     ['A116', 'mlb-thin-client: fetchMLBLiveGame + feed/live',          [/function fetchMLBLiveGame\s*\(/, 'feed/live']],
