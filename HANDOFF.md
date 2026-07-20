@@ -1,16 +1,17 @@
-## SESSION CLOSE-OUT — 2026-07-20, pl-match-client-wiring (supersedes previous)
+## SESSION CLOSE-OUT — 2026-07-20, pl-client-verify (supersedes previous)
 
-**HEAD:** e818a23 (jubilant-bassoon) / 45329db (field-relay-nba, unchanged)
+**HEAD:** 8d288e0 (jubilant-bassoon) / 45329db (field-relay-nba, unchanged)
 **Smoke count:** 963/0 (unchanged)
 **SW version:** 2026-07-20a (unchanged)
 **Session doc:** outbox/cc-session-2026-07-20-pl-match-client-wiring.md
 
-**PL match client wiring — Key Moments + Lineups:**
-- jubilant-bassoon `e818a23`: `fetchPLMatch(fixtureId)` added with 30s per-fixture cache. Consumed by two callers:
-  1. `openBottomSheet()` — async Key Moments section: goal/substitution events (filtered, sorted by time.secs), HT score, real event.text prose. Anchor `bs-pl-inject` placed before `bs-last-meeting`.
-  2. `renderStatsSection()` Today's Games — async Lineups section: starting XI (shirt#, pos, name), formation label, REF/VAR names. Placeholder `tg-pl-{id}` per game, filled after `content.innerHTML`.
-- Integration status: STAGED — sandbox egress blocks browser E2E verify. Shape verified via relay probe (fixture 116197). Smoke 963/0.
-- Open: card event types (yellow/red) not confirmed — need a booked match to verify type string.
+**PL E2E browser verification — 20/20 passed:**
+- jubilant-bassoon `120b829`: Added `window._plVerify` test API block in `field.js` (gated on `?pl-verify` URL param). Exposes `fetchPLMatch`, `openBottomSheet`, `toggleStatsView`, `setEspnScore` (setter for module-level `espnScores`), `pushAllDataSport` (setter for module-level `allData`). Required because `build-bundle.mjs` uses ESM format — all declarations are module-scoped, not globally accessible.
+- jubilant-bassoon `8d288e0`: Fixed Probe 3 Lineups assertion to query `.bs-section` ancestor of the Lineups label (instead of `#stats-content` root), accepting `REF:` or `VAR:` or `4-2-3-1` as evidence.
+- `pl_client_verify.js`: Fully rewritten to use `window._plVerify.*` for all internal access. 20/20 assertions verified on GH Actions run `29767592199`. Screenshots in `outbox/`.
+- `pl-client-verify.yml`: Auto-triggers after every successful "Deploy gate (fast smoke)" run. Results committed to `outbox/` as `[skip ci]`.
+- Integration status: VERIFIED — E2E browser tests 20/20, all three probes passing (fetchPLMatch relay contract, Key Moments bottom sheet, Stats tab Lineups).
+- Open: card event types (yellow/red) not confirmed — need a booked match to verify type string. Carry-forward only.
 
 ---
 
