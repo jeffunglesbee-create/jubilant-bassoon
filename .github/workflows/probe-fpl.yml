@@ -7,8 +7,10 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Playwright deps
-        run: npx playwright install-deps chromium 2>/dev/null || true
+      - name: Install Playwright
+        run: |
+          npm install playwright@latest --no-save 2>/dev/null
+          npx playwright install chromium 2>/dev/null || true
 
       - name: Probe pulse via Playwright browser interception
         run: |
