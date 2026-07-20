@@ -9607,6 +9607,74 @@ async function mlsSubImpactInit() {
   }
 }
 
+// ── mlsNovelMetricsInit: second-assist share, shot-selection quality, ──────
+// counter-attack identity, cross accuracy (Stats tab, MLS)
+// CC-CMD-2026-07-19-mls-novel-metrics Task 3. Two real, independent
+// sources: a single bulk season-aggregate fetch (/mls/stats/team-metrics,
+// which computes secondAssistShare/insideBoxShotShare/counterAttacksPerGame
+// server-side -- confirmed via direct relay source read before this was
+// written) for the first three sub-sections, and a per-game scan of recent
+// MLS finals (same recent-finals pattern as mlsSubImpactInit, kept
+// independent rather than sharing its internals to avoid touching that
+// already-shipped function) for cross accuracy, which the relay computes
+// per-game from accurateCrosses/totalCrosses already present in the
+// existing /soccer/xg payload -- explicitly a different cadence/source
+// than the other three, labeled as such in the UI per the CC-CMD's own
+// scope note.
+let MLS_TEAM_METRICS = []; // [{team_id, team_name, matches_played, secondAssistShare, insideBoxShotShare, counterAttacksPerGame, shotBodyPartSplit}]
+let MLS_CROSS_ACCURACY = []; // [{team, opponent, crossAccuracy, accurateCrosses, totalCrosses, date}]
+let _mlsNovelMetricsLoaded = false;
+async function mlsNovelMetricsInit() {
+  if (_mlsNovelMetricsLoaded) return;
+  try {
+    const base = (typeof V2_RELAY_BASE !== 'undefined')
+      ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+
+    try {
+      const r = await fetch(`${base}/mls/stats/team-metrics?competition=MLS-COM-000001&season=MLS-SEA-0001KA`, { signal: AbortSignal.timeout(6000) });
+      if (r.ok) {
+        const data = await r.json();
+        MLS_TEAM_METRICS = Array.isArray(data?.teams) ? data.teams : [];
+      }
+    } catch(e_) { captureFieldError('mls:team-metrics-fetch', e_, true); }
+
+    const recentFinals = [];
+    for (let daysBack = 0; daysBack <= 6 && recentFinals.length < 6; daysBack++) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysBack);
+      const dateStr = d.toISOString().slice(0, 10);
+      let games = [];
+      try { games = await fetchV2Games('mls', dateStr); }
+      catch(e_) { captureFieldError('mls:cross-accuracy-date-scan', e_, true); }
+      for (const g of games) {
+        if (g.state !== 'final' || !g.espnEventId) continue;
+        if (recentFinals.some(f => f.event === g.espnEventId)) continue;
+        recentFinals.push({ event: g.espnEventId, homeTeam: g.home?.name || '', awayTeam: g.away?.name || '', date: dateStr });
+      }
+    }
+    for (const g of recentFinals.slice(0, 6)) {
+      try {
+        const xr = await fetch(`${base}/soccer/xg?event=${g.event}&league=usa.1`, { signal: AbortSignal.timeout(5000) });
+        if (!xr.ok) continue;
+        const xd = await xr.json();
+        if (typeof xd?.home?.crossAccuracy === 'number') {
+          MLS_CROSS_ACCURACY.push({ team: xd.home.name || g.homeTeam, opponent: xd.away?.name || g.awayTeam, crossAccuracy: xd.home.crossAccuracy, accurateCrosses: xd.home.accurateCrosses, totalCrosses: xd.home.totalCrosses, date: g.date });
+        }
+        if (typeof xd?.away?.crossAccuracy === 'number') {
+          MLS_CROSS_ACCURACY.push({ team: xd.away.name || g.awayTeam, opponent: xd.home?.name || g.homeTeam, crossAccuracy: xd.away.crossAccuracy, accurateCrosses: xd.away.accurateCrosses, totalCrosses: xd.away.totalCrosses, date: g.date });
+        }
+      } catch(e_) { captureFieldError('mls:cross-accuracy-fetch', e_, true); }
+    }
+
+    _mlsNovelMetricsLoaded = true;
+    _recordRelayInit('mlsNovelMetricsInit', true);
+    if (FIELD_DEBUG) console.log('[FIELD] MLS novel metrics loaded:', MLS_TEAM_METRICS.length, 'teams,', MLS_CROSS_ACCURACY.length, 'cross-accuracy entries');
+  } catch(e) {
+    _recordRelayInit('mlsNovelMetricsInit', false, e?.message || 'error');
+    captureFieldError('mls:novel-metrics-init', e, true);
+  }
+}
+
 // ── soccerFBrefInit: loads FBref xG analytics for soccer leagues ─────────────
 // Populates per-team xG/pressing context used in EPL/WC journalism prompts.
 // Called lazily — only when a soccer game is detected on tonight's slate.
@@ -25327,6 +25395,7 @@ async function fetchSchedule(){
   setTimeout(mlbPythagInit, 4900);        // MLB Pythagorean expected record from standings API
   setTimeout(nflNGSInit, 5000);           // NFL NGS: QB CPOE + WR YAC Above Expected from R2
   setTimeout(mlsSubImpactInit, 5100);     // MLS defensive sub lead-loss metric (Stats tab, single-game)
+  setTimeout(mlsNovelMetricsInit, 5200);  // MLS second-assist/shot-selection/counter-attack/cross-accuracy (Stats tab)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
   setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
@@ -35534,6 +35603,59 @@ function renderStatsSection() {
       }).join('');
       mlsRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Defensive Substitutions — Recent Games (single-game, not a season trend)</div>${subRows}</div>`);
     }
+  }
+
+  // Second-Assist Share, Shot-Selection Quality, Counter-Attack Identity:
+  // real season-aggregate metrics, computed server-side by the relay's
+  // /mls/stats/team-metrics route from stats-api.mlssoccer.com season
+  // aggregates (CC-CMD-2026-07-19-mls-novel-metrics Task 3).
+  if (MLS_TEAM_METRICS.length) {
+    const saSorted = MLS_TEAM_METRICS
+      .filter(t => typeof t.secondAssistShare === 'number')
+      .sort((a, b) => b.secondAssistShare - a.secondAssistShare)
+      .slice(0, 8);
+    if (saSorted.length) {
+      const saRows = saSorted.map((t, i) =>
+        row(i+1, t.team_name, `${(t.secondAssistShare*100).toFixed(1)}%`, '', `${t.matches_played} MP`)
+      ).join('');
+      mlsRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Second-Assist Share (season)</div>${saRows}</div>`);
+    }
+
+    const ibSorted = MLS_TEAM_METRICS
+      .filter(t => typeof t.insideBoxShotShare === 'number')
+      .sort((a, b) => b.insideBoxShotShare - a.insideBoxShotShare)
+      .slice(0, 8);
+    if (ibSorted.length) {
+      const ibRows = ibSorted.map((t, i) =>
+        row(i+1, t.team_name, `${(t.insideBoxShotShare*100).toFixed(1)}%`, '', `${t.matches_played} MP`)
+      ).join('');
+      mlsRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Shot-Selection Quality (inside-box share, season)</div>${ibRows}</div>`);
+    }
+
+    const caSorted = MLS_TEAM_METRICS
+      .filter(t => typeof t.counterAttacksPerGame === 'number')
+      .sort((a, b) => b.counterAttacksPerGame - a.counterAttacksPerGame)
+      .slice(0, 8);
+    if (caSorted.length) {
+      const caRows = caSorted.map((t, i) =>
+        row(i+1, t.team_name, `${t.counterAttacksPerGame.toFixed(2)}/G`, '', `${t.matches_played} MP`)
+      ).join('');
+      mlsRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Counter-Attack Identity (per game, season)</div>${caRows}</div>`);
+    }
+  }
+
+  // Cross Accuracy: real, per-game (not season-aggregate) — a different
+  // real source/cadence than the three above (relay's /soccer/xg,
+  // recent-finals-scanned the same way mlsSubImpactInit does), labeled
+  // explicitly in the UI per the CC-CMD's own scope note.
+  if (MLS_CROSS_ACCURACY.length) {
+    const caxSorted = [...MLS_CROSS_ACCURACY]
+      .sort((a, b) => b.crossAccuracy - a.crossAccuracy)
+      .slice(0, 8);
+    const caxRows = caxSorted.map((c, i) =>
+      row(i+1, c.team, `${(c.crossAccuracy*100).toFixed(1)}%`, '', `${c.accurateCrosses}/${c.totalCrosses} vs ${esc(c.opponent)}`)
+    ).join('');
+    mlsRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Cross Accuracy — Recent Games (single-game, not season-aggregate)</div>${caxRows}</div>`);
   }
 
   if (mlsRows.length) {
