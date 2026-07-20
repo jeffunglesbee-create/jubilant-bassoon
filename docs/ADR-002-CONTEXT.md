@@ -169,6 +169,51 @@ it.
 Workers Plus plan giving 30ms CPU does NOT authorize moving drama/interest
 computation to the relay. The constraint is legal, not technical.
 
+### Rule F: Commodity vs. proprietary — the governing test for relay computation (added 2026-07-20)
+"Relay-is-dumb" and "arithmetic and classification ONLY" (the CLAUDE.md Rule
+7 shorthand) are imprecise. `soccer-wp.js` already runs a Poisson + Dixon-
+Coles statistical model on the relay — a multi-step probability computation
+far beyond arithmetic — and that is correct and intended. The actual governing
+principle is:
+
+**The relay may compute anything a neutral data vendor could publish.
+It may never compute anything that functions as a watch recommendation,
+regardless of how that output is labeled.**
+
+Permitted on the relay:
+- Industry-standard statistical models: win probability (Poisson/Dixon-
+  Coles), expected goals (xG), Pythagorean expectation, Elo ratings,
+  percentile ratios, pace-of-play metrics
+- Commodity factual classification: game phase (crunch time, overtime,
+  elimination), score differential, time remaining
+- Any value where a neutral third-party data vendor (ESPN, FiveThirtyEight,
+  Opta) could plausibly publish the same number
+
+Not permitted on the relay, under any labeling:
+- FIELD's proprietary composite scores (drama score, watch value) — these
+  aggregate signals in a FIELD-specific way that no neutral vendor publishes
+- Any output that, when surfaced to the user, functions as "you should watch
+  this game" — even if labeled as a factual condition
+- A push-event-derived flag like "game is close late" emitted from the relay's
+  own judgment: looks like classification (boolean, not score), but functions
+  as a watch signal. The prohibited element is the editorial recommendation,
+  not the numeric form.
+
+**The labeling-independent test:** does this output, as received by the client,
+function as a watch recommendation? If yes, it belongs client-side under the
+Drama Dial defense — never relay-side, regardless of its data type or label.
+
+**Why soccer-wp.js is permitted:** `computeSoccerWinProb()` produces a
+standard win probability — a factual input that ESPN and FiveThirtyEight
+publish routinely. It is not a watch recommendation. The client then uses
+this value in drama scoring (the editorial step), which stays client-side.
+
+**Why a relay-side "close game" push flag is not permitted:** a relay that
+detects `margin <= 3 && phase === 'crunch'` and pushes an event to the client
+is autonomously generating a watch signal. The boolean form does not change
+what it does. This violates both Rule A (autonomous push keyed to a threshold)
+and Rule F (editorial recommendation originating relay-side).
+
 ### Rule E: Derived drama/interest state may be rendered, stored, or served — never autonomously pushed (Addendum)
 Prior text banned the relay from rendering, storing, or transmitting
 *any* state representing game drama or interest — explicitly including
@@ -210,6 +255,12 @@ trigger for an unprompted, autonomously-sent notification.
    live games is operational efficiency, not an interest-level recommendation
    to the user. However, cadence tiers driven by composite drama scores
    (finding #4 in audits) are a gray area — prefer named conditions.
+
+8. **Commodity statistical models on the relay** — Win probability (Poisson/
+   Dixon-Coles, as in `soccer-wp.js`), xG, Pythagorean expectation, Elo, and
+   similar industry-standard metrics may run relay-side. These are factual
+   inputs that neutral data vendors publish. The client performs the editorial
+   step (combining these inputs into FIELD's drama score). See Rule F.
 
 ---
 
