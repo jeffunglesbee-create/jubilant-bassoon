@@ -5523,15 +5523,32 @@ assert('A603 — iPad-20: buildTodaySchedule pushes WC/FrenchOpen/AFLFinals via 
   /maybePushFrenchOpen\(sections\);\s*\n\s*maybePushWorldCup\(sections\);\s*\n\s*maybePushAFLFinals\(sections\);\s*\n\s*\n\s*return sections;/.test(html),
   'iPad-20 fix: WC schedule consistency. buildTodaySchedule must invoke maybePushWorldCup (and the French Open / AFL Finals helpers) before returning. Without these the today path never pushes a FIFA section from wc26Raw — V2 polling becomes the only source, which fails whenever the relay does. See outbox/wc-schedule-diagnosis.md.');
 
-// ── A602 / iPad-19: scroll position preserved across renderAmbientPanel polls
-assert('A602 — iPad-19: renderAmbientPanel preserves scrollTop across innerHTML re-render (STANDARDS Rule 24)',
-  // Saves scrollTop before innerHTML write
-  /const _apPrevScroll = panel\.querySelector\('\.ambient-scroll-inner'\)\?\.scrollTop \|\| 0;/.test(html) &&
-  // Restores scrollTop on the new inner after the write
-  /if \(_apNewInner\) _apNewInner\.scrollTop = _apPrevScroll;/.test(html),
-  'iPad-19 Rule 24 fix: renderAmbientPanel fires every 15-30s on the ESPN poll cycle. innerHTML replacement resets scrollTop on the new .ambient-scroll-inner element. Save the prior scrollTop and reapply it after the write so the user does not get yanked back to the top mid-read.');
+// ── A602 / iPad-19 → CC-CMD-2026-07-20-solid-2: renderAmbientPanel now
+// preserves scrollTop by never tearing down the .ambient-scroll-inner DOM
+// node at all (Solid island, mounted once, updated via reconcile()),
+// replacing the old manual save-before/restore-after innerHTML dance.
+assert('A602 — CC-CMD-2026-07-20-solid-2: renderAmbientPanel mounts a persistent Solid island instead of replacing .ambient-scroll-inner via innerHTML (STANDARDS Rule 24)',
+  // Mounted once, idempotently, guarded on the panel element itself —
+  // the DOM node this creates is never torn down again after this.
+  /if \(!panel\._solidMounted\) \{\s*mountAmbientIsland\(panel, _apScrollToFilter\);\s*panel\._solidMounted = true;\s*\}/.test(html) &&
+  // The old whole-subtree write is gone — data flows through
+  // updateAmbientData() (createStore+reconcile), not panel.innerHTML=.
+  !/panel\.innerHTML\s*=\s*_apWrapped/.test(html) &&
+  /updateAmbientData\(\{otw,scores,soon,upcoming,ctx:ctxData,editorial,arb\}\);/.test(html),
+  'CC-CMD-2026-07-20-solid-2: the old scrollTop save/restore dance is replaced by a Solid island whose DOM node is mounted once and never torn down — reconcile() only touches changed leaves, so scroll position in .ambient-scroll-inner is never reset by a poll cycle.');
 
 // ── A598 / iPad-18: ambient panel scroll via inset-positioned inner div ────
+// CC-CMD-2026-07-20-solid-2: the '<div class="ambient-scroll-inner">' wrapper
+// moved out of renderAmbientPanel()'s template-literal string (field.js,
+// synced verbatim into index.html by sync-source.mjs) and into
+// AmbientPanel()'s JSX in src/solid/ambient-island.jsx — smoke checks
+// SOURCE index.html (pre-esbuild-bundle, per deploy-gate.yml's own
+// smoke(source)→bundle order), so the literal string check now reads the
+// .jsx file directly, matching the existing precedent elsewhere in this
+// file for checking src/*.js/.ts content alongside html (e.g. A-PHASE2's
+// src/identity/index.ts reads). CSS checks are untouched — CSS stayed in
+// index.html, only the markup that fills the CSS moved.
+const ambientIslandSrc = (() => { try { return require('fs').readFileSync('./src/solid/ambient-island.jsx', 'utf8'); } catch(_) { return ''; } })();
 assert('A598 — iPad-18: .ambient-scroll-inner is position:absolute with all insets pinned; #ambient-panel is the fixed shell',
   // #ambient-panel stays the fixed shell with overflow:hidden — Rule 9 keeps
   // position:fixed intact, no body-level layout changes.
@@ -5548,8 +5565,8 @@ assert('A598 — iPad-18: .ambient-scroll-inner is position:absolute with all in
   // used — flex-on-inner is what triggered the iOS Safari scroll bug).
   html.includes('.ambient-scroll-inner > * + *{ margin-top:.75rem; }') &&
   html.includes('.ambient-scroll-inner > *{min-height:0}') &&
-  // renderAmbientPanel wraps panel content in the inner div
-  html.includes('<div class="ambient-scroll-inner">'),
+  // AmbientPanel() (Solid island) wraps panel content in the inner div
+  ambientIslandSrc.includes('<div class="ambient-scroll-inner">'),
   'iPad-18 regression fix: prior attempts (iPad-6, iPad-11, chat 4873249) kept the scroll containers height in the flex resolution chain. iOS Safari fumbles that. Inset positioning gives the inner scroll container a determinate height before overflow:auto is evaluated. See outbox/ambient-scroll-diagnosis.md.');
 
 // ── A597 / iPad-5: journal tab single-tap activation ────────────────────────

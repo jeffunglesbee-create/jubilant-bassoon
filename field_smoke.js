@@ -127,6 +127,9 @@ global.buildOddsStory = ()=>null;
 global.buildSeriesArc = ()=>null;
 global.buildBracketDeltaLayer = ()=>null;
 global.buildDebrief = ()=>null;
+// Stubs for functions in src/solid/ambient-island.jsx (CC-CMD-2026-07-20-solid-2).
+global.mountAmbientIsland = ()=>{};
+global.updateAmbientData = ()=>{};
 
 process.env.TZ = 'America/New_York';
 const RealDate = Date;

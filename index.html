@@ -5055,6 +5055,7 @@ import { VENUE_COORDS, isOutdoorVenue, getVenueCoords } from '../utils/venues.js
 import { isFeaturedTierGame } from '../utils/tier-game.js';
 import { findGameById, _resolveRealGameId, resolveGameIdByHome, initIdentityModule } from '../identity/index.ts';
 import { buildDramaUnsealed, buildFieldWasWatching, buildOddsStory, buildSeriesArc, buildBracketDeltaLayer, buildDebrief, initDebriefModule } from '../debrief/index.ts';
+import { mountAmbientIsland, updateAmbientData } from '../solid/ambient-island.jsx';
 
 'use strict';
 // Identity module — inject live state getters so the extracted functions
@@ -37431,12 +37432,31 @@ function buildWatchWindowReason(game) {
   return parts.slice(0, 3).join('\u00a0\u00b7\u00a0');
 }
 
+// Extracted from the inline onclick IIFE previously built into ctxHTML's
+// template string (CC-CMD-2026-07-20-solid-2-rewrite) -- no named function
+// existed for this; identical selector logic, just given a name so it can
+// be passed as a real Solid event handler instead of a stringified handler.
+function _apScrollToFilter(relevantLeagues){
+  const s=document.querySelector(`.game-card[data-sport*="${(relevantLeagues||[]).join('"],[data-sport*="')}"]`);
+  if(s) s.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
 // ── iPad Ambient Mode — renderAmbientPanel() ──────────────────────────────────
 // Visible only at 820–1199px. Reads existing FIELD state — no new fetches.
 // Called: on ESPN score cycle, after brief renders, on viewport resize.
 function renderAmbientPanel(){
   const panel=(_DOM?.ambientPanel||document.getElementById('ambient-panel'));
   if(!panel) return;
+  // Solid island mount (CC-CMD-2026-07-20-solid-2-rewrite): mount once, on
+  // whichever of this function's 6 real call sites happens to fire first.
+  // Idempotent via the _solidMounted flag on the panel element itself --
+  // more reliable than picking one call site by source-line order, since
+  // real first-fire order depends on setTimeout/observer scheduling, not
+  // source position.
+  if (!panel._solidMounted) {
+    mountAmbientIsland(panel, _apScrollToFilter);
+    panel._solidMounted = true;
+  }
   const w=window.innerWidth;
   // Desktop bug fix (June 15 2026): allow rendering at >=1200px when wf-mode
   // is active (WHOLE FIELD shows the panel via the @media wf-mode rules).
@@ -37466,18 +37486,17 @@ function renderAmbientPanel(){
   // Per RUWT Deep Analysis: MODERATE → resolved by user-controlled threshold
   // (server cannot set this; all computation client-side per getDramaDial).
   const fire=(typeof _otwFindLiveGame==='function')?_otwFindLiveGame(getDramaDial()):null;
-  let otwHTML;
+  let otw=null;
   if(fire){
-    const{g,ed,score}=fire;
+    const{g,ed}=fire;
     // Fixed 2026-07-02: this rendered a raw composite-score number
     // ("FIRE 87") live in Ambient Panel -- exactly what ADR-002's named-tier
     // system (fieldGameTier + fieldTierLabel, already built June 14 2026,
     // already the documented single source of truth: "every consumer reads
     // a named tier, never a raw number") exists to prevent. This code path
-    // was never migrated to it. `score` is still used for OTW *selection*
-    // (getDramaDial threshold, unchanged, matches the existing card-badge
-    // selection logic) -- only the DISPLAYED value changes, from a number
-    // to a named tier.
+    // was never migrated to it. Selection (getDramaDial threshold) is
+    // unchanged, matches the existing card-badge selection logic -- only
+    // the DISPLAYED value changes, from a number to a named tier.
     const tierName = (typeof fieldGameTier === 'function') ? fieldGameTier(g._id) : 'LIVE';
     const tierLabel = (typeof fieldTierLabel === 'function') ? (fieldTierLabel(tierName) || 'LIVE') : 'LIVE';
     const scoreStr=`${ed.awayScore||0}–${ed.homeScore||0}`;
@@ -37488,15 +37507,7 @@ function renderAmbientPanel(){
     // Row 1: FIRE badge + season context; Row 2: matchup; Row 3: score + clock
     const _fc=typeof getCalendarContext==='function'?getCalendarContext():null;
     const ctxSuffix=_fc?` · ${_fc.label}`:'';
-    otwHTML=`<div class="ap-otw-fire">
-      <span class="ap-otw-header">One to Watch</span>
-      <span class="ap-fire-badge">🔴 FIRE — ${tierLabel}${ctxSuffix}</span>
-      <span class="ap-fire-game">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</span>
-      <div class="ap-fire-row3">
-        <span class="ap-fire-score">${scoreStr}</span>
-        ${(periodLbl||clockStr)?`<span class="ap-fire-clock">${periodLbl}${clockStr}</span>`:''}
-      </div>
-    </div>`;
+    otw={mode:'fire',tierLabel,ctxSuffix,away:g.away||'',home:g.home||'',neutral:!!g.neutral,scoreStr,periodLbl,clockStr};
   }else{
     // Check SOON state — next game within 2hr
     let soonGame=null;const now=Date.now();
@@ -37509,25 +37520,17 @@ function renderAmbientPanel(){
     if(soonGame){
       const net=gameNetwork(soonGame);
       const cd=buildOTWCountdown(soonGame.start_time);
-      otwHTML=`<div class="ap-soon">
-        <span class="ap-otw-header">One to Watch</span>
-        <span class="ap-soon-label">Up Next · ${cd}</span>
-        <span class="ap-soon-game">${soonGame.away} ${soonGame.neutral?'vs':'@'} ${soonGame.home}</span>
-        ${net?`<span class="ap-soon-meta">${net}</span>`:''}
-      </div>`;
-    }else{
-      otwHTML=''; // M4: suppress quiet OTW — ghost text wastes panel top; UPCOMING leads
+      otw={mode:'soon',countdown:cd,away:soonGame.away,home:soonGame.home,neutral:!!soonGame.neutral,net:net||''};
     }
+    // else otw stays null — M4: suppress quiet OTW — ghost text wastes panel top; UPCOMING leads
   }
 
   // ── Section 2: Live / Soon / Upcoming ────────────────────────────────
-  const live=Object.values(espnScores||{}).filter(s=>
+  const live=Object.entries(espnScores||{}).filter(([,s])=>
     s.state==='in'&&typeof s.homeScore==='number'&&typeof s.awayScore==='number'&&
     s.homeScore>=0&&s.awayScore>=0
   );
-  let scoresHTML='';
-  if(live.length){
-    const rows=live.slice(0,5).map(s=>{
+  const scores=live.slice(0,5).map(([gid,s])=>{
       const awayName=s.awayTricode||teamNick(s.awayName||s.away)||'';
       const homeName=teamNick(s.homeName||s.home)||s.homeTricode||'';
       const periodLbl=s.periodLabel||(s.periodPrefix&&s.period?`${s.periodPrefix}${s.period}`:'');
@@ -37543,13 +37546,8 @@ function renderAmbientPanel(){
       const rightName = awayLeading ? homeName : awayName;
       const leftScore  = awayLeading ? s.awayScore : s.homeScore;
       const rightScore = awayLeading ? s.homeScore : s.awayScore;
-      return `<div class="ap-score-row">
-        <span class="ap-score-teams">${leftName}<strong class="ap-score-num">${leftScore}–${rightScore}</strong>${rightName}</span>
-        ${timeStr?`<span class="ap-score-clock">${timeStr}</span>`:''}
-      </div>`;
-    }).join('');
-    scoresHTML=`<div class="ap-scores"><div class="ap-section-label">Live</div>${rows}</div>`;
-  }
+      return {gid,leftName,rightName,leftScore,rightScore,timeStr};
+  });
 
   // Rail display: Hull City → Hull outside the main game card (spec May 23 2026)
   const railName=n=>n==='Hull City'?'Hull':teamNick(n||'');
@@ -37562,19 +37560,12 @@ function renderAmbientPanel(){
     if(ms>0&&ms<7200000) _apSoon.push({g,ms});
   }));
   _apSoon.sort((a,b)=>a.ms-b.ms);
-  let soonHTML='';
-  if(_apSoon.length){
-    const rows=_apSoon.slice(0,3).map(({g,ms})=>{
-      const mins=Math.round(ms/60000);
-      const cd=mins<=1?'now':mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`;
-      const net=gameNetwork(g);
-      return `<div class="ap-score-row">
-        <span class="ap-score-teams">${railName(g.away)} ${g.neutral?'vs':'@'} ${railName(g.home)}${net?` · <span style="opacity:.6">${net}</span>`:''}</span>
-        <span class="ap-score-clock">${cd}</span>
-      </div>`;
-    }).join('');
-    soonHTML=`<div class="ap-scores"><div class="ap-section-label">Soon</div>${rows}</div>`;
-  }
+  const soon=_apSoon.slice(0,3).map(({g,ms})=>{
+    const mins=Math.round(ms/60000);
+    const cd=mins<=1?'now':mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`;
+    const net=gameNetwork(g);
+    return {gid:g._id||`${g.home}|${g.away}`,away:railName(g.away),home:railName(g.home),neutral:!!g.neutral,net:net||'',countdown:cd};
+  });
 
   // UPCOMING — games later today (2h+ away)
   const _apUp=[];
@@ -37583,31 +37574,25 @@ function renderAmbientPanel(){
     if(new Date(g.start_time)-_apNow>=7200000) _apUp.push(g);
   }));
   _apUp.sort((a,b)=>new Date(a.start_time)-new Date(b.start_time));
-  let upcomingHTML='';
+  let upcoming=null;
   if(_apUp.length){
     const tz2=localTz()||'America/New_York';
     const rows=_apUp.slice(0,4).map(g=>{
       const t=new Date(g.start_time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:tz2});
-      return `<div class="ap-score-row">
-        <span class="ap-score-teams">${railName(g.away)} ${g.neutral?'vs':'@'} ${railName(g.home)}</span>
-        <span class="ap-score-clock">${t}</span>
-      </div>`;
-    }).join('');
-    const more=_apUp.length>4?`<div class="ap-score-row"><span class="ap-score-teams" style="opacity:.45;font-size:.62rem">+${_apUp.length-4} more</span></div>`:'';
-    upcomingHTML=`<div class="ap-scores"><div class="ap-section-label">Upcoming</div>${rows}${more}</div>`;
+      return {gid:g._id||`${g.home}|${g.away}`,away:railName(g.away),home:railName(g.home),neutral:!!g.neutral,time:t};
+    });
+    upcoming={rows,moreCount:_apUp.length>4?_apUp.length-4:0};
   }
 
   // ── Section 3: Season context ──────────────────────────────────────────
   const ctx=(typeof getCalendarContext==='function')?getCalendarContext():null;
   // Context pill: clickable filter — taps scroll to first game of relevant league
-  const ctxHTML=ctx
-    ?`<div class="ap-season"><div class="ap-ctx-label">Season Context</div><span class="ap-ctx-pill" title="Filter to ${ctx.label}" onclick="(()=>{const s=document.querySelector('.game-card[data-sport*=\"${(ctx.relevantLeagues||[]).join('\"],[data-sport*=\"')}\"]');if(s)s.scrollIntoView({behavior:'smooth',block:'center'});})()" style="cursor:pointer">${ctx.label}</span></div>`
-    :'';
+  const ctxData=ctx?{label:ctx.label,relevantLeagues:ctx.relevantLeagues||[]}:null;
 
   // ── Section 3 (editorial): FIELD Brief or Night Owl/Recap ─────────────────
   // On iPad, #field-brief and #night-owl are hidden from left pane — ambient panel
   // is the PRIMARY editorial surface. Renders as a styled card matching the section.
-  let editorialHTML = '';
+  let editorial = null;
   try {
     const _owlEl = (_DOM?.nightOwl||document.getElementById('night-owl'));
     const _owlActive = _owlEl?.style.display === 'block' && _owlEl?.querySelector('.night-owl-card');
@@ -37632,79 +37617,47 @@ function renderAmbientPanel(){
       const _owlTxt = (_owlSentEnd > 40 && _owlSentEnd < 255)
         ? _owlTxtWindow.slice(0, _owlSentEnd + 1)
         : _owlTxtWindow;
-      const _owlFull = _owlTxtRaw.replace(/"/g,'&quot;');
       const _owlHasMore = _owlTxtRaw.length > _owlTxt.length;
-      editorialHTML = `<div class="ap-card ap-card-owl${_owlHasMore?' ap-card-expandable':''}"
-        ${_owlHasMore?`data-full="${_owlFull}" data-trunc-len="200" onclick="_deskCardToggle(this)" style="cursor:pointer"`:''}
-        title="${_owlHasMore?'Tap to expand':''}">
-        <div class="ap-card-header">
-          <span class="ap-card-icon">${_owlIcon}</span>
-          <span class="ap-card-label">${_owlLabel}</span>
-          ${_owlHasMore?'<span class="ap-card-expand-hint" style="margin-left:auto;font-size:.55rem;color:var(--muted);font-family:var(--ff-mono)">+ expand</span>':''}
-        </div>
-        ${_owlGame?`<div class="ap-card-game">${_owlGame}${_owlScore?' <span style="opacity:.65;font-size:.7em">'+_owlScore+'</span>':''}</div>`:''}
-        ${_owlTxt?`<p class="ap-card-text">${_owlTxt}${_owlHasMore?'…':''}</p>`:''}
-      </div>`;
+      editorial = {
+        mode:'owl', icon:_owlIcon, label:_owlLabel, game:_owlGame, score:_owlScore,
+        truncatedText:_owlTxt, fullText:_owlTxtRaw, isTruncated:_owlHasMore, canToggle:_owlHasMore,
+      };
     } else if (_briefActive) {
       const _briefText = _briefEl.querySelector('.field-brief-text')?.textContent?.trim()||'';
       const _briefDate = _briefEl.querySelector('.field-brief-date')?.textContent?.trim()||'';
       if (_briefText.length > 20) {
-        const _dfb = _briefText.replace(/"/g,'&quot;');
-        editorialHTML = `<div class="ap-card ap-card-brief" data-full="${_dfb}" data-trunc-len="240" onclick="_deskCardToggle(this)">
-          <div class="ap-card-header">
-            <span class="ap-card-label">FIELD Brief</span>
-            ${_briefDate?`<span class="ap-card-date">${_briefDate}</span>`:''}
-          </div>
-          <p class="ap-card-text">${_briefText.slice(0,240)}${_briefText.length>240?'\u2026':''}</p>
-        </div>`;
+        editorial = {
+          mode:'brief', date:_briefDate,
+          truncatedText:_briefText.slice(0,240), fullText:_briefText,
+          isTruncated:_briefText.length>240, canToggle:true,
+        };
       }
     }
   } catch(_) {}
-  const briefHTML = editorialHTML; // alias for panel.innerHTML template
 
   // ── Section 5: Arbitrage summary (free games + best add) ──────────────
   // Shown only on iPad where #field-arb is hidden. Compact 1-2 line version.
-  let arbHTML='';
+  let arb=null;
   if(typeof buildArbitrageReport==='function'){
-    const arb=buildArbitrageReport();
-    if(arb&&(arb.freeCount>0||arb.bestAdd)){
-      const arbRows=[];
-      if(arb.freeCount>0){
-        const svcs=[...new Set(arb.freeGames.flatMap(fg=>fg.svcs).filter(Boolean))].slice(0,3);
-        arbRows.push(`<div class="ap-arb-row">🎯 <strong>${arb.freeCount} free tonight</strong> · ${svcs.join(' · ')}</div>`);
+    const arbReport=buildArbitrageReport();
+    if(arbReport&&(arbReport.freeCount>0||arbReport.bestAdd)){
+      const showFree = arbReport.freeCount>0;
+      const showBestAdd = !!(arbReport.bestAdd&&arbReport.missCount>0);
+      if(showFree||showBestAdd){
+        const svcs = showFree ? [...new Set(arbReport.freeGames.flatMap(fg=>fg.svcs).filter(Boolean))].slice(0,3) : [];
+        arb={freeCount:showFree?arbReport.freeCount:0,svcs,bestAdd:showBestAdd?arbReport.bestAdd:null};
       }
-      if(arb.bestAdd&&arb.missCount>0){
-        arbRows.push(`<div class="ap-arb-row">💡 Add <strong>${arb.bestAdd.name}</strong> · ${arb.bestAdd.cost}/mo → +${arb.bestAdd.gameCount} games</div>`);
-      }
-      if(arbRows.length) arbHTML=`<div class="ap-card ap-card-arb">
-        <div class="ap-card-header">
-          <span class="ap-card-icon">📡</span>
-          <span class="ap-card-label">Watch Free</span>
-        </div>
-        <div class="ap-card-arb-rows">${arbRows.join('')}</div>
-      </div>`;
     }
   }
 
-    // iPad-11: wrap rendered content in .ambient-scroll-inner — the inner
-    // div is the scroll container; #ambient-panel is the fixed shell.
-    const _apHTML=`${otwHTML}${scoresHTML?`<div class="ap-divider"></div>${scoresHTML}`:''}${soonHTML?`<div class="ap-divider"></div>${soonHTML}`:''}${upcomingHTML?`<div class="ap-divider"></div>${upcomingHTML}`:''}${ctxHTML?`<div class="ap-divider"></div>${ctxHTML}`:''}${arbHTML?`<div class="ap-divider"></div>${arbHTML}`:''}${briefHTML?`<div class="ap-divider"></div>${briefHTML}`:''}`;
-  const _apWrapped=`<div class="ambient-scroll-inner">${_apHTML}</div>`;
-  if(panel.dataset.lastAp!==_apHTML||panel.querySelector('.ambient-skeleton')){
-    // iPad-19 (CLAUDE.md Rule 14 / STANDARDS Rule 24): renderAmbientPanel
-    // fires every 15-30s via the ESPN poll cycle. The innerHTML write below
-    // replaces the .ambient-scroll-inner element wholesale, which resets
-    // scrollTop on the new element to 0 — even if iPad-18's CSS lets the
-    // user actually scroll. Save scrollTop before the write, restore after.
-    // Without this, every poll yanks the panel back to the top mid-read.
-    const _apPrevScroll = panel.querySelector('.ambient-scroll-inner')?.scrollTop || 0;
-    panel.dataset.lastAp=_apHTML;
-    panel.innerHTML=_apWrapped;
-    if (_apPrevScroll > 0) {
-      const _apNewInner = panel.querySelector('.ambient-scroll-inner');
-      if (_apNewInner) _apNewInner.scrollTop = _apPrevScroll;
-    }
-  }
+  // Solid island now owns rendering — pushing structured data through
+  // createStore+reconcile (ambient-island.jsx) replaces the old whole-
+  // subtree panel.innerHTML write. Only the DOM nodes for sections/rows
+  // that actually changed get touched, so scroll position in
+  // .ambient-scroll-inner is never reset — the node is never torn down
+  // after the initial mount, so the old save/restore scrollTop dance
+  // (iPad-19) is no longer needed.
+  updateAmbientData({otw,scores,soon,upcoming,ctx:ctxData,editorial,arb});
 }
 
 // ── Broadcast Arbitrage Finder ──────────────────────────────────────────────
