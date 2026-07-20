@@ -214,6 +214,19 @@ is autonomously generating a watch signal. The boolean form does not change
 what it does. This violates both Rule A (autonomous push keyed to a threshold)
 and Rule F (editorial recommendation originating relay-side).
 
+**Rule F is subordinate to, not a replacement for, the pull-only boundary
+(Rule A) — both axes must independently hold.** Rule F answers *what* may be
+computed relay-side (commodity vs. proprietary). Rule A answers *how* it may
+reach the client (served on pull vs. autonomously pushed) — the actual
+operative RUWT boundary per the 2026-07-07 re-analysis. A value passing Rule
+F's commodity test is not thereby cleared to be pushed. Win probability is a
+genuine commodity metric under Rule F, but a relay that autonomously pushes
+"win probability just crossed 90%" as an unprompted alert still violates
+Rule A — the commodity/proprietary distinction governs content, not delivery
+mechanism, and does not substitute for it. Every relay-side computation must
+clear both tests independently: commodity-or-proprietary (Rule F) AND
+pull-or-push (Rule A). Passing one does not imply the other.
+
 ### Rule E: Derived drama/interest state may be rendered, stored, or served — never autonomously pushed (Addendum)
 Prior text banned the relay from rendering, storing, or transmitting
 *any* state representing game drama or interest — explicitly including
@@ -258,9 +271,11 @@ trigger for an unprompted, autonomously-sent notification.
 
 8. **Commodity statistical models on the relay** — Win probability (Poisson/
    Dixon-Coles, as in `soccer-wp.js`), xG, Pythagorean expectation, Elo, and
-   similar industry-standard metrics may run relay-side. These are factual
-   inputs that neutral data vendors publish. The client performs the editorial
-   step (combining these inputs into FIELD's drama score). See Rule F.
+   similar industry-standard metrics may run relay-side, served on pull,
+   under Rule F AND subject to Rule A's pull-only guardrail — same
+   double-test as Rules B/C. These are factual inputs that neutral data
+   vendors publish. The client performs the editorial step (combining
+   these inputs into FIELD's drama score). See Rule F.
 
 ---
 
