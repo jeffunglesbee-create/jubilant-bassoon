@@ -1,0 +1,636 @@
+{
+  "generated": "2026-07-20T10:57:59.660Z",
+  "date": "2026-07-20",
+  "summary": {
+    "competitorFound": 12,
+    "competitorNotFound": 9,
+    "blocked": 30,
+    "skippedPaywall": 6,
+    "gaps": 4
+  },
+  "metrics": [
+    {
+      "id": "pythagorean_record",
+      "display": "Pythagorean Record / Expected Record",
+      "sport": "cross",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": true,
+      "competitorSites": [
+        "FanGraphs Standings",
+        "Baseball Reference Standings"
+      ],
+      "isGap": true,
+      "probes": [
+        {
+          "site": "FanGraphs Standings",
+          "status": "found",
+          "termsFound": [
+            "pythagorean",
+            "pythag"
+          ]
+        },
+        {
+          "site": "Baseball Reference Standings",
+          "status": "found",
+          "termsFound": [
+            "pythagorean",
+            "pythag"
+          ]
+        },
+        {
+          "site": "ESPN MLB Standings",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN NBA Standings",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "leverage_index",
+      "display": "Leverage Index (live / in-game)",
+      "sport": "mlb",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": true,
+      "competitorSites": [
+        "FanGraphs Glossary",
+        "FanGraphs Live Scoreboard",
+        "Baseball Reference Play Index"
+      ],
+      "isGap": true,
+      "probes": [
+        {
+          "site": "FanGraphs Glossary",
+          "status": "found",
+          "termsFound": [
+            "leverage index",
+            "high leverage",
+            "leverage"
+          ]
+        },
+        {
+          "site": "FanGraphs Live Scoreboard",
+          "status": "found",
+          "termsFound": [
+            "leverage index",
+            "leverage"
+          ]
+        },
+        {
+          "site": "Baseball Reference Play Index",
+          "status": "found",
+          "termsFound": [
+            "leverage index",
+            "leverage"
+          ]
+        },
+        {
+          "site": "ESPN Gamecast",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "run_expectancy",
+      "display": "Run Expectancy / RE24 (live)",
+      "sport": "mlb",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": true,
+      "competitorSites": [
+        "FanGraphs",
+        "Baseball Reference"
+      ],
+      "isGap": true,
+      "probes": [
+        {
+          "site": "FanGraphs",
+          "status": "found",
+          "termsFound": [
+            "run expectancy"
+          ]
+        },
+        {
+          "site": "Baseball Savant",
+          "status": "not-found",
+          "termsFound": []
+        },
+        {
+          "site": "Baseball Reference",
+          "status": "found",
+          "termsFound": [
+            "run expectancy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stuff_plus",
+      "display": "Stuff+",
+      "sport": "mlb",
+      "relayEndpoint": "/mlb-stats/pitch_arsenals.json",
+      "relayStatus": "ok",
+      "relayBytes": 80,
+      "competitorFound": true,
+      "competitorSites": [
+        "FanGraphs Pitching"
+      ],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "FanGraphs Pitching",
+          "status": "found",
+          "termsFound": [
+            "stuff+"
+          ]
+        },
+        {
+          "site": "Baseball Savant",
+          "status": "not-found",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN Stats",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "barrel_rate",
+      "display": "Barrel Rate",
+      "sport": "mlb",
+      "relayEndpoint": "/mlb-stats/expected_stats.json",
+      "relayStatus": "ok",
+      "relayBytes": 40118,
+      "competitorFound": true,
+      "competitorSites": [
+        "FanGraphs"
+      ],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "Baseball Savant",
+          "status": "not-found",
+          "termsFound": []
+        },
+        {
+          "site": "FanGraphs",
+          "status": "found",
+          "termsFound": [
+            "barrel%"
+          ]
+        },
+        {
+          "site": "ESPN",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "field_tilt",
+      "display": "Field Tilt / Territory Control (soccer)",
+      "sport": "soccer",
+      "relayEndpoint": "/soccer-fbref/mls.json",
+      "relayStatus": "ok",
+      "relayBytes": 480,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "FBref Match",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "Sofascore",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN Soccer",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        },
+        {
+          "site": "Opta / Stats Perform",
+          "status": "not-found",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "ppda",
+      "display": "PPDA (Passes Allowed Per Defensive Action)",
+      "sport": "soccer",
+      "relayEndpoint": "/soccer-fbref/mls.json",
+      "relayStatus": "ok",
+      "relayBytes": 480,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "FBref",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "Understat",
+          "status": "blocked:HTTP 404",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN Soccer Stats",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "post_shot_xg",
+      "display": "Post-Shot xG",
+      "sport": "soccer",
+      "relayEndpoint": "/soccer/xg",
+      "relayStatus": "error:HTTP 400",
+      "relayBytes": null,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "FBref Keepers",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "Understat",
+          "status": "blocked:HTTP 404",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "zone_entry_differential",
+      "display": "Zone Entry Differential (hockey)",
+      "sport": "nhl",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "Natural Stat Trick",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "MoneyPuck",
+          "status": "not-found",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN NHL Stats",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "transition_frequency",
+      "display": "Transition Frequency / Fast Break Points (basketball)",
+      "sport": "nba",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "NBA.com Advanced Stats",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "Cleaning the Glass",
+          "status": "skipped-paywall",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN NBA Stats",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "points_per_possession_half",
+      "display": "Points Per Possession by Half (basketball)",
+      "sport": "nba",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "Cleaning the Glass",
+          "status": "skipped-paywall",
+          "termsFound": []
+        },
+        {
+          "site": "NBA.com Tracking",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "air_yards_vs_yac",
+      "display": "Air Yards vs YAC split (NFL)",
+      "sport": "nfl",
+      "relayEndpoint": "/nflverse/ngs-receiving.json",
+      "relayStatus": "ok",
+      "relayBytes": 57561,
+      "competitorFound": true,
+      "competitorSites": [
+        "NFL Next Gen Stats"
+      ],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "NFL Next Gen Stats",
+          "status": "found",
+          "termsFound": [
+            "yac"
+          ]
+        },
+        {
+          "site": "PFF",
+          "status": "skipped-paywall",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN NFL Stats",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "success_rate_nfl",
+      "display": "Success Rate (NFL)",
+      "sport": "nfl",
+      "relayEndpoint": "/nflverse/player-stats.json",
+      "relayStatus": "error:HTTP 403",
+      "relayBytes": null,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "Football Outsiders",
+          "status": "blocked:fetch failed",
+          "termsFound": []
+        },
+        {
+          "site": "PFF",
+          "status": "skipped-paywall",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "pressure_rate",
+      "display": "Pressure Rate / QB Pressure (NFL)",
+      "sport": "nfl",
+      "relayEndpoint": "/nflverse/ngs-passing.json",
+      "relayStatus": "ok",
+      "relayBytes": 17169,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "PFF",
+          "status": "skipped-paywall",
+          "termsFound": []
+        },
+        {
+          "site": "NFL Next Gen Stats",
+          "status": "not-found",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "schedule_adjusted_record",
+      "display": "Schedule-Adjusted Record / SOS-corrected W-L",
+      "sport": "cross",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": true,
+      "competitorSites": [
+        "Baseball Reference"
+      ],
+      "isGap": true,
+      "probes": [
+        {
+          "site": "ESPN Power Index",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        },
+        {
+          "site": "FanGraphs Standings",
+          "status": "not-found",
+          "termsFound": []
+        },
+        {
+          "site": "Baseball Reference",
+          "status": "found",
+          "termsFound": [
+            "strength of schedule"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "breakeven_pace",
+      "display": "Breakeven Pace (games needed at X win-rate to hit target)",
+      "sport": "cross",
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayBytes": null,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "FanGraphs Standings",
+          "status": "not-found",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN Playoffs Picture",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        },
+        {
+          "site": "Baseball Reference",
+          "status": "not-found",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "clutch_net_rating",
+      "display": "Clutch Net Rating (NBA)",
+      "sport": "nba",
+      "relayEndpoint": "/nba-clutch/clutch_regular.json",
+      "relayStatus": "ok",
+      "relayBytes": 4750,
+      "competitorFound": false,
+      "competitorSites": [],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "NBA.com Clutch Stats",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "Cleaning the Glass",
+          "status": "skipped-paywall",
+          "termsFound": []
+        },
+        {
+          "site": "ESPN",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    },
+    {
+      "id": "gsax",
+      "display": "GSAx — Goals Saved Above Expected (NHL)",
+      "sport": "nhl",
+      "relayEndpoint": "/nhl-gsax/regular.json",
+      "relayStatus": "ok",
+      "relayBytes": 12783,
+      "competitorFound": true,
+      "competitorSites": [
+        "MoneyPuck"
+      ],
+      "isGap": false,
+      "probes": [
+        {
+          "site": "Natural Stat Trick",
+          "status": "blocked:HTTP 403",
+          "termsFound": []
+        },
+        {
+          "site": "MoneyPuck",
+          "status": "found",
+          "termsFound": [
+            "goals saved above expected"
+          ]
+        },
+        {
+          "site": "ESPN NHL Stats",
+          "status": "blocked:bot-gate",
+          "termsFound": []
+        }
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "id": "pythagorean_record",
+      "display": "Pythagorean Record / Expected Record",
+      "sport": "cross",
+      "competitorSites": [
+        "FanGraphs Standings",
+        "Baseball Reference Standings"
+      ],
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayNote": "Not yet built. Could be derived from /v2/games win/loss data.",
+      "relayBuilt": false
+    },
+    {
+      "id": "leverage_index",
+      "display": "Leverage Index (live / in-game)",
+      "sport": "mlb",
+      "competitorSites": [
+        "FanGraphs Glossary",
+        "FanGraphs Live Scoreboard",
+        "Baseball Reference Play Index"
+      ],
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayNote": "Not yet built. Requires RE matrix + live state; no relay endpoint.",
+      "relayBuilt": false
+    },
+    {
+      "id": "run_expectancy",
+      "display": "Run Expectancy / RE24 (live)",
+      "sport": "mlb",
+      "competitorSites": [
+        "FanGraphs",
+        "Baseball Reference"
+      ],
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayNote": "Not yet built. Savant pipeline has expected_stats.json but not RE24.",
+      "relayBuilt": false
+    },
+    {
+      "id": "schedule_adjusted_record",
+      "display": "Schedule-Adjusted Record / SOS-corrected W-L",
+      "sport": "cross",
+      "competitorSites": [
+        "Baseball Reference"
+      ],
+      "relayEndpoint": null,
+      "relayStatus": "not-built",
+      "relayNote": "Not yet built. Requires SOS data + standings computation; no relay endpoint.",
+      "relayBuilt": false
+    }
+  ]
+}
