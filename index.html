@@ -23711,6 +23711,22 @@ async function fetchPLFixtures() {
   });
 }
 
+const _plMatchCache = new Map();
+const _PL_MATCH_TTL = 30000;
+
+async function fetchPLMatch(fixtureId) {
+  if (!fixtureId) return null;
+  const hit = _plMatchCache.get(fixtureId);
+  if (hit && Date.now() - hit.ts < _PL_MATCH_TTL) return hit.data;
+  try {
+    const r = await fetch(`${PL_RELAY_BASE}/match/${fixtureId}`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const data = await r.json();
+    _plMatchCache.set(fixtureId, { data, ts: Date.now() });
+    return data;
+  } catch (e) { return null; }
+}
+
 async function fetchSoccerFixtures(){
   if(!allData||!allData.sports) return;
   const today = new Date();
@@ -35741,6 +35757,7 @@ function renderStatsSection() {
   // Shape note: these are per-game, not cross-game leaderboards — dedicated
   // sub-section pattern distinct from the row() leaderboard blocks above.
   const _todayGames = [];
+  const _tgPlPairs = [];
   let _statsBsdFired = false; // only first game with bsdEventId gets the live pitch (bsd-pitch ID is hardcoded in _bsdRepaint)
   (allData?.sports || []).forEach(sportObj => {
     const _tgSport = sportObj.sport;
@@ -35764,6 +35781,7 @@ function renderStatsSection() {
       const _tgMilestone = _bdlMilestonesCache?.[_tgId];
       const _tgMilestoneStr = _tgMilestone ? `${_tgMilestone.playerName} needs ${_tgMilestone.gap} more ${_tgMilestone.stat} → ${_tgMilestone.next}` : '';
       const _tgCb = buildComebackProbability(_tgId, _tgEData, _tgSport) || '';
+      const _tgPlId = _tgEData?._plId || null;
       const _tgBsdId = _tgEData?.bsdEventId || game.bsdEventId || null;
       let _tgBsdHtml = '';
       if (_tgBsdId && !_statsBsdFired) {
@@ -35780,7 +35798,8 @@ function renderStatsSection() {
             .catch(() => {});
         }
       }
-      if (!_tgScout && !_tgStandingsStr && !_tgSeriesMargins && !_tgMilestoneStr && !_tgCb && !_tgBsdHtml) return;
+      if (!_tgScout && !_tgStandingsStr && !_tgSeriesMargins && !_tgMilestoneStr && !_tgCb && !_tgBsdHtml && !_tgPlId) return;
+      if (_tgPlId) _tgPlPairs.push({ id: _tgId, plId: _tgPlId });
       _todayGames.push(
         `<div class="stats-subsection"><div class="stats-subsection-label">${esc(game.away||'?')} @ ${esc(game.home||'?')}</div>` +
         _tgScout +
@@ -35789,6 +35808,7 @@ function renderStatsSection() {
         (_tgMilestoneStr ? `<div class="bs-section-body" style="font-size:.7rem;opacity:.8">${esc(_tgMilestoneStr)}</div>` : '') +
         (_tgCb ? `<div class="bs-section-body" style="font-size:.7rem;opacity:.8">${esc(_tgCb)}</div>` : '') +
         _tgBsdHtml +
+        (_tgPlId ? `<div id="tg-pl-${_tgId}"></div>` : '') +
         `</div>`
       );
     });
@@ -35802,6 +35822,37 @@ function renderStatsSection() {
     return;
   }
   content.innerHTML = blocks.join('');
+
+  // PL Lineups: async fill for each Today's Games entry with a PL fixture ID
+  _tgPlPairs.forEach(({ id, plId }) => {
+    fetchPLMatch(plId).then(plData => {
+      const anchor = document.getElementById(`tg-pl-${id}`);
+      if (!anchor || !plData) return;
+      const _plEsc = s => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const teamNames = {};
+      (plData.fixture?.teams || []).forEach(t => { if (t.team?.id != null) teamNames[t.team.id] = t.team.name || ''; });
+      const officials = plData.fixture?.matchOfficials || [];
+      const ref = officials.find(o => o.role === 'MAIN');
+      const varOff = officials.find(o => o.role === 'VAR');
+      let html = '';
+      for (const tl of (plData.fixture?.teamLists || [])) {
+        const teamName = teamNames[tl.teamId] || '';
+        const formation = tl.formation?.label || '';
+        const starters = tl.lineup || [];
+        if (!starters.length) continue;
+        const rows = starters.map(p => {
+          const pos = p.info?.position || '';
+          const shirt = p.matchShirtNumber != null ? `#${p.matchShirtNumber}` : '';
+          const name = p.name?.display || '';
+          return `<div style="display:flex;gap:.4rem"><span style="opacity:.5;min-width:2rem">${_plEsc(shirt)}</span><span style="opacity:.6;min-width:1.5rem">${_plEsc(pos)}</span><span>${_plEsc(name)}</span></div>`;
+        }).join('');
+        html += `<div style="margin-bottom:.5rem"><div style="font-weight:600;font-size:.68rem;margin-bottom:.2rem">${_plEsc(teamName)}${formation ? ' · ' + _plEsc(formation) : ''}</div>${rows}</div>`;
+      }
+      const offStr = [ref ? `REF: ${_plEsc(ref.name?.display || '')}` : '', varOff ? `VAR: ${_plEsc(varOff.name?.display || '')}` : ''].filter(Boolean).join(' · ');
+      if (!html && !offStr) { anchor.remove(); return; }
+      anchor.outerHTML = `<div class="bs-section"><div class="bs-section-label">Lineups</div><div class="bs-section-body" style="font-size:.7rem;line-height:1.8">${html}${offStr ? `<div style="opacity:.55;font-size:.68rem;margin-top:.25rem">${offStr}</div>` : ''}</div></div>`;
+    }).catch(() => { document.getElementById(`tg-pl-${id}`)?.remove(); });
+  });
 }
 
 // ── BSD pitch helpers (2026-06-25) ────────────────────────────────────────
@@ -44162,6 +44213,7 @@ function openBottomSheet(gameId) {
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}${_bsIsFinal?(()=>{const _ad=buildDramaArcDescription(gameId);return _ad?`<div class="bs-section-body" style="font-size:.68rem;opacity:.75;margin-top:.25rem">${_ad.replace('[DRAMA ARC] ','')}</div>`:''})():''}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
     ${(game.matchupNote||game.localNote) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${game.matchupNote||game.localNote}</div></div>` : ''}
+    <div id="bs-pl-inject"></div>
     <div id="bs-last-meeting"></div>
     ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'🦚 Peacock GOTD · Free to stream · ':game.espnGOTD?'📺 Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
@@ -44212,6 +44264,25 @@ function openBottomSheet(gameId) {
       const dateStr = g2.date ? new Date(g2.date + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '';
       anchor.outerHTML = `<div class="bs-section"><div class="bs-section-label">Last Meeting</div><div class="bs-section-body">${teamNick(g2.away||'')} ${g2.away_score} – ${teamNick(g2.home||'')} ${g2.home_score}${dateStr ? ' · ' + dateStr : ''}</div></div>`;
     }).catch(() => {});
+  }
+
+  // PL Key Moments: async inject for PL games (goal/substitution events + halfTimeScore)
+  if (eData?._plId) {
+    fetchPLMatch(eData._plId).then(plData => {
+      if (!plData || window._currentBottomSheetGameId !== gameId) return;
+      const anchor = document.getElementById('bs-pl-inject');
+      if (!anchor) return;
+      const _plEsc = s => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const htS = plData.fixture?.halfTimeScore;
+      const htStr = (htS?.homeScore != null && htS?.awayScore != null) ? `HT: ${htS.homeScore}–${htS.awayScore}` : '';
+      const keyEvents = (plData.events || [])
+        .filter(e => e.type === 'goal' || e.type === 'substitution')
+        .sort((a, b) => (a.time?.secs ?? 0) - (b.time?.secs ?? 0));
+      if (!htStr && !keyEvents.length) { anchor.remove(); return; }
+      const htLine = htStr ? `<div style="opacity:.65;margin-bottom:.25rem">${_plEsc(htStr)}</div>` : '';
+      const rows = keyEvents.map(e => `<div>${e.time?.label != null ? _plEsc(String(e.time.label)) + '′ ' : ''}${_plEsc(e.text || '')}</div>`).join('');
+      anchor.outerHTML = `<div class="bs-section"><div class="bs-section-label">Key Moments</div><div class="bs-section-body" style="font-size:.72rem;line-height:1.7">${htLine}${rows}</div></div>`;
+    }).catch(() => { document.getElementById('bs-pl-inject')?.remove(); });
   }
 }
 
