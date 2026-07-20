@@ -1,3 +1,18 @@
+## SESSION CLOSE-OUT — 2026-07-20, pl-match-probe (supersedes previous)
+
+**HEAD:** 45329db (field-relay-nba) / ba4b233 (jubilant-bassoon, no new code)
+**Smoke count:** 963/0 (unchanged)
+**SW version:** 2026-07-20a (unchanged)
+**Session doc:** outbox/cc-session-2026-07-20-pl-match-probe.md
+
+**PulseLive textstream probe + pagination fix:**
+- Probed completed fixture 116197 (Bournemouth 2-0 Leicester GW38 2024/25) directly via PulseLive API. Confirmed event types: goal, substitution, miss, corner, offside, free kick, attempt blocked. Goal events include scorer, assister, foot, location in prose. 135 events per match.
+- field-relay-nba `45329db`: `/pl/match/:id` now fetches pageSize=100 and all pages in parallel. Response is `{ fixture, events: <flat array> }`. Verified live via probe_relay_route — 50,400 bytes, formations + teamLists + matchOfficials + halfTimeScore + all events confirmed.
+- MCP allow-list: `/pl` prefix already covered `/pl/match/:id` — no change needed.
+- `/pl/match/:id` has NO client consumer. Bottom sheet wiring is the next step.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-20, pl-pulselive (supersedes previous)
 
 **HEAD:** bdfbe82 (jubilant-bassoon) / 8bd5c19 (field-relay-nba)
