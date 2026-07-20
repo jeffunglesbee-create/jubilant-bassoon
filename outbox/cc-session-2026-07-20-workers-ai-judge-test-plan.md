@@ -182,6 +182,15 @@ production wiring:
 - Which CF AI model to test: `@cf/meta/llama-3.1-8b-instruct` (free tier) vs
   `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (better quality, paid but far
   cheaper than Gemini). Recommendation: test both in Step 3 and compare.
+- **Gemma as third candidate:** Gemma (`@hf/google/gemma-7b-it` or newer Gemma
+  3 variants if available on CF Workers AI) is Google's open-weights model
+  family from the same research lineage as Gemini — distinct from Gemini in
+  that weights are public and can run locally. Because the voice judge is
+  evaluating prose that Gemini itself generated, Gemma may have better
+  calibration for what Gemini considers wire-copy vs. real FIELD voice than
+  a Llama-family model would. Check CF Workers AI model catalog for available
+  Gemma variants and add as a third candidate in Step 3 alongside the two
+  Llama options.
 - Is there a neuronsUsed cost model for the Workers AI binding on the current
   CF plan? Confirm free tier limit before assuming zero cost.
 - Does the `AI` binding require a wrangler.toml migration entry (like DOs) or
