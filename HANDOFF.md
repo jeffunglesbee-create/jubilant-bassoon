@@ -1,3 +1,19 @@
+## SESSION CLOSE-OUT — 2026-07-20, pl-pulselive (supersedes previous)
+
+**HEAD:** bdfbe82 (jubilant-bassoon) / 8bd5c19 (field-relay-nba)
+**Smoke count:** 963/0
+**SW version:** 2026-07-20a (unchanged)
+**Session doc:** outbox/cc-session-2026-07-20-pl-pulselive.md
+
+**PL PulseLive endpoint + client wiring:**
+- field-relay-nba `43c6076`: `/pl/*` route handler — `/pl/fixtures`, `/pl/match/:id`, `/pl/seasons` via `footballapi.pulselive.com`. 30s TTL on live routes, 1h on seasons. `/pl` added to MCP probe allow-list.
+- jubilant-bassoon `9545f6c`: `fetchPLFixtures()` wired at boot + poll cycle; writes `espnScores` with `source:'pl'`; priority FD > PL > FPL.
+- field-relay-nba `8bd5c19`: `/pl/fixtures` route smoke added to `post-deploy-live-verify.yml` (fires after every deploy).
+- jubilant-bassoon `bdfbe82`: smoke.js A124 — PL_RELAY_BASE + fetchPLFixtures definition + boot call. 963/0.
+- Integration status: STAGED — sandbox egress blocked E2E HTTP verify. Verify with curl during a live/completed PL fixture window (see session doc).
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-20, adr002-rule-f (supersedes previous)
 
 **HEAD:** f07a26b
