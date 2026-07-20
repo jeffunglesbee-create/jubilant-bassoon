@@ -24363,25 +24363,39 @@ function renderESPNScores(){
       // Insert score-wrap as direct child of .game-card (not inside card-body)
       // CSS grid-row:2 (mobile) / inherited position (desktop) handles placement
       const wrapEl = card.querySelector(".score-wrap");
+      const scoreKey = game._id;
 
       if(wrapEl){
-        // Check if score changed — compare scoreline (catches score + direction flip)
-        const scoreKey = game._id;
-        const prevSL = previousScores[scoreKey+"_sl"];
-        const changed = prevSL !== undefined && prevSL !== _n.scoreline;
-        const tmp = document.createElement("div");
-        tmp.innerHTML = scoreHTML;
-        const newWrap = tmp.firstElementChild;
-        if(newWrap){
-          wrapEl.replaceWith(newWrap);
-          if(changed){
-            newWrap.classList.add("score-flash");
-            setTimeout(()=>newWrap.classList.remove("score-flash"), 700);
+        // Real dirty check (CC-CMD-2026-07-20-score-wrap-dirty-check): skip
+        // the rebuild+replace entirely when nothing in the score display
+        // actually changed since the last pass. Keyed on the full scoreHTML,
+        // not just scoreline -- period/status text and situational HTML
+        // (outs, base runners, situation badges) live inside or alongside
+        // scoreHTML too, so a scoreline-only key would silently skip real
+        // period/status transitions (e.g. halftime -> 3rd quarter) whenever
+        // the score number itself happens to stay the same.
+        const prevHTML = previousScores[scoreKey+"_html"];
+        if(prevHTML === scoreHTML){
+          previousScores[scoreKey+"_sl"] = _n.scoreline;
+        } else {
+          // Check if score changed — compare scoreline (catches score + direction flip)
+          const prevSL = previousScores[scoreKey+"_sl"];
+          const changed = prevSL !== undefined && prevSL !== _n.scoreline;
+          const tmp = document.createElement("div");
+          tmp.innerHTML = scoreHTML;
+          const newWrap = tmp.firstElementChild;
+          if(newWrap){
+            wrapEl.replaceWith(newWrap);
+            if(changed){
+              newWrap.classList.add("score-flash");
+              setTimeout(()=>newWrap.classList.remove("score-flash"), 700);
+            }
+            // Re-inject cached RAI line if available — score-wrap replaced on score change
+            _raiRehydrateScoreWrap(card, newWrap);
           }
-          // Re-inject cached RAI line if available — score-wrap replaced on score change
-          _raiRehydrateScoreWrap(card, newWrap);
+          previousScores[scoreKey+"_sl"] = _n.scoreline;
+          previousScores[scoreKey+"_html"] = scoreHTML;
         }
-        previousScores[scoreKey+"_sl"] = _n.scoreline;
       } else {
         const tmp = document.createElement("div");
         tmp.innerHTML = scoreHTML;
@@ -24395,8 +24409,8 @@ function renderESPNScores(){
           // so the .2s transition actually fires instead of being skipped as a no-op style change.
           requestAnimationFrame(()=>requestAnimationFrame(()=>newWrap.classList.remove("score-incoming")));
         }
-        const scoreKey2 = game._id;
-        previousScores[scoreKey2+"_sl"] = _n.scoreline;
+        previousScores[scoreKey+"_sl"] = _n.scoreline;
+        previousScores[scoreKey+"_html"] = scoreHTML;
       }
 
       // Update card class for accent colour
