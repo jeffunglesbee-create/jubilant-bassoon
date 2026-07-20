@@ -17290,6 +17290,7 @@ async function fetchESPNScores(){
   // 2026-07-13: .catch() removed -- fetchFPLLiveScores() is now migrated
   // to fieldOperation(), whose own promise never rejects.
   fetchFPLLiveScores();
+  fetchPLFixtures();
   // 2026-07-13: .catch() removed -- fdPrefetchSoccerLive() is now migrated
   // to fieldOperation(), whose own promise never rejects.
   fdPrefetchSoccerLive();
@@ -18615,6 +18616,62 @@ async function fetchFPLLiveScores() {
   });
 }
 
+
+// ── PL live scores via /pl/fixtures (PulseLive) ──────────────────────────────
+// Runs alongside fetchFPLLiveScores(). PL is authoritative over FPL (real
+// clock + short team names), but FD still wins when present.
+const PL_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/pl';
+let _plLastFetch = 0;
+
+async function fetchPLFixtures() {
+  const now = Date.now();
+  if (now - _plLastFetch < 28000) return;
+  _plLastFetch = now;
+
+  return fieldOperation({ subsystem: 'scores', operation: 'fetch-pl-fixtures', retryable: true }, async () => {
+    const r = await fetch(`${PL_RELAY_BASE}/fixtures`, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return;
+    const fixtures = await r.json();
+
+    for (const f of fixtures) {
+      if (f.status === 'U') continue; // upcoming — skip
+      const home = f.home;
+      const away = f.away;
+      if (!home || !away) continue;
+
+      const key      = `${home}|${away}`;
+      const existing = espnScores[key];
+      // FD is authoritative — never overwrite FD score
+      if (existing && existing.source === 'fd') continue;
+
+      const isLive  = f.status === 'L';
+      const isPost  = f.status === 'C';
+      const state   = isPost ? 'post' : 'in';
+      const clockStr = f.clock ?? '';
+      const mins     = f.clockSecs != null ? Math.floor(f.clockSecs / 60) : null;
+      const detail   = isPost ? 'FT' : (clockStr || 'LIVE');
+
+      espnScores[key] = {
+        state,
+        period: (mins != null && mins > 45) ? 2 : 1,
+        clock:  clockStr,
+        detail,
+        homeScore:   f.homeScore ?? 0,
+        awayScore:   f.awayScore ?? 0,
+        homeName:    home,
+        awayName:    away,
+        home,
+        away,
+        homeWinning: (f.homeScore ?? 0) > (f.awayScore ?? 0),
+        periodPrefix: "'",
+        source: 'pl',
+        _plId: f.id,
+      };
+      espnScoreTs[key] = Date.now();
+    }
+    renderESPNScores();
+  });
+}
 
 async function fetchSoccerFixtures(){
   if(!allData||!allData.sports) return;
@@ -20242,7 +20299,8 @@ async function fetchSchedule(){
   // ─────────────────────────────────────────────────────────────────────────in full MLB slate from ESPN (supplements hardcoded games)
   setTimeout(fetchSoccerFixtures, 500); // no-op with empty SOCCER_LEAGUES (all soccer on V2)
   setTimeout(fetchMLSLive, 800);         // MLS relay: stats-api.mlssoccer.com → canonical opta_id keys in espnScores
-  fetchFPLLiveScores();  // FPL relay — EPL live scores (official PL data, CORS bypass via relay)
+  fetchFPLLiveScores();  // FPL relay — EPL live scores (team IDs, scorer names, xG)
+  fetchPLFixtures();    // PL relay (PulseLive) — real clock, confirmed scores, venue
   // UserDO read loop (CC-CMD-2026-06-19 / Prompt 10): hydrate state after first
   // render but before the journalism build path needs it.
   setTimeout(() => { if (typeof fetchUserState === 'function') fetchUserState(); }, 2000);
