@@ -7050,6 +7050,40 @@ assert('A-DISPOSAL-1 — the 7 confirmed never-adopted/superseded utilities are 
   !/function buildSlashGolfGamesForToday\(/.test(html),
   'nhlStreams (obsolete TNT/ESPN assumption, real 2026 SCF was all-ABC), mlbBaserunnerBonus (superseded by applyQW1SituationBonus\'s real baseball section), normalizeApiFootballStats (superseded by the real [MATCH STATS] localStorage mechanism), enrichGame (abandoned shell, watchValue reimplemented as computeWatchValue), forEachGame/fieldFetch (never-adopted refactor utilities), buildSlashGolfGamesForToday (superseded golf-schedule architecture) must all be genuinely removed, each independently confirmed dead with real evidence, not just orphaned');
 
+// ── Game Thread structural assertions (SPEC-game-thread-2026-07-19 TASK 5) ──
+assert('GAME-THREAD-1 — _getThreadToken defined, reads/writes field_thread_token_v1 in localStorage',
+  /function _getThreadToken\(\)/.test(html) &&
+  html.includes("'field_thread_token_v1'") &&
+  html.includes('localStorage.getItem(THREAD_TOKEN_KEY)') &&
+  html.includes('localStorage.setItem(THREAD_TOKEN_KEY'),
+  '_getThreadToken must persist the session token in localStorage under field_thread_token_v1');
+
+assert('GAME-THREAD-2 — GameSocket has onThreadNote and onThreadCatchup callbacks and sendThreadNote method',
+  html.includes('this.onThreadNote') &&
+  html.includes('this.onThreadCatchup') &&
+  html.includes('sendThreadNote(body)') &&
+  html.includes("type: 'thread_note'") &&
+  html.includes("type === 'thread_note'") &&
+  html.includes("type === 'thread_catchup'"),
+  'GameSocket must expose onThreadNote/onThreadCatchup callback slots and sendThreadNote send method wired to the relay contract');
+
+assert('GAME-THREAD-3 — thread-drawer, thread-note, thread-input CSS classes defined',
+  html.includes('.thread-drawer{') &&
+  html.includes('.thread-note{') &&
+  html.includes('.thread-input{') &&
+  html.includes('.thread-mine{') &&
+  html.includes('.thread-send-btn{'),
+  'CSS for .thread-drawer, .thread-note, .thread-input, .thread-mine, .thread-send-btn must be present');
+
+assert('GAME-THREAD-4 — toggleThreadDrawer and _threadSend handlers defined and wired to PRIME-circadian cards',
+  /function toggleThreadDrawer\(/.test(html) &&
+  /function _threadSend\(/.test(html) &&
+  html.includes("_circadian==='PRIME'") &&
+  html.includes('thread-btn') &&
+  html.includes('thread-drawer') &&
+  html.includes('thread-input'),
+  'toggleThreadDrawer and _threadSend must be defined; thread-btn and thread-drawer must appear in PRIME-circadian card HTML');
+
 assert('A-DRAMA-GATEWAY-1 — getDramaGateway exists as a function definition',
   /function getDramaGateway\(/.test(html),
   'getDramaGateway must be defined; it is the structural access point for drama data keyed on game state');

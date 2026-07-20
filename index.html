@@ -2003,6 +2003,19 @@ body.wf-mode .np-inner{max-width:100%}
 .debrief-bracket__mover[data-dir="up"]{color:#22c55e;opacity:.8}
 .debrief-bracket__mover[data-dir="down"]{color:#ef4444;opacity:.8}
 
+.thread-btn{display:inline-flex;align-items:center;gap:.25rem;margin-top:.25rem;padding:.2rem .5rem;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:4px;color:rgba(99,102,241,.9);font-size:.65rem;font-family:var(--ff-cond);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:.15s}
+.thread-btn:hover{background:rgba(99,102,241,.22);border-color:rgba(99,102,241,.6)}
+.thread-drawer{grid-column:1/-1;display:flex;flex-direction:column;gap:.5rem;padding:.6rem .75rem;border-top:1px solid rgba(99,102,241,.18);background:rgba(99,102,241,.04);border-radius:0 0 8px 8px}
+.thread-notes{display:flex;flex-direction:column;gap:.35rem;max-height:200px;overflow-y:auto;scroll-behavior:smooth}
+.thread-note{padding:.3rem .5rem;background:rgba(255,255,255,.05);border-radius:4px;font-size:.8rem;line-height:1.4;color:var(--text,#e8e8f0);word-break:break-word}
+.thread-mine{background:rgba(99,102,241,.15);border-left:2px solid rgba(99,102,241,.6)}
+.thread-input-row{display:flex;gap:.4rem;align-items:center}
+.thread-input{flex:1;padding:.3rem .5rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--text,#e8e8f0);font-size:.8rem;outline:none}
+.thread-input:focus{border-color:rgba(99,102,241,.5);background:rgba(255,255,255,.09)}
+.thread-send-btn{padding:.3rem .6rem;background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);border-radius:4px;color:rgba(99,102,241,.95);font-size:.75rem;cursor:pointer;transition:.15s;white-space:nowrap}
+.thread-send-btn:disabled{opacity:.45;cursor:default}
+.thread-send-btn:not(:disabled):hover{background:rgba(99,102,241,.35)}
+
 .live-badge{
   display:inline-flex;align-items:center;gap:4px;
   font-family:var(--ff-cond);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;
@@ -6072,6 +6085,8 @@ if (typeof location !== 'undefined') {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  // Game Thread (July 20 2026)
+  'game-thread':             '2026-07-20',  // _getThreadToken + GameSocket.onThreadNote/onThreadCatchup/sendThreadNote + buildThreadNoteHTML + toggleThreadDrawer + _threadSend + .thread-drawer/.thread-note/.thread-input UI
   // Featured tier + compact overflow (July 15 2026)
   'featured-tier-overflow':  '2026-07-15',  // isFeaturedTierGame/buildRankBadge/buildOverflowStrip — generic volume-management split for high-volume sport sections (CFB now), inert below FEATURED_TIER_OVERFLOW_THRESHOLD
   'cfb-section-injection':   '2026-07-15',  // injectV2SportSection() — generic V2-poll-to-allData.sports schedule injection (mirrors WC26's own pattern), wired for cfb; mapV2ToESPN threads homeCuratedRank/awayCuratedRank
@@ -12575,7 +12590,9 @@ function renderAll(skipUnchanged){
           ${_circadian==='LATE'&&_circEData?`<div class="circadian-late-recap">Final: ${(g.away||'').replace(/</g,'')} ${_circEData.awayScore??''} – ${(g.home||'').replace(/</g,'')} ${_circEData.homeScore??''}</div>`:""}
           ${g.crew?`<span class="crew-chip" title="Broadcast crew">🎙 ${g.crew}</span>`:""}
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="event.stopPropagation();toggleStandings(this,'${sec.sport}','2025')" title="Show ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'table':'standings'}">▼ ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'Table':'Standings'}</button>`:""}
+          ${_circadian==='PRIME'?`<button class="thread-btn" onclick="event.stopPropagation();toggleThreadDrawer('${g._id}')">💬 Thread</button>`:""}
         </div>
+        ${_circadian==='PRIME'?`<div class="thread-drawer" data-open="0" hidden><div class="thread-notes"></div><div class="thread-input-row"><input class="thread-input" maxlength="280" placeholder="say something" oninput="this.closest('.game-card').querySelector('.thread-send-btn').disabled=!this.value.trim()||this.value.trim().length>280" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();_threadSend('${g._id}');}"><button class="thread-send-btn" disabled onclick="event.stopPropagation();_threadSend('${g._id}')">Send</button></div></div>`:""}
       </div>`;
       _cardStringCache.set(g._id, {fingerprint: _fingerprint, html: _html, circInput: _circInput, circadianTier: _circadian});
       return _html;
@@ -19111,11 +19128,26 @@ async function fetchV2Games(sport, date) {
 //   // ...later: gs.signalCrunch({homeScore:101, awayScore:99, period:4, ...});
 //   // ...or:    gs.disconnect();
 // ═══════════════════════════════════════════════════════════════════════════
+// ── Game Thread session token (SPEC-game-thread-2026-07-19) ─────────────────
+// Random opaque string, persisted across page loads, never sent as identity.
+// Server echoes it back on broadcast so the client can style its own notes.
+const THREAD_TOKEN_KEY = 'field_thread_token_v1';
+function _getThreadToken() {
+  let t = localStorage.getItem(THREAD_TOKEN_KEY);
+  if (!t) {
+    t = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    localStorage.setItem(THREAD_TOKEN_KEY, t);
+  }
+  return t;
+}
+
 class GameSocket {
   constructor(sport, gameId, onFacts) {
-    this.sport     = sport;
-    this.gameId    = String(gameId);
-    this.onFacts   = typeof onFacts === 'function' ? onFacts : (()=>{});
+    this.sport            = sport;
+    this.gameId           = String(gameId);
+    this.onFacts          = typeof onFacts === 'function' ? onFacts : (()=>{});
+    this.onThreadNote     = null;
+    this.onThreadCatchup  = null;
     this.ws        = null;
     this.available = false;
     this._retryMs  = 5000;
@@ -19150,6 +19182,12 @@ class GameSocket {
       let msg = null;
       try { msg = JSON.parse(ev.data); } catch(_){}
       if (!msg) return;
+      if (msg.type === 'thread_note') {
+        try { if (typeof this.onThreadNote === 'function') this.onThreadNote(msg); } catch(_){}
+      }
+      if (msg.type === 'thread_catchup') {
+        try { if (typeof this.onThreadCatchup === 'function') this.onThreadCatchup(msg); } catch(_){}
+      }
       if (msg.type === 'facts') {
         try { this.onFacts(msg); } catch(_){}
         // PM-27: record freshness timestamp + emit field:ws_fresh for WS Pulse subscriber
@@ -19197,6 +19235,14 @@ class GameSocket {
   // Signal client-side-detected CRUNCH TIME. The DO dedupes per (gameId, period)
   // and fans out Web Push to pinned subscribers. RUWT compliance: this browser
   // already made the named-condition determination; the DO only delivers.
+  // Send a thread note. Returns false if socket not open.
+  sendThreadNote(body) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
+    try {
+      this.ws.send(JSON.stringify({ type: 'thread_note', body, token: _getThreadToken() }));
+      return true;
+    } catch(_) { return false; }
+  }
   signalCrunch(detail) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       try { this.ws.send(JSON.stringify({ type:'signal-crunch', ...detail })); return true; } catch(_){}
@@ -19266,6 +19312,90 @@ function dropGameSocket(sport, gameId) {
   const key = `${sport}:${gameId}`;
   const gs = _gameSockets.get(key);
   if (gs) { gs.disconnect(); _gameSockets.delete(key); }
+}
+
+// ── Game Thread render + send (SPEC-game-thread-2026-07-19) ─────────────────
+
+// Pure function — returns an HTML string for a single note.
+// Append-only: callers use insertAdjacentHTML, never innerHTML replacement.
+function buildThreadNoteHTML(note, myToken) {
+  const mine = note.token === myToken;
+  const body = (note.body || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<div class="thread-note${mine ? ' thread-mine' : ''}">${body}</div>`;
+}
+
+// Per-game rate-cap state (client-side mirror of relay's 30s cap).
+const _threadRateCap = new Map(); // gameId → ts of last send
+
+// Toggle the thread drawer for a game card. Opens on first call (wires socket
+// callbacks + renders catchup); subsequent calls toggle visibility.
+function toggleThreadDrawer(gameId) {
+  const card = document.querySelector(`.game-card[data-gameid="${gameId}"]`);
+  if (!card) return;
+  let drawer = card.querySelector('.thread-drawer');
+  if (!drawer) return;
+  const open = drawer.dataset.open === '1';
+  if (!open) {
+    drawer.dataset.open = '1';
+    drawer.hidden = false;
+    // Wire thread callbacks onto the existing GameSocket for this game.
+    const sport = card.dataset.sport || '';
+    const gs = ensureGameSocket(sport, gameId, null);
+    if (gs) {
+      const notesList = drawer.querySelector('.thread-notes');
+      const myToken = _getThreadToken();
+      gs.onThreadCatchup = (msg) => {
+        if (!notesList) return;
+        // Catchup: render all notes (no token — intentional per spec).
+        notesList.innerHTML = '';
+        (msg.notes || []).forEach(n => {
+          notesList.insertAdjacentHTML('beforeend', buildThreadNoteHTML(n, null));
+        });
+        notesList.scrollTop = notesList.scrollHeight;
+      };
+      gs.onThreadNote = (msg) => {
+        if (!notesList) return;
+        // Append-only: preserve scroll position unless user is at bottom.
+        const atBottom = notesList.scrollHeight - notesList.scrollTop - notesList.clientHeight < 40;
+        notesList.insertAdjacentHTML('beforeend', buildThreadNoteHTML(msg, myToken));
+        if (atBottom) notesList.scrollTop = notesList.scrollHeight;
+      };
+    }
+  } else {
+    drawer.dataset.open = '0';
+    drawer.hidden = true;
+  }
+}
+
+// Send handler — called by the thread input's submit button.
+function _threadSend(gameId) {
+  const card = document.querySelector(`.game-card[data-gameid="${gameId}"]`);
+  if (!card) return;
+  const input = card.querySelector('.thread-input');
+  if (!input) return;
+  const body = (input.value || '').trim();
+  if (!body || body.length < 1 || body.length > 280) return;
+  // Client-side rate cap mirror: disable send for 30s after each send.
+  const now = Date.now();
+  const last = _threadRateCap.get(gameId) || 0;
+  if (now - last < 30000) return;
+  const sport = card.dataset.sport || '';
+  const gs = _gameSockets.get(`${sport}:${gameId}`);
+  if (!gs || !gs.available) return;
+  if (gs.sendThreadNote(body)) {
+    _threadRateCap.set(gameId, now);
+    input.value = '';
+    const btn = card.querySelector('.thread-send-btn');
+    if (btn) {
+      btn.disabled = true;
+      let remaining = 30;
+      const tick = setInterval(() => {
+        remaining--;
+        if (btn.isConnected) btn.textContent = remaining > 0 ? `${remaining}s` : 'Send';
+        if (remaining <= 0) { clearInterval(tick); if (btn.isConnected) btn.disabled = false; }
+      }, 1000);
+    }
+  }
 }
 
 function mapV2ToESPN(fg) {
@@ -26195,7 +26325,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-19c';
+  const SW_VERSION = '2026-07-19d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
