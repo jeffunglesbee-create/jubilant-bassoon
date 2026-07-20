@@ -1,0 +1,74 @@
+name: Probe FPL API
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap static
+        run: |
+          echo "=== /api/bootstrap-static/ top-level keys ==="
+          curl -s "https://fantasy.premierleague.com/api/bootstrap-static/" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log('keys:', Object.keys(d));
+            console.log('events[0]:', JSON.stringify(d.events?.[0], null, 2));
+            console.log('element_types:', JSON.stringify(d.element_types, null, 2));
+          "
+
+      - name: Fixtures
+        run: |
+          echo "=== /api/fixtures/ sample ==="
+          curl -s "https://fantasy.premierleague.com/api/fixtures/" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const finished = d.filter(f => f.finished).slice(-2);
+            console.log('total fixtures:', d.length);
+            console.log('sample finished fixture keys:', Object.keys(finished[0] || {}));
+            console.log('stats array sample:', JSON.stringify(finished[0]?.stats, null, 2));
+            console.log('full fixture sample:', JSON.stringify(finished[0], null, 2));
+          "
+
+      - name: Current GW live
+        run: |
+          echo "=== /api/event/{current_gw}/live/ ==="
+          GW=$(curl -s "https://fantasy.premierleague.com/api/bootstrap-static/" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const cur = d.events?.find(e => e.is_current) || d.events?.find(e => e.is_previous);
+            console.log(cur?.id || 38);
+          ")
+          echo "Gameweek: $GW"
+          curl -s "https://fantasy.premierleague.com/api/event/${GW}/live/" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const elements = d.elements || [];
+            console.log('element count:', elements.length);
+            const sample = elements.find(e => e.stats?.goals_scored > 0) || elements[0];
+            console.log('sample element keys:', Object.keys(sample || {}));
+            console.log('sample stats:', JSON.stringify(sample?.stats, null, 2));
+            console.log('sample explain:', JSON.stringify(sample?.explain, null, 2));
+          "
+
+      - name: Fixture detail (last finished)
+        run: |
+          echo "=== /api/fixture/ detail — checking for timeline/events ==="
+          FIXTURE_ID=$(curl -s "https://fantasy.premierleague.com/api/fixtures/" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const f = d.filter(x => x.finished).slice(-1)[0];
+            console.log(f.id);
+          ")
+          echo "Fixture ID: $FIXTURE_ID"
+          curl -s "https://fantasy.premierleague.com/api/fixtures/?event=$(curl -s 'https://fantasy.premierleague.com/api/fixtures/' | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); console.log(d.filter(x=>x.finished).slice(-1)[0].event)")" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log('fixture count in event:', d.length);
+            console.log('full first fixture:', JSON.stringify(d[0], null, 2));
+          "
+
+      - name: Element summary (player history)
+        run: |
+          echo "=== /api/element-summary/{id}/ — player history ==="
+          curl -s "https://fantasy.premierleague.com/api/element-summary/328/" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log('top keys:', Object.keys(d));
+            console.log('history[0]:', JSON.stringify(d.history?.[0], null, 2));
+            console.log('history_past[0]:', JSON.stringify(d.history_past?.[0], null, 2));
+          "
