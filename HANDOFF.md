@@ -1,3 +1,20 @@
+## SESSION CLOSE-OUT — 2026-07-20, game-thread-client (supersedes previous)
+
+**HEAD:** ae24581
+**Smoke count:** 962/0
+**SW version:** 2026-07-19d
+**Session doc:** outbox/cc-session-2026-07-20-game-thread-client.md
+
+**Game Thread client — Phase 2 (CC-CMD-2026-07-20-game-thread-client.md):**
+- `_getThreadToken()` — localStorage['field_thread_token_v1'], generated once, never sent as identity
+- `GameSocket.onThreadNote` + `onThreadCatchup` callbacks wired to confirmed relay contract
+- `sendThreadNote(body)` method on GameSocket; `toggleThreadDrawer(gameId)` + `_threadSend(gameId)` exposed on `window`
+- Thread button + drawer gated on `_circadian === 'PRIME'` in `buildCardHTML`; append-only render, scroll preserved
+- 4 GAME-THREAD smoke assertions; SW_VERSION: 2026-07-19c → 2026-07-19d
+- **TASK 6 VERIFIED LIVE:** Two headless browser sessions, same game card (`g1`), Tab 1 sent note, Tab 2 received via `thread_catchup` WS, <2s latency. 100/100 confidence.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-19, stats-tab (supersedes previous)
 
 **HEAD:** 4469111
