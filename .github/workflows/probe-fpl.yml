@@ -7,6 +7,64 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
+      - name: Probe pulse_id endpoints
+        run: |
+          PULSE_ID=125161
+          echo "=== pulse base — /api/football/fixtures/${PULSE_ID} ==="
+          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}" \
+            -H "Origin: https://www.premierleague.com" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log('top keys:', Object.keys(d));
+            console.log('full:', JSON.stringify(d, null, 2).slice(0, 4000));
+          " 2>&1 || echo "FAILED: base fixture"
+
+          echo ""
+          echo "=== pulse events — /api/football/fixtures/${PULSE_ID}/textstream/EN ==="
+          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/textstream/EN" \
+            -H "Origin: https://www.premierleague.com" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log('top keys:', Object.keys(d));
+            const events = d.events || d.content || d.entries || d.items || [];
+            console.log('event count:', Array.isArray(events) ? events.length : 'not array');
+            console.log('first event:', JSON.stringify(events[0], null, 2));
+            console.log('second event:', JSON.stringify(events[1], null, 2));
+          " 2>&1 || echo "FAILED: textstream"
+
+          echo ""
+          echo "=== pulse stats — /api/football/fixtures/${PULSE_ID}/stats ==="
+          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/stats" \
+            -H "Origin: https://www.premierleague.com" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log('top keys:', Object.keys(d));
+            console.log('full:', JSON.stringify(d, null, 2).slice(0, 3000));
+          " 2>&1 || echo "FAILED: stats"
+
+          echo ""
+          echo "=== pulse lineups — /api/football/fixtures/${PULSE_ID}/lineups ==="
+          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/lineups" \
+            -H "Origin: https://www.premierleague.com" | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log('top keys:', Object.keys(d));
+            console.log('full:', JSON.stringify(d, null, 2).slice(0, 3000));
+          " 2>&1 || echo "FAILED: lineups"
+
+          echo ""
+          echo "=== PL API direct — /football/fixtures/${PULSE_ID} ==="
+          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}" \
+            -H "Origin: https://www.premierleague.com" \
+            -H "Referer: https://www.premierleague.com/" | node -e "
+            const raw = require('fs').readFileSync('/dev/stdin','utf8');
+            console.log('raw (first 2000):', raw.slice(0, 2000));
+          " 2>&1 || echo "FAILED"
+
+          echo ""
+          echo "=== PL match facts — /api/football/fixtures/${PULSE_ID}/matchfacts ==="
+          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/matchfacts" \
+            -H "Origin: https://www.premierleague.com" | node -e "
+            const raw = require('fs').readFileSync('/dev/stdin','utf8');
+            console.log('raw (first 3000):', raw.slice(0, 3000));
+          " 2>&1 || echo "FAILED: matchfacts"
+
       - name: Bootstrap static
         run: |
           echo "=== /api/bootstrap-static/ top-level keys ==="
