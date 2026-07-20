@@ -1,5 +1,5 @@
 {
-  "updated": "20260713T131019Z",
+  "updated": "20260720T125827Z",
   "data": {
     "gausman": {
       "team": "TOR",
@@ -34,9 +34,26 @@
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.464,
-          "whiffRate": 0.12,
+          "usage": 0.465,
+          "whiffRate": 0.122,
           "runValuePer100": -0.4
+        }
+      ]
+    },
+    "singer": {
+      "team": "CIN",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.476,
+          "whiffRate": 0.149,
+          "runValuePer100": -0.2
+        },
+        {
+          "type": "Slider",
+          "usage": 0.285,
+          "whiffRate": 0.34,
+          "runValuePer100": -0.2
         }
       ]
     },
@@ -54,17 +71,6 @@
           "usage": 0.212,
           "whiffRate": 0.27,
           "runValuePer100": -1.2
-        }
-      ]
-    },
-    "singer": {
-      "team": "CIN",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.479,
-          "whiffRate": 0.143,
-          "runValuePer100": -0.6
         }
       ]
     },
@@ -107,15 +113,32 @@
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.458,
-          "whiffRate": 0.115,
-          "runValuePer100": 0.7
+          "usage": 0.459,
+          "whiffRate": 0.118,
+          "runValuePer100": 0.8
         },
         {
           "type": "Curveball",
           "usage": 0.278,
           "whiffRate": 0.314,
           "runValuePer100": -0.7
+        }
+      ]
+    },
+    "bradley": {
+      "team": "MIN",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.474,
+          "whiffRate": 0.141,
+          "runValuePer100": 0.5
+        },
+        {
+          "type": "Cutter",
+          "usage": 0.242,
+          "whiffRate": 0.386,
+          "runValuePer100": 0.6
         }
       ]
     },
@@ -130,37 +153,31 @@
         }
       ]
     },
-    "bradley": {
-      "team": "MIN",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.476,
-          "whiffRate": 0.142,
-          "runValuePer100": 0.9
-        },
-        {
-          "type": "Cutter",
-          "usage": 0.238,
-          "whiffRate": 0.39,
-          "runValuePer100": 0.7
-        }
-      ]
-    },
     "detmers": {
       "team": "LAA",
       "pitches": [
         {
           "type": "4-Seam Fastball",
           "usage": 0.448,
-          "whiffRate": 0.226,
-          "runValuePer100": -0.3
+          "whiffRate": 0.225,
+          "runValuePer100": -0.1
         },
         {
           "type": "Slider",
-          "usage": 0.323,
-          "whiffRate": 0.347,
+          "usage": 0.328,
+          "whiffRate": 0.353,
           "runValuePer100": 2.0
+        }
+      ]
+    },
+    "gore": {
+      "team": "TEX",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.45,
+          "whiffRate": 0.23,
+          "runValuePer100": 1.0
         }
       ]
     },
@@ -172,6 +189,17 @@
           "usage": 0.455,
           "whiffRate": 0.272,
           "runValuePer100": 1.1
+        }
+      ]
+    },
+    "woo": {
+      "team": "SEA",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.478,
+          "whiffRate": 0.262,
+          "runValuePer100": 1.0
         }
       ]
     },
@@ -192,14 +220,37 @@
         }
       ]
     },
-    "gore": {
-      "team": "TEX",
+    "p\u00e9rez": {
+      "team": "MIA",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.449,
-          "whiffRate": 0.231,
-          "runValuePer100": 0.9
+          "usage": 0.43,
+          "whiffRate": 0.236,
+          "runValuePer100": 0.8
+        },
+        {
+          "type": "Sinker",
+          "usage": 0.328,
+          "whiffRate": 0.088,
+          "runValuePer100": 0.6
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.304,
+          "whiffRate": 0.316,
+          "runValuePer100": 0.6
+        }
+      ]
+    },
+    "eovaldi": {
+      "team": "TEX",
+      "pitches": [
+        {
+          "type": "Split-Finger",
+          "usage": 0.37,
+          "whiffRate": 0.35,
+          "runValuePer100": 1.7
         }
       ]
     },
@@ -243,6 +294,17 @@
         }
       ]
     },
+    "mclean": {
+      "team": "NYM",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.337,
+          "whiffRate": 0.149,
+          "runValuePer100": 3.2
+        }
+      ]
+    },
     "chandler": {
       "team": "PIT",
       "pitches": [
@@ -251,6 +313,51 @@
           "usage": 0.479,
           "whiffRate": 0.204,
           "runValuePer100": -0.1
+        }
+      ]
+    },
+    "schlittler": {
+      "team": "NYY",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.446,
+          "whiffRate": 0.348,
+          "runValuePer100": 1.5
+        },
+        {
+          "type": "Cutter",
+          "usage": 0.266,
+          "whiffRate": 0.215,
+          "runValuePer100": 0.2
+        },
+        {
+          "type": "Sinker",
+          "usage": 0.2,
+          "whiffRate": 0.166,
+          "runValuePer100": 1.3
+        }
+      ]
+    },
+    "skenes": {
+      "team": "PIT",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.41,
+          "whiffRate": 0.296,
+          "runValuePer100": 1.5
+        }
+      ]
+    },
+    "burke": {
+      "team": "CWS",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.373,
+          "whiffRate": 0.256,
+          "runValuePer100": 1.2
         }
       ]
     },
@@ -265,82 +372,14 @@
         }
       ]
     },
-    "woo": {
-      "team": "SEA",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.481,
-          "whiffRate": 0.26,
-          "runValuePer100": 1.2
-        }
-      ]
-    },
-    "p\u00e9rez": {
-      "team": "MIA",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.442,
-          "whiffRate": 0.234,
-          "runValuePer100": 0.8
-        },
-        {
-          "type": "Sinker",
-          "usage": 0.328,
-          "whiffRate": 0.088,
-          "runValuePer100": 0.6
-        },
-        {
-          "type": "Changeup",
-          "usage": 0.304,
-          "whiffRate": 0.316,
-          "runValuePer100": 0.6
-        }
-      ]
-    },
-    "eovaldi": {
-      "team": "TEX",
-      "pitches": [
-        {
-          "type": "Split-Finger",
-          "usage": 0.367,
-          "whiffRate": 0.351,
-          "runValuePer100": 1.7
-        }
-      ]
-    },
-    "mclean": {
-      "team": "NYM",
+    "mcdonald": {
+      "team": "SF",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.337,
-          "whiffRate": 0.155,
-          "runValuePer100": 3.1
-        }
-      ]
-    },
-    "schlittler": {
-      "team": "NYY",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.448,
-          "whiffRate": 0.332,
-          "runValuePer100": 1.6
-        },
-        {
-          "type": "Cutter",
-          "usage": 0.27,
-          "whiffRate": 0.217,
-          "runValuePer100": 0.2
-        },
-        {
-          "type": "Sinker",
-          "usage": 0.197,
-          "whiffRate": 0.18,
-          "runValuePer100": 1.6
+          "usage": 0.571,
+          "whiffRate": 0.1,
+          "runValuePer100": 1.1
         }
       ]
     },
@@ -367,36 +406,65 @@
         }
       ]
     },
-    "burke": {
-      "team": "CWS",
+    "rea": {
+      "team": "CHC",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.376,
-          "whiffRate": 0.259,
-          "runValuePer100": 1.0
+          "usage": 0.426,
+          "whiffRate": 0.147,
+          "runValuePer100": -0.7
         }
       ]
     },
-    "mcdonald": {
+    "imanaga": {
+      "team": "CHC",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.406,
+          "whiffRate": 0.204,
+          "runValuePer100": -0.3
+        },
+        {
+          "type": "Split-Finger",
+          "usage": 0.337,
+          "whiffRate": 0.408,
+          "runValuePer100": 0.7
+        }
+      ]
+    },
+    "meyer": {
+      "team": "MIA",
+      "pitches": [
+        {
+          "type": "Sweeper",
+          "usage": 0.3,
+          "whiffRate": 0.357,
+          "runValuePer100": 0.8
+        },
+        {
+          "type": "Slider",
+          "usage": 0.26,
+          "whiffRate": 0.396,
+          "runValuePer100": 1.8
+        },
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.24,
+          "whiffRate": 0.125,
+          "runValuePer100": -0.7
+        }
+      ]
+    },
+    "houser": {
       "team": "SF",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.571,
-          "whiffRate": 0.1,
-          "runValuePer100": 1.1
-        }
-      ]
-    },
-    "skenes": {
-      "team": "PIT",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.4,
-          "whiffRate": 0.288,
-          "runValuePer100": 1.5
+          "usage": 0.455,
+          "whiffRate": 0.101,
+          "runValuePer100": -0.1
         }
       ]
     },
@@ -407,18 +475,24 @@
           "type": "4-Seam Fastball",
           "usage": 0.443,
           "whiffRate": 0.272,
-          "runValuePer100": -0.8
+          "runValuePer100": -0.9
         }
       ]
     },
-    "rea": {
-      "team": "CHC",
+    "sale": {
+      "team": "ATL",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.423,
-          "whiffRate": 0.15,
-          "runValuePer100": -0.9
+          "usage": 0.407,
+          "whiffRate": 0.256,
+          "runValuePer100": 0.6
+        },
+        {
+          "type": "Slider",
+          "usage": 0.391,
+          "whiffRate": 0.373,
+          "runValuePer100": 1.3
         }
       ]
     },
@@ -444,55 +518,55 @@
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.397,
-          "whiffRate": 0.22,
+          "usage": 0.536,
+          "whiffRate": 0.149,
+          "runValuePer100": -2.1
+        },
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.395,
+          "whiffRate": 0.216,
+          "runValuePer100": 1.5
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.269,
+          "whiffRate": 0.218,
+          "runValuePer100": 0.6
+        }
+      ]
+    },
+    "yesavage": {
+      "team": "TOR",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.471,
+          "whiffRate": 0.205,
+          "runValuePer100": 0.8
+        }
+      ]
+    },
+    "alcantara": {
+      "team": "MIA",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.255,
+          "whiffRate": 0.114,
           "runValuePer100": 1.6
         },
         {
           "type": "Changeup",
-          "usage": 0.27,
-          "whiffRate": 0.217,
-          "runValuePer100": 0.9
-        }
-      ]
-    },
-    "meyer": {
-      "team": "MIA",
-      "pitches": [
-        {
-          "type": "Sweeper",
-          "usage": 0.304,
-          "whiffRate": 0.347,
-          "runValuePer100": 0.7
-        },
-        {
-          "type": "Slider",
-          "usage": 0.255,
-          "whiffRate": 0.41,
-          "runValuePer100": 2.1
+          "usage": 0.21,
+          "whiffRate": 0.297,
+          "runValuePer100": -1.1
         },
         {
           "type": "4-Seam Fastball",
-          "usage": 0.237,
-          "whiffRate": 0.114,
-          "runValuePer100": -0.8
-        }
-      ]
-    },
-    "imanaga": {
-      "team": "CHC",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.413,
-          "whiffRate": 0.202,
-          "runValuePer100": -0.5
-        },
-        {
-          "type": "Split-Finger",
-          "usage": 0.335,
-          "whiffRate": 0.414,
-          "runValuePer100": 0.6
+          "usage": 0.191,
+          "whiffRate": 0.205,
+          "runValuePer100": -0.3
         }
       ]
     },
@@ -501,37 +575,72 @@
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.36,
-          "whiffRate": 0.193,
-          "runValuePer100": 0.1
-        }
-      ]
-    },
-    "sale": {
-      "team": "ATL",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.4,
-          "whiffRate": 0.253,
-          "runValuePer100": 0.4
+          "usage": 0.349,
+          "whiffRate": 0.204,
+          "runValuePer100": 0.2
         },
         {
           "type": "Slider",
-          "usage": 0.394,
-          "whiffRate": 0.377,
-          "runValuePer100": 1.1
+          "usage": 0.262,
+          "whiffRate": 0.347,
+          "runValuePer100": -0.5
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.17,
+          "whiffRate": 0.236,
+          "runValuePer100": 1.6
         }
       ]
     },
-    "houser": {
-      "team": "SF",
+    "sasaki": {
+      "team": "LAD",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.432,
+          "whiffRate": 0.199,
+          "runValuePer100": -1.3
+        },
+        {
+          "type": "Split-Finger",
+          "usage": 0.353,
+          "whiffRate": 0.337,
+          "runValuePer100": -0.4
+        }
+      ]
+    },
+    "ginn": {
+      "team": "ATH",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.451,
-          "whiffRate": 0.096,
-          "runValuePer100": -0.2
+          "usage": 0.334,
+          "whiffRate": 0.23,
+          "runValuePer100": 1.5
+        }
+      ]
+    },
+    "rogers": {
+      "team": "BAL",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.779,
+          "whiffRate": 0.117,
+          "runValuePer100": 2.6
+        },
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.45,
+          "whiffRate": 0.235,
+          "runValuePer100": 0.3
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.224,
+          "whiffRate": 0.236,
+          "runValuePer100": -0.7
         }
       ]
     },
@@ -546,31 +655,26 @@
         }
       ]
     },
-    "ginn": {
-      "team": "ATH",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.346,
-          "whiffRate": 0.229,
-          "runValuePer100": 1.5
-        }
-      ]
-    },
-    "degrom": {
-      "team": "TEX",
+    "king": {
+      "team": "SD",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.421,
-          "whiffRate": 0.255,
-          "runValuePer100": 0.3
+          "usage": 0.592,
+          "whiffRate": 0.177,
+          "runValuePer100": 0.6
         },
         {
-          "type": "Slider",
-          "usage": 0.361,
-          "whiffRate": 0.407,
-          "runValuePer100": 2.6
+          "type": "Sinker",
+          "usage": 0.29,
+          "whiffRate": 0.172,
+          "runValuePer100": -0.3
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.274,
+          "whiffRate": 0.283,
+          "runValuePer100": 1.6
         }
       ]
     },
@@ -591,26 +695,42 @@
         }
       ]
     },
-    "alcantara": {
-      "team": "MIA",
+    "degrom": {
+      "team": "TEX",
       "pitches": [
         {
-          "type": "Sinker",
-          "usage": 0.253,
-          "whiffRate": 0.104,
-          "runValuePer100": 1.4
-        },
-        {
-          "type": "Changeup",
-          "usage": 0.214,
-          "whiffRate": 0.303,
-          "runValuePer100": -1.0
-        },
-        {
           "type": "4-Seam Fastball",
-          "usage": 0.189,
-          "whiffRate": 0.202,
-          "runValuePer100": -0.5
+          "usage": 0.421,
+          "whiffRate": 0.255,
+          "runValuePer100": 0.3
+        },
+        {
+          "type": "Slider",
+          "usage": 0.361,
+          "whiffRate": 0.407,
+          "runValuePer100": 2.6
+        }
+      ]
+    },
+    "griffin": {
+      "team": "WSH",
+      "pitches": [
+        {
+          "type": "Cutter",
+          "usage": 0.327,
+          "whiffRate": 0.219,
+          "runValuePer100": 2.0
+        }
+      ]
+    },
+    "nola": {
+      "team": "PHI",
+      "pitches": [
+        {
+          "type": "Curveball",
+          "usage": 0.343,
+          "whiffRate": 0.41,
+          "runValuePer100": 1.3
         }
       ]
     },
@@ -631,6 +751,34 @@
         }
       ]
     },
+    "tolle": {
+      "team": "BOS",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.485,
+          "whiffRate": 0.296,
+          "runValuePer100": 0.8
+        }
+      ]
+    },
+    "gilbert": {
+      "team": "SEA",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.395,
+          "whiffRate": 0.247,
+          "runValuePer100": 1.2
+        },
+        {
+          "type": "Slider",
+          "usage": 0.236,
+          "whiffRate": 0.371,
+          "runValuePer100": 1.8
+        }
+      ]
+    },
     "messick": {
       "team": "CLE",
       "pitches": [
@@ -645,34 +793,6 @@
           "usage": 0.237,
           "whiffRate": 0.371,
           "runValuePer100": -0.5
-        }
-      ]
-    },
-    "sasaki": {
-      "team": "LAD",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.432,
-          "whiffRate": 0.194,
-          "runValuePer100": -1.5
-        },
-        {
-          "type": "Split-Finger",
-          "usage": 0.354,
-          "whiffRate": 0.338,
-          "runValuePer100": -0.5
-        }
-      ]
-    },
-    "tolle": {
-      "team": "BOS",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.485,
-          "whiffRate": 0.296,
-          "runValuePer100": 0.8
         }
       ]
     },
@@ -693,20 +813,26 @@
         }
       ]
     },
-    "gallen": {
-      "team": "AZ",
+    "holmes": {
+      "team": "ATL",
       "pitches": [
         {
-          "type": "4-Seam Fastball",
-          "usage": 0.37,
-          "whiffRate": 0.066,
-          "runValuePer100": -1.0
+          "type": "Sinker",
+          "usage": 0.505,
+          "whiffRate": 0.13,
+          "runValuePer100": 1.6
         },
         {
           "type": "Slider",
-          "usage": 0.216,
-          "whiffRate": 0.297,
-          "runValuePer100": -2.1
+          "usage": 0.369,
+          "whiffRate": 0.398,
+          "runValuePer100": 0.2
+        },
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.311,
+          "whiffRate": 0.158,
+          "runValuePer100": 0.0
         }
       ]
     },
@@ -727,83 +853,20 @@
         }
       ]
     },
-    "yesavage": {
-      "team": "TOR",
+    "gallen": {
+      "team": "AZ",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.458,
-          "whiffRate": 0.187,
-          "runValuePer100": 0.7
-        }
-      ]
-    },
-    "king": {
-      "team": "SD",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.604,
-          "whiffRate": 0.177,
-          "runValuePer100": 1.0
-        },
-        {
-          "type": "Sinker",
-          "usage": 0.293,
-          "whiffRate": 0.179,
-          "runValuePer100": 0.0
-        },
-        {
-          "type": "Changeup",
-          "usage": 0.273,
-          "whiffRate": 0.288,
-          "runValuePer100": 1.7
-        }
-      ]
-    },
-    "holmes": {
-      "team": "ATL",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.505,
-          "whiffRate": 0.13,
-          "runValuePer100": 1.6
+          "usage": 0.37,
+          "whiffRate": 0.066,
+          "runValuePer100": -1.0
         },
         {
           "type": "Slider",
-          "usage": 0.374,
-          "whiffRate": 0.398,
-          "runValuePer100": 0.3
-        },
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.321,
-          "whiffRate": 0.161,
-          "runValuePer100": 0.1
-        }
-      ]
-    },
-    "cantillo": {
-      "team": "CLE",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.358,
-          "whiffRate": 0.142,
-          "runValuePer100": -1.2
-        },
-        {
-          "type": "Changeup",
-          "usage": 0.271,
-          "whiffRate": 0.415,
-          "runValuePer100": 0.5
-        },
-        {
-          "type": "Curveball",
-          "usage": 0.257,
-          "whiffRate": 0.381,
-          "runValuePer100": 0.9
+          "usage": 0.216,
+          "whiffRate": 0.297,
+          "runValuePer100": -2.1
         }
       ]
     },
@@ -812,71 +875,15 @@
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.313,
-          "whiffRate": 0.101,
+          "usage": 0.304,
+          "whiffRate": 0.099,
           "runValuePer100": 2.1
         },
         {
           "type": "Changeup",
-          "usage": 0.242,
-          "whiffRate": 0.283,
+          "usage": 0.249,
+          "whiffRate": 0.286,
           "runValuePer100": -0.4
-        }
-      ]
-    },
-    "rogers": {
-      "team": "BAL",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.778,
-          "whiffRate": 0.115,
-          "runValuePer100": 2.6
-        },
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.443,
-          "whiffRate": 0.232,
-          "runValuePer100": 0.3
-        }
-      ]
-    },
-    "nola": {
-      "team": "PHI",
-      "pitches": [
-        {
-          "type": "Curveball",
-          "usage": 0.34,
-          "whiffRate": 0.398,
-          "runValuePer100": 1.1
-        }
-      ]
-    },
-    "griffin": {
-      "team": "WSH",
-      "pitches": [
-        {
-          "type": "Cutter",
-          "usage": 0.323,
-          "whiffRate": 0.226,
-          "runValuePer100": 2.3
-        }
-      ]
-    },
-    "roupp": {
-      "team": "SF",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.364,
-          "whiffRate": 0.102,
-          "runValuePer100": 0.3
-        },
-        {
-          "type": "Curveball",
-          "usage": 0.257,
-          "whiffRate": 0.354,
-          "runValuePer100": 1.1
         }
       ]
     },
@@ -885,32 +892,72 @@
       "pitches": [
         {
           "type": "Sweeper",
-          "usage": 0.371,
-          "whiffRate": 0.509,
-          "runValuePer100": 1.5
+          "usage": 0.374,
+          "whiffRate": 0.502,
+          "runValuePer100": 1.7
         },
         {
           "type": "4-Seam Fastball",
-          "usage": 0.252,
-          "whiffRate": 0.17,
-          "runValuePer100": -0.9
+          "usage": 0.249,
+          "whiffRate": 0.171,
+          "runValuePer100": -0.8
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.198,
+          "whiffRate": 0.39,
+          "runValuePer100": 0.3
         }
       ]
     },
-    "gilbert": {
-      "team": "SEA",
+    "cantillo": {
+      "team": "CLE",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.393,
-          "whiffRate": 0.245,
-          "runValuePer100": 1.4
+          "usage": 0.353,
+          "whiffRate": 0.139,
+          "runValuePer100": -1.4
         },
         {
-          "type": "Slider",
-          "usage": 0.232,
-          "whiffRate": 0.369,
-          "runValuePer100": 1.8
+          "type": "Changeup",
+          "usage": 0.27,
+          "whiffRate": 0.418,
+          "runValuePer100": 0.4
+        },
+        {
+          "type": "Curveball",
+          "usage": 0.263,
+          "whiffRate": 0.389,
+          "runValuePer100": 1.0
+        }
+      ]
+    },
+    "roupp": {
+      "team": "SF",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.358,
+          "whiffRate": 0.099,
+          "runValuePer100": 0.3
+        },
+        {
+          "type": "Curveball",
+          "usage": 0.258,
+          "whiffRate": 0.346,
+          "runValuePer100": 1.3
+        }
+      ]
+    },
+    "young": {
+      "team": "BAL",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.407,
+          "whiffRate": 0.22,
+          "runValuePer100": 1.7
         }
       ]
     },
@@ -920,14 +967,25 @@
         {
           "type": "4-Seam Fastball",
           "usage": 0.35,
-          "whiffRate": 0.224,
-          "runValuePer100": -0.4
+          "whiffRate": 0.225,
+          "runValuePer100": 0.0
         },
         {
           "type": "Curveball",
-          "usage": 0.277,
-          "whiffRate": 0.39,
+          "usage": 0.27,
+          "whiffRate": 0.401,
           "runValuePer100": 0.3
+        }
+      ]
+    },
+    "l\u00f3pez": {
+      "team": "ATL",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.55,
+          "whiffRate": 0.167,
+          "runValuePer100": 1.5
         }
       ]
     },
@@ -948,28 +1006,6 @@
         }
       ]
     },
-    "l\u00f3pez": {
-      "team": "ATL",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.55,
-          "whiffRate": 0.167,
-          "runValuePer100": 1.5
-        }
-      ]
-    },
-    "young": {
-      "team": "BAL",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.414,
-          "whiffRate": 0.219,
-          "runValuePer100": 1.6
-        }
-      ]
-    },
     "ashcraft": {
       "team": "PIT",
       "pitches": [
@@ -977,7 +1013,7 @@
           "type": "4-Seam Fastball",
           "usage": 0.316,
           "whiffRate": 0.175,
-          "runValuePer100": -0.3
+          "runValuePer100": -0.2
         },
         {
           "type": "Curveball",
@@ -990,17 +1026,6 @@
           "usage": 0.232,
           "whiffRate": 0.333,
           "runValuePer100": -0.4
-        }
-      ]
-    },
-    "rasmussen": {
-      "team": "TB",
-      "pitches": [
-        {
-          "type": "Cutter",
-          "usage": 0.313,
-          "whiffRate": 0.247,
-          "runValuePer100": 1.0
         }
       ]
     },
@@ -1018,6 +1043,57 @@
           "usage": 0.287,
           "whiffRate": 0.214,
           "runValuePer100": -0.2
+        }
+      ]
+    },
+    "rasmussen": {
+      "team": "TB",
+      "pitches": [
+        {
+          "type": "Cutter",
+          "usage": 0.313,
+          "whiffRate": 0.247,
+          "runValuePer100": 1.0
+        }
+      ]
+    },
+    "mcclanahan": {
+      "team": "TB",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.374,
+          "whiffRate": 0.184,
+          "runValuePer100": 0.1
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.293,
+          "whiffRate": 0.371,
+          "runValuePer100": 1.8
+        }
+      ]
+    },
+    "pallante": {
+      "team": "STL",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.31,
+          "whiffRate": 0.136,
+          "runValuePer100": 0.5
+        },
+        {
+          "type": "Slider",
+          "usage": 0.3,
+          "whiffRate": 0.292,
+          "runValuePer100": 1.8
+        },
+        {
+          "type": "Sinker",
+          "usage": 0.185,
+          "whiffRate": 0.121,
+          "runValuePer100": -0.1
         }
       ]
     },
@@ -1072,6 +1148,17 @@
         }
       ]
     },
+    "okert": {
+      "team": "HOU",
+      "pitches": [
+        {
+          "type": "Slider",
+          "usage": 0.679,
+          "whiffRate": 0.35,
+          "runValuePer100": 1.8
+        }
+      ]
+    },
     "peterson": {
       "team": "CHC",
       "pitches": [
@@ -1079,7 +1166,7 @@
           "type": "Sinker",
           "usage": 0.29,
           "whiffRate": 0.118,
-          "runValuePer100": -0.8
+          "runValuePer100": -0.7
         }
       ]
     },
@@ -1091,6 +1178,17 @@
           "usage": 0.417,
           "whiffRate": 0.157,
           "runValuePer100": -0.1
+        }
+      ]
+    },
+    "blubaugh": {
+      "team": "HOU",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.506,
+          "whiffRate": 0.211,
+          "runValuePer100": 0.5
         }
       ]
     },
@@ -1111,31 +1209,14 @@
         }
       ]
     },
-    "okert": {
-      "team": "HOU",
-      "pitches": [
-        {
-          "type": "Slider",
-          "usage": 0.678,
-          "whiffRate": 0.342,
-          "runValuePer100": 1.8
-        }
-      ]
-    },
-    "martinez": {
-      "team": "TB",
+    "ferrer": {
+      "team": "SEA",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.305,
-          "whiffRate": 0.078,
-          "runValuePer100": 1.3
-        },
-        {
-          "type": "Changeup",
-          "usage": 0.28,
-          "whiffRate": 0.349,
-          "runValuePer100": 1.6
+          "usage": 0.715,
+          "whiffRate": 0.155,
+          "runValuePer100": 0.9
         }
       ]
     },
@@ -1156,31 +1237,20 @@
         }
       ]
     },
-    "blubaugh": {
-      "team": "HOU",
+    "martinez": {
+      "team": "TB",
       "pitches": [
         {
-          "type": "4-Seam Fastball",
-          "usage": 0.508,
-          "whiffRate": 0.211,
-          "runValuePer100": 0.3
-        }
-      ]
-    },
-    "pallante": {
-      "team": "STL",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
+          "type": "Sinker",
           "usage": 0.305,
-          "whiffRate": 0.137,
-          "runValuePer100": 0.5
+          "whiffRate": 0.078,
+          "runValuePer100": 1.3
         },
         {
-          "type": "Slider",
-          "usage": 0.304,
-          "whiffRate": 0.298,
-          "runValuePer100": 2.0
+          "type": "Changeup",
+          "usage": 0.28,
+          "whiffRate": 0.349,
+          "runValuePer100": 1.6
         }
       ]
     },
@@ -1201,23 +1271,6 @@
         }
       ]
     },
-    "mcclanahan": {
-      "team": "TB",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.371,
-          "whiffRate": 0.19,
-          "runValuePer100": 0.1
-        },
-        {
-          "type": "Changeup",
-          "usage": 0.293,
-          "whiffRate": 0.369,
-          "runValuePer100": 2.7
-        }
-      ]
-    },
     "sheehan": {
       "team": "LAD",
       "pitches": [
@@ -1225,7 +1278,7 @@
           "type": "4-Seam Fastball",
           "usage": 0.427,
           "whiffRate": 0.272,
-          "runValuePer100": -1.1
+          "runValuePer100": -1.2
         },
         {
           "type": "Slider",
@@ -1235,14 +1288,42 @@
         }
       ]
     },
-    "ferrer": {
-      "team": "SEA",
+    "arrighetti": {
+      "team": "HOU",
       "pitches": [
         {
-          "type": "Sinker",
-          "usage": 0.708,
-          "whiffRate": 0.16,
-          "runValuePer100": 0.9
+          "type": "Curveball",
+          "usage": 0.333,
+          "whiffRate": 0.394,
+          "runValuePer100": 0.0
+        }
+      ]
+    },
+    "yamamoto": {
+      "team": "LAD",
+      "pitches": [
+        {
+          "type": "Split-Finger",
+          "usage": 0.274,
+          "whiffRate": 0.322,
+          "runValuePer100": 1.6
+        },
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.266,
+          "whiffRate": 0.28,
+          "runValuePer100": 1.9
+        }
+      ]
+    },
+    "hudson": {
+      "team": "CWS",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.666,
+          "whiffRate": 0.238,
+          "runValuePer100": 1.0
         }
       ]
     },
@@ -1257,14 +1338,25 @@
         }
       ]
     },
-    "hudson": {
-      "team": "CWS",
+    "patrick": {
+      "team": "MIL",
+      "pitches": [
+        {
+          "type": "Cutter",
+          "usage": 0.423,
+          "whiffRate": 0.309,
+          "runValuePer100": 1.6
+        }
+      ]
+    },
+    "keller": {
+      "team": "PIT",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.669,
-          "whiffRate": 0.235,
-          "runValuePer100": 0.9
+          "usage": 0.314,
+          "whiffRate": 0.169,
+          "runValuePer100": 1.4
         }
       ]
     },
@@ -1279,14 +1371,14 @@
         }
       ]
     },
-    "keller": {
-      "team": "PIT",
+    "hill": {
+      "team": "NYY",
       "pitches": [
         {
-          "type": "4-Seam Fastball",
-          "usage": 0.314,
-          "whiffRate": 0.169,
-          "runValuePer100": 1.4
+          "type": "Sinker",
+          "usage": 0.796,
+          "whiffRate": 0.102,
+          "runValuePer100": 1.3
         }
       ]
     },
@@ -1324,6 +1416,29 @@
         }
       ]
     },
+    "kelly": {
+      "team": "AZ",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.596,
+          "whiffRate": 0.133,
+          "runValuePer100": 2.0
+        },
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.266,
+          "whiffRate": 0.137,
+          "runValuePer100": -2.3
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.257,
+          "whiffRate": 0.304,
+          "runValuePer100": 0.1
+        }
+      ]
+    },
     "kochanowicz": {
       "team": "LAA",
       "pitches": [
@@ -1335,14 +1450,14 @@
         }
       ]
     },
-    "arrighetti": {
-      "team": "HOU",
+    "ashby": {
+      "team": "MIL",
       "pitches": [
         {
-          "type": "Curveball",
-          "usage": 0.335,
-          "whiffRate": 0.391,
-          "runValuePer100": -0.1
+          "type": "Sinker",
+          "usage": 0.528,
+          "whiffRate": 0.152,
+          "runValuePer100": -0.3
         }
       ]
     },
@@ -1351,42 +1466,76 @@
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.577,
-          "whiffRate": 0.24,
+          "usage": 0.578,
+          "whiffRate": 0.241,
           "runValuePer100": 0.6
         }
       ]
     },
-    "patrick": {
-      "team": "MIL",
-      "pitches": [
-        {
-          "type": "Cutter",
-          "usage": 0.427,
-          "whiffRate": 0.317,
-          "runValuePer100": 1.7
-        }
-      ]
-    },
-    "early": {
-      "team": "BOS",
+    "lambert": {
+      "team": "HOU",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.351,
-          "whiffRate": 0.241,
-          "runValuePer100": 0.2
+          "usage": 0.313,
+          "whiffRate": 0.257,
+          "runValuePer100": 0.5
         }
       ]
     },
-    "hill": {
-      "team": "NYY",
+    "montero": {
+      "team": "DET",
       "pitches": [
         {
+          "type": "4-Seam Fastball",
+          "usage": 0.315,
+          "whiffRate": 0.134,
+          "runValuePer100": 1.9
+        },
+        {
           "type": "Sinker",
-          "usage": 0.792,
-          "whiffRate": 0.104,
-          "runValuePer100": 1.2
+          "usage": 0.23,
+          "whiffRate": 0.096,
+          "runValuePer100": 2.0
+        }
+      ]
+    },
+    "manaea": {
+      "team": "NYM",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.338,
+          "whiffRate": 0.192,
+          "runValuePer100": 0.9
+        },
+        {
+          "type": "Sweeper",
+          "usage": 0.321,
+          "whiffRate": 0.309,
+          "runValuePer100": -2.2
+        }
+      ]
+    },
+    "smith": {
+      "team": "CLE",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.617,
+          "whiffRate": 0.29,
+          "runValuePer100": -0.2
+        }
+      ]
+    },
+    "v\u00e1squez": {
+      "team": "SD",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.327,
+          "whiffRate": 0.214,
+          "runValuePer100": 1.0
         }
       ]
     },
@@ -1407,14 +1556,36 @@
         }
       ]
     },
-    "montero": {
-      "team": "DET",
+    "early": {
+      "team": "BOS",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.32,
-          "whiffRate": 0.123,
-          "runValuePer100": 2.0
+          "usage": 0.351,
+          "whiffRate": 0.241,
+          "runValuePer100": 0.2
+        }
+      ]
+    },
+    "scott": {
+      "team": "NYM",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.489,
+          "whiffRate": 0.269,
+          "runValuePer100": -0.2
+        }
+      ]
+    },
+    "bazardo": {
+      "team": "SEA",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.625,
+          "whiffRate": 0.145,
+          "runValuePer100": 1.2
         }
       ]
     },
@@ -1446,47 +1617,26 @@
         }
       ]
     },
-    "yamamoto": {
-      "team": "LAD",
-      "pitches": [
-        {
-          "type": "Split-Finger",
-          "usage": 0.271,
-          "whiffRate": 0.326,
-          "runValuePer100": 1.3
-        }
-      ]
-    },
-    "smith": {
+    "williams": {
       "team": "CLE",
       "pitches": [
         {
-          "type": "4-Seam Fastball",
-          "usage": 0.618,
-          "whiffRate": 0.282,
-          "runValuePer100": -0.3
-        }
-      ]
-    },
-    "manaea": {
-      "team": "NYM",
-      "pitches": [
+          "type": "Sweeper",
+          "usage": 0.262,
+          "whiffRate": 0.427,
+          "runValuePer100": -0.1
+        },
         {
           "type": "4-Seam Fastball",
-          "usage": 0.349,
-          "whiffRate": 0.189,
-          "runValuePer100": 1.0
-        }
-      ]
-    },
-    "kelly": {
-      "team": "AZ",
-      "pitches": [
+          "usage": 0.236,
+          "whiffRate": 0.311,
+          "runValuePer100": 0.3
+        },
         {
-          "type": "Changeup",
-          "usage": 0.257,
-          "whiffRate": 0.305,
-          "runValuePer100": 0.1
+          "type": "Curveball",
+          "usage": 0.224,
+          "whiffRate": 0.262,
+          "runValuePer100": -0.7
         }
       ]
     },
@@ -1501,25 +1651,31 @@
         }
       ]
     },
-    "ashby": {
-      "team": "MIL",
+    "teng": {
+      "team": "HOU",
       "pitches": [
         {
-          "type": "Sinker",
-          "usage": 0.523,
-          "whiffRate": 0.147,
-          "runValuePer100": -0.4
+          "type": "Sweeper",
+          "usage": 0.348,
+          "whiffRate": 0.298,
+          "runValuePer100": 0.9
         }
       ]
     },
-    "v\u00e1squez": {
-      "team": "SD",
+    "mcgreevy": {
+      "team": "STL",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.326,
-          "whiffRate": 0.215,
-          "runValuePer100": 0.9
+          "usage": 0.254,
+          "whiffRate": 0.133,
+          "runValuePer100": -0.1
+        },
+        {
+          "type": "Changeup",
+          "usage": 0.2,
+          "whiffRate": 0.259,
+          "runValuePer100": 0.6
         }
       ]
     },
@@ -1546,14 +1702,25 @@
         }
       ]
     },
-    "bazardo": {
-      "team": "SEA",
+    "ober": {
+      "team": "MIN",
       "pitches": [
         {
-          "type": "Sinker",
-          "usage": 0.627,
-          "whiffRate": 0.147,
-          "runValuePer100": 1.1
+          "type": "Changeup",
+          "usage": 0.361,
+          "whiffRate": 0.232,
+          "runValuePer100": -1.0
+        }
+      ]
+    },
+    "fuentes": {
+      "team": "ATL",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.695,
+          "whiffRate": 0.25,
+          "runValuePer100": 1.3
         }
       ]
     },
@@ -1585,42 +1752,53 @@
         }
       ]
     },
-    "williams": {
-      "team": "CLE",
+    "littell": {
+      "team": "WSH",
       "pitches": [
         {
-          "type": "Sweeper",
-          "usage": 0.267,
-          "whiffRate": 0.429,
-          "runValuePer100": 0.3
+          "type": "Slider",
+          "usage": 0.293,
+          "whiffRate": 0.21,
+          "runValuePer100": 0.7
         },
         {
-          "type": "Curveball",
-          "usage": 0.227,
-          "whiffRate": 0.276,
-          "runValuePer100": -0.2
+          "type": "4-Seam Fastball",
+          "usage": 0.274,
+          "whiffRate": 0.152,
+          "runValuePer100": -2.7
         }
       ]
     },
-    "scott": {
-      "team": "NYM",
+    "corbin": {
+      "team": "TOR",
       "pitches": [
         {
-          "type": "4-Seam Fastball",
-          "usage": 0.501,
-          "whiffRate": 0.261,
-          "runValuePer100": -0.4
+          "type": "Sinker",
+          "usage": 0.276,
+          "whiffRate": 0.088,
+          "runValuePer100": -1.3
         }
       ]
     },
-    "lambert": {
-      "team": "HOU",
+    "martin": {
+      "team": "CWS",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.314,
-          "whiffRate": 0.238,
-          "runValuePer100": 0.2
+          "usage": 0.26,
+          "whiffRate": 0.264,
+          "runValuePer100": -0.5
+        }
+      ]
+    },
+    "o'brien": {
+      "team": "STL",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.598,
+          "whiffRate": 0.185,
+          "runValuePer100": 0.7
         }
       ]
     },
@@ -1635,36 +1813,25 @@
         }
       ]
     },
-    "corbin": {
-      "team": "TOR",
+    "mayza": {
+      "team": "PHI",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.276,
-          "whiffRate": 0.09,
-          "runValuePer100": -1.3
+          "usage": 0.603,
+          "whiffRate": 0.198,
+          "runValuePer100": 2.0
         }
       ]
     },
-    "teng": {
-      "team": "HOU",
+    "mlodzinski": {
+      "team": "PIT",
       "pitches": [
         {
-          "type": "Sweeper",
-          "usage": 0.342,
-          "whiffRate": 0.289,
-          "runValuePer100": 0.8
-        }
-      ]
-    },
-    "civale": {
-      "team": "ATH",
-      "pitches": [
-        {
-          "type": "Cutter",
-          "usage": 0.353,
-          "whiffRate": 0.249,
-          "runValuePer100": 0.6
+          "type": "4-Seam Fastball",
+          "usage": 0.282,
+          "whiffRate": 0.158,
+          "runValuePer100": -0.9
         }
       ]
     },
@@ -1675,18 +1842,84 @@
           "type": "Sinker",
           "usage": 0.237,
           "whiffRate": 0.15,
-          "runValuePer100": 0.7
+          "runValuePer100": 0.6
         }
       ]
     },
-    "mlodzinski": {
-      "team": "PIT",
+    "boyd": {
+      "team": "CHC",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.281,
-          "whiffRate": 0.158,
-          "runValuePer100": -1.1
+          "usage": 0.467,
+          "whiffRate": 0.187,
+          "runValuePer100": -0.8
+        }
+      ]
+    },
+    "petersen": {
+      "team": "MIA",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.608,
+          "whiffRate": 0.279,
+          "runValuePer100": 2.3
+        }
+      ]
+    },
+    "lowder": {
+      "team": "CIN",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.3,
+          "whiffRate": 0.086,
+          "runValuePer100": 0.6
+        }
+      ]
+    },
+    "skubal": {
+      "team": "DET",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.371,
+          "whiffRate": 0.248,
+          "runValuePer100": 0.5
+        }
+      ]
+    },
+    "jump": {
+      "team": "ATH",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.486,
+          "whiffRate": 0.196,
+          "runValuePer100": 0.8
+        }
+      ]
+    },
+    "miles": {
+      "team": "TOR",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.412,
+          "whiffRate": 0.163,
+          "runValuePer100": 2.8
+        }
+      ]
+    },
+    "taylor": {
+      "team": "CWS",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.486,
+          "whiffRate": 0.297,
+          "runValuePer100": 1.2
         }
       ]
     },
@@ -1707,97 +1940,91 @@
         }
       ]
     },
-    "mcgreevy": {
-      "team": "STL",
+    "civale": {
+      "team": "ATH",
       "pitches": [
         {
-          "type": "4-Seam Fastball",
-          "usage": 0.255,
-          "whiffRate": 0.139,
-          "runValuePer100": 0.0
+          "type": "Cutter",
+          "usage": 0.352,
+          "whiffRate": 0.25,
+          "runValuePer100": 0.6
         }
       ]
     },
-    "taylor": {
-      "team": "CWS",
+    "mejia": {
+      "team": "COL",
       "pitches": [
         {
           "type": "4-Seam Fastball",
           "usage": 0.492,
-          "whiffRate": 0.297,
-          "runValuePer100": 1.2
+          "whiffRate": 0.205,
+          "runValuePer100": -0.7
         }
       ]
     },
-    "o'brien": {
-      "team": "STL",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.594,
-          "whiffRate": 0.184,
-          "runValuePer100": 0.9
-        }
-      ]
-    },
-    "fuentes": {
-      "team": "ATL",
+    "anderson": {
+      "team": "DET",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.688,
-          "whiffRate": 0.245,
-          "runValuePer100": 1.1
+          "usage": 0.401,
+          "whiffRate": 0.214,
+          "runValuePer100": 1.7
         }
       ]
     },
-    "martin": {
+    "cameron": {
+      "team": "KC",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.277,
+          "whiffRate": 0.172,
+          "runValuePer100": -0.4
+        }
+      ]
+    },
+    "kay": {
       "team": "CWS",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.262,
-          "whiffRate": 0.264,
-          "runValuePer100": -0.8
+          "usage": 0.233,
+          "whiffRate": 0.181,
+          "runValuePer100": -0.4
         }
       ]
     },
-    "littell": {
-      "team": "WSH",
+    "mattson": {
+      "team": "PIT",
       "pitches": [
-        {
-          "type": "Slider",
-          "usage": 0.294,
-          "whiffRate": 0.217,
-          "runValuePer100": 1.1
-        },
         {
           "type": "4-Seam Fastball",
-          "usage": 0.282,
-          "whiffRate": 0.157,
-          "runValuePer100": -2.1
+          "usage": 0.727,
+          "whiffRate": 0.206,
+          "runValuePer100": 1.3
         }
       ]
     },
-    "ober": {
-      "team": "MIN",
+    "miller": {
+      "team": "SEA",
       "pitches": [
         {
-          "type": "Changeup",
-          "usage": 0.365,
-          "whiffRate": 0.232,
-          "runValuePer100": -0.9
+          "type": "4-Seam Fastball",
+          "usage": 0.44,
+          "whiffRate": 0.257,
+          "runValuePer100": 1.4
         }
       ]
     },
-    "mayza": {
-      "team": "PHI",
+    "may": {
+      "team": "STL",
       "pitches": [
         {
-          "type": "Sinker",
-          "usage": 0.603,
-          "whiffRate": 0.204,
-          "runValuePer100": 2.2
+          "type": "4-Seam Fastball",
+          "usage": 0.268,
+          "whiffRate": 0.191,
+          "runValuePer100": 0.7
         }
       ]
     },
@@ -1812,25 +2039,14 @@
         }
       ]
     },
-    "anderson": {
-      "team": "DET",
+    "richards": {
+      "team": "CWS",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.403,
-          "whiffRate": 0.213,
-          "runValuePer100": 1.9
-        }
-      ]
-    },
-    "mejia": {
-      "team": "COL",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.485,
-          "whiffRate": 0.205,
-          "runValuePer100": -0.5
+          "usage": 0.628,
+          "whiffRate": 0.112,
+          "runValuePer100": 1.1
         }
       ]
     },
@@ -1845,25 +2061,25 @@
         }
       ]
     },
-    "petersen": {
-      "team": "MIA",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.604,
-          "whiffRate": 0.282,
-          "runValuePer100": 2.2
-        }
-      ]
-    },
-    "lowder": {
-      "team": "CIN",
+    "uribe": {
+      "team": "MIL",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.298,
-          "whiffRate": 0.08,
-          "runValuePer100": 1.0
+          "usage": 0.66,
+          "whiffRate": 0.212,
+          "runValuePer100": 1.7
+        }
+      ]
+    },
+    "headrick": {
+      "team": "NYY",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.481,
+          "whiffRate": 0.223,
+          "runValuePer100": 2.8
         }
       ]
     },
@@ -1878,25 +2094,36 @@
         }
       ]
     },
-    "headrick": {
-      "team": "NYY",
+    "latz": {
+      "team": "TEX",
       "pitches": [
         {
           "type": "4-Seam Fastball",
-          "usage": 0.488,
-          "whiffRate": 0.221,
-          "runValuePer100": 2.7
+          "usage": 0.542,
+          "whiffRate": 0.213,
+          "runValuePer100": 3.5
         }
       ]
     },
-    "matz": {
-      "team": "TB",
+    "svanson": {
+      "team": "STL",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.484,
-          "whiffRate": 0.192,
-          "runValuePer100": -2.0
+          "usage": 0.45,
+          "whiffRate": 0.13,
+          "runValuePer100": -0.9
+        }
+      ]
+    },
+    "gray": {
+      "team": "BOS",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.202,
+          "whiffRate": 0.165,
+          "runValuePer100": 2.9
         }
       ]
     },
@@ -1905,9 +2132,42 @@
       "pitches": [
         {
           "type": "Slider",
-          "usage": 0.527,
-          "whiffRate": 0.399,
-          "runValuePer100": 2.0
+          "usage": 0.518,
+          "whiffRate": 0.392,
+          "runValuePer100": 2.1
+        }
+      ]
+    },
+    "bruihl": {
+      "team": "STL",
+      "pitches": [
+        {
+          "type": "Sinker",
+          "usage": 0.455,
+          "whiffRate": 0.088,
+          "runValuePer100": 1.0
+        }
+      ]
+    },
+    "gordon": {
+      "team": "COL",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.394,
+          "whiffRate": 0.249,
+          "runValuePer100": -0.7
+        }
+      ]
+    },
+    "cole": {
+      "team": "NYY",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.449,
+          "whiffRate": 0.187,
+          "runValuePer100": 1.0
         }
       ]
     },
@@ -1922,25 +2182,47 @@
         }
       ]
     },
-    "svanson": {
-      "team": "STL",
+    "matz": {
+      "team": "TB",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.453,
-          "whiffRate": 0.131,
-          "runValuePer100": -1.1
+          "usage": 0.484,
+          "whiffRate": 0.192,
+          "runValuePer100": -2.0
         }
       ]
     },
-    "uribe": {
-      "team": "MIL",
+    "fisher": {
+      "team": "TOR",
+      "pitches": [
+        {
+          "type": "Slider",
+          "usage": 0.496,
+          "whiffRate": 0.307,
+          "runValuePer100": 0.4
+        }
+      ]
+    },
+    "lugo": {
+      "team": "KC",
       "pitches": [
         {
           "type": "Sinker",
-          "usage": 0.664,
-          "whiffRate": 0.215,
-          "runValuePer100": 1.9
+          "usage": 0.198,
+          "whiffRate": 0.128,
+          "runValuePer100": -0.3
+        }
+      ]
+    },
+    "matthews": {
+      "team": "MIN",
+      "pitches": [
+        {
+          "type": "4-Seam Fastball",
+          "usage": 0.376,
+          "whiffRate": 0.13,
+          "runValuePer100": -0.1
         }
       ]
     },
@@ -1955,80 +2237,14 @@
         }
       ]
     },
-    "kay": {
-      "team": "CWS",
+    "kinley": {
+      "team": "ATL",
       "pitches": [
         {
-          "type": "4-Seam Fastball",
-          "usage": 0.234,
-          "whiffRate": 0.172,
-          "runValuePer100": -0.5
-        }
-      ]
-    },
-    "bruihl": {
-      "team": "STL",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.457,
-          "whiffRate": 0.09,
-          "runValuePer100": 0.9
-        }
-      ]
-    },
-    "miles": {
-      "team": "TOR",
-      "pitches": [
-        {
-          "type": "Sinker",
-          "usage": 0.405,
-          "whiffRate": 0.162,
-          "runValuePer100": 2.9
-        }
-      ]
-    },
-    "mattson": {
-      "team": "PIT",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.725,
-          "whiffRate": 0.193,
-          "runValuePer100": 1.2
-        }
-      ]
-    },
-    "skubal": {
-      "team": "DET",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.377,
-          "whiffRate": 0.244,
-          "runValuePer100": 0.4
-        }
-      ]
-    },
-    "latz": {
-      "team": "TEX",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.537,
-          "whiffRate": 0.214,
-          "runValuePer100": 3.4
-        }
-      ]
-    },
-    "cameron": {
-      "team": "KC",
-      "pitches": [
-        {
-          "type": "4-Seam Fastball",
-          "usage": 0.277,
-          "whiffRate": 0.169,
-          "runValuePer100": -0.2
+          "type": "Slider",
+          "usage": 0.665,
+          "whiffRate": 0.313,
+          "runValuePer100": 0.2
         }
       ]
     }

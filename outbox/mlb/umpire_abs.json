@@ -1,5 +1,5 @@
 {
-  "updated": "20260713T131019Z",
+  "updated": "20260720T125827Z",
   "source": "Statcast des + MLB Stats API officials",
   "processed_game_pks": [
     "822708",
@@ -16,6 +16,9 @@
     "822729",
     "822731",
     "822732",
+    "822786",
+    "822789",
+    "822790",
     "822792",
     "822793",
     "822796",
@@ -65,6 +68,9 @@
     "823053",
     "823054",
     "823062",
+    "823113",
+    "823115",
+    "823116",
     "823117",
     "823119",
     "823120",
@@ -125,6 +131,8 @@
     "823377",
     "823378",
     "823380",
+    "823440",
+    "823441",
     "823444",
     "823445",
     "823449",
@@ -135,6 +143,9 @@
     "823457",
     "823458",
     "823460",
+    "823521",
+    "823523",
+    "823524",
     "823525",
     "823526",
     "823527",
@@ -185,7 +196,10 @@
     "823700",
     "823701",
     "823702",
+    "823763",
+    "823764",
     "823765",
+    "823766",
     "823768",
     "823769",
     "823778",
@@ -223,6 +237,8 @@
     "823946",
     "823947",
     "823949",
+    "824008",
+    "824009",
     "824012",
     "824014",
     "824015",
@@ -234,6 +250,7 @@
     "824023",
     "824024",
     "824026",
+    "824090",
     "824091",
     "824095",
     "824096",
@@ -248,6 +265,8 @@
     "824107",
     "824108",
     "824109",
+    "824168",
+    "824170",
     "824173",
     "824174",
     "824175",
@@ -278,6 +297,8 @@
     "824269",
     "824270",
     "824275",
+    "824330",
+    "824332",
     "824333",
     "824334",
     "824335",
@@ -293,7 +314,10 @@
     "824350",
     "824351",
     "824352",
+    "824411",
+    "824412",
     "824413",
+    "824414",
     "824415",
     "824417",
     "824419",
@@ -342,7 +366,10 @@
     "824596",
     "824597",
     "824598",
+    "824653",
+    "824655",
     "824656",
+    "824657",
     "824658",
     "824662",
     "824663",
@@ -354,6 +381,9 @@
     "824672",
     "824675",
     "824676",
+    "824737",
+    "824738",
+    "824739",
     "824740",
     "824741",
     "824742",
@@ -382,6 +412,8 @@
     "824835",
     "824838",
     "824840",
+    "824899",
+    "824901",
     "824902",
     "824903",
     "824904",
@@ -395,7 +427,10 @@
     "824918",
     "824919",
     "824920",
+    "824978",
+    "824979",
     "824980",
+    "824981",
     "824982",
     "824984",
     "824985",
@@ -414,6 +449,9 @@
     "825001",
     "825004",
     "825005",
+    "825057",
+    "825059",
+    "825060",
     "825061",
     "825062",
     "825063",
@@ -432,9 +470,9 @@
   ],
   "data": {
     "little": {
-      "challenged": 5,
+      "challenged": 6,
       "overturned": 2,
-      "rate": 0.4,
+      "rate": 0.333,
       "fullName": "Will Little",
       "weakness": "down-right",
       "zones": {
@@ -457,19 +495,23 @@
         "1": {
           "challenged": 2,
           "overturned": 0
+        },
+        "8": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "visconti": {
-      "challenged": 6,
-      "overturned": 3,
-      "rate": 0.5,
+      "challenged": 7,
+      "overturned": 4,
+      "rate": 0.571,
       "fullName": "Jansen Visconti",
       "weakness": "down-left",
       "zones": {
         "7": {
-          "challenged": 2,
-          "overturned": 2
+          "challenged": 3,
+          "overturned": 3
         },
         "6": {
           "challenged": 2,
@@ -556,9 +598,9 @@
       }
     },
     "miller": {
-      "challenged": 16,
-      "overturned": 7,
-      "rate": 0.438,
+      "challenged": 18,
+      "overturned": 9,
+      "rate": 0.5,
       "fullName": "Brennan Miller",
       "weakness": "up-left",
       "zones": {
@@ -579,8 +621,8 @@
           "overturned": 2
         },
         "9": {
-          "challenged": 4,
-          "overturned": 2
+          "challenged": 5,
+          "overturned": 3
         },
         "7": {
           "challenged": 5,
@@ -591,8 +633,8 @@
           "overturned": 2
         },
         "13": {
-          "challenged": 3,
-          "overturned": 1
+          "challenged": 4,
+          "overturned": 2
         },
         "3": {
           "challenged": 2,
@@ -638,9 +680,9 @@
       }
     },
     "beck": {
-      "challenged": 12,
-      "overturned": 5,
-      "rate": 0.417,
+      "challenged": 14,
+      "overturned": 6,
+      "rate": 0.429,
       "fullName": "Adam Beck",
       "weakness": "down-right",
       "zones": {
@@ -675,6 +717,10 @@
         "13": {
           "challenged": 1,
           "overturned": 0
+        },
+        "9": {
+          "challenged": 2,
+          "overturned": 1
         }
       }
     },
@@ -794,9 +840,9 @@
       }
     },
     "jones": {
-      "challenged": 12,
-      "overturned": 6,
-      "rate": 0.5,
+      "challenged": 13,
+      "overturned": 7,
+      "rate": 0.538,
       "fullName": "Austin Jones",
       "weakness": "down-right",
       "zones": {
@@ -821,8 +867,8 @@
           "overturned": 2
         },
         "7": {
-          "challenged": 2,
-          "overturned": 0
+          "challenged": 3,
+          "overturned": 1
         },
         "4": {
           "challenged": 2,
@@ -872,9 +918,9 @@
       }
     },
     "mackay": {
-      "challenged": 10,
-      "overturned": 8,
-      "rate": 0.8,
+      "challenged": 11,
+      "overturned": 9,
+      "rate": 0.818,
       "fullName": "Alex MacKay",
       "weakness": "left",
       "zones": {
@@ -893,6 +939,10 @@
         "9": {
           "challenged": 5,
           "overturned": 5
+        },
+        "7": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -942,9 +992,9 @@
       }
     },
     "valentine": {
-      "challenged": 13,
+      "challenged": 14,
       "overturned": 6,
-      "rate": 0.462,
+      "rate": 0.429,
       "fullName": "Junior Valentine",
       "weakness": "up",
       "zones": {
@@ -979,6 +1029,10 @@
         "12": {
           "challenged": 1,
           "overturned": 1
+        },
+        "11": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
@@ -1024,9 +1078,9 @@
       }
     },
     "wolf": {
-      "challenged": 11,
-      "overturned": 6,
-      "rate": 0.545,
+      "challenged": 12,
+      "overturned": 7,
+      "rate": 0.583,
       "fullName": "Jim Wolf",
       "weakness": "down-left",
       "zones": {
@@ -1057,6 +1111,10 @@
         "9": {
           "challenged": 2,
           "overturned": 0
+        },
+        "7": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -1160,9 +1218,9 @@
       }
     },
     "jean": {
-      "challenged": 7,
-      "overturned": 4,
-      "rate": 0.571,
+      "challenged": 10,
+      "overturned": 6,
+      "rate": 0.6,
       "fullName": "James Jean",
       "weakness": "up-left",
       "zones": {
@@ -1179,12 +1237,20 @@
           "overturned": 4
         },
         "9": {
-          "challenged": 4,
-          "overturned": 2
+          "challenged": 5,
+          "overturned": 3
         },
         "4": {
           "challenged": 2,
           "overturned": 0
+        },
+        "13": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "1": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -1272,9 +1338,9 @@
       }
     },
     "moore": {
-      "challenged": 13,
-      "overturned": 7,
-      "rate": 0.538,
+      "challenged": 15,
+      "overturned": 8,
+      "rate": 0.533,
       "fullName": "Malachi Moore",
       "weakness": "up-right",
       "zones": {
@@ -1303,8 +1369,12 @@
           "overturned": 0
         },
         "13": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 3
+        },
+        "11": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -1371,9 +1441,9 @@
       }
     },
     "bacchus": {
-      "challenged": 4,
+      "challenged": 5,
       "overturned": 2,
-      "rate": 0.5,
+      "rate": 0.4,
       "fullName": "Erich Bacchus",
       "weakness": "up-right",
       "zones": {
@@ -1388,6 +1458,10 @@
         "7": {
           "challenged": 1,
           "overturned": 1
+        },
+        "11": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
@@ -1458,9 +1532,9 @@
       }
     },
     "ripperger": {
-      "challenged": 11,
+      "challenged": 12,
       "overturned": 5,
-      "rate": 0.455,
+      "rate": 0.417,
       "fullName": "Mark Ripperger",
       "weakness": "left",
       "zones": {
@@ -1497,7 +1571,7 @@
           "overturned": 0
         },
         "6": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 0
         },
         "13": {
@@ -1672,15 +1746,15 @@
       }
     },
     "tomlinson": {
-      "challenged": 3,
-      "overturned": 3,
+      "challenged": 5,
+      "overturned": 5,
       "rate": 1.0,
       "fullName": "Nate Tomlinson",
       "weakness": null,
       "zones": {
         "8": {
-          "challenged": 4,
-          "overturned": 4
+          "challenged": 5,
+          "overturned": 5
         },
         "9": {
           "challenged": 4,
@@ -1697,6 +1771,10 @@
         "7": {
           "challenged": 2,
           "overturned": 2
+        },
+        "13": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -1833,11 +1911,11 @@
       }
     },
     "ceja": {
-      "challenged": 4,
-      "overturned": 4,
-      "rate": 1.0,
+      "challenged": 6,
+      "overturned": 5,
+      "rate": 0.833,
       "fullName": "Nestor Ceja",
-      "weakness": null,
+      "weakness": "up-left",
       "zones": {
         "6": {
           "challenged": 4,
@@ -1848,8 +1926,8 @@
           "overturned": 0
         },
         "3": {
-          "challenged": 2,
-          "overturned": 0
+          "challenged": 3,
+          "overturned": 1
         },
         "1": {
           "challenged": 2,
@@ -1860,7 +1938,7 @@
           "overturned": 2
         },
         "11": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 2
         },
         "8": {
@@ -1903,14 +1981,14 @@
       }
     },
     "dreckman": {
-      "challenged": 5,
+      "challenged": 6,
       "overturned": 2,
-      "rate": 0.4,
+      "rate": 0.333,
       "fullName": "Bruce Dreckman",
-      "weakness": "down-left",
+      "weakness": "left",
       "zones": {
         "7": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 2
         },
         "13": {
@@ -1936,9 +2014,9 @@
       }
     },
     "kelley": {
-      "challenged": 3,
+      "challenged": 4,
       "overturned": 1,
-      "rate": 0.333,
+      "rate": 0.25,
       "fullName": "Dexter Kelley",
       "weakness": null,
       "zones": {
@@ -1953,15 +2031,19 @@
         "3": {
           "challenged": 1,
           "overturned": 0
+        },
+        "12": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "mahrley": {
-      "challenged": 3,
-      "overturned": 0,
-      "rate": 0.0,
+      "challenged": 5,
+      "overturned": 1,
+      "rate": 0.2,
       "fullName": "Nick Mahrley",
-      "weakness": null,
+      "weakness": "down",
       "zones": {
         "9": {
           "challenged": 1,
@@ -1972,21 +2054,25 @@
           "overturned": 0
         },
         "8": {
+          "challenged": 2,
+          "overturned": 1
+        },
+        "1": {
           "challenged": 1,
           "overturned": 0
         }
       }
     },
     "hanahan": {
-      "challenged": 3,
-      "overturned": 1,
-      "rate": 0.333,
+      "challenged": 5,
+      "overturned": 2,
+      "rate": 0.4,
       "fullName": "Tom Hanahan",
-      "weakness": null,
+      "weakness": "down-left",
       "zones": {
         "7": {
-          "challenged": 1,
-          "overturned": 1
+          "challenged": 2,
+          "overturned": 2
         },
         "8": {
           "challenged": 1,
@@ -1995,13 +2081,17 @@
         "12": {
           "challenged": 1,
           "overturned": 0
+        },
+        "1": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "hoye": {
-      "challenged": 3,
+      "challenged": 5,
       "overturned": 2,
-      "rate": 0.667,
+      "rate": 0.4,
       "fullName": "James Hoye",
       "weakness": null,
       "zones": {
@@ -2014,6 +2104,10 @@
           "overturned": 1
         },
         "7": {
+          "challenged": 2,
+          "overturned": 0
+        },
+        "8": {
           "challenged": 1,
           "overturned": 0
         }
@@ -2077,6 +2171,98 @@
           "overturned": 0
         },
         "9": {
+          "challenged": 1,
+          "overturned": 1
+        }
+      }
+    },
+    "tosi": {
+      "challenged": 3,
+      "overturned": 1,
+      "rate": 0.333,
+      "fullName": "Alex Tosi",
+      "weakness": null,
+      "zones": {
+        "7": {
+          "challenged": 2,
+          "overturned": 0
+        },
+        "13": {
+          "challenged": 1,
+          "overturned": 1
+        }
+      }
+    },
+    "metz": {
+      "challenged": 4,
+      "overturned": 2,
+      "rate": 0.5,
+      "fullName": "Jacob Metz",
+      "weakness": null,
+      "zones": {
+        "4": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "1": {
+          "challenged": 1,
+          "overturned": 1
+        },
+        "14": {
+          "challenged": 1,
+          "overturned": 1
+        },
+        "9": {
+          "challenged": 1,
+          "overturned": 0
+        }
+      }
+    },
+    "thomas": {
+      "challenged": 4,
+      "overturned": 1,
+      "rate": 0.25,
+      "fullName": "Derek Thomas",
+      "weakness": null,
+      "zones": {
+        "4": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "11": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "7": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "8": {
+          "challenged": 1,
+          "overturned": 1
+        }
+      }
+    },
+    "libka": {
+      "challenged": 4,
+      "overturned": 2,
+      "rate": 0.5,
+      "fullName": "John Libka",
+      "weakness": null,
+      "zones": {
+        "4": {
+          "challenged": 1,
+          "overturned": 1
+        },
+        "1": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "9": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "6": {
           "challenged": 1,
           "overturned": 1
         }
