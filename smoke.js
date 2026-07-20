@@ -5930,20 +5930,20 @@ assert('A_BSD_8 — bsd:ball SSE listener in _connect()',
   html.includes("addEventListener('bsd:ball'"),
   '_connect() must register bsd:ball listener on existing _es singleton');
 
-assert('A_BSD_9 — bottom sheet renders bsd-pitch container gated on bsdEventId alone (CC-CMD-2026-07-14-bsd-pitch-generalize)',
-  /_bsIsWC\s*=\s*\/wc26\|world cup\|fifa\/i\.test/.test(html) &&
-  /_bsBsdEventId\s*=\s*eData\?\.bsdEventId/.test(html) &&
-  /\$\{_bsBsdEventId\s*\?\s*`<div class="bs-section">[^`]*id="bsd-pitch"/.test(html),
-  'openBottomSheet must include a bsd-pitch container conditioned on _bsBsdEventId alone -- not WC-only, any BSD-covered live game qualifies');
+assert('A_BSD_9 — Stats tab Today\'s Games renders bsd-pitch container gated on bsdEventId (relocated from bottom sheet per CC-CMD-2026-07-19-bottom-sheet-stats-reconciliation)',
+  /_tgBsdId\s*=\s*_tgEData\?\.bsdEventId/.test(html) &&
+  /id="bsd-pitch"/.test(html) &&
+  /_bsdActivate\(_tgBsdId\)/.test(html),
+  'renderStatsSection Today\'s Games must include a bsd-pitch container conditioned on _tgBsdId and call _bsdActivate -- BSD pitch relocated from openBottomSheet to Stats tab');
 
-assert('A_BSD_10 — post-game bottom sheet fetches /bsd/r2/read with a sport-parameterized key and feeds _bsdRepaint (CC-CMD-2026-07-14-bsd-replay-slug-wire)',
-  /_r2Sport\s*=\s*eData\?\.\_sport\s*\|\|\s*\(_bsIsWC\s*\?\s*'wc26'\s*:\s*''\)/.test(html) &&
-  /bsd\/\$\{_r2Sport\}\/\$\{_bsBsdEventId\}\/stats\.json/.test(html) &&
-  /\/bsd\/r2\/read\?key=\$\{encodeURIComponent\(_r2Key\)\}/.test(html) &&
-  /eData\?\.state\s*===\s*'post'/.test(html) &&
+assert('A_BSD_10 — Stats tab Today\'s Games fetches /bsd/r2/read with a sport-parameterized key and feeds _bsdRepaint (relocated from bottom sheet per CC-CMD-2026-07-19-bottom-sheet-stats-reconciliation)',
+  /_r2Sp\s*=\s*_tgEData\?\.\_sport/.test(html) &&
+  /bsd\/\$\{_r2Sp\}\/\$\{_tgBsdId\}\/stats\.json/.test(html) &&
+  /\/bsd\/r2\/read\?key=\$\{encodeURIComponent\(_r2K\)\}/.test(html) &&
+  /_tgEData\?\.state\s*===\s*'post'/.test(html) &&
   /_bsdShotData\s*=\s*d\.shotmap/.test(html) &&
   /_bsdRepaint\(\)/.test(html),
-  'post-game bottom sheet must fetch /bsd/r2/read with a bsd/{realSlug}/{id}/stats.json key (falling back to wc26 for WC games), assign shotmap to _bsdShotData, and call _bsdRepaint()');
+  'renderStatsSection Today\'s Games must fetch /bsd/r2/read with a bsd/{realSlug}/{id}/stats.json key, assign shotmap to _bsdShotData, and call _bsdRepaint()');
 
 assert('A_DEV_1 — _isFieldDevMode helper defined (?dev=1 or field_dev localStorage)',
   html.includes('function _isFieldDevMode()') &&

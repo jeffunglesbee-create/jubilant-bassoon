@@ -30624,6 +30624,69 @@ function renderStatsSection() {
     blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚽ MLS</div>${mlsRows.join('')}</div>`);
   }
 
+  // ── Today's Games ──────────────────────────────────────────────────────────
+  // Per-game context relocated from openBottomSheet per CC-CMD-2026-07-19-
+  // bottom-sheet-stats-reconciliation (TASK 1: scouting/standings/milestone,
+  // TASK 2: BSD pitch, TASK 3: comeback probability).
+  // Shape note: these are per-game, not cross-game leaderboards — dedicated
+  // sub-section pattern distinct from the row() leaderboard blocks above.
+  const _todayGames = [];
+  let _statsBsdFired = false; // only first game with bsdEventId gets the live pitch (bsd-pitch ID is hardcoded in _bsdRepaint)
+  (allData?.sports || []).forEach(sportObj => {
+    const _tgSport = sportObj.sport;
+    const _tgStandings = _relayStandingsCache?.[_tgSport];
+    (sportObj.games || []).forEach(game => {
+      const _tgId = game._id;
+      const _tgEData = Object.values(espnScores || {}).find(e => {
+        const h = teamNick(game.home).toLowerCase();
+        return (e.homeName || '').toLowerCase().includes(h) || (e.home || '').toLowerCase().includes(h);
+      });
+      const _tgScout = buildScoutingReport(game, _tgSport);
+      let _tgStandingsStr = '';
+      if (_tgStandings?.length) {
+        const hSlug = teamNick(game.home).toLowerCase();
+        const aSlug = teamNick(game.away).toLowerCase();
+        const hT = _tgStandings.find(t => (t.team || '').toLowerCase().includes(hSlug));
+        const aT = _tgStandings.find(t => (t.team || '').toLowerCase().includes(aSlug));
+        if (hT && aT) _tgStandingsStr = `${teamNick(game.home)}: ${hT.wins}–${hT.losses} \xb7 ${teamNick(game.away)}: ${aT.wins}–${aT.losses}`;
+      }
+      const _tgSeriesMargins = buildSeriesMarginsDots(game);
+      const _tgMilestone = _bdlMilestonesCache?.[_tgId];
+      const _tgMilestoneStr = _tgMilestone ? `${_tgMilestone.playerName} needs ${_tgMilestone.gap} more ${_tgMilestone.stat} → ${_tgMilestone.next}` : '';
+      const _tgCb = buildComebackProbability(_tgId, _tgEData, _tgSport) || '';
+      const _tgBsdId = _tgEData?.bsdEventId || game.bsdEventId || null;
+      let _tgBsdHtml = '';
+      if (_tgBsdId && !_statsBsdFired) {
+        _statsBsdFired = true;
+        _tgBsdHtml = `<div class="bs-section"><div class="bs-section-label">Pitch</div><div id="bsd-pitch" style="width:100%;min-height:200px"></div></div>`;
+        if (_tgEData?.state === 'in') _bsdActivate(_tgBsdId);
+        if (_tgEData?.state === 'post' || _tgEData?.state === 'final') {
+          const _r2Sp = _tgEData?._sport || '';
+          const _r2K = `bsd/${_r2Sp}/${_tgBsdId}/stats.json`;
+          const _rl = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
+          fetch(`${_rl}/bsd/r2/read?key=${encodeURIComponent(_r2K)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (!d?.shotmap?.length) return; _bsdShotData = d.shotmap; _bsdBallPos = null; _bsdRepaint(); })
+            .catch(() => {});
+        }
+      }
+      if (!_tgScout && !_tgStandingsStr && !_tgSeriesMargins && !_tgMilestoneStr && !_tgCb && !_tgBsdHtml) return;
+      _todayGames.push(
+        `<div class="stats-subsection"><div class="stats-subsection-label">${esc(game.away||'?')} @ ${esc(game.home||'?')}</div>` +
+        _tgScout +
+        (_tgStandingsStr ? `<div class="bs-section-body">${_tgStandingsStr}</div>` : '') +
+        (_tgSeriesMargins || '') +
+        (_tgMilestoneStr ? `<div class="bs-section-body" style="font-size:.7rem;opacity:.8">${esc(_tgMilestoneStr)}</div>` : '') +
+        (_tgCb ? `<div class="bs-section-body" style="font-size:.7rem;opacity:.8">${esc(_tgCb)}</div>` : '') +
+        _tgBsdHtml +
+        `</div>`
+      );
+    });
+  });
+  if (_todayGames.length) {
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">📋 Today's Games</div>${_todayGames.join('')}</div>`);
+  }
+
   if (!blocks.length) {
     content.innerHTML = '<div class="stats-empty">Analytics loading… check back after boot completes (~5s)</div>';
     return;
@@ -38956,11 +39019,7 @@ function openBottomSheet(gameId) {
   const scoreStr = (hS!==''&&aS!=='') ? `${_bsL}–${_bsR}` : '';
   const period = eData?.period ? ` · ${eData.periodLabel||espnPeriodLabel(eData.periodPrefix||'Q',eData.period||0,'')}` : '';
   const sparkline = buildDramaSparklineSVG(gameId, 200, 32) || '';
-  const cb = buildComebackProbability(gameId, eData, sport) || '';
   const story = buildStoryTape(gameId, 5);
-  const milestone = _bdlMilestonesCache?.[gameId];
-  const milestoneStr = milestone ? `${milestone.playerName} needs ${milestone.gap} more ${milestone.stat} → ${milestone.next}` : '';
-  const seriesMargins = buildSeriesMarginsDots(game);
   const drama = getSmoothedDrama(gameId);
   // Display tier label not raw number — number is redundant alongside the sparkline
   const dramaLabel_bs = drama != null
@@ -38968,19 +39027,6 @@ function openBottomSheet(gameId) {
     : '';
   // Postgame: build richer drama context from history + score log
   const _bsIsFinal = eData?.state === 'post';
-  // WC pitch: bottom sheet renders the bsd-pitch SVG canvas when a WC game
-  // has a BSD event ID. Container is always present for WC games (live + post)
-  // so _bsdRepaint has something to paint; post-game fetch fills it from R2.
-  const _bsIsWC       = /wc26|world cup|fifa/i.test(sport || game._sport || '');
-  const _bsBsdEventId = eData?.bsdEventId || game.bsdEventId || null;
-  // Activate BSD subscription directly from the bottom sheet (CC-CMD-2026-
-  // 07-14-bsd-pitch-trigger-generalize): _bsdActivateForWC's own scan only
-  // ever runs when entering the WC tab, so a live non-WC game's bottom
-  // sheet would otherwise render an empty, never-populated pitch container.
-  // _bsdActivate is already idempotent (no-op if this event ID is already
-  // the active one). Gated on state==='in' -- post-game views use the
-  // separate R2 replay read below, no live subscription needed.
-  if (_bsBsdEventId && eData?.state === 'in') _bsdActivate(_bsBsdEventId);
   let _bsPostgameDrama = '';
   if (_bsIsFinal) {
     try {
@@ -38995,34 +39041,20 @@ function openBottomSheet(gameId) {
       if (parts.length) _bsPostgameDrama = parts.join(' · ');
     } catch(e_) { captureFieldError('bottomsheet:postgame-drama', e_, true); }
   }
-  // Standings context
-  const standings = _relayStandingsCache?.[sport];
-  let standingsStr = '';
-  if (standings?.length) {
-    const hSlug = teamNick(game.home).toLowerCase();
-    const aSlug = teamNick(game.away).toLowerCase();
-    const hT = standings.find(t=>(t.team||'').toLowerCase().includes(hSlug));
-    const aT = standings.find(t=>(t.team||'').toLowerCase().includes(aSlug));
-    if (hT && aT) standingsStr = `${teamNick(game.home)}: ${hT.wins}–${hT.losses} · ${teamNick(game.away)}: ${aT.wins}–${aT.losses}`;
-  }
   const gameBrief = _gameBriefCache[gameId] || null;
-  const scoutReport = buildScoutingReport(game, sport);
   content.innerHTML = `
     <div class="bs-teams">${game.away||'?'} @ ${game.home||'?'}</div>
     <div class="bs-meta">${scoreStr?scoreStr+period:fmtTime(game.start_time)+' ET'} · ${game.venue||sport||''}${game.seriesRecord?' · '+game.seriesRecord:''}</div>
-    ${scoutReport}
     ${gameBrief ? `<div class="bs-section"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6">${gameBrief}</div></div>` : '<div class="bs-section bs-brief-placeholder" id="bs-brief-pending"><div class="bs-section-label">FIELD Brief</div><div class="bs-section-body" style="font-size:.74rem;line-height:1.6;opacity:.45;font-style:italic">Loading brief\u2026</div></div>'}
     ${gameBrief ? `<div class="bs-section bs-jrn-link" onclick="openJournalismForGame('${gameId}')"><div class="bs-section-label">Read full coverage →</div></div>` : ''}
     ${(_bsIsFinal && _bsPostgameDrama) ? `<div class="bs-section"><div class="bs-section-label">Game Summary</div><div class="bs-section-body">${_bsPostgameDrama}${(()=>{const _sn=buildScoreNarrativeContext(gameId,game.home||'',game.away||'',sport);return _sn?'<br>'+_sn.replace('[SCORE NARRATIVE] ',''):'';})()}</div></div>` : ''}
-    ${(!_bsIsFinal && (dramaLabel_bs||cb)) ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${[dramaLabel_bs,cb].filter(Boolean).join(' · ')}</div></div>` : ''}
+    ${(!_bsIsFinal && dramaLabel_bs) ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${dramaLabel_bs}</div></div>` : ''}
     ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}${_bsIsFinal?(()=>{const _ad=buildDramaArcDescription(gameId);return _ad?`<div class="bs-section-body" style="font-size:.68rem;opacity:.75;margin-top:.25rem">${_ad.replace('[DRAMA ARC] ','')}</div>`:''})():''}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
-    ${(game.matchupNote||game.localNote||milestoneStr) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${[game.matchupNote||game.localNote, milestoneStr].filter(Boolean).join('<br>')}</div></div>` : ''}
-    ${standingsStr||seriesMargins ? `<div class="bs-section"><div class="bs-section-label">Standings</div><div class="bs-section-body">${standingsStr}</div>${seriesMargins}</div>` : ''}
+    ${(game.matchupNote||game.localNote) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${game.matchupNote||game.localNote}</div></div>` : ''}
     <div id="bs-last-meeting"></div>
     ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'🦚 Peacock GOTD · Free to stream · ':game.espnGOTD?'📺 Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
-    ${_bsBsdEventId ? `<div class="bs-section"><div class="bs-section-label">Pitch</div><div id="bsd-pitch" style="width:100%;min-height:200px"></div></div>` : ''}
     <div style="margin-top:1rem;display:flex;gap:.6rem">
       <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
       <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">⬆ Share</button>
@@ -39036,33 +39068,6 @@ function openBottomSheet(gameId) {
       const first = _bsEl2.querySelector('button,[href],[tabindex]:not([tabindex="-1"])');
       if (first) first.focus();
     }, 290);
-  }
-
-  // Post-game shot map from R2: completed BSD-covered game has its shotmap
-  // captured to R2 (bsd/{slug}/{id}/stats.json) by runBSDEndgameCapture
-  // (CC-CMD-2026-07-14-bsd-replay-slug-wire -- relay now writes any covered
-  // club league under its own slug, not just wc26). eData._sport carries
-  // the exact same slug the relay's own V2_LEAGUES table uses (confirmed
-  // directly against the relay's real source, e.g. 'epl'/'mls'/'ucl'/
-  // 'laliga'/'seriea'/'bundesliga'/'ligue1'/'wc26') -- it's set in
-  // mapV2ToESPN as `_sport: fg.sport`, the same object bsdEventId itself
-  // comes from, so it's guaranteed present whenever _bsBsdEventId is.
-  // Fetch via relay /bsd/r2/read and render the same bsd-pitch SVG canvas the
-  // live branch uses (no extra DOM scaffolding needed).
-  const _bsGameAge = game.start_time ? (Date.now() - new Date(game.start_time).getTime()) / 60000 : 0;
-  if (_bsBsdEventId && (eData?.state === 'post' || eData?.state === 'final' || _bsGameAge > 95)) {
-    const _r2Sport = eData?._sport || (_bsIsWC ? 'wc26' : '');
-    const _r2Key = `bsd/${_r2Sport}/${_bsBsdEventId}/stats.json`;
-    const _relay = (typeof V2_RELAY_BASE !== 'undefined') ? V2_RELAY_BASE : '';
-    fetch(`${_relay}/bsd/r2/read?key=${encodeURIComponent(_r2Key)}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (!d?.shotmap?.length) return;
-        _bsdShotData = d.shotmap;
-        _bsdBallPos  = null; // no live ball post-game
-        _bsdRepaint();
-      })
-      .catch(() => {});
   }
 
   // J11: on-demand brief — fires after sheet opens, fills placeholder if cache was empty
