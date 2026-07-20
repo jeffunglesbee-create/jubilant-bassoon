@@ -1,0 +1,66 @@
+name: PL client verify (Key Moments + Lineups)
+# Verifies that /pl/match/:id data wires correctly into:
+#   1. fetchPLMatch relay contract (field shape assertions)
+#   2. Bottom sheet Key Moments section (goal/sub events + halfTimeScore)
+#   3. Stats tab Lineups section (starting XI, formation, officials)
+# Auto-triggers after every successful deploy. Also workflow_dispatch for manual re-runs.
+
+on:
+  workflow_run:
+    workflows: ["Deploy gate (fast smoke)"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    # Only run on deploy success (workflow_dispatch always runs)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    name: PL Key Moments + Lineups E2E
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Wait for CF propagation
+        # Deploy takes ~20s to propagate after gate passes
+        if: ${{ github.event_name == 'workflow_run' }}
+        run: sleep 30
+
+      - name: Run PL client verify
+        run: node pl_client_verify.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+        continue-on-error: true
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "PL Verify"
+          git pull --rebase --autostash origin main
+          git add outbox/pl-verify-*.png outbox/pl-verify-*.json 2>/dev/null || true
+          git status --short
+          if git diff --cached --quiet; then
+            echo "No result files to commit"
+            exit 0
+          fi
+          git commit -m "pl-client-verify result [skip ci]"
+          for i in 1 2 3; do
+            git push origin main && break
+            sleep $((i * 5))
+            git pull --rebase --autostash origin main
+          done
