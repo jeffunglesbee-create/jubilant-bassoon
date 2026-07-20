@@ -1,3 +1,18 @@
+## SESSION CLOSE-OUT — 2026-07-20, bottom-sheet-stats-reconciliation (supersedes previous)
+
+**HEAD:** 8c501b4
+**Smoke count:** 962/0
+**SW version:** 2026-07-19d (unchanged)
+**Session doc:** outbox/cc-session-2026-07-20-bottom-sheet-stats-reconciliation.md
+
+**Bottom sheet / Stats tab reconciliation (CC-CMD-2026-07-19-bottom-sheet-stats-reconciliation.md):**
+- `renderStatsSection()` — new "Today's Games" sub-section iterates allData.sports, renders buildScoutingReport(), standings, milestone alert, comeback probability, BSD pitch per game
+- `openBottomSheet()` — removed: scoutReport, standingsStr, seriesMargins, milestoneStr, cb, _bsBsdEventId, _bsIsWC, post-game R2 fetch; Live Intelligence simplified to dramaLabel_bs only; Context simplified to matchupNote||localNote only
+- smoke.js A_BSD_9/A_BSD_10 updated to new renderStatsSection location
+- Smoke 962/0 before and after
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-20, game-thread-client (supersedes previous)
 
 **HEAD:** ae24581
