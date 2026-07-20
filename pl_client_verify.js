@@ -25,13 +25,27 @@ function fail(name, detail) { results.push({ name, ok: false, detail }); console
   await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(BOOT_WAIT_MS);
 
+  // Confirm _plVerify test API is present (proves ESM export wired)
+  const hasVerifyApi = await page.evaluate(() => typeof window._plVerify === 'object' && window._plVerify !== null);
+  if (!hasVerifyApi) {
+    fail('_plVerify test API present', '_plVerify not defined — check ?pl-verify export block in field.js');
+    // All remaining probes depend on this; bail out early
+    await browser.close();
+    console.log('\n── Results ─────────────────────────────────────────────────────');
+    results.forEach(r => console.log(`  ${r.ok ? '✅' : '❌'} ${r.name}${r.detail ? ': ' + r.detail : ''}`));
+    console.log(`\n0/1 passed`);
+    fs.mkdirSync('outbox', { recursive: true });
+    fs.writeFileSync(`outbox/pl-verify-summary-${new Date().toISOString().replace(/[:.]/g, '-')}.json`, JSON.stringify({ ts: new Date().toISOString(), fixture: PL_FIXTURE_ID, passed: 0, total: 1, results }, null, 2));
+    process.exit(1);
+  }
+  pass('_plVerify test API present');
+
   // ── PROBE 1: fetchPLMatch relay contract ─────────────────────────────────
   console.log('\n── Probe 1: fetchPLMatch relay contract');
   let plData = null;
   try {
     plData = await page.evaluate(async (fixtureId) => {
-      if (typeof fetchPLMatch !== 'function') throw new Error('fetchPLMatch not defined');
-      return await fetchPLMatch(fixtureId);
+      return await window._plVerify.fetchPLMatch(fixtureId);
     }, PL_FIXTURE_ID);
   } catch (e) {
     fail('fetchPLMatch is defined', e.message);
@@ -115,20 +129,17 @@ function fail(name, detail) { results.push({ name, ok: false, detail }); console
   try {
     await page.evaluate((fixtureId) => {
       // Inject a synthetic PL game so openBottomSheet has something to render
-      if (typeof espnScores === 'undefined') window.espnScores = {};
-      espnScores['Bournemouth|Leicester City'] = {
+      window._plVerify.setEspnScore('Bournemouth|Leicester City', {
         state: 'post', homeName: 'Bournemouth', awayName: 'Leicester City',
         home: 'Bournemouth', away: 'Leicester City',
         homeScore: 2, awayScore: 0, source: 'pl', _plId: fixtureId,
         period: 2, detail: 'FT',
-      };
-      if (!allData) window.allData = { sports: [] };
-      if (!allData.sports) allData.sports = [];
-      allData.sports.push({
+      });
+      window._plVerify.pushAllDataSport({
         sport: 'Premier League',
         games: [{ _id: 'pl-verify-game', home: 'Bournemouth', away: 'Leicester City', start_time: '2025-05-25T16:00:00Z' }],
       });
-      openBottomSheet('pl-verify-game');
+      window._plVerify.openBottomSheet('pl-verify-game');
     }, PL_FIXTURE_ID);
 
     // Wait for async inject (fetchPLMatch fires, then DOM fills)
@@ -171,6 +182,7 @@ function fail(name, detail) { results.push({ name, ok: false, detail }); console
     // Screenshot of bottom sheet
     const bsEl = await page.$('#bottom-sheet');
     if (bsEl) {
+      fs.mkdirSync('outbox', { recursive: true });
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const shot = `outbox/pl-verify-bottomsheet-${ts}.png`;
       await bsEl.screenshot({ path: shot });
@@ -184,26 +196,19 @@ function fail(name, detail) { results.push({ name, ok: false, detail }); console
   console.log('\n── Probe 3: Stats tab Lineups inject');
   try {
     // Navigate to Stats tab and re-inject synthetic game
-    await page.evaluate(() => {
-      if (typeof espnScores === 'undefined') window.espnScores = {};
-      espnScores['Bournemouth|Leicester City'] = {
+    await page.evaluate((fixtureId) => {
+      window._plVerify.setEspnScore('Bournemouth|Leicester City', {
         state: 'post', homeName: 'Bournemouth', awayName: 'Leicester City',
         home: 'Bournemouth', away: 'Leicester City',
-        homeScore: 2, awayScore: 0, source: 'pl', _plId: 116197,
+        homeScore: 2, awayScore: 0, source: 'pl', _plId: fixtureId,
         period: 2, detail: 'FT',
-      };
-      if (!allData) window.allData = { sports: [] };
-      if (!allData.sports) allData.sports = [];
-      const existing = allData.sports.find(s => s.sport === 'Premier League');
-      if (!existing) {
-        allData.sports.push({
-          sport: 'Premier League',
-          games: [{ _id: 'pl-verify-game', home: 'Bournemouth', away: 'Leicester City', start_time: '2025-05-25T16:00:00Z' }],
-        });
-      }
-      // Switch to Stats tab via the nav function
-      if (typeof toggleStatsView === 'function') toggleStatsView();
-    });
+      });
+      window._plVerify.pushAllDataSport({
+        sport: 'Premier League',
+        games: [{ _id: 'pl-verify-game', home: 'Bournemouth', away: 'Leicester City', start_time: '2025-05-25T16:00:00Z' }],
+      });
+      window._plVerify.toggleStatsView();
+    }, PL_FIXTURE_ID);
 
     await page.waitForTimeout(INJECT_WAIT_MS);
 
@@ -236,6 +241,7 @@ function fail(name, detail) { results.push({ name, ok: false, detail }); console
     // Screenshot
     const statsEl = await page.$('#stats-content');
     if (statsEl) {
+      fs.mkdirSync('outbox', { recursive: true });
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const shot = `outbox/pl-verify-stats-${ts}.png`;
       await statsEl.screenshot({ path: shot });
@@ -261,6 +267,7 @@ function fail(name, detail) { results.push({ name, ok: false, detail }); console
     total: results.length,
     results,
   };
+  fs.mkdirSync('outbox', { recursive: true });
   const summaryFile = `outbox/pl-verify-summary-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
   fs.writeFileSync(summaryFile, JSON.stringify(summary, null, 2));
   console.log(`\nSummary written: ${summaryFile}`);

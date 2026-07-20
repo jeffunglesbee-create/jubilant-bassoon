@@ -40329,3 +40329,19 @@ restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });
 // same fire-and-forget/never-blocks-boot pattern as before, just a
 // higher ceiling.
 runDramaBackfillDiscovery().catch(() => {});
+
+// pl-verify test API — only exposed when ?pl-verify is in the URL
+if (location.search.includes('pl-verify')) {
+  window._plVerify = {
+    fetchPLMatch,
+    openBottomSheet,
+    toggleStatsView,
+    setEspnScore: (key, val) => { espnScores[key] = val; },
+    pushAllDataSport: (sport) => {
+      if (!allData) allData = { sports: [] };
+      if (!allData.sports) allData.sports = [];
+      const ex = allData.sports.find(s => s.sport === sport.sport);
+      if (!ex) allData.sports.push(sport);
+    },
+  };
+}
