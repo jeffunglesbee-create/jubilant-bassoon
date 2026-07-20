@@ -225,6 +225,34 @@ unless CF releases a sub-500ms non-reasoning model with 70B-class accuracy.
 
 ---
 
+## Actuality vs promises close-out
+
+The original proposal (jubilant-bassoon chat thread "Field actuality vs promises gap", 2026-07-20)
+stated:
+
+> "Net verdict: **yes, Workers AI can eliminate the Gemini cost for the judge entirely**, at the
+> cost of some format reliability risk and a small architectural change to thread `env.AI` into
+> the quality module. Worth testing before committing to it as the production path."
+
+**That claim is wrong.** Seven configurations were tested against four gates. None passed all four.
+
+The original caveats listed in the proposal were:
+1. Context window — verified fine (8B is 128K). Not the blocker.
+2. Format reliability — 70B hit 100% structured. Not the blocker.
+3. Classification quality — **was the blocker for 8B** (100% FP) and contributed to 70B (1 persistent FP).
+4. Binding required — resolved in Step 2. Not the blocker.
+
+The proposal did not anticipate the latency problem. Gate D (p95≤1500ms) was not listed as a
+caveat. 70B's ~2900ms p95 on FAIL cases — driven by output token generation, not prompt size —
+was the primary reason the most capable model failed. No prompt engineering approach resolved it:
+the two-phase mitigation cleared Gate D in isolation but made the full FAIL path slower than
+Gemini in production context.
+
+**The cost will not be eliminated by Workers AI under current CF infrastructure.
+The circuit breaker is the correct permanent floor.**
+
+---
+
 ## Open test routes (cleanup required if Step 5 authorized in future)
 
 - `/test/workers-ai-judge` — field-relay-nba src/index.js + ALLOWED_EXACT
