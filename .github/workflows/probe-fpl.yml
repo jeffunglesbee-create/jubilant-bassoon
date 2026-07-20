@@ -7,63 +7,96 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe pulse_id endpoints
+      - name: Install Playwright deps
+        run: npx playwright install-deps chromium 2>/dev/null || true
+
+      - name: Probe pulse via Playwright browser interception
+        run: |
+          node - << 'PLAYWRIGHT_SCRIPT'
+          const { chromium } = require('playwright');
+          (async () => {
+            const PULSE_ID = 125161;
+            const browser = await chromium.launch({
+              executablePath: process.env.PLAYWRIGHT_BROWSERS_PATH
+                ? require('fs').readdirSync(process.env.PLAYWRIGHT_BROWSERS_PATH + '/chromium').map(d => `${process.env.PLAYWRIGHT_BROWSERS_PATH}/chromium/${d}/chrome-linux/chrome`).find(p => { try { require('fs').accessSync(p); return true; } catch { return false; } })
+                : undefined,
+              args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+            const context = await browser.newContext();
+            const captured = [];
+            await context.route('**footballapi.pulse.football.co.uk/**', async route => {
+              const req = route.request();
+              console.log('INTERCEPTED REQUEST:', req.url());
+              console.log('  headers:', JSON.stringify(req.headers(), null, 2));
+              const resp = await route.fetch();
+              const body = await resp.text();
+              console.log('  response status:', resp.status());
+              console.log('  response headers:', JSON.stringify(resp.headers(), null, 2));
+              console.log('  body (first 3000):', body.slice(0, 3000));
+              captured.push({ url: req.url(), status: resp.status(), body: body.slice(0, 500) });
+              await route.fulfill({ response: resp });
+            });
+            const page = await context.newPage();
+            // Load a PL match page that uses this pulse_id
+            console.log('=== Loading PL match page ===');
+            try {
+              await page.goto(`https://www.premierleague.com/match/${PULSE_ID}`, { timeout: 20000, waitUntil: 'domcontentloaded' });
+              await page.waitForTimeout(5000);
+            } catch (e) {
+              console.log('page load error (expected):', e.message.slice(0, 200));
+            }
+            console.log('=== captured pulse calls:', captured.length, '===');
+            captured.forEach(c => console.log(c.url, c.status, c.body.slice(0, 200)));
+
+            // Also try direct curl-style fetch from within browser context
+            console.log('=== Direct fetch from browser context ===');
+            try {
+              const result = await page.evaluate(async (pid) => {
+                const r = await fetch(`https://footballapi.pulse.football.co.uk/football/fixtures/${pid}`, {
+                  headers: { 'Origin': 'https://www.premierleague.com' }
+                });
+                return { status: r.status, body: await r.text() };
+              }, PULSE_ID);
+              console.log('fetch status:', result.status);
+              console.log('fetch body (first 2000):', result.body.slice(0, 2000));
+            } catch (e) {
+              console.log('in-page fetch error:', e.message);
+            }
+
+            await browser.close();
+          })().catch(e => { console.error('PLAYWRIGHT ERROR:', e.message); process.exit(0); });
+          PLAYWRIGHT_SCRIPT
+
+      - name: Probe pulse raw curl with verbose headers
         run: |
           PULSE_ID=125161
-          echo "=== pulse base — /api/football/fixtures/${PULSE_ID} ==="
-          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}" \
-            -H "Origin: https://www.premierleague.com" | node -e "
-            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-            console.log('top keys:', Object.keys(d));
-            console.log('full:', JSON.stringify(d, null, 2).slice(0, 4000));
-          " 2>&1 || echo "FAILED: base fixture"
-
-          echo ""
-          echo "=== pulse events — /api/football/fixtures/${PULSE_ID}/textstream/EN ==="
-          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/textstream/EN" \
-            -H "Origin: https://www.premierleague.com" | node -e "
-            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-            console.log('top keys:', Object.keys(d));
-            const events = d.events || d.content || d.entries || d.items || [];
-            console.log('event count:', Array.isArray(events) ? events.length : 'not array');
-            console.log('first event:', JSON.stringify(events[0], null, 2));
-            console.log('second event:', JSON.stringify(events[1], null, 2));
-          " 2>&1 || echo "FAILED: textstream"
-
-          echo ""
-          echo "=== pulse stats — /api/football/fixtures/${PULSE_ID}/stats ==="
-          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/stats" \
-            -H "Origin: https://www.premierleague.com" | node -e "
-            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-            console.log('top keys:', Object.keys(d));
-            console.log('full:', JSON.stringify(d, null, 2).slice(0, 3000));
-          " 2>&1 || echo "FAILED: stats"
-
-          echo ""
-          echo "=== pulse lineups — /api/football/fixtures/${PULSE_ID}/lineups ==="
-          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/lineups" \
-            -H "Origin: https://www.premierleague.com" | node -e "
-            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-            console.log('top keys:', Object.keys(d));
-            console.log('full:', JSON.stringify(d, null, 2).slice(0, 3000));
-          " 2>&1 || echo "FAILED: lineups"
-
-          echo ""
-          echo "=== PL API direct — /football/fixtures/${PULSE_ID} ==="
-          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}" \
+          echo "=== curl -v to see response code and headers ==="
+          curl -v -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}" \
             -H "Origin: https://www.premierleague.com" \
-            -H "Referer: https://www.premierleague.com/" | node -e "
-            const raw = require('fs').readFileSync('/dev/stdin','utf8');
-            console.log('raw (first 2000):', raw.slice(0, 2000));
-          " 2>&1 || echo "FAILED"
+            -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36" \
+            -H "Accept: application/json, text/plain, */*" \
+            -H "Accept-Language: en-US,en;q=0.9" \
+            -H "Referer: https://www.premierleague.com/" \
+            -H "sec-fetch-site: cross-site" \
+            -H "sec-fetch-mode: cors" \
+            -H "sec-fetch-dest: empty" \
+            2>&1 | head -80
 
           echo ""
-          echo "=== PL match facts — /api/football/fixtures/${PULSE_ID}/matchfacts ==="
-          curl -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/matchfacts" \
-            -H "Origin: https://www.premierleague.com" | node -e "
-            const raw = require('fs').readFileSync('/dev/stdin','utf8');
-            console.log('raw (first 3000):', raw.slice(0, 3000));
-          " 2>&1 || echo "FAILED: matchfacts"
+          echo "=== same with -L (follow redirects) ==="
+          curl -L -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}" \
+            -H "Origin: https://www.premierleague.com" \
+            -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36" \
+            -H "Accept: application/json" | head -c 3000 || echo "FAILED"
+
+          echo ""
+          echo "=== textstream with full browser headers ==="
+          curl -v -s "https://footballapi.pulse.football.co.uk/football/fixtures/${PULSE_ID}/textstream/EN" \
+            -H "Origin: https://www.premierleague.com" \
+            -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36" \
+            -H "Accept: application/json" \
+            -H "Referer: https://www.premierleague.com/" \
+            2>&1 | head -80
 
       - name: Bootstrap static
         run: |
