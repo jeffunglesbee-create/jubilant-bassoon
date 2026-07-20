@@ -4504,6 +4504,70 @@ async function nhlGSAXInit() {
   } catch(e_) { _recordRelayInit('nhlGSAXInit', false, e_?.message || 'error'); }
 }
 
+// ── mlsSubImpactInit: Defensive Substitution Lead-Loss metric (Stats tab) ────
+// CC-CMD-2026-07-19-mls-sub-impact-metric Task 4. Real, single-game,
+// event-derived computation (timeline + position lookup + score-state
+// tracking) -- not a drama/interest/watch-worthiness judgment, matching
+// the CC-CMD's own Rule 47 reasoning. No bulk "recent MLS finals" endpoint
+// exists (confirmed live during this build) -- scans the last several real
+// calendar days via the already-established fetchV2Games('mls', date) for
+// state==='final' games, then asks the relay's already-live /soccer/sub-
+// impact route (verified directly against real data before this was
+// written) whether each one had a real defensive substitution. Only games
+// with a genuine hasDefensiveSubImpact:true result are kept -- this is
+// real, honest single-game data, not a cross-game aggregate (explicitly
+// out of scope per the CC-CMD's own Task 3).
+let MLS_SUB_IMPACT = []; // [{event, homeTeam, awayTeam, homeScore, awayScore, date, defensiveSubs}]
+let _mlsSubImpactLoaded = false;
+async function mlsSubImpactInit() {
+  if (_mlsSubImpactLoaded) return;
+  try {
+    const base = (typeof V2_RELAY_BASE !== 'undefined')
+      ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const recentFinals = [];
+    for (let daysBack = 0; daysBack <= 6 && recentFinals.length < 6; daysBack++) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysBack);
+      const dateStr = d.toISOString().slice(0, 10);
+      // fetchV2Games is throw-proof by its own current design (catches
+      // internally, always resolves to []) -- guarded here too so this
+      // scan doesn't become fragile to that if it ever changes; one bad
+      // date must not abort the whole scan.
+      let games = [];
+      try { games = await fetchV2Games('mls', dateStr); }
+      catch(e_) { captureFieldError('mls:sub-impact-date-scan', e_, true); }
+      for (const g of games) {
+        if (g.state !== 'final' || !g.espnEventId) continue;
+        if (recentFinals.some(f => f.event === g.espnEventId)) continue; // date-range overlap
+        recentFinals.push({
+          event: g.espnEventId,
+          homeTeam: g.home?.name || '',
+          awayTeam: g.away?.name || '',
+          homeScore: g.home?.score ?? null,
+          awayScore: g.away?.score ?? null,
+          date: dateStr,
+        });
+      }
+    }
+    for (const g of recentFinals.slice(0, 6)) {
+      try {
+        const r = await fetch(`${base}/soccer/sub-impact?league=usa.1&event=${g.event}`, { signal: AbortSignal.timeout(5000) });
+        if (!r.ok) continue;
+        const data = await r.json();
+        if (data?.hasDefensiveSubImpact && Array.isArray(data.defensiveSubs) && data.defensiveSubs.length) {
+          MLS_SUB_IMPACT.push({ ...g, defensiveSubs: data.defensiveSubs });
+        }
+      } catch(e_) { captureFieldError('mls:sub-impact-fetch', e_, true); }
+    }
+    _mlsSubImpactLoaded = true;
+    _recordRelayInit('mlsSubImpactInit', true);
+    if (FIELD_DEBUG) console.log('[FIELD] MLS sub-impact loaded:', MLS_SUB_IMPACT.length, 'qualifying games of', recentFinals.length, 'scanned');
+  } catch(e) {
+    _recordRelayInit('mlsSubImpactInit', false, e?.message || 'error');
+    captureFieldError('mls:sub-impact-init', e, true);
+  }
+}
+
 // ── soccerFBrefInit: loads FBref xG analytics for soccer leagues ─────────────
 // Populates per-team xG/pressing context used in EPL/WC journalism prompts.
 // Called lazily — only when a soccer game is detected on tonight's slate.
@@ -20223,6 +20287,7 @@ async function fetchSchedule(){
   setTimeout(nhlGSAXInit, 4800);          // NHL GSAX from MoneyPuck R2 (upgrades NHL_GOALIE_RATINGS from save% proxy)
   setTimeout(mlbPythagInit, 4900);        // MLB Pythagorean expected record from standings API
   setTimeout(nflNGSInit, 5000);           // NFL NGS: QB CPOE + WR YAC Above Expected from R2
+  setTimeout(mlsSubImpactInit, 5100);     // MLS defensive sub lead-loss metric (Stats tab, single-game)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
   setTimeout(nhlPlayoffLeadersPrefetch, 3000); // Phase B subtask 9: NHL playoff leaders feed (15-min TTL)
   setTimeout(nbaPlayoffLeadersPrefetch, 3100); // ADR-003: NBA playoff leaders via /nba-stats/leagueLeaders (15-min TTL)
@@ -30401,6 +30466,39 @@ function renderStatsSection() {
       }).join('');
       blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚽ EPL</div><div class="stats-subsection"><div class="stats-subsection-label">xGoal Involvement per 90 (xGI/90)</div>${fplRows}</div></div>`);
     }
+  }
+
+  // ── MLS ──────────────────────────────────────────────────────────────────
+  // CC-CMD-2026-07-19-mls-sub-impact-metric Task 4. mlsRows accumulates
+  // real MLS Stats tab sub-sections the same way mlbRows/nflRows do above --
+  // the sibling CC-CMD-2026-07-19-mls-novel-metrics.md's own Task 3 extends
+  // this same block with further sub-sections; this array is the shared,
+  // additive home for both, not a one-off.
+  const mlsRows = [];
+
+  // Defensive Substitution Lead-Loss: real, single-game, event-derived
+  // (see mlsSubImpactInit's own header comment). Honest scope note, not
+  // optional: this is single-game data, never framed as a season trend.
+  if (MLS_SUB_IMPACT.length) {
+    const mlsSubEntries = [];
+    MLS_SUB_IMPACT.forEach(g => {
+      g.defensiveSubs.forEach(s => {
+        const opponent = s.team === g.homeTeam ? g.awayTeam : g.homeTeam;
+        mlsSubEntries.push({ ...s, opponent, finalScore: `${g.awayScore}-${g.homeScore}` });
+      });
+    });
+    if (mlsSubEntries.length) {
+      const subRows = mlsSubEntries.map((s, i) => {
+        const outcomeCls = s.outcome === 'held' ? 'pos' : s.outcome === 'lost' ? 'neg' : '';
+        const outcomeLabel = s.outcome === 'held' ? 'Held' : s.outcome === 'challenged' ? 'Challenged' : 'Lost';
+        return row(i+1, s.team, outcomeLabel, outcomeCls, `${esc(s.playerOff)}→${esc(s.playerOn)} (${esc(s.positionOff)}→${esc(s.positionOn)}) @ ${esc(s.clock)} vs ${esc(s.opponent)} · Final ${esc(s.finalScore)}`);
+      }).join('');
+      mlsRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Defensive Substitutions — Recent Games (single-game, not a season trend)</div>${subRows}</div>`);
+    }
+  }
+
+  if (mlsRows.length) {
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚽ MLS</div>${mlsRows.join('')}</div>`);
   }
 
   if (!blocks.length) {
