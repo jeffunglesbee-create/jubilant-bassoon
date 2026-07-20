@@ -1,3 +1,19 @@
+## SESSION CLOSE-OUT — 2026-07-20, pl-match-client-wiring (supersedes previous)
+
+**HEAD:** e818a23 (jubilant-bassoon) / 45329db (field-relay-nba, unchanged)
+**Smoke count:** 963/0 (unchanged)
+**SW version:** 2026-07-20a (unchanged)
+**Session doc:** outbox/cc-session-2026-07-20-pl-match-client-wiring.md
+
+**PL match client wiring — Key Moments + Lineups:**
+- jubilant-bassoon `e818a23`: `fetchPLMatch(fixtureId)` added with 30s per-fixture cache. Consumed by two callers:
+  1. `openBottomSheet()` — async Key Moments section: goal/substitution events (filtered, sorted by time.secs), HT score, real event.text prose. Anchor `bs-pl-inject` placed before `bs-last-meeting`.
+  2. `renderStatsSection()` Today's Games — async Lineups section: starting XI (shirt#, pos, name), formation label, REF/VAR names. Placeholder `tg-pl-{id}` per game, filled after `content.innerHTML`.
+- Integration status: STAGED — sandbox egress blocks browser E2E verify. Shape verified via relay probe (fixture 116197). Smoke 963/0.
+- Open: card event types (yellow/red) not confirmed — need a booked match to verify type string.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-20, pl-match-probe (supersedes previous)
 
 **HEAD:** 45329db (field-relay-nba) / ba4b233 (jubilant-bassoon, no new code)
