@@ -191,6 +191,18 @@ production wiring:
   a Llama-family model would. Check CF Workers AI model catalog for available
   Gemma variants and add as a third candidate in Step 3 alongside the two
   Llama options.
+  **RESOLVED (2026-07-20, real, live catalog check via
+  developers.cloudflare.com/ai/models/):** `@hf/google/gemma-7b-it` is
+  marked Beta/Deprecated on Workers AI — do not use for new work. Two real,
+  current Cloudflare-hosted options: `@cf/google/gemma-4-26b-a4b-it`
+  (newest, "Gemma 4," built from Gemini 3 research, no explicit context-
+  window figure confirmed in the catalog listing itself — verify directly
+  in Step 1's probe rather than assume) and `@cf/google/gemma-3-12b-it`
+  (128K context, confirmed, but also marked Deprecated). Recommendation:
+  use `gemma-4-26b-a4b-it` as the real Gemma candidate for Step 3, not the
+  originally-named `gemma-7b-it` — confirm its context window empirically
+  in Step 1 alongside the two Llama candidates before assuming it clears
+  the >100K gate.
 - Is there a neuronsUsed cost model for the Workers AI binding on the current
   CF plan? Confirm free tier limit before assuming zero cost.
 - Does the `AI` binding require a wrangler.toml migration entry (like DOs) or
