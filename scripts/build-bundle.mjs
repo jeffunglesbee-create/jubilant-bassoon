@@ -4,6 +4,7 @@
 // This script transforms index.html in-place, same pattern as strip-comments.js.
 
 import { build } from 'esbuild';
+import { solidPlugin } from 'esbuild-plugin-solid';
 import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -23,6 +24,7 @@ await build({
   platform: 'browser',
   minify: false,        // strip-comments.js handles comment removal after this step
   logLevel: 'warning',  // surface pre-existing warnings (duplicate keys etc.)
+  plugins: [solidPlugin()],
 });
 
 const bundled = readFileSync(tmpOut, 'utf8');
