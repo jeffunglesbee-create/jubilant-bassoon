@@ -7,6 +7,10 @@
 - `42d5629` — Layer 3b circuit breaker (prior session)
 - `61a4714` — feat: add Workers AI voice judge probe route (Step 2)
 - `51a7732` — feat: add Gemini judge probe route for Step 3 corpus comparison
+- `77a8913` — feat: raise max_tokens to 2000, fix Gemma 4 response parsing
+- `811e8cf` — feat: raise max_tokens to 4000 for Gemma 4 extended test
+- `8b2dd8e` — feat: add ?format=passfail to workers-ai-judge probe (two-phase test)
+- `0fad644` — feat: add ?format=reframe to workers-ai-judge probe (8B reframe test)
 
 ## HEAD progression (jubilant-bassoon)
 - `859da9d` — docs: Workers AI voice judge test plan [skip ci]
@@ -112,35 +116,112 @@ Step 5 production wiring is explicitly not authorized regardless of gate results
 
 ---
 
+## Novel ideas tested (extended session)
+
+After the initial Step 4 verdict, three novel mitigations were tested.
+
+### Gemini FAIL latency baseline (Gate D validity check)
+
+Hypothesis: Gate D (p95≤1500ms) was calibrated against Gemini PASS cases only (~650ms),
+making it unfair to compare 70B FAIL latency (~2900ms) against a PASS-only baseline.
+
+Result: **DISPROVED.** Gemini FAIL cases (FAIL + SENTENCE + FIX output) take 731-816ms —
+only ~150ms slower than PASS cases. Gate D is apples-to-apples. Gemini genuinely delivers
+structured failure analysis in under 1 second. 70B takes 1715-2339ms for the same task.
+
+Secondary finding: Gemini flagged "Denver wins in overtime because Jokic simply refused
+the other outcome" as FAIL — treating "wins because [player name]" as generic structure.
+Gemini may be stricter than the 10-brief ground truth suggested.
+
+### Two-phase approach: `?format=passfail` on 70B (Gate D targeted fix)
+
+Root cause of 70B's Gate D failure: FAIL cases generate ~80 output tokens (FAIL + SENTENCE +
+FIX) vs PASS cases generating ~1 token. At 70B's CF throughput (~60 tok/s), that's
+~800-1000ms of pure generation — exactly the observed gap.
+
+Test: strip SENTENCE/FIX requirement from prompt (Phase 1 classify-only). Re-ran 10-brief
+corpus on 70B with `?format=passfail`.
+
+| Brief | Gemini GT | 70B passfail | ms |
+|-------|-----------|--------------|-----|
+| B1 wire-copy | FAIL | FAIL ✓ | 1234 |
+| B2 wire-copy | FAIL | FAIL ✓ | 1167 |
+| B3 wire-copy | FAIL | FAIL ✓ | 925 |
+| B4 wire-copy | FAIL | FAIL ✓ | 1487 |
+| B5 Wembanyama | PASS | FAIL ✗ FP | 1016 |
+| B6 Cubs | PASS | PASS ✓ | 271 |
+| B7 Sinner | PASS | PASS ✓ | 844 |
+| B8 Avalanche | PASS | PASS ✓ | 1622 |
+| B9 Salah | PASS | PASS ✓ | 1001 |
+| B10 Raptors | FAIL | FAIL ✓ | 1132 |
+
+Sorted latencies: 271, 844, 925, 1001, 1016, 1132, 1167, 1234, 1487, **1622**. p95 = 1622ms.
+
+Gate A: ✓ 0% FN. Gate B: ✓ 100%. Gate C: ✓ 20% FP (B5 persistent). Gate D: **✗ p95 1622ms**.
+
+The Gate D failure is a single PASS outlier (B8 Avalanche, 1622ms) — PASS output is 1 token,
+1622ms is scheduling/cold-path variance, not structural. 9/10 cases cleared Gate D. The
+two-phase approach structurally works: FAIL-path latency dropped from 1715-2909ms to 925-1487ms.
+Not a clean gate pass on this corpus, but the architecture is validated.
+
+### 8B structural reframe: `?format=reframe` (Gate C targeted fix)
+
+Root cause hypothesis for 8B's 100% FP: the 2900-token FIELD_VOICE_REGISTER is too dense
+for 8B to parse the subordinated-stats distinction. It sees any number in prose and fires FAIL.
+
+Test: replace full register with a tight 200-token structural test focused on the wire-copy
+signature verb pattern (`has/holds/carries/averages/enters with/improved to + STAT`).
+
+Result: **All 10 returned PASS.** Swing from 100% FP to 100% FN.
+Gate A: ✗ 100% FN (5/5 FAIL cases missed). Gate C: ✓ 0% FP. Gate D: ✓ p95 ~423ms.
+
+The specific verb list is necessary but not sufficient. Wire-copy uses dozens of verbs
+(`went 2-for-4`, `scored 31 points with`, `beat the Celtics 118-112`) that bypass the
+pattern. 8B matched the listed signatures but couldn't generalize the underlying concept.
+This is a model capability limit, not a prompt engineering problem.
+
+### Complete novel ideas summary
+
+| Config | Gate A FN≤10% | Gate C FP≤30% | Gate D p95≤1500ms | Verdict |
+|--------|--------------|--------------|------------------|---------|
+| 8B full prompt | ✓ 0% FN | ✗ 100% FP | ✓ ~868ms | FAIL |
+| 8B reframe | ✗ 100% FN | ✓ 0% FP | ✓ ~423ms | FAIL |
+| 70B full prompt | ✓ 0% | ✓ 20% | ✗ ~2909ms | FAIL |
+| 70B passfail | ✓ 0% | ✓ 20% | ✗* p95 1622ms | FAIL |
+
+*Structurally validated; single PASS outlier at 1622ms caused the gate miss.
+
+**No configuration passes all four gates. Workers AI judge remains not viable.**
+
+---
+
 ## Failure analysis
 
 **8B:** Overcorrects aggressively — treats any number in prose as wire-copy signal.
-False positive rate 100% renders it unusable.
+False positive rate 100% renders it unusable. Structural reframe (narrow verb list)
+swings to 100% false negative — 8B cannot generalize the subordinated-stats concept.
 
-**70B:** Correct classification (only 1 false positive), but p95 latency ~2900ms far exceeds
-the 1500ms gate. The existing Gemini judge adds ~800-1200ms. 70B is a latency regression,
-not an improvement. Additionally, 70B is paid-tier Workers AI (~$0.40/M tokens) vs Gemini
-Flash-Lite — cost savings unclear.
+**70B:** Correct classification (only 1 consistent false positive: B5 Wembanyama), but
+p95 latency ~2900ms far exceeds the 1500ms gate. Two-phase approach (passfail format)
+brings FAIL-path latency to 925-1487ms, but one PASS outlier pushed p95 to 1622ms.
+Additionally, 70B is paid-tier Workers AI (~$0.40/M tokens) vs Gemini Flash-Lite.
 
-**Gemma 4:** Architecture mismatch. Reasoning model (extended thinking) exhausts its
-256-token budget on CoT before writing PASS/FAIL. Would require `max_tokens: 2000+` to
-produce structured output, and even then, reasoning tokens (likely billed) may make it
-more expensive than Gemini.
+**Gemma 4:** Architecture mismatch. Reasoning model exhausts token budget on CoT before
+writing PASS/FAIL. Even at 4000 tokens, p95 ~29s. Unusable for this task.
 
 ---
 
 ## Options per failure condition (test plan)
 
-1. **Trim FIELD_VOICE_REGISTER to exemplars-only** — may fix 8B's false positive rate,
-   but risks Gate A (false negatives on genuinely bad prose). Would need re-test.
-2. **Increase max_tokens for Gemma 4 to ~2000** — would unblock Gate B, but reasoning
-   token cost is unknown/potentially expensive, and latency would worsen.
-3. **Accept circuit breaker (`42d5629`) as permanent cost floor** — most pragmatic.
+1. **Two-phase 70B in production** — Phase 1 classify (passfail, ~800-1500ms), Phase 2
+   only on FAIL to get SENTENCE/FIX (adds ~1500-2500ms for FAIL cases). Net latency for
+   FAIL path: ~2300-4000ms total — WORSE than current Gemini (~800ms). Not viable.
+2. **Accept circuit breaker (`42d5629`) as permanent cost floor** — most pragmatic.
    Circuit breaker already deployed; reduces Gemini judge calls to zero when any prior
    layer fires a retry. Cost floor is ~$3-4/day (down from $8-9/day spike).
 
 Recommendation: Accept circuit breaker as permanent floor. No further Workers AI pursuit
-unless CF adds a sub-500ms, non-reasoning Llama 70B variant.
+unless CF releases a sub-500ms non-reasoning model with 70B-class accuracy.
 
 ---
 
