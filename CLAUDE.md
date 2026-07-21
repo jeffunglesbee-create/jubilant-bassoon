@@ -171,3 +171,34 @@ not guess faster. Uncertainty is not permission to shortcut.
 If quick way — stop, find the right way, then move at pace.
 
 See STANDARDS.md Rule 88 for full rationale and case study.
+
+## Rule 89 — Surgical-render chrome cleanup (RENDER-CHROME-A)
+
+Any ambient-panel chrome element (skeleton, loading state, spinner, or any
+future placeholder added to `#ambient-panel`'s static HTML) MUST be
+explicitly removed in JS once real section content has mounted — in ALL
+states, including all-sections-empty. This applies even when the panel
+renders zero visible sections (e.g. no live games, no Upcoming items yet).
+
+**Why this rule exists (root cause from CC-CMD-2026-07-21-ambient-skeleton-overlap,
+Codex `ambient-panel-skeleton-overlap`):** Wholesale-innerHTML rewrites used
+to clear skeletons for free — anything inside the container got overwritten.
+The Solid fine-grained-DOM rewrite (`CC-CMD-2026-07-20-solid-2-rewrite`)
+deliberately does surgical updates via `reconcile()`, which means Solid's
+`render()` never touches siblings of what it mounts. Skeletons placed as
+siblings of the Solid root are invisible to Solid and survive indefinitely.
+Any future fine-grained-rendering conversion has this same exposure — when
+you change a renderer from wholesale-innerHTML to surgical DOM, audit whether
+any chrome lived "for free" inside the old replacement target that now needs
+an explicit removal step.
+
+**The fix pattern (from `renderAmbientPanel()`):**
+```js
+if (!panel._solidMounted) {
+  mountAmbientIsland(panel, _apScrollToFilter);
+  panel._solidMounted = true;
+  panel.querySelector('.ambient-skeleton')?.remove();  // ← explicit cleanup
+}
+```
+Use `remove()`, not `display:none` — a removed node cannot bleed through
+again; a hidden one can if any future code un-hides it.

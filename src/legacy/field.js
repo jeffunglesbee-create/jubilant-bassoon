@@ -21510,7 +21510,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-21a';
+  const SW_VERSION = '2026-07-21b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32726,6 +32726,7 @@ function renderAmbientPanel(){
   if (!panel._solidMounted) {
     mountAmbientIsland(panel, _apScrollToFilter);
     panel._solidMounted = true;
+    panel.querySelector('.ambient-skeleton')?.remove();
   }
   const w=window.innerWidth;
   // Desktop bug fix (June 15 2026): allow rendering at >=1200px when wf-mode

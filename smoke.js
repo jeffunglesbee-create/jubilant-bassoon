@@ -5538,12 +5538,16 @@ assert('A603 — iPad-20: buildTodaySchedule pushes WC/FrenchOpen/AFLFinals via 
 assert('A602 — CC-CMD-2026-07-20-solid-2: renderAmbientPanel mounts a persistent Solid island instead of replacing .ambient-scroll-inner via innerHTML (STANDARDS Rule 24)',
   // Mounted once, idempotently, guarded on the panel element itself —
   // the DOM node this creates is never torn down again after this.
-  /if \(!panel\._solidMounted\) \{\s*mountAmbientIsland\(panel, _apScrollToFilter\);\s*panel\._solidMounted = true;\s*\}/.test(html) &&
+  /if \(!panel\._solidMounted\) \{\s*mountAmbientIsland\(panel, _apScrollToFilter\);\s*panel\._solidMounted = true;\s*panel\.querySelector\('\.ambient-skeleton'\)\?\.remove\(\);?\s*\}/.test(html) &&
   // The old whole-subtree write is gone — data flows through
   // updateAmbientData() (createStore+reconcile), not panel.innerHTML=.
   !/panel\.innerHTML\s*=\s*_apWrapped/.test(html) &&
   /updateAmbientData\(\{otw,scores,soon,upcoming,ctx:ctxData,editorial,arb\}\);/.test(html),
   'CC-CMD-2026-07-20-solid-2: the old scrollTop save/restore dance is replaced by a Solid island whose DOM node is mounted once and never torn down — reconcile() only touches changed leaves, so scroll position in .ambient-scroll-inner is never reset by a poll cycle.');
+
+assert('A602b — CC-CMD-2026-07-21-ambient-skeleton-overlap: .ambient-skeleton explicitly removed inside _solidMounted block (Rule 89 RENDER-CHROME-A)',
+  /panel\._solidMounted = true;\s*panel\.querySelector\('\.ambient-skeleton'\)\?\.remove\(\)/.test(html),
+  'Surgical DOM updates (reconcile) never clear skeleton siblings implicitly — wholesale innerHTML did for free. The remove() call must follow panel._solidMounted = true inside the if-block so it fires exactly once, at real mount time. Rule 89: any ambient-panel chrome element must be explicitly removed after mount.');
 
 // ── A598 / iPad-18: ambient panel scroll via inset-positioned inner div ────
 // CC-CMD-2026-07-20-solid-2: the '<div class="ambient-scroll-inner">' wrapper
