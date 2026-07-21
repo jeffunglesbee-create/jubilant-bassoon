@@ -1,0 +1,55 @@
+name: Ambient Skeleton Probe
+# Verifies .ambient-skeleton is absent from DOM after Solid mount.
+# CC-CMD-2026-07-21-ambient-skeleton-overlap TASK 4 live verification.
+# Trigger: push to outbox/.trigger-ambient-skeleton-probe OR workflow_dispatch
+
+on:
+  push:
+    paths: ['outbox/.trigger-ambient-skeleton-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run ambient skeleton probe
+        run: node ambient_skeleton_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Ambient Skeleton Probe"
+          git add outbox/ambient-skeleton-probe-*.png outbox/ambient-skeleton-probe-manifest-*.json
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "ambient skeleton probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
