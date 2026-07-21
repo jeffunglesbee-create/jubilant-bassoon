@@ -63,25 +63,27 @@ async function probeViewport(browser, vp) {
   // Log key result NOW before screenshot (screenshot can timeout, result must not be lost)
   console.log(`  [${vp.name}] solidMounted=${state.solidMounted} skeletonPresent=${state.skeletonPresent} skeletonCount=${state.skeletonCount}`);
 
-  // Screenshot #ambient-panel — use fullPage screenshot crop if panel not visible
+  // Screenshot #ambient-panel — force visible, fall back to full-page if needed
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const screenshotPath = `${SCRATCHPAD}/ambient-skeleton-probe-${vp.name}-${ts}.png`;
+  let screenshotTaken = false;
   try {
     const panelEl = await page.$('#ambient-panel');
     if (panelEl) {
-      // force visible for screenshot purposes (CSS hides it at this breakpoint)
       await page.evaluate(() => {
         const p = document.getElementById('ambient-panel');
-        if (p) { p.style.display = 'block'; p.style.position = 'static'; }
+        if (p) { p.style.display = 'block'; p.style.position = 'static'; p.style.width = '380px'; }
       });
-      await panelEl.screenshot({ path: screenshotPath, timeout: 5000 });
+      await panelEl.screenshot({ path: screenshotPath, timeout: 8000 });
+      screenshotTaken = true;
     } else {
       await page.screenshot({ path: screenshotPath, fullPage: false });
+      screenshotTaken = true;
     }
   } catch (e) {
-    // Non-fatal: take a full-page screenshot instead
     console.log(`  screenshot fallback (${e.message.split('\n')[0]})`);
     await page.screenshot({ path: screenshotPath, fullPage: false }).catch(() => {});
+    screenshotTaken = true;
   }
 
   await ctx.close();
@@ -91,7 +93,7 @@ async function probeViewport(browser, vp) {
     width: vp.width,
     mounted,
     ...state,
-    screenshotPath: panelEl ? screenshotPath : null,
+    screenshotPath: screenshotTaken ? screenshotPath : null,
     consoleErrors: errors.slice(0, 5),
   };
 }
