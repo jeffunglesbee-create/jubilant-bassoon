@@ -1,6 +1,6 @@
 ## SESSION CLOSE-OUT — 2026-07-21, ambient-skeleton-overlap (supersedes previous)
 
-**HEAD:** 0ac1075 (jubilant-bassoon) / d637561 (field-relay-nba, unchanged)
+**HEAD:** 5d82c04 (jubilant-bassoon, includes probe results at 0e36412) / d637561 (field-relay-nba, unchanged)
 **Smoke count:** 965/0 (+1 from A602b assertion, A602 regex updated)
 **SW version:** 2026-07-21b (bumped from 2026-07-21a)
 **Session doc:** outbox/cc-session-2026-07-21-ambient-skeleton-overlap.md
@@ -10,7 +10,7 @@
 - Fix: `panel.querySelector('.ambient-skeleton')?.remove()` added inside `if (!panel._solidMounted)` block in `renderAmbientPanel()` (field.js), immediately after `panel._solidMounted = true`.
 - CLAUDE.md Rule 89 added (RENDER-CHROME-A) — generalizes the pattern to any future surgical-render conversion.
 - Smoke A602b added: regex-verifies `_solidMounted = true` is followed by `.remove()`.
-- Live DOM verification STAGED: `renderAmbientPanel()` is inside IIFE; not exposed on `window`; fires only from live data polls. Structural proof via A602b is deterministic.
+- Live DOM verification VERIFIED: GitHub Actions probe run 3 (29876685790), 2026-07-21T23:18:49Z. wf_desktop_1440: solidMounted=true, skeletonPresent=false. ipad_820: solidMounted=true, skeletonPresent=false. 2/2 PASS. Screenshots + manifest committed at `0e36412`.
 - Scroll regression: none. `updateAmbientData(reconcile)` path unchanged; `.ambient-scroll-inner` node never torn down.
 
 ---

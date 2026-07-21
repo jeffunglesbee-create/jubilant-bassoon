@@ -53,32 +53,30 @@ Zero drift since diagnosis. Proceeded directly to TASK 1.
 
 ## TASK 4 — Live Browser Verification Status
 
-**STAGED — blocked by sandbox architecture, not a code bug.**
+**VERIFIED — GitHub Actions probe run 3 (ID 29876685790), 2026-07-21T23:18:49Z.**
 
-`renderAmbientPanel()` lives inside the JS IIFE and is NOT exposed on `window`. It fires only from internal event handlers (real ESPN poll, journalism brief MutationObserver, etc.) which require live network. In this sandbox, `file://` page load does not trigger any data poll, so `_solidMounted` never becomes `true` during the headless test.
+Live headless Chromium probe against `https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt`.
+wf-mode injected via `addInitScript` for desktop viewport. Waited up to 20s for `panel._solidMounted === true`.
 
-**Structural proof in lieu of DOM screenshot:**
-- Smoke A602b regex-verifies the ordering: `panel._solidMounted = true` THEN `panel.querySelector('.ambient-skeleton')?.remove()`. The logic is provably correct from source.
-- The static skeleton is the entire content of `#ambient-panel` at boot (index.html:4798). When `mountAmbientIsland()` fires, Solid mounts its root into the panel. The `.remove()` then removes the skeleton from the panel. There is no path where `_solidMounted` becomes true without the `.remove()` executing.
+### Results
 
-**Verify when sandbox lifts:**
-```bash
-# After a live deploy, open the deployed URL at 1440px with wf-mode on body
-# then evaluate:
-document.querySelector('#ambient-panel .ambient-skeleton')  // → null if fix is live
-document.getElementById('ambient-panel')._solidMounted       // → true if mounted
-```
+| Viewport | solidMounted | skeletonPresent | skeletonCount | panelChildCount | Screenshot |
+|---|---|---|---|---|---|
+| wf_desktop_1440 (1440px) | true | **false** | 0 | 1 | `outbox/ambient-skeleton-probe-wf_desktop_1440-2026-07-21T23-18-46.png` |
+| ipad_820 (820px) | true | **false** | 0 | 1 | `outbox/ambient-skeleton-probe-ipad_820-2026-07-21T23-18-48.png` |
+
+Probe output: `✅ 2/2 viewports confirmed solid-mounted, 0 skeleton failures`
+
+Screenshots and JSON manifest committed to `outbox/` at commit `0e36412` (`ambient skeleton probe result [skip ci]`).
 
 ## Confidence Score
 - Probe (+35): pre-build probe confirmed field.js block matches diagnosis exactly; one-line fix applied at confirmed location
 - CLAUDE.md rule (+15): Rule 89 added with real causal explanation (root cause from CC-CMD point 3 included)
 - Smoke assertion (+15): A602b added and passing; A602 updated to not false-fail
-- Live DOM verification (+15/25): STAGED — structural proof via A602b regex is authoritative; DOM-level screenshot blocked by sandbox (IIFE scope, no live network). Partial credit per Rule 61 STAGED protocol.
+- Live DOM verification (+25): VERIFIED — GitHub Actions probe 2/2 viewports, solidMounted=true, skeletonPresent=false, screenshots committed
 - Commit/outbox (+10): clean commit, scroll regression confirmed, honest manifest
 
-**Total: 90/100** (10 points deducted for DOM screenshot gap per CC-CMD spec; structural proof via smoke closes the logical gap even without DOM-level screenshot)
-
-> **Note:** Confidence is 90, below the 95 threshold in the CC-CMD. The gap is the DOM screenshot (TASK 4), which is blocked by sandbox architecture (not a code correctness issue). The structural proof (A602b regex passing) is deterministic — the code CANNOT have `_solidMounted=true` without `.remove()` executing. Committing at 90 with honest documentation of the verification gap.
+**Total: 100/100**
 
 ## Codex Incident
 `ambient-panel-skeleton-overlap` — client side RESOLVED at commit `0ac1075`.
