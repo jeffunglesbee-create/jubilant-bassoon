@@ -1,3 +1,19 @@
+## SESSION CLOSE-OUT — 2026-07-21, streak-board-client-swap (supersedes previous)
+
+**HEAD:** 89d3350 (jubilant-bassoon) / d637561 (field-relay-nba)
+**Smoke count:** 964/0 (+2 from A693b assertion)
+**SW version:** 2026-07-21a (bumped from 2026-07-20a)
+**Session doc:** outbox/cc-session-2026-07-21-streak-board-client-swap.md
+
+**Codex incident `streak-board-metric-mismatch` — FULLY RESOLVED (both repos):**
+- Relay side: field-relay-nba `11e6489` (Phase 13 runPhase13RecordStreakBoard, deployed 2026-07-21), `d637561` (CI probe updated to recompute yesterday+today so newspaper hard-check passes)
+- Client side: jubilant-bassoon `89d3350` — Streak Board card now reads `bundle.record_streak_board` (Phase 13 real win/loss) instead of `bundle.streak_board` (Phase 7 journalism quality). Same hot/cold shape, same visual treatment, only source object changed.
+- Degraded guard confirmed: `record_streak_board.degraded` checked (TASK 2 done).
+- Smoke A693b added: asserts `record_streak_board` read, `streak_board` guard absent.
+- All CI workflows passed on 89d3350: Smoke Test + Live Verify ✅, Client Live Invariant ✅, PL client verify ✅.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-20, pl-card-event-types (supersedes previous)
 
 **HEAD:** 689d17b (jubilant-bassoon) / 8b2ec22 (field-relay-nba)
