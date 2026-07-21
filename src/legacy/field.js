@@ -19927,10 +19927,10 @@ function renderNewspaper(bundle) {
     parts.push(`<div class="np-section np-preview"><div class="np-label">TONIGHT</div><p class="np-prose">${bundle.preview}</p></div>`);
   }
 
-  // 7. Streak Board
-  if (bundle.streak_board && !bundle.streak_board.degraded) {
-    const hot  = (bundle.streak_board.hot  || []).map(s => `<span class="np-streak-chip np-hot">🔥 ${s.team} × ${s.streak}</span>`).join('');
-    const cold = (bundle.streak_board.cold || []).map(s => `<span class="np-streak-chip np-cold">🧊 ${s.team} × ${s.streak}</span>`).join('');
+  // 7. Streak Board — reads real win/loss streaks (record_streak_board, Phase 13)
+  if (bundle.record_streak_board && !bundle.record_streak_board.degraded) {
+    const hot  = (bundle.record_streak_board.hot  || []).map(s => `<span class="np-streak-chip np-hot">🔥 ${s.team} × ${s.streak}</span>`).join('');
+    const cold = (bundle.record_streak_board.cold || []).map(s => `<span class="np-streak-chip np-cold">🧊 ${s.team} × ${s.streak}</span>`).join('');
     if (hot || cold) {
       parts.push(`<div class="np-section np-streaks"><div class="np-label">STREAK BOARD</div><div class="np-streak-row">${hot}${cold}</div></div>`);
     }
@@ -21510,7 +21510,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-20a';
+  const SW_VERSION = '2026-07-21a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

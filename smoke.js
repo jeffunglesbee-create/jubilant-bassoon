@@ -4777,6 +4777,13 @@ assert('A693 — renderNewspaper top-level; stashes bundle; assembles 7 sections
   /TODAY'S SCHEDULE/.test(html),
   'CC-CMD-2026-06-22 Newspaper Task 4: renderNewspaper at module scope assembles up to seven sections (Since You Were Last Here, Night Stars, Morning Report, Truth Is, Tonight\'s Pick, Tonight preview, Streak Board) plus optional freshness timestamp and the TODAY\'S SCHEDULE divider. Bundle stashed on window so applyFieldPickBadge can re-tag across re-renders. main.prepend places the newspaper above all schedule sections.');
 
+assert('A693b — Streak Board reads record_streak_board (real win/loss), not streak_board (journalism quality)',
+  /bundle\.record_streak_board && !bundle\.record_streak_board\.degraded/.test(html) &&
+  /bundle\.record_streak_board\.hot/.test(html) &&
+  /bundle\.record_streak_board\.cold/.test(html) &&
+  !/bundle\.streak_board && !bundle\.streak_board\.degraded/.test(html),
+  'CC-CMD-2026-07-21 streak-board-client-swap: Streak Board card must read from record_streak_board (Phase 13 real win/loss data) not streak_board (Phase 7 journalism quality). Same hot/cold shape; only the source object changed.');
+
 assert('A694 — getWhatYouMissed top-level; uses field_last_visit; structural notability only; caps at 5',
   /^function getWhatYouMissed\(completedGames\)/m.test(html) &&
   /localStorage\.getItem\('field_last_visit'\)/.test(html) &&

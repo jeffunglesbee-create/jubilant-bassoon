@@ -24965,10 +24965,10 @@ function renderNewspaper(bundle) {
     parts.push(`<div class="np-section np-preview"><div class="np-label">TONIGHT</div><p class="np-prose">${bundle.preview}</p></div>`);
   }
 
-  // 7. Streak Board
-  if (bundle.streak_board && !bundle.streak_board.degraded) {
-    const hot  = (bundle.streak_board.hot  || []).map(s => `<span class="np-streak-chip np-hot">🔥 ${s.team} × ${s.streak}</span>`).join('');
-    const cold = (bundle.streak_board.cold || []).map(s => `<span class="np-streak-chip np-cold">🧊 ${s.team} × ${s.streak}</span>`).join('');
+  // 7. Streak Board — reads real win/loss streaks (record_streak_board, Phase 13)
+  if (bundle.record_streak_board && !bundle.record_streak_board.degraded) {
+    const hot  = (bundle.record_streak_board.hot  || []).map(s => `<span class="np-streak-chip np-hot">🔥 ${s.team} × ${s.streak}</span>`).join('');
+    const cold = (bundle.record_streak_board.cold || []).map(s => `<span class="np-streak-chip np-cold">🧊 ${s.team} × ${s.streak}</span>`).join('');
     if (hot || cold) {
       parts.push(`<div class="np-section np-streaks"><div class="np-label">STREAK BOARD</div><div class="np-streak-row">${hot}${cold}</div></div>`);
     }
