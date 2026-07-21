@@ -1,15 +1,15 @@
 {
   "_meta": {
     "schema_version": "2.0",
-    "generated_at": "2026-07-20T10:24:49.797Z",
-    "for_date": "2026-07-20",
+    "generated_at": "2026-07-21T10:01:24.121Z",
+    "for_date": "2026-07-21",
     "source": "field-data workflow (automated)",
     "games_found": {
       "nhl": 0,
       "nba": 0,
       "mlb": 15,
       "mls": 0,
-      "wnba": 4
+      "wnba": 0
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -23,7 +23,7 @@
         "sport": "MLB",
         "home": "Cleveland Guardians",
         "away": "Minnesota Twins",
-        "start_time": "2026-07-20T22:40:00Z",
+        "start_time": "2026-07-21T22:40:00Z",
         "venue": "Progressive Field",
         "league": "MLB",
         "isPlayoff": false,
@@ -36,9 +36,24 @@
       },
       {
         "sport": "MLB",
+        "home": "Philadelphia Phillies",
+        "away": "Los Angeles Dodgers",
+        "start_time": "2026-07-21T22:40:00Z",
+        "venue": "Citizens Bank Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_TBS",
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
         "home": "New York Yankees",
         "away": "Pittsburgh Pirates",
-        "start_time": "2026-07-20T23:05:00Z",
+        "start_time": "2026-07-21T23:05:00Z",
         "venue": "Yankee Stadium",
         "league": "MLB",
         "isPlayoff": false,
@@ -53,7 +68,7 @@
         "sport": "MLB",
         "home": "Toronto Blue Jays",
         "away": "Tampa Bay Rays",
-        "start_time": "2026-07-20T23:07:00Z",
+        "start_time": "2026-07-21T23:07:00Z",
         "venue": "Rogers Centre",
         "league": "MLB",
         "isPlayoff": false,
@@ -68,23 +83,8 @@
         "sport": "MLB",
         "home": "Boston Red Sox",
         "away": "Baltimore Orioles",
-        "start_time": "2026-07-20T23:10:00Z",
+        "start_time": "2026-07-21T23:10:00Z",
         "venue": "Fenway Park",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": null,
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "mlbnShowcase": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Philadelphia Phillies",
-        "away": "Los Angeles Dodgers",
-        "start_time": "2026-07-20T23:10:00Z",
-        "venue": "Citizens Bank Park",
         "league": "MLB",
         "isPlayoff": false,
         "nationalBundle": null,
@@ -98,7 +98,7 @@
         "sport": "MLB",
         "home": "Atlanta Braves",
         "away": "San Diego Padres",
-        "start_time": "2026-07-20T23:15:00Z",
+        "start_time": "2026-07-21T23:15:00Z",
         "venue": "Truist Park",
         "league": "MLB",
         "isPlayoff": false,
@@ -113,7 +113,7 @@
         "sport": "MLB",
         "home": "Kansas City Royals",
         "away": "San Francisco Giants",
-        "start_time": "2026-07-20T23:40:00Z",
+        "start_time": "2026-07-21T23:40:00Z",
         "venue": "Kauffman Stadium",
         "league": "MLB",
         "isPlayoff": false,
@@ -128,7 +128,7 @@
         "sport": "MLB",
         "home": "Milwaukee Brewers",
         "away": "New York Mets",
-        "start_time": "2026-07-20T23:40:00Z",
+        "start_time": "2026-07-21T23:40:00Z",
         "venue": "American Family Field",
         "league": "MLB",
         "isPlayoff": false,
@@ -143,7 +143,7 @@
         "sport": "MLB",
         "home": "Chicago Cubs",
         "away": "Detroit Tigers",
-        "start_time": "2026-07-21T00:05:00Z",
+        "start_time": "2026-07-22T00:05:00Z",
         "venue": "Wrigley Field",
         "league": "MLB",
         "isPlayoff": false,
@@ -158,7 +158,7 @@
         "sport": "MLB",
         "home": "Texas Rangers",
         "away": "Chicago White Sox",
-        "start_time": "2026-07-21T00:05:00Z",
+        "start_time": "2026-07-22T00:05:00Z",
         "venue": "Globe Life Field",
         "league": "MLB",
         "isPlayoff": false,
@@ -173,7 +173,7 @@
         "sport": "MLB",
         "home": "Houston Astros",
         "away": "Miami Marlins",
-        "start_time": "2026-07-21T00:10:00Z",
+        "start_time": "2026-07-22T00:10:00Z",
         "venue": "Daikin Park",
         "league": "MLB",
         "isPlayoff": false,
@@ -188,7 +188,7 @@
         "sport": "MLB",
         "home": "Colorado Rockies",
         "away": "Washington Nationals",
-        "start_time": "2026-07-21T00:40:00Z",
+        "start_time": "2026-07-22T00:40:00Z",
         "venue": "Coors Field",
         "league": "MLB",
         "isPlayoff": false,
@@ -201,9 +201,24 @@
       },
       {
         "sport": "MLB",
+        "home": "Los Angeles Angels",
+        "away": "St. Louis Cardinals",
+        "start_time": "2026-07-22T01:38:00Z",
+        "venue": "Angel Stadium",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": true,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
         "home": "Arizona Diamondbacks",
         "away": "Athletics",
-        "start_time": "2026-07-21T01:40:00Z",
+        "start_time": "2026-07-22T01:40:00Z",
         "venue": "Chase Field",
         "league": "MLB",
         "isPlayoff": false,
@@ -218,23 +233,8 @@
         "sport": "MLB",
         "home": "Seattle Mariners",
         "away": "Cincinnati Reds",
-        "start_time": "2026-07-21T01:40:00Z",
+        "start_time": "2026-07-22T01:40:00Z",
         "venue": "T-Mobile Park",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": null,
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "mlbnShowcase": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Los Angeles Angels",
-        "away": "St. Louis Cardinals",
-        "start_time": "2026-07-21T02:10:00Z",
-        "venue": "Angel Stadium",
         "league": "MLB",
         "isPlayoff": false,
         "nationalBundle": null,
@@ -246,44 +246,12 @@
       }
     ],
     "soccer": [],
-    "wnba": [
-      {
-        "sport": "WNBA",
-        "home": "Toronto Tempo",
-        "away": "Las Vegas Aces",
-        "start_time": "2026-07-21T00:00Z",
-        "venue": "Coca-Cola Coliseum",
-        "league": "WNBA",
-        "confirmed": true
-      },
-      {
-        "sport": "WNBA",
-        "home": "Dallas Wings",
-        "away": "New York Liberty",
-        "start_time": "2026-07-21T00:00Z",
-        "venue": "College Park Center",
-        "league": "WNBA",
-        "confirmed": true
-      },
-      {
-        "sport": "WNBA",
-        "home": "Golden State Valkyries",
-        "away": "Washington Mystics",
-        "start_time": "2026-07-21T02:00Z",
-        "venue": "Chase Center",
-        "league": "WNBA",
-        "confirmed": true
-      },
-      {
-        "sport": "WNBA",
-        "home": "Seattle Storm",
-        "away": "Minnesota Lynx",
-        "start_time": "2026-07-21T02:00Z",
-        "venue": "Climate Pledge Arena",
-        "league": "WNBA",
-        "confirmed": true
-      }
-    ]
+    "wnba": []
   },
-  "game_overlays": []
+  "game_overlays": [
+    {
+      "_match_key": "Philadelphia Phillies|Los Angeles Dodgers",
+      "matchupNote": "The Dodgers and Phillies collide in a heavyweight clash of National League titans, with both clubs looking to assert dominance in a potential postseason preview. Expect fireworks as two of baseball’s most potent lineups square off in a high-stakes series opener at Citizens Bank Park."
+    }
+  ]
 }
