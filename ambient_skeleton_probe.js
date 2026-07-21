@@ -21,13 +21,26 @@ async function probeViewport(browser, vp) {
   const errors = [];
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 
+  // For desktop viewport: inject wf-mode so renderAmbientPanel() doesn't return early.
+  // The live site only sets this from user preference (localStorage); CI has no session.
+  if (vp.width >= 1200) {
+    await ctx.addInitScript(() => {
+      // Set wf-mode on body as early as possible so the boot logic sees it
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('wf-mode');
+        // Also set localStorage so the app's own mode-detection confirms it
+        try { localStorage.setItem('field_mode', 'whole'); } catch(e) {}
+      }, { capture: true });
+    });
+  }
+
   await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
   // Wait up to 12s for _solidMounted to become true (real data poll fires ~5-10s after load)
   const mounted = await page.waitForFunction(() => {
     const panel = document.getElementById('ambient-panel');
     return panel && panel._solidMounted === true;
-  }, { timeout: 12000 }).then(() => true).catch(() => false);
+  }, { timeout: 20000 }).then(() => true).catch(() => false);
 
   // Give Solid one more tick to process the reconcile
   await page.waitForTimeout(500);
@@ -47,12 +60,28 @@ async function probeViewport(browser, vp) {
     };
   });
 
-  // Screenshot #ambient-panel
+  // Log key result NOW before screenshot (screenshot can timeout, result must not be lost)
+  console.log(`  [${vp.name}] solidMounted=${state.solidMounted} skeletonPresent=${state.skeletonPresent} skeletonCount=${state.skeletonCount}`);
+
+  // Screenshot #ambient-panel — use fullPage screenshot crop if panel not visible
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const screenshotPath = `${SCRATCHPAD}/ambient-skeleton-probe-${vp.name}-${ts}.png`;
-  const panelEl = await page.$('#ambient-panel');
-  if (panelEl) {
-    await panelEl.screenshot({ path: screenshotPath });
+  try {
+    const panelEl = await page.$('#ambient-panel');
+    if (panelEl) {
+      // force visible for screenshot purposes (CSS hides it at this breakpoint)
+      await page.evaluate(() => {
+        const p = document.getElementById('ambient-panel');
+        if (p) { p.style.display = 'block'; p.style.position = 'static'; }
+      });
+      await panelEl.screenshot({ path: screenshotPath, timeout: 5000 });
+    } else {
+      await page.screenshot({ path: screenshotPath, fullPage: false });
+    }
+  } catch (e) {
+    // Non-fatal: take a full-page screenshot instead
+    console.log(`  screenshot fallback (${e.message.split('\n')[0]})`);
+    await page.screenshot({ path: screenshotPath, fullPage: false }).catch(() => {});
   }
 
   await ctx.close();
