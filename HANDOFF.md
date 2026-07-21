@@ -1,3 +1,20 @@
+## SESSION CLOSE-OUT — 2026-07-21, ambient-skeleton-overlap (supersedes previous)
+
+**HEAD:** 0ac1075 (jubilant-bassoon) / d637561 (field-relay-nba, unchanged)
+**Smoke count:** 965/0 (+1 from A602b assertion, A602 regex updated)
+**SW version:** 2026-07-21b (bumped from 2026-07-21a)
+**Session doc:** outbox/cc-session-2026-07-21-ambient-skeleton-overlap.md
+
+**Codex incident `ambient-panel-skeleton-overlap` — RESOLVED:**
+- Root cause: Solid fine-grained rewrite (reconcile) does not implicitly clear skeleton siblings; wholesale-innerHTML used to clear them for free.
+- Fix: `panel.querySelector('.ambient-skeleton')?.remove()` added inside `if (!panel._solidMounted)` block in `renderAmbientPanel()` (field.js), immediately after `panel._solidMounted = true`.
+- CLAUDE.md Rule 89 added (RENDER-CHROME-A) — generalizes the pattern to any future surgical-render conversion.
+- Smoke A602b added: regex-verifies `_solidMounted = true` is followed by `.remove()`.
+- Live DOM verification STAGED: `renderAmbientPanel()` is inside IIFE; not exposed on `window`; fires only from live data polls. Structural proof via A602b is deterministic.
+- Scroll regression: none. `updateAmbientData(reconcile)` path unchanged; `.ambient-scroll-inner` node never torn down.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-21, streak-board-client-swap (supersedes previous)
 
 **HEAD:** 89d3350 (jubilant-bassoon) / d637561 (field-relay-nba)
