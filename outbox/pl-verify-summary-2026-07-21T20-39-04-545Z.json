@@ -1,0 +1,88 @@
+{
+  "ts": "2026-07-21T20:39:04.545Z",
+  "fixture": 116197,
+  "passed": 20,
+  "total": 20,
+  "results": [
+    {
+      "name": "_plVerify test API present",
+      "ok": true
+    },
+    {
+      "name": "fetchPLMatch is defined",
+      "ok": true
+    },
+    {
+      "name": "fetchPLMatch returns data",
+      "ok": true
+    },
+    {
+      "name": "fixture.halfTimeScore present (HT: 0–0)",
+      "ok": true
+    },
+    {
+      "name": "events[] is flat array (135 events)",
+      "ok": true
+    },
+    {
+      "name": "goal events present (2 goals)",
+      "ok": true
+    },
+    {
+      "name": "goal.text and goal.time.label present",
+      "ok": true
+    },
+    {
+      "name": "substitution events present (10 subs)",
+      "ok": true
+    },
+    {
+      "name": "fixture.teamLists present (2 teams)",
+      "ok": true
+    },
+    {
+      "name": "player shape: name.display, info.position, matchShirtNumber present",
+      "ok": true
+    },
+    {
+      "name": "formation.label present (4-2-3-1)",
+      "ok": true
+    },
+    {
+      "name": "MAIN referee present (Lewis Smith)",
+      "ok": true
+    },
+    {
+      "name": "VAR official present (James Bell)",
+      "ok": true
+    },
+    {
+      "name": "bs-content element exists",
+      "ok": true
+    },
+    {
+      "name": "bs-pl-inject anchor replaced (async inject fired)",
+      "ok": true
+    },
+    {
+      "name": "Key Moments section label rendered",
+      "ok": true
+    },
+    {
+      "name": "Goal event text rendered in Key Moments",
+      "ok": true
+    },
+    {
+      "name": "tg-pl- placeholder replaced (stats async inject fired)",
+      "ok": true
+    },
+    {
+      "name": "Lineups section label rendered in Stats tab",
+      "ok": true
+    },
+    {
+      "name": "Lineups section has content (REF/VAR/formation)",
+      "ok": true
+    }
+  ]
+}
