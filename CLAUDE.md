@@ -202,3 +202,44 @@ if (!panel._solidMounted) {
 ```
 Use `remove()`, not `display:none` — a removed node cannot bleed through
 again; a hidden one can if any future code un-hides it.
+
+## Rule 90 — Verification tasks specify an artifact, never a bare action (VERIFY-ARTIFACT-A)
+
+A CC-CMD task or Done Condition that says "verify," "confirm," "test," or
+"check" a behavior, without also specifying the concrete,
+externally-checkable thing that must exist afterward as proof, is
+satisfiable without actually proving the claim. This pattern has recurred
+under several names in this project's own history: Rule 87's own violation-
+signals list ("verification steps blocked by sandbox egress") accepted as a
+stopping point rather than routed around; the regex-anchoring rule (a bare
+string match satisfied a check without matching for the right reason);
+`rule-gha-for-sandbox-egress-blocks` (a session accepted STAGED/partial
+results because "sandbox egress" sounded like a real blocker); and most
+directly, the ambient-panel skeleton bug — an earlier version of that fix
+was satisfiable by opening a browser and eyeballing *something*, without
+committing evidence that the specific claimed behavior actually held.
+
+**The fix:** every verification instruction states what artifact proves it.
+Accepted artifact forms: a specific curl response field whose value must NOT
+equal a known-bad string; a committed screenshot at a named URL, viewport,
+and state; an enumerated set of input/output pairs that must all pass; a
+diff showing exactly N lines changed in exactly these files. "Looks right"
+and "works" are not artifacts. This rule binds chat's CC-CMD authoring as
+much as CC's execution of it — a vaguely-specified verification task is a
+spec failure at the point it is written, not a CC execution failure at the
+point it is satisfied loosely.
+
+**Visual/rendering bugs specifically require the CI-as-proxy Playwright
+pattern** — not an ad-hoc "verify in a headless browser" instruction. The
+required form: a dedicated GitHub Actions workflow, triggered by an
+`outbox/.trigger-*` path push, running a real Playwright browser against
+the LIVE deployed URL, committing real screenshots and a structured manifest
+(boolean fields like `skeletonPresent`, `panelChildCount` — not prose) back
+to `outbox/` as the artifact. See `ambient-skeleton-probe.yml` and its
+`ambient-skeleton-probe-manifest-*.json` output as the reference
+implementation. This pattern exists specifically because sandbox browser
+access (both chat's and CC's) has proven unreliable in this project —
+timeouts, viewport mismatches, one wait call that errored outright — and
+GitHub Actions' unrestricted egress is the proven escape hatch. The same
+principle as `rule-gha-for-sandbox-egress-blocks`, applied to visual
+verification specifically.
