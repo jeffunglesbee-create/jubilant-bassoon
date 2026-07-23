@@ -1,6 +1,6 @@
 ## SESSION CLOSE-OUT — 2026-07-23, chip-overflow-containment (supersedes previous)
 
-**HEAD:** faf7cd5 (jubilant-bassoon) / c854f68 (field-relay-nba, unchanged)
+**HEAD:** 6407652 (jubilant-bassoon) / c854f68 (field-relay-nba, unchanged)
 **Smoke count:** 965/0 (unchanged)
 **SW version:** 2026-07-23a (bumped from 2026-07-21b)
 **Session doc:** outbox/cc-session-2026-07-23-chip-overflow-containment.md
@@ -9,7 +9,9 @@
 - Root cause: `.stream-chip` had explicit `overflow:visible`; `.watch-now-btn` lacked `white-space:nowrap` and overflow handling; `.stream-row` grid layout needed `grid-column:1/-1` on watch-now-btn to span full 160px width.
 - Fix (CSS-only, `index.html`): `.stream-chip` → `overflow:hidden;text-overflow:ellipsis;min-width:0`; `.watch-now-btn` → `+white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0`; `.stream-row>.watch-now-btn{grid-column:1/-1}`. Commit `aa53d8e`.
 - Probe GHA (`chip-overflow-probe.yml`) + script (`chip_overflow_probe.js`) committed at `55a141a`.
-- **VERIFIED LIVE** — GHA run 30026833587, 2026-07-23T16:50:19Z. Manifest `outbox/chip-overflow-probe-manifest-20260723T165048Z.json`: `noScrollWidthOverflow: true`, `noSiblingOverlap: true`, `allPass: true`, `totalChipsMeasured: 1`, `overflowingChips: 0`, `overlapPairCount: 0`.
+- **VERIFIED LIVE (run 1)** — GHA run 30026833587, 2026-07-23T16:50:19Z. Manifest `outbox/chip-overflow-probe-manifest-20260723T165048Z.json`: `allPass: true`, label `"[object Object]"` (rendering bug, not overflow).
+- Bug fix: `field.js:735` — `chipSR` (first stream element) is a legacy object `{name, url, ...}`; direct template interpolation coerced to `"[object Object]"`. Added `chipSRName` extraction: `typeof chipSR === 'string' ? chipSR : (chipSR?.name || '')`. Commit `6407652`.
+- **VERIFIED LIVE (run 2)** — GHA run 30028847993, 2026-07-23T17:19:26Z. Manifest `outbox/chip-overflow-probe-manifest-20260723T171918Z.json`: `allPass: true`, `noScrollWidthOverflow: true`, `noSiblingOverlap: true`, `overflowingChips: 0`, `overlapPairCount: 0`, `label: "MLB.TV"` (real name confirmed).
 
 **Carry-Forwards:** None.
 

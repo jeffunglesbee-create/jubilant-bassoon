@@ -72,3 +72,32 @@ New files:
 ## Carry-Forwards
 
 None.
+
+## ADDENDUM — [object Object] rendering fix + probe run 2
+
+### Bug: stream-chip label rendered "[object Object]"
+
+**Root cause:** `field.js:735` — `chipSR = (g.streams || [])[0]` extracts the first stream element. Stream elements can be either string bundle keys (e.g. `"MLB_LOCAL"`) or legacy objects `{name, url, col, auth, ...}`. Direct interpolation `${chipSR}` coerces objects to `"[object Object]"`.
+
+**Fix (commit `6407652`):**
+```js
+const chipSR = (g.streams || [])[0];
+const chipSRName = typeof chipSR === 'string' ? chipSR : (chipSR?.name || '');
+const chipEl = chipSRName
+  ? `<span class="stream-chip" style="font-size:.55rem;padding:.1rem .35rem">${chipSRName}</span>`
+  : '';
+```
+
+Smoke: 965/0. Committed to main, deployed.
+
+### TASK 4 — Probe run 2 verification
+
+**GHA run 30028847993** (`workflow_dispatch`, 2026-07-23T17:19:26Z):
+- Manifest: `outbox/chip-overflow-probe-manifest-20260723T171918Z.json`
+- `allPass: true`
+- `noScrollWidthOverflow: true`
+- `noSiblingOverlap: true`
+- `label: "MLB.TV"` (real network name — [object Object] bug confirmed fixed)
+- `totalChipsMeasured: 1`, `overflowingChips: 0`, `overlapPairCount: 0`
+
+**Done condition fully met.** Both overflow containment and label rendering verified on live deployed site.
