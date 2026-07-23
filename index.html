@@ -2038,7 +2038,7 @@ body.wf-mode .np-inner{max-width:100%}
   border:1px solid;text-decoration:none;transition:.12s;white-space:nowrap;
   font-family:var(--ff-cond);letter-spacing:.05em;font-weight:600;
   position:relative;display:inline-flex;align-items:center;gap:3px;
-  overflow:visible;
+  overflow:hidden;text-overflow:ellipsis;min-width:0;
 }
 .watch-now-btn{
   display:inline-flex;align-items:center;gap:.35rem;
@@ -2048,7 +2048,9 @@ body.wf-mode .np-inner{max-width:100%}
   background:transparent;cursor:pointer;
   transition:opacity .15s,background .15s;
   margin-right:.4rem;margin-bottom:.3rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
 }
+.stream-row>.watch-now-btn{grid-column:1/-1}
 .watch-now-btn:hover{opacity:.8;text-decoration:none}
 .stream-chip:hover{opacity:.75}
 /* Auth indicator icons on chips */
@@ -26548,7 +26550,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-21b';
+  const SW_VERSION = '2026-07-23a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
