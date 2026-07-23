@@ -1,3 +1,19 @@
+## SESSION CLOSE-OUT — 2026-07-23, chip-probe-coverage-disclosure (supersedes previous)
+
+**HEAD:** 798fb2b (jubilant-bassoon) / c854f68 (field-relay-nba, unchanged)
+**Smoke count:** 965/0 (unchanged)
+**SW version:** 2026-07-23a (unchanged)
+**Session doc:** outbox/cc-session-2026-07-23-chip-probe-coverage-disclosure.md
+
+**CC-CMD-2026-07-23-chip-probe-coverage-disclosure — COMPLETE (confidence 100/100):**
+- `chip_overflow_probe.js` only. Added `lowCoverage` (bool, threshold 3) and `coverageNote` (string|null) to manifest. `Result:` console line now appends the coverage note inline when `lowCoverage` is true — caveat visible in same glance as `ALL PASS ✓`, not buried in JSON.
+- Commit `798fb2b`. GHA run 30030834080, 2026-07-23T17:46:20Z. Console output (verbatim): `Result: ALL PASS ✓ [LOW COVERAGE: only 1 chip(s) measured this run -- a pass here does not confirm the fix broadly. Re-trigger during a busier live slate for real confidence.]`
+- Manifest `outbox/chip-overflow-probe-manifest-20260723T174703Z.json`: `lowCoverage: true`, `coverageNote: "LOW COVERAGE: ..."`, `allPass: true`, `noScrollWidthOverflow: true`, `noSiblingOverlap: true`.
+
+**Carry-Forwards:** None.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-23, chip-overflow-containment (supersedes previous)
 
 **HEAD:** 6407652 (jubilant-bassoon) / c854f68 (field-relay-nba, unchanged)
