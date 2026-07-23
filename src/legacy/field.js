@@ -733,8 +733,9 @@ function buildRightNowTiers(g, eData) {
 
   // Broadcast chip (first stream)
   const chipSR = (g.streams || [])[0];
-  const chipEl = chipSR
-    ? `<span class="stream-chip" style="font-size:.55rem;padding:.1rem .35rem">${chipSR}</span>`
+  const chipSRName = typeof chipSR === 'string' ? chipSR : (chipSR?.name || '');
+  const chipEl = chipSRName
+    ? `<span class="stream-chip" style="font-size:.55rem;padding:.1rem .35rem">${chipSRName}</span>`
     : '';
 
   // Clock/period
