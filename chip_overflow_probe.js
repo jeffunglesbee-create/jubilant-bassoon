@@ -105,6 +105,11 @@ async function run() {
   const totalChips = measurements.length;
   const overflowingChips = measurements.filter(m => m.overflows);
   const allPass = overflowingChips.length === 0 && overlapPairs.length === 0;
+  const LOW_COVERAGE_THRESHOLD = 3;
+  const lowCoverage = totalChips < LOW_COVERAGE_THRESHOLD;
+  const coverageNote = lowCoverage
+    ? `LOW COVERAGE: only ${totalChips} chip(s) measured this run -- a pass here does not confirm the fix broadly. Re-trigger during a busier live slate for real confidence.`
+    : null;
 
   const manifest = {
     timestamp: stamp,
@@ -115,6 +120,8 @@ async function run() {
     overflowingChips: overflowingChips.length,
     overlapPairCount: overlapPairs.length,
     allPass,
+    lowCoverage,
+    coverageNote,
     // Per VERIFY-ARTIFACT-A: falsifiable boolean fields
     noScrollWidthOverflow: overflowingChips.length === 0,
     noSiblingOverlap: overlapPairs.length === 0,
@@ -139,7 +146,8 @@ async function run() {
   if (overlapPairs.length > 0) {
     overlapPairs.forEach(p => console.log(`  OVERLAP: ${p.a} ↔ ${p.b}`));
   }
-  console.log(`Result: ${allPass ? 'ALL PASS ✓' : 'FAILURES DETECTED ✗'}`);
+  const coverageSuffix = lowCoverage ? ` [${coverageNote}]` : '';
+  console.log(`Result: ${allPass ? 'ALL PASS ✓' : 'FAILURES DETECTED ✗'}${coverageSuffix}`);
   console.log(`Manifest: ${manifestPath}`);
   console.log(`Screenshot: ${screenshotPath}`);
 
