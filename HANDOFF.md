@@ -1,3 +1,28 @@
+## SESSION CLOSE-OUT — 2026-07-24, playground-run (supersedes previous)
+
+**HEAD:** 49a129c (field-playground, main) / 798fb2b (jubilant-bassoon, unchanged) / c854f68 (field-relay-nba, unchanged)
+**Smoke count:** 965/0 (unchanged)
+**SW version:** 2026-07-23a (unchanged)
+**Session doc:** field-playground main
+
+**playground first run — COMPLETE:**
+- `vite.config.js`: added `mockRelay()` Vite plugin. `configureServer` middleware intercepts `/analytics/newspaper/{date}` and `/context/date/{date}` in dev mode, returning real-shaped mock data (real field names, realistic game states: pre/live/final/F-OT, reason arrays, pick tiers). Regex match extracts date from URL so `currentDate` signal works correctly even with mock.
+- `src/data/relay.js`: `RELAY_BASE` now uses `import.meta.env.DEV ? '' : 'https://field-relay-nba.jeffunglesbee.workers.dev'` — relative URLs in dev hit the mock middleware; prod still targets the worker. Permanent addition, not a one-off hack.
+- **App run confirmed via Playwright headless screenshot** — both panels rendered the happy path: AmbientPanel showing `morning_report` prose + three pick rows with tier badges and reason chips; DeskCard showing 8 games across MLB/MLS/WNBA grouped by sport, mix of pre/live/final/F-OT states with animated live dot. No console errors on second pass (first-pass 404 was Vite HMR WebSocket noise, disappeared on re-run).
+- **Skeleton → content transition structurally correct** — `<Switch><Match>` means skeleton and content are mutually exclusive by construction. There is no code path where both could be visible; the bug class the experiment targets is not expressible in this component structure.
+
+**What the run confirmed about the experiment question:**
+- The skeleton-overlap bug (Codex: `ambient-panel-skeleton-overlap`) required an explicit `.remove()` call in field.js because the skeleton was a DOM sibling that nothing automatically cleared. In this SolidJS rebuild, the skeleton is the `when={ambientData.loading}` branch of `<Switch>` — it physically cannot coexist with the content branch. The old bug is not "harder to write" here; it is not writable. The conditions that produced it do not exist in this rendering model.
+- The chip overflow bug class (CSS containment nobody's job) is not addressed differently by SolidJS — it's a CSS/component-structure question, not a reactivity question. Per-component CSS files make the omission more localized and visible, but don't prevent it.
+
+**Carry-Forwards:**
+- Side-by-side comparison with production app still not done — real visual fidelity check pending.
+- Remaining newspaper fields unsurfaced: `truth_is`, `night_stars`, `streak_board`, `record_streak_board`, `composite_brief`, `contradiction`, `broken_record`, `completed_games`, `preview`, `late`, `quality_feedback`, `quality_alert`, `sport_of_week`. Shapes unknown.
+- `briefs`, `series`, `standings` from context endpoint also unused.
+- Experiment write-up not committed to the repo yet — the answer is known (skeleton-overlap class: not writable; overflow class: same footguns, different location) but not written into `docs/SOLIDJS-BUILD.md` as a concluded result.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-24, playground-setup (supersedes previous)
 
 **HEAD:** 2c3d183 (field-playground, main) / 798fb2b (jubilant-bassoon, unchanged) / c854f68 (field-relay-nba, unchanged)
@@ -14,19 +39,12 @@
 - All state branches handled via `<Switch><Match>` — skeleton/error/content are mutually exclusive by construction, not by flag management.
 - Mock artifact published at `https://claude.ai/code/artifact/1f0e9dfd-d387-4ab8-b3d1-c41c658834d2` — static hardcoded data matching real relay shapes, dark/light theme, pulsing live dot.
 - Build verified clean (vite build, 13 modules, 20.9KB JS / 4.3KB CSS).
-- Relay fetch from container: blocked by proxy (ERR_TUNNEL_CONNECTION_FAILED). Build-time verification only; browser load required for live data confirmation.
 
 **Merge to main — conflict resolution (2026-07-24):**
 - Work was on `claude/playground-setup-njng55` (5 commits, f09e618→f36df12). ChatGPT had pushed 3 commits directly to main while the branch was in progress: `5812e4b` (their own `docs/GROUND-UP-DESIGN.md` — 8-principle founding spec traced to real incidents), `cb2472c` (README update), `d93591d` (stub `package.json` to satisfy environment setup).
 - Conflict 1 — `docs/GROUND-UP-DESIGN.md`: two genuinely different documents. ChatGPT's kept as `docs/GROUND-UP-DESIGN.md` (repo founding principles). Ours moved to `docs/SOLIDJS-BUILD.md` (SolidJS implementation plan). Both on main.
 - Conflict 2 — `package.json`: ChatGPT's was a stub (empty deps, no scripts). Ours (full SolidJS project) kept.
-- Merge commit: `2c3d183`. All playground-setup work now on main. Branch `claude/playground-setup-njng55` can be treated as closed.
-
-**Carry-Forwards:**
-- Side-by-side production comparison not yet done — that's the experiment's actual deliverable.
-- Remaining newspaper fields not yet surfaced: `truth_is`, `night_stars`, `streak_board`, `record_streak_board`, `composite_brief`, `contradiction`, `broken_record`, `completed_games`, `preview`, `late`, `quality_feedback`, `quality_alert`, `sport_of_week`. Shapes unknown; surfacing them requires live browser inspect or explicit shape-drop.
-- `briefs`, `series`, `standings` from the context endpoint also unused.
-- Experiment answer (does SolidJS make the skeleton-overlap class of bug structurally hard to write?) not yet written up — requires the side-by-side to be honest.
+- Merge commit: `2c3d183`. Branch `claude/playground-setup-njng55` closed.
 
 ---
 
