@@ -1,12 +1,12 @@
 ## SESSION CLOSE-OUT — 2026-07-24, playground-setup (supersedes previous)
 
-**HEAD:** f36df12 (field-playground, claude/playground-setup-njng55) / 798fb2b (jubilant-bassoon, unchanged) / c854f68 (field-relay-nba, unchanged)
+**HEAD:** 2c3d183 (field-playground, main) / 798fb2b (jubilant-bassoon, unchanged) / c854f68 (field-relay-nba, unchanged)
 **Smoke count:** 965/0 (unchanged — field-playground has no smoke suite)
 **SW version:** 2026-07-23a (unchanged)
-**Session doc:** field-playground branch claude/playground-setup-njng55
+**Session doc:** field-playground main
 
-**CC-CMD playground-setup — COMPLETE:**
-- `docs/GROUND-UP-DESIGN.md` written — design doc for Desk card + Ambient panel SolidJS rebuild. Captures why SolidJS specifically answers the skeleton-overlap experiment question: `<Show>` / `<Switch>` / `<Match>` are reactive expressions, not imperative calls, so the "old content visible while new content mounts" class of bug is structurally awkward to write, not just easy to miss.
+**CC-CMD playground-setup — COMPLETE + MERGED TO MAIN:**
+- `docs/SOLIDJS-BUILD.md` (formerly `docs/GROUND-UP-DESIGN.md`) — design doc for Desk card + Ambient panel SolidJS rebuild. Captures why SolidJS specifically answers the skeleton-overlap experiment question: `<Show>` / `<Switch>` / `<Match>` are reactive expressions, not imperative calls, so the "old content visible while new content mounts" class of bug is structurally awkward to write, not just easy to miss.
 - Vite + SolidJS scaffold wired: `package.json` (solid-js ^1.9.0, vite ^6.0.0, vite-plugin-solid ^2.11.0), `vite.config.js`, `index.html`, `src/main.jsx`, `src/App.jsx`.
 - `src/data/relay.js`: both resources wired to live relay. `currentDate` is a `createSignal(todayStr())` — both `createResource` calls take it as source, so `setCurrentDate('YYYY-MM-DD')` refetches both panels without a page reload. Endpoints: `/analytics/newspaper/{date}` (AmbientPanel) + `/context/date/{date}` (DeskCard), both on `field-relay-nba.jeffunglesbee.workers.dev`, plain GET, no auth.
 - `src/components/AmbientPanel/`: `morning_report` as prose block; `pick.ranked` as a list of rows — tier badge (A/B/C with semantic colour), sport tag, matchup, final score, reason badges. `reasons` confirmed array of short tag strings (e.g. `"prime time"`, `"postseason/elimination"`) on live data back to 2026-07-19; rendered as small bordered chips via `<For each={p().reasons}>` directly, no defensive wrapping.
@@ -15,6 +15,12 @@
 - Mock artifact published at `https://claude.ai/code/artifact/1f0e9dfd-d387-4ab8-b3d1-c41c658834d2` — static hardcoded data matching real relay shapes, dark/light theme, pulsing live dot.
 - Build verified clean (vite build, 13 modules, 20.9KB JS / 4.3KB CSS).
 - Relay fetch from container: blocked by proxy (ERR_TUNNEL_CONNECTION_FAILED). Build-time verification only; browser load required for live data confirmation.
+
+**Merge to main — conflict resolution (2026-07-24):**
+- Work was on `claude/playground-setup-njng55` (5 commits, f09e618→f36df12). ChatGPT had pushed 3 commits directly to main while the branch was in progress: `5812e4b` (their own `docs/GROUND-UP-DESIGN.md` — 8-principle founding spec traced to real incidents), `cb2472c` (README update), `d93591d` (stub `package.json` to satisfy environment setup).
+- Conflict 1 — `docs/GROUND-UP-DESIGN.md`: two genuinely different documents. ChatGPT's kept as `docs/GROUND-UP-DESIGN.md` (repo founding principles). Ours moved to `docs/SOLIDJS-BUILD.md` (SolidJS implementation plan). Both on main.
+- Conflict 2 — `package.json`: ChatGPT's was a stub (empty deps, no scripts). Ours (full SolidJS project) kept.
+- Merge commit: `2c3d183`. All playground-setup work now on main. Branch `claude/playground-setup-njng55` can be treated as closed.
 
 **Carry-Forwards:**
 - Side-by-side production comparison not yet done — that's the experiment's actual deliverable.
