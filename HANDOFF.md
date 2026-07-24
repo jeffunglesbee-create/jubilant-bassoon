@@ -1,3 +1,29 @@
+## SESSION CLOSE-OUT — 2026-07-24, playground-setup (supersedes previous)
+
+**HEAD:** f36df12 (field-playground, claude/playground-setup-njng55) / 798fb2b (jubilant-bassoon, unchanged) / c854f68 (field-relay-nba, unchanged)
+**Smoke count:** 965/0 (unchanged — field-playground has no smoke suite)
+**SW version:** 2026-07-23a (unchanged)
+**Session doc:** field-playground branch claude/playground-setup-njng55
+
+**CC-CMD playground-setup — COMPLETE:**
+- `docs/GROUND-UP-DESIGN.md` written — design doc for Desk card + Ambient panel SolidJS rebuild. Captures why SolidJS specifically answers the skeleton-overlap experiment question: `<Show>` / `<Switch>` / `<Match>` are reactive expressions, not imperative calls, so the "old content visible while new content mounts" class of bug is structurally awkward to write, not just easy to miss.
+- Vite + SolidJS scaffold wired: `package.json` (solid-js ^1.9.0, vite ^6.0.0, vite-plugin-solid ^2.11.0), `vite.config.js`, `index.html`, `src/main.jsx`, `src/App.jsx`.
+- `src/data/relay.js`: both resources wired to live relay. `currentDate` is a `createSignal(todayStr())` — both `createResource` calls take it as source, so `setCurrentDate('YYYY-MM-DD')` refetches both panels without a page reload. Endpoints: `/analytics/newspaper/{date}` (AmbientPanel) + `/context/date/{date}` (DeskCard), both on `field-relay-nba.jeffunglesbee.workers.dev`, plain GET, no auth.
+- `src/components/AmbientPanel/`: `morning_report` as prose block; `pick.ranked` as a list of rows — tier badge (A/B/C with semantic colour), sport tag, matchup, final score, reason badges. `reasons` confirmed array of short tag strings (e.g. `"prime time"`, `"postseason/elimination"`) on live data back to 2026-07-19; rendered as small bordered chips via `<For each={p().reasons}>` directly, no defensive wrapping.
+- `src/components/DeskCard/`: `games.regular` + `games.postseason` merged, grouped by sport via a `createMemo`. Each row: animated dot (pre=dim, live=blinking green, final=grey), matchup, score/status derived from `home_score === null` and `finalized_at`. F/OT from `went_to_ot`.
+- All state branches handled via `<Switch><Match>` — skeleton/error/content are mutually exclusive by construction, not by flag management.
+- Mock artifact published at `https://claude.ai/code/artifact/1f0e9dfd-d387-4ab8-b3d1-c41c658834d2` — static hardcoded data matching real relay shapes, dark/light theme, pulsing live dot.
+- Build verified clean (vite build, 13 modules, 20.9KB JS / 4.3KB CSS).
+- Relay fetch from container: blocked by proxy (ERR_TUNNEL_CONNECTION_FAILED). Build-time verification only; browser load required for live data confirmation.
+
+**Carry-Forwards:**
+- Side-by-side production comparison not yet done — that's the experiment's actual deliverable.
+- Remaining newspaper fields not yet surfaced: `truth_is`, `night_stars`, `streak_board`, `record_streak_board`, `composite_brief`, `contradiction`, `broken_record`, `completed_games`, `preview`, `late`, `quality_feedback`, `quality_alert`, `sport_of_week`. Shapes unknown; surfacing them requires live browser inspect or explicit shape-drop.
+- `briefs`, `series`, `standings` from the context endpoint also unused.
+- Experiment answer (does SolidJS make the skeleton-overlap class of bug structurally hard to write?) not yet written up — requires the side-by-side to be honest.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-23, chip-probe-coverage-disclosure (supersedes previous)
 
 **HEAD:** 798fb2b (jubilant-bassoon) / c854f68 (field-relay-nba, unchanged)
