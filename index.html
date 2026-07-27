@@ -15429,7 +15429,16 @@ function renderJournalism() {
   sections.sort((a, b) => ((_jPri[a.type] !== undefined ? _jPri[a.type] : 99) - (_jPri[b.type] !== undefined ? _jPri[b.type] : 99)));
 
   if (!sections.length) {
-    content.innerHTML = '<div class="jrn-empty">Tonight\'s editorial is loading. Briefs render as the journalism pipeline completes — usually within the first minute after page load.</div>';
+    // BUG FIX (2026-07-27): this branch used to render ONLY the loading
+    // message, with no archive link -- the link was appended exclusively
+    // in the sections.length>0 branch below. Any visitor who opened the
+    // Journalism tab before today's brief finished loading (the common
+    // case right after page load) saw no way to reach renderJournalismArchive()
+    // at all, i.e. "stuck on nothing, can't browse past editorials."
+    // renderJournalismArchive() itself was already correct (7-day D1
+    // fallback via /archive/query) -- the entry point just vanished here.
+    content.innerHTML = '<div class="jrn-empty">Tonight\'s editorial is loading. Briefs render as the journalism pipeline completes — usually within the first minute after page load.</div>'
+      + '<div class="jrn-archive-link"><a href="#" onclick="event.preventDefault();renderJournalismArchive()">Yesterday\'s FIELD →</a></div>';
   } else {
     const interleaved = [];
     sections.forEach((s, i) => {
@@ -26551,7 +26560,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-26a';
+  const SW_VERSION = '2026-07-26b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
