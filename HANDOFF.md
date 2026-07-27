@@ -1,3 +1,23 @@
+## SESSION CLOSE-OUT — 2026-07-27, journalism-archive-link-fix (supersedes previous)
+
+**HEAD:** 00ea8eca (jubilant-bassoon) / 1bed89d (field-relay-nba)
+**Smoke count:** 965/0 (unchanged count, fixed 2 pre-existing SW_VERSION-sync failures)
+**SW version:** 2026-07-26b (bumped from 2026-07-26a)
+**Session doc:** outbox/cc-session-2026-07-27-journalism-archive-link-fix.md
+
+**Journalism archive-link fix — COMPLETE, VERIFIED:**
+- User-reported symptom: Journalism tab stuck on single latest brief, no way to browse past ones.
+- Investigated first (Rule 72): `renderJournalismArchive()` + relay `/archive/query?brief_type=slate&source=cron&limit=7` already existed and already worked (live-verified: 7 real days returned). Root cause was that `renderJournalism()`'s empty-sections branch never appended the archive link — only the `sections.length>0` branch did. Any visitor opening the tab before today's brief loaded had no entry point to the archive at all.
+- Fix: `src/legacy/field.js` — append the same archive link in both branches. Single-concern, matches existing label/onclick exactly.
+- Also reconciled pre-existing SW_VERSION drift: a prior CI commit had bumped index.html's SW_VERSION directly without updating field.js, causing field.js → index.html sync to silently regress the version on the next sync. Both files now correctly at 2026-07-26b.
+- Live-verified via `html_probe` against the deployed sw.js: `SW_VERSION = '2026-07-26b'` confirmed live, proving the same-commit journalism fix is deployed.
+- **Not adopted:** a separately-built field-relay-nba endpoint (`/journalism/brief/history`, commit cff1477) turned out unnecessary — the existing `/archive/query` path already served this need. Left in place as harmless, uncalled infrastructure; flagged in both repos' outboxes so it isn't later mistaken for orphaned dead code.
+
+**Carry-Forwards:**
+- None new. Full manual click-through of the archive link (not just live SW_VERSION artifact) not performed — sandbox has no browser access to *.workers.dev.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-24, playground-run (supersedes previous)
 
 **HEAD:** 49a129c (field-playground, main) / 798fb2b (jubilant-bassoon, unchanged) / c854f68 (field-relay-nba, unchanged)
