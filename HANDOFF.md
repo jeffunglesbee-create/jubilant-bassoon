@@ -1,3 +1,28 @@
+## SESSION CLOSE-OUT — 2026-07-30, reconcile-soccer-base-formula (supersedes previous)
+
+**HEAD:** 1d1f0a3e (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-07-30c (bumped from 2026-07-30b)
+**Session doc:** outbox/cc-session-2026-07-30-reconcile-soccer-base-formula.md
+
+**Soccer base drama formula — RECALIBRATED, VALIDATED:** decision task,
+not a bug fix. Live table (0.72/0.32/0.06) confirmed genuinely never
+revisited — the July 4 fix referenced in its own adjacent comment only
+fixed WC26 sport-label routing, never touched these values; no outbox
+record exists; the May 12 spec doc cites no empirical calibration either.
+Adopted the May spec's numbers (0.85/0.90-if-bothScored/0.45/0.15) after
+validating against 17 real live MLS results (CI-as-proxy): May's numbers
+score every non-tied real match higher, one-directional, matching the
+spec's own soccer-specific reasoning better than the old table's
+basketball-shaped decay. `bothTeamsScored` built as a real signal
+(confirmed not vacuous against real games). `timeBonus`/`upsetBonus`/
+Layers 2-4 untouched, per explicit scope.
+
+### Carry-forwards
+- None from this task.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-30, fix-savant-wp-scale (supersedes previous)
 
 **HEAD:** 54f4724d (jubilant-bassoon)
