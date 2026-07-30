@@ -8491,6 +8491,38 @@ function buildTodaySchedule(){
     return `West Ham need to win AND rely on Everton to beat Spurs at the Tottenham Hotspur Stadium simultaneously. Spurs lead by ${gap} pts and +${gdGap} GD \u2014 only maximum points across both venues saves them.`;
   }
 
+  // \u2500\u2500 PL Final Day note injection (CC-CMD-2026-07-30-wire-pl-final-day-stakes) \u2500\u2500
+  // The four note functions above were fully correct but had zero real
+  // callers -- this wires them. PL_FD's data is hardcoded for the 2025-26
+  // season's real May 24, 2026 Final Day (per Task 3 of that CC-CMD:
+  // refreshing the numbers is a separate, later decision gated on the
+  // CURRENT season's Final Day actually being imminent -- it is not, the
+  // 2026-27 season has not even started yet). The date gate below is
+  // intentionally specific to that one real date, matching PL_FD's own
+  // data -- this is seasonal, dormant-outside-its-date code, same pattern
+  // already established and endorsed in this file for inEFLPlayoffs()
+  // (EFL_PLAYOFF_START/END, ~14042-14044): reactivates every real Final
+  // Day by refreshing PL_FD + this date constant together, not deleted
+  // for looking orphaned between seasons.
+  const PL_FINAL_DAY_DATE = '2026-05-24';
+  const _plTeamMatch = (name, re) => re.test((name||''));
+  function _applyPLFinalDayNote(g){
+    if (g.matchupNote) return; // don't override an existing note
+    if (!g.start_time || g.start_time.slice(0,10) !== PL_FINAL_DAY_DATE) return;
+    const h = g.home||'', a = g.away||'';
+    const isArsenalGame = _plTeamMatch(h,/arsenal/i) || _plTeamMatch(a,/arsenal/i);
+    const isCityGame    = _plTeamMatch(h,/man(chester)?\s*city/i) || _plTeamMatch(a,/man(chester)?\s*city/i);
+    const isTotGame     = _plTeamMatch(h,/tottenham|spurs/i) || _plTeamMatch(a,/tottenham|spurs/i);
+    const isWhuGame     = _plTeamMatch(h,/west ham/i) || _plTeamMatch(a,/west ham/i);
+    // Arsenal and City games take priority (title race is the marquee
+    // Final Day story); Tottenham/West Ham (relegation) checked after,
+    // matching PL_FD's own comment ordering (title first, survival second).
+    if (isArsenalGame) g.matchupNote = _plTitleNote();
+    else if (isCityGame) g.matchupNote = _plCityNote();
+    else if (isTotGame) g.matchupNote = _plTotNote();
+    else if (isWhuGame) g.matchupNote = _plWhuNote();
+  }
+
   // ── Premier League MW36 + MW37 (hardcoded fallback — fetchSoccerFixtures provides live data) ─────
   // These games appear if ESPN soccer API returns empty. Merged/deduped by fetchSoccerFixtures.
   // MW36: Sat May 9 (complete) · Sun May 10 (complete) · MW37: Wed May 13 (1 midweek makeup)
@@ -8679,6 +8711,7 @@ function buildTodaySchedule(){
   // All live-data soccer leagues — applyNarrativeContext before rendering
   // Fix: La Liga/Ligue 1/others previously had no narrative context → zero elimination boost
   applyNarrativeContext(eplGames);
+  eplGames.forEach(_applyPLFinalDayNote);
   applyNarrativeContext(laLigaGames);
   applyNarrativeContext(ligue1Games);
   if(typeof bundesligaGames !== 'undefined') applyNarrativeContext(bundesligaGames);
@@ -21537,7 +21570,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-30c';
+  const SW_VERSION = '2026-07-30d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
