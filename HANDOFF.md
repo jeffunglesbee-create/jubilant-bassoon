@@ -1,3 +1,36 @@
+## SESSION CLOSE-OUT — 2026-07-30, two-legged-aggregate (STOPPED — confidence gate, no commit)
+
+**HEAD:** 1d1f0a3e (unchanged — no code committed)
+**Session doc:** outbox/cc-session-2026-07-30-two-legged-aggregate.md
+
+**CC-CMD-2026-07-30-build-two-legged-aggregate-tracking — STOPPED, confidence
+< 95, per explicit instruction.** Task 1's own required re-verification
+surfaced a blocker the CC-CMD didn't anticipate: UCL/Europa/Conference
+have no functional live-score pipeline right now, at all. Client-side,
+`FIELD_V2_SOURCES.ucl/europa/conference` are flat `false` (not date-gated
+like `wc26`/`nfl` in the same object) — stale since before this season's
+qualifiers started July 7. Independently, the relay's own
+`/v2/games?sport=ucl` returns zero games for a date (2026-07-29) where a
+real match is confirmed to exist via direct ESPN probe. Building
+aggregate-context scoring on top of a pipeline that never delivers real
+`eData` to `dramaScoreLive` for these games would be unverifiable and
+likely dead code. Not built. Two follow-up CC-CMDs needed (one
+field-relay-nba, one jubilant-bassoon, sequenced) before this becomes
+buildable — see outbox doc for exact scope of each.
+
+**What WAS confirmed useful, verified live:** ESPN's own public API
+already computes and serves per-competitor `aggregateScore` plus a `leg`
+object natively for two-legged ties — real shape confirmed via direct
+probe. Once the relay-side gap is fixed, aggregate context should be
+cheap to source (either from ESPN directly or via whatever the relay's
+UCL fix ends up using).
+
+### Carry-forwards
+1. field-relay-nba CC-CMD: diagnose/fix `/v2/games?sport=ucl` (+`europa`/`conference`) not serving real live qualifier data.
+2. jubilant-bassoon CC-CMD (blocked on #1): flip `FIELD_V2_SOURCES` date-gate, wire aggregate context into `dramaScoreLive`.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-30, reconcile-soccer-base-formula (supersedes previous)
 
 **HEAD:** 1d1f0a3e (jubilant-bassoon)
