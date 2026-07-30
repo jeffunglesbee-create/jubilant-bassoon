@@ -22441,8 +22441,21 @@ async function fetchESPNWinProb(gameId) {
 // Endpoint: baseballsavant.mlb.com/gf?game_pk={mlbSourceId}
 // CORS: access-control-allow-origin: * (no relay needed)
 // gamePk = game.sourceId (MLB Stats API numeric ID, NOT ESPN event ID)
-// Returns: { wp: homeTeamWinProbability (0-1), lastWpa: homeTeamWinProbabilityAdded }
-// WP scale: 0-1 fraction (e.g. 0.72 = 72% home win prob) — same as ESPN WP
+// Returns: { wp: homeTeamWinProbability (0-1), lastWpa: homeTeamWinProbabilityAdded (0-1) }
+// WP scale: 0-1 fraction (e.g. 0.72 = 72% home win prob) — same as ESPN WP.
+// BUG FIX (2026-07-30, CC-CMD-2026-07-30-fix-savant-wp-scale): the prior
+// version of this comment claimed the above was already true and wasn't --
+// Savant's raw response is 0-100 (e.g. 52.2, not 0.522), confirmed live on
+// 28 real games via CI-as-proxy (baseballsavant.mlb.com is sandbox-blocked;
+// GitHub Actions reached it directly) and re-confirmed again immediately
+// before this fix (gamePk 822946: homeTeamWinProbability 52.2). The old
+// "confirmed live" note below only verified the field was present, not
+// that its range matched this comment's claim. Every consumer
+// (dramaScoreLive's wpBonus, the WP chip's awayWp = 1 - homeWp) already
+// assumes 0-1 correctly, so the fix normalizes here at the source --
+// dividing both wp and wpa by 100 -- rather than patching any consumer.
+// Original "confirmed live: gamePk 778507" note (was never actually
+// verifying the scale, per the above) left below for provenance only.
 // Confirmed live: gamePk 778507 showed homeTeamWinProbability 24x in gameWpa array
 async function fetchSavantGameFeed(sourceId) {
   if (!sourceId) return null;
@@ -22460,8 +22473,12 @@ async function fetchSavantGameFeed(sourceId) {
       return null;
     }
     const last = gameWpa[gameWpa.length - 1];
-    const wp    = last?.homeTeamWinProbability   ?? null;
-    const wpa   = last?.homeTeamWinProbabilityAdded ?? null;
+    const wpRaw  = last?.homeTeamWinProbability   ?? null;
+    const wpaRaw = last?.homeTeamWinProbabilityAdded ?? null;
+    // Savant returns 0-100; normalize to the 0-1 fraction every consumer
+    // (dramaScoreLive's wpBonus, the WP chip) already correctly assumes.
+    const wp  = wpRaw  !== null ? wpRaw  / 100 : null;
+    const wpa = wpaRaw !== null ? wpaRaw / 100 : null;
     if (FIELD_DEBUG) console.log('[SAVANT] gamePk', sourceId, '→ wp:', wp, 'wpa:', wpa);
     return wp !== null ? { wp, wpa } : null;
   } catch(e) {
@@ -26560,7 +26577,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-30a';
+  const SW_VERSION = '2026-07-30b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
