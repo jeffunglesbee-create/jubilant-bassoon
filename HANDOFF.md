@@ -1,3 +1,28 @@
+## SESSION CLOSE-OUT — 2026-07-30, pl-final-day-wiring (supersedes previous)
+
+**HEAD:** 24061749 (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-07-30d (bumped from 2026-07-30c)
+**Session doc:** outbox/cc-session-2026-07-30-pl-final-day-wiring.md
+
+**PL Final Day notes — WIRED, VERIFIED:** `_plTitleNote`/`_plCityNote`/
+`_plTotNote`/`_plWhuNote` (already-correct clinch math, previously zero
+callers) now wired via `_applyPLFinalDayNote(g)` at the existing
+`applyNarrativeContext(eplGames)` call site — reused, not invented. Sets
+`g.matchupNote` when a team match (Arsenal/City/Tottenham/West Ham) AND
+date gate (`PL_FINAL_DAY_DATE='2026-05-24'`) both hold. `PL_FD` data left
+as-is (2026-27 season hasn't started; refreshing it is a separate, later
+decision per the CC-CMD). Verified via direct evaluation (extracted real
+committed code, ran against 6 real-shaped game objects) — all 4 notes
+fire correctly, both negative controls (wrong team, wrong date) correctly
+stay unset. Intentionally seasonal/dormant code, same pattern as
+`inEFLPlayoffs()`.
+
+### Carry-forwards
+- Next real Final Day: refresh `PL_FD` + `PL_FINAL_DAY_DATE` together.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-30, two-legged-aggregate (STOPPED — confidence gate, no commit)
 
 **HEAD:** 1d1f0a3e (unchanged — no code committed)
