@@ -1,3 +1,29 @@
+## SESSION CLOSE-OUT — 2026-07-30, fix-savant-wp-scale (supersedes previous)
+
+**HEAD:** 54f4724d (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-07-30b (bumped from 2026-07-30a)
+**Session doc:** outbox/cc-session-2026-07-30-fix-savant-wp-scale.md
+
+**Savant WP scale bug — FIXED, VERIFIED:** `fetchSavantGameFeed`'s own
+adjacent comment claimed a 0-1 fraction; Savant's raw response is actually
+0-100 (re-confirmed live today, gamePk 822946, before touching anything).
+Two live consumers were silently broken: `dramaScoreLive`'s `wpBonus`
+could only ever land at exactly 0 or its 25pt cap (never between), and the
+WP chip's `awayWp = 1 - homeWp` fired unconditionally on every live
+Savant-sourced MLB game regardless of actual closeness. Fix: normalize
+`wp`/`wpa` by `/100` inside `fetchSavantGameFeed` itself — single
+function, single point, both consumers untouched (already correct for a
+0-1 input). Behavioral proof included: synthetic before/after shows
+`wpBonus` going from pinned-25/pinned-25 to genuinely proportional
+(4.95/11.25) for the same test sequence. `fetchESPNWinProb` (NBA)
+independently re-confirmed correct, not touched.
+
+### Carry-forwards
+- None from this fix.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-27, journalism-archive-link-fix (supersedes previous)
 
 **HEAD:** 00ea8eca (jubilant-bassoon) / 1bed89d (field-relay-nba)
