@@ -7673,6 +7673,7 @@ function renderAll(skipUnchanged){
           ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'"'+(v.onclick?' role="button" tabindex="0" style="cursor:pointer" onclick="'+v.onclick+'"':'')+'>'+v.label+'</span>').join('')+'</div>':'';})()}
           ${(()=>{ const _wcB=typeof buildWCBars==='function'?buildWCBars(g):''; return _wcB?`<div class="wc-bars-wrap">${_wcB}</div>`:''; })()}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!isPlayoffGame(g)?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
+          ${g._layer4Watch?`<div class="layer4-watch-line">🔀 ${g._layer4Watch}</div>`:""}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
                     ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
           ${(()=>{ if(g._sport!=='UFL'||!g._epaLive?.lastPlay) return ''; return _buildUFLEpaHTML(g._epaLive); })()}
@@ -8492,18 +8493,10 @@ function buildTodaySchedule(){
   }
 
   // \u2500\u2500 PL Final Day note injection (CC-CMD-2026-07-30-wire-pl-final-day-stakes) \u2500\u2500
-  // The four note functions above were fully correct but had zero real
-  // callers -- this wires them. PL_FD's data is hardcoded for the 2025-26
-  // season's real May 24, 2026 Final Day (per Task 3 of that CC-CMD:
-  // refreshing the numbers is a separate, later decision gated on the
-  // CURRENT season's Final Day actually being imminent -- it is not, the
-  // 2026-27 season has not even started yet). The date gate below is
-  // intentionally specific to that one real date, matching PL_FD's own
-  // data -- this is seasonal, dormant-outside-its-date code, same pattern
-  // already established and endorsed in this file for inEFLPlayoffs()
-  // (EFL_PLAYOFF_START/END, ~14042-14044): reactivates every real Final
-  // Day by refreshing PL_FD + this date constant together, not deleted
-  // for looking orphaned between seasons.
+  // Wires the four already-correct note functions above (previously zero
+  // callers). PL_FD data is the real 2025-26 Final Day (May 24, 2026) --
+  // not refreshed, since the 2026-27 season hasn't started (Task 3).
+  // Seasonal/dormant by design, same pattern as inEFLPlayoffs() (~14042).
   const PL_FINAL_DAY_DATE = '2026-05-24';
   const _plTeamMatch = (name, re) => re.test((name||''));
   function _applyPLFinalDayNote(g){
@@ -8521,6 +8514,53 @@ function buildTodaySchedule(){
     else if (isCityGame) g.matchupNote = _plCityNote();
     else if (isTotGame) g.matchupNote = _plTotNote();
     else if (isWhuGame) g.matchupNote = _plWhuNote();
+  }
+
+  // ── Layer 4: cross-game "watching elsewhere" facts, PULL-ONLY (CC-CMD-
+  // 2026-07-30-layer4-cross-game-facts-pull) ──────────────────────────────
+  // Not modeled on BracketDO (autonomous WebSocket fan-out -- Rule A
+  // violation shape, ADR-002-CONTEXT.md ~211-215). No DO, no relay call, no
+  // storage: pure sync fn over games already in `eplGames` (refreshed by
+  // the existing score-poll). All 10 Final Day games are already
+  // co-located in one array -- no coordinator needed. Reuses PL_FD.
+  function _applyLayer4CrossGameFacts(games){
+    if (!games || !games.length) return;
+    const findByTeam = re => games.find(g => _plTeamMatch(g.home,re) || _plTeamMatch(g.away,re));
+    const arsenalGame = findByTeam(/arsenal/i);
+    const cityGame    = findByTeam(/man(chester)?\s*city/i);
+    const totGame     = findByTeam(/tottenham|spurs/i);
+    const whuGame     = findByTeam(/west ham/i);
+    // teamRe = which side of THIS game is the tracked team; must be passed
+    // explicitly per call (a hardcoded guess mislabeled a team as its own
+    // opponent -- caught via direct evaluation before this shipped).
+    const liveState = (g, teamRe) => {
+      if (!g) return null;
+      const score = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
+      if (!score || score.homeScore == null || score.awayScore == null) return null;
+      const isHomeTracked = _plTeamMatch(g.home,teamRe);
+      const teamScore    = isHomeTracked ? score.homeScore : score.awayScore;
+      const oppScore     = isHomeTracked ? score.awayScore : score.homeScore;
+      const oppName      = isHomeTracked ? g.away : g.home;
+      const state        = score.state; // 'pre' | 'in' | 'post'
+      return { teamScore, oppScore, oppName, state,
+        summary: state === 'pre' ? null
+          : `${teamScore>oppScore?'leading':teamScore<oppScore?'trailing':'level with'} ${oppName} ${teamScore}-${oppScore}${state==='post'?' (FT)':''}`
+      };
+    };
+    // Title race pair: Arsenal's card shows City's live state, and vice versa.
+    if (arsenalGame && cityGame) {
+      const cityState = liveState(cityGame,/man(chester)?\s*city/i);
+      if (cityState?.summary) arsenalGame._layer4Watch = `Man City currently ${cityState.summary} — watch that game too.`;
+      const arsState = liveState(arsenalGame,/arsenal/i);
+      if (arsState?.summary) cityGame._layer4Watch = `Arsenal currently ${arsState.summary} — watch that game too.`;
+    }
+    // Relegation pair: Tottenham's card shows West Ham's live state, and vice versa.
+    if (totGame && whuGame) {
+      const whuState = liveState(whuGame,/west ham/i);
+      if (whuState?.summary) totGame._layer4Watch = `West Ham currently ${whuState.summary} — watch that game too.`;
+      const totState = liveState(totGame,/tottenham|spurs/i);
+      if (totState?.summary) whuGame._layer4Watch = `Tottenham currently ${totState.summary} — watch that game too.`;
+    }
   }
 
   // ── Premier League MW36 + MW37 (hardcoded fallback — fetchSoccerFixtures provides live data) ─────
@@ -8712,6 +8752,7 @@ function buildTodaySchedule(){
   // Fix: La Liga/Ligue 1/others previously had no narrative context → zero elimination boost
   applyNarrativeContext(eplGames);
   eplGames.forEach(_applyPLFinalDayNote);
+  _applyLayer4CrossGameFacts(eplGames);
   applyNarrativeContext(laLigaGames);
   applyNarrativeContext(ligue1Games);
   if(typeof bundesligaGames !== 'undefined') applyNarrativeContext(bundesligaGames);
@@ -17436,19 +17477,11 @@ async function fetchESPNWinProb(gameId) {
 // gamePk = game.sourceId (MLB Stats API numeric ID, NOT ESPN event ID)
 // Returns: { wp: homeTeamWinProbability (0-1), lastWpa: homeTeamWinProbabilityAdded (0-1) }
 // WP scale: 0-1 fraction (e.g. 0.72 = 72% home win prob) — same as ESPN WP.
-// BUG FIX (2026-07-30, CC-CMD-2026-07-30-fix-savant-wp-scale): the prior
-// version of this comment claimed the above was already true and wasn't --
-// Savant's raw response is 0-100 (e.g. 52.2, not 0.522), confirmed live on
-// 28 real games via CI-as-proxy (baseballsavant.mlb.com is sandbox-blocked;
-// GitHub Actions reached it directly) and re-confirmed again immediately
-// before this fix (gamePk 822946: homeTeamWinProbability 52.2). The old
-// "confirmed live" note below only verified the field was present, not
-// that its range matched this comment's claim. Every consumer
-// (dramaScoreLive's wpBonus, the WP chip's awayWp = 1 - homeWp) already
-// assumes 0-1 correctly, so the fix normalizes here at the source --
-// dividing both wp and wpa by 100 -- rather than patching any consumer.
-// Original "confirmed live: gamePk 778507" note (was never actually
-// verifying the scale, per the above) left below for provenance only.
+// BUG FIX (2026-07-30, CC-CMD-2026-07-30-fix-savant-wp-scale): prior comment
+// claimed 0-1 and was wrong -- Savant's raw response is 0-100 (e.g. 52.2),
+// confirmed live on 28 real games via CI-as-proxy. Consumers (wpBonus, WP
+// chip) already assume 0-1, so this fix normalizes at the source (/100).
+// Old "confirmed live" note below only checked presence, not range.
 // Confirmed live: gamePk 778507 showed homeTeamWinProbability 24x in gameWpa array
 async function fetchSavantGameFeed(sourceId) {
   if (!sourceId) return null;
@@ -21570,7 +21603,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-30d';
+  const SW_VERSION = '2026-07-30e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -21901,24 +21934,13 @@ function dramaScoreLive(eData, sport){
     // via grep, reused rather than invented).
     //
     // BASE TABLE RECALIBRATED (2026-07-30, CC-CMD-2026-07-30-reconcile-
-    // soccer-base-formula): the numbers below (0.72/0.32/0.06) predate
-    // this branch's own July 4 fix -- that fix only corrected WHICH games
-    // reach this branch (the WC26 label-matching bug above), it never
-    // touched or revisited these values. Confirmed genuinely never
-    // calibrated: no outbox record, no code comment, no real-match
-    // validation exists for these specific numbers anywhere in history.
-    // Replaced with the May 12 2026 spec's numbers (Drive doc
-    // 1KUiDqiH-1_Dc7Gmv1TyLmS1OSwF-DiXVesoXu3eRubA), validated today
-    // against 17 real recent MLS results: May's numbers score every
-    // single non-tied real match higher than the old table (delta
-    // +0.09 to +0.18, one-directional across all 14 non-tied games,
-    // not noise) -- matching the spec's own soccer-specific reasoning
-    // (~2.6 goals/match; a single goal matters enormously) rather than
-    // the old table's much steeper basketball-shaped decay. bothTeamsScored
-    // built as a real signal (previously entirely absent) -- confirmed
-    // NOT vacuous: real margin-1 both-scored games (e.g. CLT 2-1 ATL)
-    // vs real margin-1 one-side-scored games (e.g. MIN 0-1 VAN) are a
-    // real, common distinction in the 17-game sample, not a hypothetical.
+    // soccer-base-formula): old numbers (0.72/0.32/0.06) predate the July 4
+    // fix above (which only fixed branch-matching, never these values) and
+    // were never calibrated. Replaced with the May 12 2026 spec's numbers
+    // (Drive 1KUiDqiH-1_Dc7Gmv1TyLmS1OSwF-DiXVesoXu3eRubA), validated
+    // against 17 real MLS results: scores every non-tied real match higher
+    // (+0.09 to +0.18, one-directional, not noise) -- see outbox for detail.
+    // bothTeamsScored built as a real signal (was entirely absent).
     const bothTeamsScored = (eData.homeScore||0) > 0 && (eData.awayScore||0) > 0;
     base = diff===0 ? 1.0
          : diff===1 ? (bothTeamsScored ? 0.90 : 0.85)
