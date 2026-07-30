@@ -1,3 +1,41 @@
+## SESSION CLOSE-OUT — 2026-07-30, layer4-cross-game-facts-pull (supersedes previous — closes today's 4-CC-CMD run)
+
+**HEAD:** 8f6d45f0 (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-07-30e (bumped from 2026-07-30d)
+**Session doc:** outbox/cc-session-2026-07-30-layer4-cross-game-facts-pull.md
+
+**Layer 4 cross-game facts — BUILT, PULL-ONLY, VERIFIED.** Deliberately
+NOT modeled on BracketDO (re-confirmed fresh: still autonomously
+WebSocket-fans-out on threshold changes, a real Rule A violation shape).
+No DO, no relay endpoint, no new storage — all 10 PL Final Day games
+already co-located in the same in-memory `eplGames` array on every
+render, so no coordinator is needed. `_applyLayer4CrossGameFacts(games)`
+is a pure sync function (confirmed zero fetch/WebSocket/postMessage calls
+via direct inspection), reads live scores via the same `findESPNScore`
+every other card uses, reuses `PL_FD`/the four note functions from the
+prior CC-CMD. Direct evaluation caught and fixed a real bug (a hardcoded
+team-check mislabeled Man City as its own opponent on its own game) before
+shipping — this is exactly the class of bug "looks right" review misses.
+
+**File-size smoke gate note:** index.html's 2,600,000-byte structural
+ceiling was crossed by this session's cumulative comment volume across
+all 4 CC-CMDs; trimmed verbosity only (zero logic changes, re-verified
+after each trim) to fit under it. Disclosed in the outbox, not silently
+bundled.
+
+**This closes today's 4-CC-CMD run** (fix-savant-wp-scale,
+reconcile-soccer-base-formula, two-legged-aggregate [stopped at
+confidence gate], wire-pl-final-day-stakes, layer4-cross-game-facts-pull
+— 5 total counting the earlier fix-savant-wp-scale).
+
+### Carry-forwards
+- field-relay-nba CC-CMD: diagnose/fix `/v2/games?sport=ucl` (+`europa`/`conference`) not serving real live qualifier data (from the stopped two-legged-aggregate task).
+- jubilant-bassoon CC-CMD (blocked on above): flip `FIELD_V2_SOURCES` date-gate, wire aggregate context into `dramaScoreLive`.
+- BracketDO Rule A concern remains open (separate audit, not this session's scope): `docs/outbox/chat-update-2026-07-30-bracketdo-rule-a-concern.md`.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-30, pl-final-day-wiring (supersedes previous)
 
 **HEAD:** 24061749 (jubilant-bassoon)
