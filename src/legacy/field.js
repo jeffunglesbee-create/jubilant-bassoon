@@ -21537,7 +21537,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-30b';
+  const SW_VERSION = '2026-07-30c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -21866,7 +21866,31 @@ function dramaScoreLive(eData, sport){
     // below and used the WRONG base-score calibration. Same substring
     // check classifySport() already uses for its own isWC26 (verified
     // via grep, reused rather than invented).
-    base = diff===0?1.0 : diff===1?0.72 : diff===2?0.32 : 0.06;
+    //
+    // BASE TABLE RECALIBRATED (2026-07-30, CC-CMD-2026-07-30-reconcile-
+    // soccer-base-formula): the numbers below (0.72/0.32/0.06) predate
+    // this branch's own July 4 fix -- that fix only corrected WHICH games
+    // reach this branch (the WC26 label-matching bug above), it never
+    // touched or revisited these values. Confirmed genuinely never
+    // calibrated: no outbox record, no code comment, no real-match
+    // validation exists for these specific numbers anywhere in history.
+    // Replaced with the May 12 2026 spec's numbers (Drive doc
+    // 1KUiDqiH-1_Dc7Gmv1TyLmS1OSwF-DiXVesoXu3eRubA), validated today
+    // against 17 real recent MLS results: May's numbers score every
+    // single non-tied real match higher than the old table (delta
+    // +0.09 to +0.18, one-directional across all 14 non-tied games,
+    // not noise) -- matching the spec's own soccer-specific reasoning
+    // (~2.6 goals/match; a single goal matters enormously) rather than
+    // the old table's much steeper basketball-shaped decay. bothTeamsScored
+    // built as a real signal (previously entirely absent) -- confirmed
+    // NOT vacuous: real margin-1 both-scored games (e.g. CLT 2-1 ATL)
+    // vs real margin-1 one-side-scored games (e.g. MIN 0-1 VAN) are a
+    // real, common distinction in the 17-game sample, not a hypothetical.
+    const bothTeamsScored = (eData.homeScore||0) > 0 && (eData.awayScore||0) > 0;
+    base = diff===0 ? 1.0
+         : diff===1 ? (bothTeamsScored ? 0.90 : 0.85)
+         : diff===2 ? 0.45
+         : 0.15;
   } else {
     // NBA / NHL / NFL — higher scoring, tighter windows
     base = diff===0?1.0 : diff<=3?0.82 : diff<=7?0.52 : diff<=14?0.22 : 0.05;
