@@ -14231,8 +14231,8 @@ const FIELD_V2_SOURCES = {
              // Date coverage: fieldDatesToQuery's ≥16 ET tomorrow-add captures the
              // typical Saturday/Sunday AEST evening match window (AEST evening =
              // UTC next day ≈ ET afternoon previous day).
-  epl: false,                                // Premier League off-season, no games until August
-  ucl: true, europa: true, conference: true, // 2026-27 UEFA LIVE; *qual sports unwired
+  epl: false, // off-season
+  ucl: true, europa: true, conference: true, uclqual: true, europaqual: true, conferencequal: true,
   eflchamp: false, eflone: false, efltwo: false,             // EFL — season ended May 25 2026
   laliga: false, seriea: false, bundesliga: false, ligue1: false,
   wc26: new Date() >= new Date('2026-06-11T00:00:00Z'), // auto-activates June 11 2026 UTC
@@ -14259,6 +14259,7 @@ const ESPN_TO_V2_MAP = {
 const V2_PERIOD_PREFIX = {
   nba:'Q', nhl:'P', mlb:'T', wnba:'Q',
   mls:"'", epl:"'", ucl:"'", europa:"'", conference:"'",
+  uclqual:"'", europaqual:"'", conferencequal:"'",
   eflchamp:"'", eflone:"'", efltwo:"'",
   laliga:"'", seriea:"'", bundesliga:"'", ligue1:"'", wc26:"'",
   nfl:'Q', cfb:'Q',
@@ -21604,7 +21605,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-30f';
+  const SW_VERSION = '2026-07-30g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
