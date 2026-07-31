@@ -1,3 +1,37 @@
+## SESSION CLOSE-OUT — 2026-07-30, uefa-flags-flip (supersedes previous)
+
+**HEAD:** 2452594e (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-07-30f (bumped from 2026-07-30e)
+**Session doc:** outbox/cc-session-2026-07-30-uefa-flags-flip.md
+
+**`FIELD_V2_SOURCES.ucl/europa/conference` flipped `false → true`.**
+`epl` left `false` (genuine off-season). Resolves the carry-forward below
+— but resolves it as "flags are correctly off-scope-empty right now, not
+broken" rather than "now shows live data," because of two real gaps found
+via direct probe (`probe_relay_route`, not assumed):
+1. The live 2026-27 UEFA action is entirely under `uclqual`/`europaqual`/
+   `conferencequal` sport keys, which have **zero entries** in
+   `FIELD_V2_SOURCES` — not wired at all. Confirmed via probe: `sport=ucl`
+   date=2026-07-29 → empty (main tournament hasn't started, correct);
+   `sport=uclqual` same date → real finished qualifying matches (Kairat
+   Almaty, CSU Craiova, etc.).
+2. The relay's existing two-legged aggregate enrichment (ESPN-based,
+   already fully wired end-to-end — NOT BSD, a stopped BSD-duplicate CC-CMD
+   was abandoned this session once this was found) pre-filters on
+   `/2nd leg|second leg/i` against ESPN's round string, but real qualifying
+   rounds return `"UCL Qualifying, Second Round"` — regex will never match.
+
+Both documented with explicit unblock criteria in the session doc. Neither
+actioned this session — out of stated scope ("flip flags now").
+
+### Carry-forwards
+- Wire `uclqual`/`europaqual`/`conferencequal` into `FIELD_V2_SOURCES` + client fetch call sites.
+- Widen relay's two-legged-aggregate round regex to match qualifying-round naming (scoped to `*qual` sports only).
+- BracketDO Rule A concern remains open (separate audit): `docs/outbox/chat-update-2026-07-30-bracketdo-rule-a-concern.md`.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-30, layer4-cross-game-facts-pull (supersedes previous — closes today's 4-CC-CMD run)
 
 **HEAD:** 8f6d45f0 (jubilant-bassoon)
