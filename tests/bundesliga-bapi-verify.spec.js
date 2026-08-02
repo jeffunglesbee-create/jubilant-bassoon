@@ -109,6 +109,7 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     if (await selectPlaceholder.count().catch(() => 0) > 0) {
       result.matSelectFound = true;
       try {
+        await selectPlaceholder.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => {});
         await selectPlaceholder.click({ timeout: 5000 }).catch(() =>
           selectPlaceholder.click({ timeout: 5000, force: true })
         );
