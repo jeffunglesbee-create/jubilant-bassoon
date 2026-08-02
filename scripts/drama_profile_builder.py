@@ -130,4 +130,11 @@ for team, score in ranked[:10]:
 print("\n=== REFERENCE POINTS ===")
 for team in ['KC', 'SF', 'BUF', 'DAL', 'NYG', 'CLE']:
     print(f"  {team}: {drama_dict.get(team, 'N/A')}")
+
+print("\n=== DIAGNOSTIC: per-metric z-scores, KC vs top 3 ===")
+diag = profiles.set_index('team')
+for team in [t for t, _ in ranked[:3]] + ['KC']:
+    row = diag.loc[team]
+    parts = ' | '.join(f"{c}_z={row[f'{c}_z']:.2f}" for c in METRIC_WEIGHTS)
+    print(f"  {team} (games={int(row['games'])}): {parts}")
 print("\n✓ Saved: team_drama_profiles_nfl.json")
