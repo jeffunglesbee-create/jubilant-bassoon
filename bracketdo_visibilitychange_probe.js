@@ -57,6 +57,11 @@ async function wsState(page) {
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 
   await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  // Wait for the app's own boot-complete sentinel (set after the first
+  // renderAll() call) rather than just "the globals exist" -- 3 prior real
+  // runs showed intermittent wc-mode state races when acting before the
+  // app's own initial render/class-setting had actually settled.
+  await page.waitForFunction(() => !!window._fieldDataReady, { timeout: 20000 }).catch(() => {});
   await page.waitForFunction(() => typeof window.toggleWCView === 'function' && !!window._bracketWS, { timeout: 15000 }).catch(() => {});
 
   const results = { scenarios: [] };
