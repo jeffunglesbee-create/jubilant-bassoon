@@ -42,26 +42,45 @@ test('laliga apim fresh re-verification', async ({ page, request }) => {
     }
   }
 
+  // Try several plausible auth shapes -- a bare API-context request lacks
+  // whatever a real browser sends automatically (Origin/Referer for a
+  // CORS-gated API), and the header name/format for the key was never
+  // confirmed against the ORIGINAL capture (no access to that repo/script
+  // to check). Log every variant's real result rather than guessing once
+  // and concluding from a single shot.
+  result.authAttempts = [];
   if (result.subscriptionKey) {
-    const resp = await request.get(
-      'https://apim.laliga.com/public-service/api/v1/digitalassets/clasificacion',
-      {
-        headers: { 'Ocp-Apim-Subscription-Key': result.subscriptionKey },
-        timeout: 20000,
+    const variants = [
+      { label: 'Ocp-Apim-Subscription-Key header only', headers: { 'Ocp-Apim-Subscription-Key': result.subscriptionKey } },
+      { label: 'Ocp-Apim-Subscription-Key + Origin/Referer', headers: { 'Ocp-Apim-Subscription-Key': result.subscriptionKey, 'Origin': 'https://www.laliga.com', 'Referer': 'https://www.laliga.com/' } },
+      { label: 'lowercase subscription-key header', headers: { 'subscription-key': result.subscriptionKey, 'Origin': 'https://www.laliga.com', 'Referer': 'https://www.laliga.com/' } },
+      { label: 'query param subscription-key', url: `https://apim.laliga.com/public-service/api/v1/digitalassets/clasificacion?subscription-key=${result.subscriptionKey}`, headers: { 'Origin': 'https://www.laliga.com', 'Referer': 'https://www.laliga.com/' } },
+    ];
+    for (const v of variants) {
+      const resp = await request.get(
+        v.url || 'https://apim.laliga.com/public-service/api/v1/digitalassets/clasificacion',
+        { headers: v.headers, timeout: 20000 }
+      ).catch(e => ({ status: () => null, ok: () => false, _err: String(e) }));
+      const status = resp.status ? resp.status() : null;
+      const ok = resp.ok ? resp.ok() : false;
+      result.authAttempts.push({ label: v.label, status, ok });
+      if (ok) {
+        result.clasificacionStatus = status;
+        result.clasificacionOk = true;
+        try {
+          const body = await resp.json();
+          const teams = Array.isArray(body) ? body : (body.data || body.teams || []);
+          result.sampleTeams = (teams || []).slice(0, 3).map(t =>
+            t.teamName || t.name || t.team || JSON.stringify(t).slice(0, 60)
+          );
+        } catch (e) {
+          result.parseError = String(e).slice(0, 200);
+        }
+        break;
       }
-    );
-    result.clasificacionStatus = resp.status();
-    result.clasificacionOk = resp.ok();
-    if (resp.ok()) {
-      try {
-        const body = await resp.json();
-        const teams = Array.isArray(body) ? body : (body.data || body.teams || []);
-        result.sampleTeams = (teams || []).slice(0, 3).map(t =>
-          t.teamName || t.name || t.team || JSON.stringify(t).slice(0, 60)
-        );
-      } catch (e) {
-        result.parseError = String(e).slice(0, 200);
-      }
+    }
+    if (!result.clasificacionOk) {
+      result.clasificacionStatus = result.authAttempts[0]?.status ?? null;
     }
   }
 
