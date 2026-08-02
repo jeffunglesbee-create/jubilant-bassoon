@@ -76,7 +76,12 @@ async function wsState(page) {
 
   // ── Scenario 2: from hidden, visible while still in wc-mode -> reopens ──
   await setVisibility(page, 'visible');
-  await page.waitForTimeout(1500);
+  // Poll instead of a flat sleep -- a reopen right after a recent close may
+  // take longer than a cold first connect (relay-side WS accept latency).
+  await page.waitForFunction(
+    () => document.getElementById('wc-tab-bracket-btn')?.classList.contains('bracket-live'),
+    { timeout: 8000 }
+  ).catch(() => {});
   const afterVisible = await wsState(page);
   results.scenarios.push({
     name: 'hidden -> visible (still wc-mode) -> socket reopens',
