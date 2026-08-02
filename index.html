@@ -18425,15 +18425,10 @@ function _hrdPollLoop() {
   const intervalId = setInterval(() => { if (stopped) { clearInterval(intervalId); return; } tick(); }, HRD_LIVE_TTL);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Football-Data.org engine
-// Free tier: 10 req/min, no commercial use, attribution required
-// Covers: PL, ELC, PD, SA, BL1, FL1, CL, EL, ECL and more
-// ══════════════════════════════════════════════════════════════════════════════
-
+// Football-Data.org engine. Free tier 10 req/min, no commercial use.
+// Covers: PL, ELC, PD, SA, BL1, FL1, CL, EL, ECL and more.
 async function fdFetch(path){
-  // Routes through relay worker — CORS bypass + X-Auth-Token added server-side
-  // Free tier: 10 req/min shared across all users via relay-level Cloudflare caching
+  // Routes through relay -- CORS bypass + X-Auth-Token added server-side.
   const r = await fetch(`${FD_RELAY}${path}`, {
     signal: AbortSignal.timeout(8000)
   });
@@ -18628,6 +18623,20 @@ async function fetchESPNStandings(sportName){
 
 // Toggle standings panel on soccer game cards
 // Priority: FD.org (form table) → ESPN → SDB stub
+async function _laligaApimCrossCheck(fdRows){
+  try{
+    const r = await fetch('https://field-relay-nba.jeffunglesbee.workers.dev/laliga-apim/clasificacion');
+    if(!r.ok) return;
+    const b = await r.json();
+    if(!b.available || !Array.isArray(b.data) || !b.data.length) return;
+    const at = b.data[0]?.teamName || b.data[0]?.name || '';
+    const ft = fdRows[0]?.team || '';
+    if(FIELD_DEBUG && at && ft && !ft.includes(at) && !at.includes(ft)){
+      console.warn(`[LaLiga] FD top "${ft}" vs apim "${at}"`);
+    }
+  }catch(e){}
+}
+
 async function toggleStandings(btn, leagueId, season){
   const card = btn.closest(".game-card");
   if(!card) return;
@@ -18656,6 +18665,7 @@ async function toggleStandings(btn, leagueId, season){
         renderFDStandingsPanel(panel, fdRows, sportName);
         card.appendChild(panel);
         btn.textContent = closeLabel;
+        if(sportName === "La Liga") _laligaApimCrossCheck(fdRows);
         return;
       }
     }catch(e){ if(FIELD_DEBUG) console.warn("[Standings] FD failed:", e.message); }
@@ -26642,7 +26652,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-02b';
+  const SW_VERSION = '2026-08-02c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
