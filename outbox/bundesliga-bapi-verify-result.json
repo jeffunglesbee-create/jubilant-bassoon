@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-02T06:11:29.732Z",
+  "timestamp": "2026-08-02T06:21:54.985Z",
   "confirmedKeyStillWorks": true,
   "confirmedShapeStatus": 200,
   "consentDismissed": true,
@@ -37,7 +37,7 @@
   ],
   "matchdaySwitchAttempted": true,
   "matchdaySwitchSucceeded": true,
-  "initialPayloadCaptureCount": 5,
+  "initialPayloadCaptureCount": 8,
   "initialPayloadCaptures": [
     {
       "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000003/DFL-DAY-004CBT",
@@ -63,9 +63,24 @@
       "url": "https://wapp.bapi.bundesliga.com/editorial?category=fixturesbl1&editorialtype=feature,news,live_match&pageSize=3&pageNumber=0",
       "status": 200,
       "bodyPreview": "{\"totalElementCount\":2180,\"totalPageCount\":727,\"currentPageNumber\":0,\"elementsPerPage\":3,\"elementsOnPage\":3,\"elements\":[{\"author\":\"dflds066@dfl.de\",\"categories\":[\"tablebl1\",\"bundesliga\",\"fixturesbl1\"],\"cisId\":\"CON-37680\",\"clubs\":[],\"editorialAbstract\":\"Life has returned to Bundesliga training grounds as teams start to get back to business preparing for the 2026/27 campaign. Find out what every club has planned for their pre-season preparations this summer...\",\"headlines\":{\"defaultHeadline\":\"Bundesliga clubs' 2026/27 pre-season schedules: tours, friendlies and training\",\"shortHeadline\":\"Follow your team through pre-season\"},\"isVideo\":false,\"language\":\"en\",\"media\":[{\"type\":\"image\",\"desktop\":{\"alt\":\"Fabio Silva Dortmund, AUGUST 1, 2026 - Football / Soccer : International Friendly, Länderspiel, Nationalmannschaft match between FC Tokyo -1 Borussia Dortmund at MUFG STADIUM National Stadium in Tokyo, Japan. PUBLICATIONxNOTxINxJPN aflo_339773690 KenxAsakurax\",\"caption\":\"Fabio Silva was on target for Borussia Dortmund in their 1-0 win against FC Tokyo. \",\"copyright\":\"IMAGO/Ken Asakura\",\"credit\":\"\",\"src\":\"https://assets.bundesliga.com/contender/2026/7/imago1080604318.jpg?crop=0px%2C446px%2C4550px%2C2555px\"},\"mobile\":{\"alt\":\"Fabio Silva Dortmund, AUGUST 1, 2026 - Football / Soccer : International Friendly, Länderspiel, Nationalmannschaft match between FC Tokyo -1 Borussia Dortmund at MUFG STADIUM National Stadium in Tokyo, Japan. PUBLICATIONxNOTxINxJPN aflo_339773690 KenxAsakurax\",\"caption\":\"Fabio Silva was on target for Borussia Dortmund in their 1-0 win against FC Tokyo. \",\"copyright\":\"IMAGO/Ken Asakura\",\"credit\":\"\",\"src\":\"https://assets.bundesliga.com/contender/2026/7/imago1080604318.jpg?crop=0px%2C414px%2C3295px%2C2638px\"}},{\"type\":\"liveMatch\",\"liveMatchId\":\"Preseasontraining2026\"},{\"type\":\"video\",\"aspectRatio\":\"16:9\",\"description\":\"Bayern's record-breaking season\",\"duration\":1003,\"headline\":\"Bayern's record-breaking season\",\"poster\":\"https://assets.bundesliga.com/video/j"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000001/DFL-DAY-004CBT",
+      "status": 200,
+      "bodyPreview": "{\"broadcasts\":[]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasters?promoteInHeader=true",
+      "status": 200,
+      "bodyPreview": "{\"country\":\"US\",\"broadcasters\":[{\"name\":\"ESPN+\",\"url\":\"https://www.espn.com/watch/espnplus\",\"rank\":1,\"logos\":{\"light\":\"https://img.bundesliga.com/tachyon/sites/2/2020/09/ESPN-BLACK-TEXT.png?fit=1024\",\"dark\":\"https://img.bundesliga.com/tachyon/sites/2/2020/09/ESPN-WHITE-TEXT.png?fit=1024\"}}]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000001/DFL-DAY-004CBT",
+      "status": 200,
+      "bodyPreview": "{\"broadcasts\":[]}"
     }
   ],
-  "postConsentPayloadCaptureCount": 2,
+  "postConsentPayloadCaptureCount": 5,
   "postConsentPayloadCaptures": [
     {
       "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000001/DFL-DAY-004CBT",
@@ -76,7 +91,67 @@
       "url": "https://wapp.bapi.bundesliga.com/editorial?category=fixturesbl1&editorialtype=feature,news,live_match&pageSize=3&pageNumber=0",
       "status": 200,
       "bodyPreview": "{\"totalElementCount\":2180,\"totalPageCount\":727,\"currentPageNumber\":0,\"elementsPerPage\":3,\"elementsOnPage\":3,\"elements\":[{\"author\":\"dflds066@dfl.de\",\"categories\":[\"tablebl1\",\"bundesliga\",\"fixturesbl1\"],\"cisId\":\"CON-37680\",\"clubs\":[],\"editorialAbstract\":\"Life has returned to Bundesliga training grounds as teams start to get back to business preparing for the 2026/27 campaign. Find out what every club has planned for their pre-season preparations this summer...\",\"headlines\":{\"defaultHeadline\":\"Bundesliga clubs' 2026/27 pre-season schedules: tours, friendlies and training\",\"shortHeadline\":\"Follow your team through pre-season\"},\"isVideo\":false,\"language\":\"en\",\"media\":[{\"type\":\"image\",\"desktop\":{\"alt\":\"Fabio Silva Dortmund, AUGUST 1, 2026 - Football / Soccer : International Friendly, Länderspiel, Nationalmannschaft match between FC Tokyo -1 Borussia Dortmund at MUFG STADIUM National Stadium in Tokyo, Japan. PUBLICATIONxNOTxINxJPN aflo_339773690 KenxAsakurax\",\"caption\":\"Fabio Silva was on target for Borussia Dortmund in their 1-0 win against FC Tokyo. \",\"copyright\":\"IMAGO/Ken Asakura\",\"credit\":\"\",\"src\":\"https://assets.bundesliga.com/contender/2026/7/imago1080604318.jpg?crop=0px%2C446px%2C4550px%2C2555px\"},\"mobile\":{\"alt\":\"Fabio Silva Dortmund, AUGUST 1, 2026 - Football / Soccer : International Friendly, Länderspiel, Nationalmannschaft match between FC Tokyo -1 Borussia Dortmund at MUFG STADIUM National Stadium in Tokyo, Japan. PUBLICATIONxNOTxINxJPN aflo_339773690 KenxAsakurax\",\"caption\":\"Fabio Silva was on target for Borussia Dortmund in their 1-0 win against FC Tokyo. \",\"copyright\":\"IMAGO/Ken Asakura\",\"credit\":\"\",\"src\":\"https://assets.bundesliga.com/contender/2026/7/imago1080604318.jpg?crop=0px%2C414px%2C3295px%2C2638px\"}},{\"type\":\"liveMatch\",\"liveMatchId\":\"Preseasontraining2026\"},{\"type\":\"video\",\"aspectRatio\":\"16:9\",\"description\":\"Bayern's record-breaking season\",\"duration\":1003,\"headline\":\"Bayern's record-breaking season\",\"poster\":\"https://assets.bundesliga.com/video/j"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000001/DFL-DAY-004CBT",
+      "status": 200,
+      "bodyPreview": "{\"broadcasts\":[]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasters?promoteInHeader=true",
+      "status": 200,
+      "bodyPreview": "{\"country\":\"US\",\"broadcasters\":[{\"name\":\"ESPN+\",\"url\":\"https://www.espn.com/watch/espnplus\",\"rank\":1,\"logos\":{\"light\":\"https://img.bundesliga.com/tachyon/sites/2/2020/09/ESPN-BLACK-TEXT.png?fit=1024\",\"dark\":\"https://img.bundesliga.com/tachyon/sites/2/2020/09/ESPN-WHITE-TEXT.png?fit=1024\"}}]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000001/DFL-DAY-004CBT",
+      "status": 200,
+      "bodyPreview": "{\"broadcasts\":[]}"
     }
   ],
+  "otherDomainsSeen": [
+    "cdn.cookielaw.org",
+    "assets.bundesliga.com",
+    "geolocation.onetrust.com",
+    "mt.bundesliga.com",
+    "cp.bundesliga.com",
+    "securepubads.g.doubleclick.net",
+    "www.googletagmanager.com",
+    "t.screeb.app",
+    "cdn.amplitude.com",
+    "ep1.adtrafficquality.google",
+    "94a5c0bac7a669ff55ec017cbe407b29.safeframe.googlesyndication.com",
+    "ep2.adtrafficquality.google",
+    "www.google.com",
+    "pagead2.googlesyndication.com",
+    "sr-client-cfg.eu.amplitude.com",
+    "dfl-privacy.my.onetrust.com",
+    "rpc.screeb.app",
+    "api.eu.amplitude.com",
+    "bf15230cxd.bf.dynatrace.com",
+    "3eafaf28800407153f4dcabece997529.safeframe.googlesyndication.com"
+  ],
+  "otherDomainFixtureLikeHits": [
+    {
+      "url": "https://securepubads.g.doubleclick.net/gampad/ads?pvsid=6261886629033147&correlator=227075909359290&eid=31099591%2C95390553&output=ldjh&gdfp_req=1&vrg=202607280101&ptt=17&impl=fifs&gdpr_consent=CQoUVUAQoUVUAAcABBENCqFsAP_gAEPgAChQL4QM4AAgAFAAsADAAIAAVgAwADIAHgAQAAoABYADIAIUATABNgCiAKQAWwAvgBhADaAIAAQYAhQBGACUgE4AToAwwBqgDiAHOAPMAhABHACWgFpALuAacA_4CHQEagJiAXmAxYBjIDKwGogOiAgsBEwCRQEsgKVgW9AvgCf0BMABYAFQAPAAgAD8AJwAYYA5wCEAEWAI4Aa8A_4CHQExAMWAiYBIoCfwAgSAGADIAJgC8x0AMAGQATAF5koAQATAF5lIAYAMgAmALzAA.f_wACHwAAAAA.IL4QN4AAgAFAAsADAAIAAVgAwADIAHgAQAAoABYADIAIUATABNgCiAKQAWwAvgBhADaAH4AQAAgwBCgCMAEpAJwAnQBhgDVAHEAOcAeYBCACLAEcAJaAWkAu4BpwDXgH_AQ6AjUBMQC8wGLAMZAZWA1EB0QEFgImASKAlkBP4ClYFvQL4AAA&gdpr=1&iu_parts=66185244%2Cbundesliga_web%2Cfixturesresults_slb_top&enc_prev_ius=%2F0%2F1%2F2&prev_iu_szs=728x90&ifi=1&dids=div-gpt-ad-1501160287123-0&adfs=172593690&sfv=1-0-45&eri=1&sc=1&cookie_enabled=1&abxe=1&dt=1785651730059&lmt=1785651730&adxs=276&adys=118&biw=1280&bih=720&scr_x=0&scr_y=0&btvi=0&ucis=1&oid=2&u_his=2&u_h=720&u_w=1280&u_ah=720&u_aw=1280&u_cd=24&u_sd=1&dmc=16&bc=31&nvt=1&uach=WyJMaW51eCIsIiIsIng4NiIsIiIsIjE0OS4wLjc4MjcuNTUiLG51bGwsMCxudWxsLCI2NCIsW1siSGVhZGxlc3NDaHJvbWUiLCIxNDkuMC43ODI3LjU1Il0sWyJDaHJvbWl1bSIsIjE0OS4wLjc4MjcuNTUiXSxbIk5vdClBO0JyYW5kIiwiMjQuMC4wLjAiXV0sMF0.&uas=3&url=https%3A%2F%2Fwww.bundesliga.com%2Fen%2Fbundesliga%2Fmatchday&vis=1&psz=81x18&msz=728x0&fws=128&ohw=0&dlt=1785651715129&idt=14842&cust_params=language%3DEN%26pos%3Datf%26lazy%3Dfalse%26sticky%3Dfalse%26zz%3D6%26domain%3Dhttps%253A%252F%252Fwww.bundesliga.com%252Fen%252Fbundesliga%252Fmatchday%26league%3Dbundesliga&adks=1101933754&frm=20&eoidce=1&pgls=CAo.",
+      "status": 200
+    },
+    {
+      "url": "https://mt.bundesliga.com/matomo.php?e_c=Fixtures&e_a=Select%20Matchday&e_n=MD%3A%201&ca=1&idsite=1&rec=1&r=146493&h=6&m=22&s=17&url=https%3A%2F%2Fwww.bundesliga.com%2Fen%2Fbundesliga%2Fmatchday&_id=&_idn=1&send_image=0&_refts=0&dimension1=GTM%20event&dimension7=bundesliga&dimension10=&dimension13=&dimension14=&dimension15=English&dimension21=&dimension23=&dimension26=Cookieless&pv_id=37vI8F&uadata=%7B%22formFactors%22%3A%5B%22Desktop%22%5D%2C%22fullVersionList%22%3A%5B%7B%22brand%22%3A%22HeadlessChrome%22%2C%22version%22%3A%22149.0.7827.55%22%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%22149.0.7827.55%22%7D%2C%7B%22brand%22%3A%22Not)A%3BBrand%22%2C%22version%22%3A%2224.0.0.0%22%7D%5D%2C%22mobile%22%3Afalse%2C%22model%22%3A%22%22%2C%22platform%22%3A%22Linux%22%2C%22platformVersion%22%3A%22%22%7D&cookie=1&res=1280x720",
+      "status": 204
+    },
+    {
+      "url": "https://securepubads.g.doubleclick.net/gampad/ads?pvsid=6261886629033147&correlator=1071244288467860&eid=31099591%2C95390553&output=ldjh&gdfp_req=1&vrg=202607280101&ptt=17&impl=fifs&gdpr_consent=CQoUVUAQoUVUAAcABBENCqFsAP_gAEPgAChQL4QM4AAgAFAAsADAAIAAVgAwADIAHgAQAAoABYADIAIUATABNgCiAKQAWwAvgBhADaAIAAQYAhQBGACUgE4AToAwwBqgDiAHOAPMAhABHACWgFpALuAacA_4CHQEagJiAXmAxYBjIDKwGogOiAgsBEwCRQEsgKVgW9AvgCf0BMABYAFQAPAAgAD8AJwAYYA5wCEAEWAI4Aa8A_4CHQExAMWAiYBIoCfwAgSAGADIAJgC8x0AMAGQATAF5koAQATAF5lIAYAMgAmALzAA.f_wACHwAAAAA.IL4QN4AAgAFAAsADAAIAAVgAwADIAHgAQAAoABYADIAIUATABNgCiAKQAWwAvgBhADaAH4AQAAgwBCgCMAEpAJwAnQBhgDVAHEAOcAeYBCACLAEcAJaAWkAu4BpwDXgH_AQ6AjUBMQC8wGLAMZAZWA1EB0QEFgImASKAlkBP4ClYFvQL4AAA&gdpr=1&iu_parts=66185244%2Cbundesliga_web%2Cfixturesresults_slb_top&enc_prev_ius=%2F0%2F1%2F2&prev_iu_szs=728x90&ifi=2&dids=div-gpt-ad-1501160287123-0&adfs=172593690&sfv=1-0-45&rcs=1&eri=1&sc=1&cookie_enabled=1&abxe=1&dt=1785651737483&lmt=1785651737&adxs=276&adys=118&biw=1280&bih=720&scr_x=0&scr_y=0&btvi=0&ucis=2&oid=2&u_his=2&u_h=720&u_w=1280&u_ah=720&u_aw=1280&u_cd=24&u_sd=1&dmc=16&bc=31&nvt=1&uach=WyJMaW51eCIsIiIsIng4NiIsIiIsIjE0OS4wLjc4MjcuNTUiLG51bGwsMCxudWxsLCI2NCIsW1siSGVhZGxlc3NDaHJvbWUiLCIxNDkuMC43ODI3LjU1Il0sWyJDaHJvbWl1bSIsIjE0OS4wLjc4MjcuNTUiXSxbIk5vdClBO0JyYW5kIiwiMjQuMC4wLjAiXV0sMF0.&uas=3&url=https%3A%2F%2Fwww.bundesliga.com%2Fen%2Fbundesliga%2Fmatchday%2F2026-2027%2F1&vis=1&psz=728x18&msz=728x0&fws=0&ohw=0&dlt=1785651715129&idt=14842&cust_params=language%3DEN%26pos%3Datf%26lazy%3Dfalse%26sticky%3Dfalse%26zz%3D9%26domain%3Dhttps%253A%252F%252Fwww.bundesliga.com%252Fen%252Fbundesliga%252Fmatchday%252F2026-2027%252F1%26league%3Dbundesliga&adks=1101933754&frm=20&eoidce=1&pgls=CAo.",
+      "status": 200
+    },
+    {
+      "url": "https://securepubads.g.doubleclick.net/gampad/ads?pvsid=4605377857387469&correlator=1349737615417650&eid=31099268%2C95390553%2C95340252%2C95340254&output=ldjh&gdfp_req=1&vrg=202607280101&ptt=17&impl=fifs&gdpr_consent=CQoUVUAQoUVUAAcABBENCqFsAP_gAEPgAChQL4QM4AAgAFAAsADAAIAAVgAwADIAHgAQAAoABYADIAIUATABNgCiAKQAWwAvgBhADaAIAAQYAhQBGACUgE4AToAwwBqgDiAHOAPMAhABHACWgFpALuAacA_4CHQEagJiAXmAxYBjIDKwGogOiAgsBEwCRQEsgKVgW9AvgCf0BMABYAFQAPAAgAD8AJwAYYA5wCEAEWAI4Aa8A_4CHQExAMWAiYBIoCfwAgSAGADIAJgC8x0AMAGQATAF5koAQATAF5lIAYAMgAmALzAA.f_wACHwAAAAA.IL4QN4AAgAFAAsADAAIAAVgAwADIAHgAQAAoABYADIAIUATABNgCiAKQAWwAvgBhADaAH4AQAAgwBCgCMAEpAJwAnQBhgDVAHEAOcAeYBCACLAEcAJaAWkAu4BpwDXgH_AQ6AjUBMQC8wGLAMZAZWA1EB0QEFgImASKAlkBP4ClYFvQL4AAA&gdpr=1&iu_parts=66185244%2Cbundesliga_web%2Cfixturesresults_slb_top&enc_prev_ius=%2F0%2F1%2F2&prev_iu_szs=728x90&ifi=1&dids=div-gpt-ad-1501160287123-0&adfs=172593690&sfv=1-0-45&eri=1&sc=1&cookie_enabled=1&abxe=1&dt=1785651742360&lmt=1785651742&adxs=276&adys=118&biw=1280&bih=720&scr_x=0&scr_y=0&btvi=0&ucis=1&oid=2&u_his=2&u_h=720&u_w=1280&u_ah=720&u_aw=1280&u_cd=24&u_sd=1&dmc=16&bc=31&nvt=1&uach=WyJMaW51eCIsIiIsIng4NiIsIiIsIjE0OS4wLjc4MjcuNTUiLG51bGwsMCxudWxsLCI2NCIsW1siSGVhZGxlc3NDaHJvbWUiLCIxNDkuMC43ODI3LjU1Il0sWyJDaHJvbWl1bSIsIjE0OS4wLjc4MjcuNTUiXSxbIk5vdClBO0JyYW5kIiwiMjQuMC4wLjAiXV0sMF0.&url=https%3A%2F%2Fwww.bundesliga.com%2Fen%2Fbundesliga%2Fmatchday%2F2026-2027%2F1&vis=1&psz=81x18&msz=728x0&fws=128&ohw=0&dlt=1785651741583&idt=719&cust_params=language%3DEN%26pos%3Datf%26lazy%3Dfalse%26sticky%3Dfalse%26zz%3D1%26domain%3Dhttps%253A%252F%252Fwww.bundesliga.com%252Fen%252Fbundesliga%252Fmatchday%252F2026-2027%252F1%26league%3Dbundesliga&adks=1101933754&frm=20&eoidce=1&pgls=CAo.",
+      "status": 200
+    }
+  ],
+  "urlBeforeSwitch": "https://www.bundesliga.com/en/bundesliga/matchday",
+  "urlAfterSwitch": "https://www.bundesliga.com/en/bundesliga/matchday/2026-2027/1",
+  "directNavAttempted": true,
+  "directNavUrl": "https://www.bundesliga.com/en/bundesliga/matchday/2026-2027/1",
+  "directNavDayId": "DFL-DAY-004CBT",
   "error": null
 }
