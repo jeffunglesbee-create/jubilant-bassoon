@@ -41,7 +41,7 @@ jobs:
         run: |
           git config user.email "bundesliga-bapi-verify@field"
           git config user.name "Bundesliga-Bapi-Verify-Probe"
-          git add outbox/bundesliga-bapi-verify-result.json 2>/dev/null || true
+          git add outbox/bundesliga-bapi-verify-result.json outbox/bundesliga-matchday-page.png 2>/dev/null || true
           git diff --cached --quiet && echo "No result to commit" && exit 0
           git commit -m "bundesliga-bapi-verify result [skip ci]"
           for i in 1 2 3; do
