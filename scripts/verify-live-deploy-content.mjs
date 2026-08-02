@@ -10,7 +10,7 @@ import { writeFileSync } from 'fs';
 const SITE = 'https://jubilant-bassoon.jeffunglesbee.workers.dev/';
 
 async function main() {
-  const out = { hasNflDramaProfiles: null, nflSample: null, hasPeriodGte5: null, error: null };
+  const out = { hasNflDramaProfiles: null, nflSample: null, hasPeriodGte5: null, error: null, swVersionMatch: null, swVersionSample: null };
   try {
     const r = await fetch(SITE);
     const html = await r.text();
@@ -19,6 +19,13 @@ async function main() {
     out.nflSample = nflMatch ? nflMatch[0] : null;
     out.hasPeriodGte5 = /period\s*>=\s*5/.test(html);
     out.status = r.status;
+    // Real diagnostic for deploy-drift-detector.yml run 2 (2026-08-02) reporting
+    // liveStatus:200 but liveSwVersion:null -- fetch worked, extraction didn't.
+    // Same regex detect-deploy-drift.mjs uses: /SW_VERSION\s*=\s*'([^']+)'/
+    const swMatch = html.match(/SW_VERSION\s*=\s*'([^']+)'/);
+    out.swVersionMatch = swMatch ? swMatch[1] : null;
+    out.swVersionSample = swMatch ? html.slice(Math.max(0, swMatch.index - 40), swMatch.index + 60) : null;
+    out.htmlLength = html.length;
   } catch (e) {
     out.error = String(e).slice(0, 300);
   }
