@@ -1,0 +1,29 @@
+name: Verify LaLiga Relay Route
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run verification
+        run: node scripts/verify-laliga-relay-route.mjs
+      - name: Push result
+        run: |
+          git config user.email "laliga-relay-verify@field"
+          git config user.name "LaLiga-Relay-Verify"
+          git add outbox/laliga-relay-route-verify.json
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "laliga-relay-route-verify result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
