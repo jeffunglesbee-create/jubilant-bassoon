@@ -36,18 +36,45 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     initialPayloadCaptures: [],
     postConsentPayloadCaptureCount: 0,
     postConsentPayloadCaptures: [],
+    // Novel-thinking retry: three prior real capture windows (initial load,
+    // post-consent, post-matchday-switch UI click) all agreed the bapi
+    // surface never sends a per-matchday day-ID. Rather than a 4th retry of
+    // the same mechanism, this pass checks two different angles: (1) does
+    // ANY other domain (not just bapi.bundesliga.com) carry a fixture list
+    // with day-IDs, and (2) does the site's own URL change per matchday --
+    // if so, direct URL navigation (not UI click) might be the real
+    // resolution mechanism instead of a same-page refetch.
+    otherDomainsSeen: [],
+    otherDomainFixtureLikeHits: [],
+    urlBeforeSwitch: null,
+    urlAfterSwitch: null,
+    directNavAttempted: false,
+    directNavUrl: null,
+    directNavDayId: null,
     error: null,
   };
 
   const dayIds = new Set();
   const comIds = new Set();
   const initialPayloadCaptures = [];
+  const otherDomains = new Set();
+  const fixtureLikeHits = [];
   let postConsentStartIdx = null;
 
   try {
     page.on('response', (resp) => {
       const url = resp.url();
-      if (!url.includes('bapi.bundesliga.com')) return;
+
+      if (!url.includes('bapi.bundesliga.com')) {
+        try {
+          const host = new URL(url).host;
+          if (host && host !== 'www.bundesliga.com') otherDomains.add(host);
+        } catch (e) { /* ignore malformed URL */ }
+        if (/fixture|schedule|calendar|matchlist|matches\b|season-?matches/i.test(url)) {
+          fixtureLikeHits.push({ url, status: resp.status() });
+        }
+        return;
+      }
 
       const dm = url.match(/DFL-DAY-[A-Z0-9]+/);
       const cm = url.match(/DFL-COM-[A-Z0-9]+/);
@@ -157,6 +184,8 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     // of the same component (a common Angular responsive pattern), not the
     // visible "All Matchdays" one. Targeting by its real visible text
     // instead of DOM order.
+    result.urlBeforeSwitch = page.url();
+
     const selectPlaceholder = page.getByText('All Matchdays', { exact: true }).first();
     if (await selectPlaceholder.count().catch(() => 0) > 0) {
       result.matSelectFound = true;
@@ -181,6 +210,33 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
         }
       } catch (e) {
         result.matSelectError = String(e).slice(0, 300);
+      }
+    }
+
+    result.urlAfterSwitch = page.url();
+    result.otherDomainsSeen = [...otherDomains];
+    result.otherDomainFixtureLikeHits = fixtureLikeHits.slice(0, 10);
+
+    // Novel angle: if the UI switch changed the page's own URL (a route
+    // param, not just an in-page mat-select state), the site may resolve
+    // matchday -> data via URL-based routing rather than a same-page
+    // refetch. Real test: navigate DIRECTLY to that URL fresh (simulating
+    // a user landing on it, e.g. from a shared link) and see if the
+    // resulting broadcasts call carries a different DFL-DAY id than the
+    // one already seen (004CBT).
+    if (result.urlAfterSwitch && result.urlAfterSwitch !== result.urlBeforeSwitch) {
+      result.directNavAttempted = true;
+      result.directNavUrl = result.urlAfterSwitch;
+      const dayIdsBeforeNav = new Set(dayIds);
+      try {
+        await page.goto(result.urlAfterSwitch, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForTimeout(4000);
+        const newIds = [...dayIds].filter((id) => !dayIdsBeforeNav.has(id));
+        result.directNavDayId = newIds.length ? newIds[0] : (result.realBroadcastsUrl
+          ? (result.realBroadcastsUrl.match(/DFL-DAY-[A-Z0-9]+/) || [null])[0]
+          : null);
+      } catch (e) {
+        result.directNavError = String(e).slice(0, 300);
       }
     }
 
@@ -221,6 +277,8 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     }
     result.distinctDflDayIds = [...dayIds];
     result.distinctDflComIds = [...comIds];
+    result.otherDomainsSeen = [...otherDomains];
+    result.otherDomainFixtureLikeHits = fixtureLikeHits.slice(0, 10);
     fs.mkdirSync('outbox', { recursive: true });
     await page.screenshot({ path: 'outbox/bundesliga-matchday-page.png', fullPage: false }).catch(() => {});
     fs.writeFileSync('outbox/bundesliga-bapi-verify-result.json', JSON.stringify(result, null, 2));
