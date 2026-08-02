@@ -8492,11 +8492,7 @@ function buildTodaySchedule(){
     return `West Ham need to win AND rely on Everton to beat Spurs at the Tottenham Hotspur Stadium simultaneously. Spurs lead by ${gap} pts and +${gdGap} GD \u2014 only maximum points across both venues saves them.`;
   }
 
-  // \u2500\u2500 PL Final Day note injection (CC-CMD-2026-07-30-wire-pl-final-day-stakes) \u2500\u2500
-  // Wires the four already-correct note functions above (previously zero
-  // callers). PL_FD data is the real 2025-26 Final Day (May 24, 2026) --
-  // not refreshed, since the 2026-27 season hasn't started (Task 3).
-  // Seasonal/dormant by design, same pattern as inEFLPlayoffs() (~14042).
+  // PL Final Day note injection -- seasonal/dormant, same pattern as inEFLPlayoffs().
   const PL_FINAL_DAY_DATE = '2026-05-24';
   const _plTeamMatch = (name, re) => re.test((name||''));
   function _applyPLFinalDayNote(g){
@@ -8516,13 +8512,7 @@ function buildTodaySchedule(){
     else if (isWhuGame) g.matchupNote = _plWhuNote();
   }
 
-  // ── Layer 4: cross-game "watching elsewhere" facts, PULL-ONLY (CC-CMD-
-  // 2026-07-30-layer4-cross-game-facts-pull) ──────────────────────────────
-  // Not modeled on BracketDO (autonomous WebSocket fan-out -- Rule A
-  // violation shape, ADR-002-CONTEXT.md ~211-215). No DO, no relay call, no
-  // storage: pure sync fn over games already in `eplGames` (refreshed by
-  // the existing score-poll). All 10 Final Day games are already
-  // co-located in one array -- no coordinator needed. Reuses PL_FD.
+  // Layer 4: cross-game "watching elsewhere" facts, pull-only, no DO/relay/storage.
   function _applyLayer4CrossGameFacts(games){
     if (!games || !games.length) return;
     const findByTeam = re => games.find(g => _plTeamMatch(g.home,re) || _plTeamMatch(g.away,re));
@@ -8530,9 +8520,7 @@ function buildTodaySchedule(){
     const cityGame    = findByTeam(/man(chester)?\s*city/i);
     const totGame     = findByTeam(/tottenham|spurs/i);
     const whuGame     = findByTeam(/west ham/i);
-    // teamRe = which side of THIS game is the tracked team; must be passed
-    // explicitly per call (a hardcoded guess mislabeled a team as its own
-    // opponent -- caught via direct evaluation before this shipped).
+    // teamRe must be passed explicitly (a hardcoded guess mislabeled a team as its own opponent).
     const liveState = (g, teamRe) => {
       if (!g) return null;
       const score = typeof findESPNScore === 'function' ? findESPNScore(g) : null;
@@ -8561,6 +8549,20 @@ function buildTodaySchedule(){
       const totState = liveState(totGame,/tottenham|spurs/i);
       if (totState?.summary) whuGame._layer4Watch = `Tottenham currently ${totState.summary} — watch that game too.`;
     }
+  }
+
+  async function _applyBSDMatchStats(games){
+    if (!games || !games.length) return;
+    const targets = games.filter(g => g.bsdEventId && ['in','post'].includes(findESPNScore?.(g)?.state));
+    await Promise.all(targets.map(async g => {
+      try {
+        const r = await fetch(`${V2_RELAY_BASE}/bsd/events/${g.bsdEventId}/shotmap`);
+        if (!r.ok) return;
+        const {stats:{home:h,away:a}={}} = await r.json();
+        if (h?.expected_goals!=null && a?.expected_goals!=null) g.bsdXG = {home:h.expected_goals, away:a.expected_goals};
+        if (h?.ball_possession!=null && a?.ball_possession!=null) g.bsdPossession = {home:h.ball_possession, away:a.ball_possession};
+      } catch (e) {}
+    }));
   }
 
   // ── Premier League MW36 + MW37 (hardcoded fallback — fetchSoccerFixtures provides live data) ─────
@@ -8753,6 +8755,7 @@ function buildTodaySchedule(){
   applyNarrativeContext(eplGames);
   eplGames.forEach(_applyPLFinalDayNote);
   _applyLayer4CrossGameFacts(eplGames);
+  _applyBSDMatchStats(eplGames);
   applyNarrativeContext(laLigaGames);
   applyNarrativeContext(ligue1Games);
   if(typeof bundesligaGames !== 'undefined') applyNarrativeContext(bundesligaGames);
@@ -21605,7 +21608,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-07-30g';
+  const SW_VERSION = '2026-08-01b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -25018,6 +25021,7 @@ function buildCompoundPrompt(sections) {
       (()=>{try{const _eL=findESPNScore?.(g);if(_eL?.state==='in'&&(_eL.homeLeader||_eL.awayLeader)){const parts=[];if(_eL.homeLeader?.name) parts.push(`${_eL.homeLeader.name} ${_eL.homeLeader.val}${_eL.homeLeader.unit?(' '+_eL.homeLeader.unit):''}`);if(_eL.awayLeader?.name) parts.push(`${_eL.awayLeader.name} ${_eL.awayLeader.val}${_eL.awayLeader.unit?(' '+_eL.awayLeader.unit):''}`);return parts.length?`  Leaders: ${parts.join(' · ')}`:'';} return '';}catch(e_){return ''}})(),
       `  Network: ${stream}`,
       crewCtx ? `  Crew: ${crewCtx}` : '',
+      g.bsdXG ? `  [XG] ${g.away||''} ${g.bsdXG.away} · ${g.home||''} ${g.bsdXG.home}${g.bsdPossession?` (Poss: ${g.bsdPossession.away}%-${g.bsdPossession.home}%)`:''}` : '',
       // Item 2: MLB probable pitchers
       (()=>{try{const sp=(_gameSport(g)).toLowerCase();if(!(sp.includes('mlb')||sp.includes('baseball'))) return '';const hp=g.homePitcher,ap=g.awayPitcher;if(!hp&&!ap) return '';const fmt=p=>p?`${p.lastName||p.fullName||''}${p.era?` (${p.era} ERA)`:p.wins!=null?` (${p.wins}-${p.losses})`:''}`:'TBD';return `  Pitchers: ${fmt(ap)} vs ${fmt(hp)}`;}catch(e_){return ''}})(),
       // Wave 1 MLB analytics
