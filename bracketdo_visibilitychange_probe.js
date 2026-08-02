@@ -19,6 +19,15 @@ async function setVisibility(page, state) {
   }, state);
 }
 
+// toggleWCView() is a real toggle, not a setter -- WC26 is currently live so
+// the site may default to wc-mode already active. This forces a specific
+// target state deterministically instead of assuming a blind toggle() call
+// always turns wc-mode ON.
+async function setWCMode(page, wantOn) {
+  const isOn = await page.evaluate(() => document.body.classList.contains('wc-mode'));
+  if (isOn !== wantOn) await page.evaluate(() => window.toggleWCView());
+}
+
 async function wsState(page) {
   return page.evaluate(() => {
     const w = window._bracketWS;
@@ -47,7 +56,7 @@ async function wsState(page) {
   const results = { scenarios: [] };
 
   // ── Scenario 1: open WC mode -> hidden -> confirm the socket closes ──────
-  await page.evaluate(() => window.toggleWCView());
+  await setWCMode(page, true);
   await page.waitForTimeout(1500); // let the real WS connection attempt settle
   const afterOpen = await wsState(page);
   await setVisibility(page, 'hidden');
@@ -56,7 +65,7 @@ async function wsState(page) {
   results.scenarios.push({
     name: 'open WC mode -> hidden -> socket closes',
     afterOpen, afterHidden,
-    pass: afterOpen.wcMode === true && afterHidden.liveIndicator === false,
+    pass: afterOpen.wcMode === true && afterOpen.liveIndicator === true && afterHidden.liveIndicator === false,
   });
 
   // ── Scenario 2: from hidden, visible while still in wc-mode -> reopens ──
@@ -73,7 +82,7 @@ async function wsState(page) {
   //    mode via the in-app toggle WHILE hidden, then visible -> must NOT reopen
   await setVisibility(page, 'hidden');
   await page.waitForTimeout(300);
-  await page.evaluate(() => window.toggleWCView()); // explicit in-app navigation away, while hidden
+  await setWCMode(page, false); // explicit in-app navigation away, while hidden
   const afterToggleAwayWhileHidden = await wsState(page);
   await setVisibility(page, 'visible');
   await page.waitForTimeout(1500);
