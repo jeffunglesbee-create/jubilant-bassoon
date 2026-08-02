@@ -1,0 +1,99 @@
+{
+  "baseball/mlb": {
+    "old_apis_site_v2": {
+      "status": 200,
+      "entryCount": 0,
+      "topLevelKeys": [
+        "fullViewLink"
+      ]
+    },
+    "new_apis_v2": {
+      "status": 200,
+      "entryCount": 30,
+      "topLevelKeys": [
+        "uid",
+        "id",
+        "name",
+        "abbreviation",
+        "shortName",
+        "children",
+        "season",
+        "links",
+        "seasons"
+      ]
+    }
+  },
+  "basketball/nba": {
+    "old_apis_site_v2": {
+      "status": 200,
+      "entryCount": 0,
+      "topLevelKeys": [
+        "fullViewLink"
+      ]
+    },
+    "new_apis_v2": {
+      "status": 200,
+      "entryCount": 30,
+      "topLevelKeys": [
+        "uid",
+        "id",
+        "name",
+        "abbreviation",
+        "shortName",
+        "children",
+        "isConference",
+        "season",
+        "links",
+        "seasons"
+      ]
+    }
+  },
+  "hockey/nhl": {
+    "old_apis_site_v2": {
+      "status": 200,
+      "entryCount": 0,
+      "topLevelKeys": [
+        "fullViewLink"
+      ]
+    },
+    "new_apis_v2": {
+      "status": 200,
+      "entryCount": 32,
+      "topLevelKeys": [
+        "uid",
+        "id",
+        "name",
+        "abbreviation",
+        "children",
+        "season",
+        "links",
+        "seasons"
+      ]
+    }
+  },
+  "football/nfl": {
+    "old_apis_site_v2": {
+      "status": 200,
+      "entryCount": 0,
+      "topLevelKeys": [
+        "fullViewLink"
+      ]
+    },
+    "new_apis_v2": {
+      "status": 200,
+      "entryCount": 32,
+      "topLevelKeys": [
+        "uid",
+        "id",
+        "name",
+        "abbreviation",
+        "shortName",
+        "children",
+        "isConference",
+        "season",
+        "links",
+        "seasons"
+      ]
+    }
+  }
+}
