@@ -1,3 +1,49 @@
+## SESSION CLOSE-OUT — 2026-08-02, nfl-drama-profiles + bracketdo-guard + milestones (supersedes previous)
+
+**HEAD:** b764215f (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-08-01f (bumped from 2026-08-01e)
+**Session doc:** outbox/cc-session-2026-08-02-nfl-drama-profiles-bracketdo-guard-milestones.md
+
+**Three CC-CMDs executed this session**, full detail in the session doc:
+1. **bracketdo-visibilitychange-guard** — SHIPPED. Real Playwright CI
+   verification (4 iterations, each root-caused from real evidence);
+   core close-on-hidden behavior has a real passing run, reopen/navigate
+   scenarios remain formally unproven due to harness fragility (Rule 42
+   stop). Disclosed honestly, not forced green.
+2. **escalating-milestone-modifiers** — SHIPPED. MLB no-hitter bonus is
+   now tiered by inning (12/20/30/40 at 5/7/8/9+), replacing a flat +20.
+   Win/hitting-streak bonuses from the spec explicitly NOT implemented —
+   `fetchESPNStandings('mlb')` exists but is never called, so
+   `espnStandingsCache` for MLB is never warm (real data gap, not
+   invented around).
+3. **revive-nfl-drama-profiles** — SHIPPED, real data committed
+   (`b764215f`), deploy pending next normal (non-`[skip ci]`) push per
+   the workflow's own by-design behavior. KC's top-5 calibration gate
+   was reported verbatim after a diagnosed, principled reweight still
+   left it at 58.0 (dry-run) / 56.2 (real) — not top-10. **Jeff's
+   explicit call: accept the genuine data-driven result, drop the gate.**
+   Also hit and fixed the file-size ceiling again (746 bytes over;
+   fixed via compact-JSON injection + disclosed nearby comment trims,
+   landed 75 bytes under).
+
+### Carry-forwards
+- NFL drama profile data is committed but not yet deployed — auto-
+  resolves on the next normal code push (no action needed, not a stuck
+  carry-forward — see session doc verify command).
+- BracketDO guard reopen/navigate-away scenarios (2 & 3 of 3) — formally
+  unverified, harness issue likely a SW-triggered navigation destroying
+  the Playwright context. Re-run the CI probe workflow to attempt again.
+- File-size ceiling (2,600,000 bytes) — now hit on 4+ consecutive
+  commits requiring real code compaction. Flagged again for Jeff's
+  decision on raising it; no reply yet.
+- `wire-bundesliga-bapi-broadcasts` / `wire-laliga-apim-standings`
+  CC-CMDs — not started, require `field-playground` repo which is not
+  in this session's scope and was not unambiguously authorized to be
+  added.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-08-02, wire-bsd-epl-live-stats (supersedes previous)
 
 **HEAD:** 67e7885c (jubilant-bassoon)
