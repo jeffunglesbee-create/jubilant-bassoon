@@ -23,6 +23,7 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     timestamp: new Date().toISOString(),
     confirmedKeyStillWorks: null,
     confirmedShapeStatus: null,
+    consentDismissed: false,
     realBroadcastsRequestCaptured: false,
     realBroadcastsUrl: null,
     distinctDflDayIds: [],
@@ -61,6 +62,46 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     });
     await page.waitForTimeout(5000);
 
+    // Real evidence from the prior run: a cookie-consent overlay from
+    // cp.bundesliga.com (seen loading on every page load in the earlier
+    // network capture) intercepted the matchday-select click (real
+    // TimeoutError: "attempting click action" against a covered element).
+    // Dismiss it first via its real accept-button pattern before any other
+    // interaction, rather than guessing at the select click again.
+    const consentSelectors = [
+      'button:has-text("Accept")',
+      'button:has-text("I agree")',
+      'button:has-text("Alle akzeptieren")',
+      '#onetrust-accept-btn-handler',
+      '[data-testid="uc-accept-all-button"]',
+    ];
+    for (const sel of consentSelectors) {
+      const btn = page.locator(sel).first();
+      if (await btn.count().catch(() => 0) > 0) {
+        try {
+          await btn.click({ timeout: 3000 });
+          result.consentDismissed = true;
+          await page.waitForTimeout(1500);
+          break;
+        } catch (e) { /* try next selector */ }
+      }
+    }
+    // Consent banners are often inside a same-origin-looking but distinct
+    // iframe (cp.bundesliga.com) -- also check inside any iframe directly.
+    if (!result.consentDismissed) {
+      for (const frame of page.frames()) {
+        try {
+          const btn = frame.locator('button:has-text("Accept"), button:has-text("Alle akzeptieren")').first();
+          if (await btn.count().catch(() => 0) > 0) {
+            await btn.click({ timeout: 3000 });
+            result.consentDismissed = true;
+            await page.waitForTimeout(1500);
+            break;
+          }
+        } catch (e) { /* not this frame */ }
+      }
+    }
+
     // Real Material select interaction (identified via real DOM capture in
     // the v2 diagnostic) -- open the dropdown, enumerate real options, pick
     // a different one than what's currently shown.
@@ -68,7 +109,9 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     if (await selectPlaceholder.count().catch(() => 0) > 0) {
       result.matSelectFound = true;
       try {
-        await selectPlaceholder.click({ timeout: 5000 });
+        await selectPlaceholder.click({ timeout: 5000 }).catch(() =>
+          selectPlaceholder.click({ timeout: 5000, force: true })
+        );
         await page.waitForTimeout(1000);
         const options = await page.locator('.mat-mdc-option, [role="option"]').allTextContents().catch(() => []);
         result.matSelectOptionsSeen = options.slice(0, 20);
