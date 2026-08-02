@@ -1,11 +1,49 @@
 # CC-CMD-2026-08-02-wire-bundesliga-bapi-broadcasts-v2 — Result
 
-## Status: Task 1 UI interaction SOLVED (real breakthrough, novel
-diagnosis). Core ID-resolution question answered with real, negative
-evidence, confirmed under BOTH the pre-consent and post-consent capture
-windows. FINAL — no day-ID mapping call was found anywhere in this
-session's captures, and the one remaining caveat (consent-gated fetch)
-has now been ruled out with real evidence. STOPPED before Task 2/3.
+## Status: CORRECTED FINDING (this update reverses the prior negative
+conclusion). Task 1's UI interaction is solved. The day-ID DOES vary
+correctly per matchday — the earlier "constant ID" conclusion was a
+real bug in this session's own test methodology, not a property of the
+site. STOPPED before Task 2/3 for a different, genuine reason: the
+resolution mechanism that works is browser-side URL routing, which a
+Workers relay (no headless browser) cannot replicate without a new
+infrastructure dependency requiring explicit approval (see below).
+
+## THE BUG IN THIS SESSION'S OWN PRIOR TESTING (why "constant ID" was wrong)
+
+Every earlier capture window (initial load, post-consent, matchday-switch
+via mat-select click) picked `targetIdx = first option that isn't "All
+Matchdays"` — which is **always the same option, Matchday 1**, on every
+single run. Three "independent" tests all reported `DFL-DAY-004CBT`
+staying constant because they were all testing the identical selection
+every time, never two different matchdays in the same run. That is not
+evidence the ID doesn't vary; it's evidence the test never varied the
+matchday. Caught only by noticing the mat-select click also changed the
+page's own URL to `/en/bundesliga/matchday/{season}/{N}` — a real,
+previously-unobserved fact from the widened cross-domain capture —
+which made a proper multi-matchday comparison possible.
+
+## Decisive retest: `tests/bundesliga-matchday-url-decisive.spec.js`
+
+Directly navigated to `/en/bundesliga/matchday/2026-2027/{N}` for
+N = 1, 5, 10 in the same run and compared the resulting `/broadcasts/`
+request per matchday. Real result
+(`outbox/bundesliga-matchday-url-decisive-result.json`):
+
+| Matchday | DFL-DAY id |
+|---|---|
+| 1 | `DFL-DAY-004CBT` |
+| 5 | `DFL-DAY-004CBX` |
+| 10 | `DFL-DAY-004CC2` |
+
+`conclusiveVariation: true`. The id genuinely changes per matchday, and
+the deltas are suggestively sequential in a base-36-like encoding
+(T→X is 4 steps for a 4-matchday gap; X→…→2 is 5 steps for a
+5-matchday gap) — but this pattern is observed from only 3 data points
+and is NOT being treated as a confirmed formula. Deriving a hardcoded
+offset formula from 3 samples and shipping it would violate Rule 2
+(DO NOT ASSUME) — it needs either more samples across a full season and
+a season boundary, or (preferably) the actual source of the mapping.
 
 ## How Task 1's blocker actually got solved (novel thinking, not repeated guessing)
 
@@ -72,44 +110,61 @@ already-seen endpoints (`/broadcasts/DFL-COM-000001/DFL-DAY-004CBT` →
 and no day-ID mapping, appeared post-consent either. The CMP-gating
 caveat is now ruled out with real evidence, not assumed away.
 
-## The actual, real answer to Task 1's core question
+## The actual, real answer to Task 1's core question (revised)
 
-**The `DFL-DAY-XXX` broadcasts request did not re-fire with a new ID
-when the matchday selector changed, and no call observed in either the
-pre-consent or post-consent capture windows returns a day-ID mapping.**
-Combined with the original finding (comId changes, dayId doesn't, on a
-real successful matchday switch), the evidence now consistently points
-to one conclusion across three independent checks: the fixture list is
-rendered from data fetched once per competition/page-load context and
-filtered client-side — there is no observed API call, at any point in
-the page lifecycle this session could inspect (initial load,
-post-consent, post-matchday-switch), that resolves a selected matchday
-to a `DFL-DAY-XXX` ID.
+**The DFL-DAY id is real, matchday-specific, and correctly resolvable —
+but only via the site's own client-side URL router, not via any
+directly-callable API this session could find.** Navigating a real
+browser to `bundesliga.com/en/bundesliga/matchday/{season}/{N}` causes
+the Angular app to resolve `N` to the correct `DFL-DAY-XXX` internally
+and then fire the real `/broadcasts/{comId}/{dayId}` request — this
+works and is now proven with 3 distinct matchdays. But across every
+capture window this session ran (initial load, post-consent,
+post-switch, and the widened cross-domain sweep), no plain HTTP
+endpoint was ever observed that takes a matchday number and returns a
+day-ID directly. The resolution logic lives client-side (likely a
+bundled config/lookup table in the Angular app's JS, not a network
+call) — confirmed absent from network traffic, not confirmed present
+anywhere else.
 
-## Why this stops here (not Task 2/3) — FINAL
+## Why this stops here (not Task 2/3) — infrastructure blocker, not a diagnosis gap
 
-Per the CC-CMD's own explicit gate: a broadcast lookup that always
-returns `DFL-DAY-004CBT` regardless of what matchday is actually
-requested would be exactly the "fabricated-looking correctness" both
-CC-CMD versions warn against. The interaction bug is solved. Three
-independent, real capture windows (initial page-load, post-consent,
-post-matchday-switch) all returned the same negative result. This is
-no longer a tooling gap or an unexplored angle — it's a converged,
-three-way-confirmed finding. Task 2 (relay route) and Task 3 (client
-wiring) are abandoned for this CC-CMD: there is no real per-matchday
-broadcast data to wire up. A route that only ever serves
-`DFL-DAY-004CBT` regardless of the caller's requested matchday would
-misrepresent every non-current-matchday query.
+A Cloudflare Workers relay (no headless browser) cannot replicate
+"load this URL in a real browser and read what request it triggers."
+Two real paths exist to unblock this, and both require an explicit
+decision this session is not authorized to make unilaterally:
+
+1. **Cloudflare Browser Rendering** (Workers Puppeteer API) — real,
+   existing Cloudflare product that could let the relay itself resolve
+   `N -> DFL-DAY-XXX` by rendering the matchday URL server-side. This
+   is a new infrastructure dependency (new binding, new cost surface,
+   new failure mode) and falls under "Do NOT add new Durable Object
+   classes" / infra-change-without-approval — requires explicit sign-off,
+   not something to add unilaterally.
+2. **Derive the ID formula** — the 3-sample pattern (`004CBT` → `004CBX`
+   → `004CC2` for matchdays 1/5/10) looks like a simple sequential
+   base-36-ish encoding, but 3 points is not enough to trust a hardcoded
+   formula in production (Rule 2), especially across season boundaries
+   where the numeric prefix (`004C`) may also change.
+
+Task 2 (relay route) and Task 3 (client wiring) remain out of scope
+until one of these paths is explicitly chosen.
 
 ## Unblock criteria (Rule 74)
 
-**Blocked by:** confirmed absence of any per-matchday day-ID
-resolution mechanism observable from the public site, across three
-independent real capture windows.
-**Unblocked when:** DFL/Bundesliga publishes or exposes a different,
-documented API (not the public bundesliga.com bapi surface) that
-serves a full-season fixture list with day-IDs attached — this is now
-an external-dependency block, not a session-diagnosable one.
-**Verify:** if such an API is later found, re-run a capture against it
-and confirm a real day-ID varies correctly across multiple distinct,
-named matchdays (not just comId) before writing Task 2/3.
+**Blocked by:** no plain HTTP endpoint found that resolves matchday
+number to `DFL-DAY-XXX`; the only working resolution path
+(client-side URL routing in a real browser) is not something a
+Workers relay can natively replicate.
+**Unblocked when:** EITHER (a) explicit approval to add Cloudflare
+Browser Rendering as a new relay dependency, and a proof-of-concept
+relay route that renders the matchday URL and captures the resulting
+broadcasts request, OR (b) a session collects enough real
+`(matchday, DFL-DAY-id)` samples across a full season (ideally 34+ for
+Bundesliga) to either derive a trustworthy formula or definitively rule
+one out.
+**Verify:** if (a), a real relay route returns a correct, matchday-
+varying `DFL-DAY-XXX` for at least 3 distinct requested matchdays,
+verified via `curl`. If (b), an 34-sample table (or a formula verified
+against all 34 samples with zero mismatches) is committed and checked
+against a fresh live re-fetch before being trusted.
