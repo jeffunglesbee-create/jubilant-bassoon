@@ -2,89 +2,81 @@
 
 **Repo:** jubilant-bassoon
 **Branch:** main — commit directly, do not create a feature branch or PR
-**PRIORITY: execute immediately, this is the only open item.**
+**Priority: URGENT — real, verified, user-facing features are sitting on main, fully correct, and have never deployed.**
 
 One-liner:
 ```
 git remote get-url origin | grep -q jubilant-bassoon || { echo "WRONG REPO"; exit 1; }
-git pull. Read docs/CC-CMD-2026-08-02-URGENT-trigger-deploy-gate.md. Execute the single task.
+git pull. Read docs/CC-CMD-2026-08-02-URGENT-trigger-deploy-gate.md. Execute all tasks.
 Do not commit unless confidence >= 95. If score < 95, report verbatim and stop.
 ```
 
 ---
 
-## What's wrong
+## What happened — confirmed, not guessed
 
-`docs/CC-CMD-2026-07-30-escalating-milestone-modifiers.md` and
-`docs/CC-CMD-2026-07-30-revive-nfl-drama-profiles.md` both shipped real,
-correct code to `main` earlier today — confirmed independently by chat,
-directly reading the committed source (`period>=5` escalating tiers;
-`NFL_DRAMA_PROFILES` with real per-team values, e.g. `"ARI":42.7`).
+`deploy-gate.yml` (the only workflow that actually deploys to
+Cloudflare) triggers exclusively on a direct push to `main` touching
+`index.html`/`sw.js`/`field_utils.js`/`wrangler.jsonc` — and by its own
+documented design, `[skip ci]` in a commit message skips it entirely.
+Every commit that landed today touching those paths carried
+`[skip ci]` (the NFL drama profiles data commit explicitly, by the
+`update-drama-profiles.yml` workflow's own design; apparently the
+byte-headroom fix commit too, though not documented as such).
 
-**Neither has ever deployed.** Confirmed by chat via two direct curl
-checks against the live site, several minutes apart, identical stale
-byte count both times, zero references to either feature.
+Confirmed directly: `deploy-gate.yml` does not appear anywhere in
+real, recent CI history (`get_ci_status`/`get_deploy_status`), despite
+multiple commits to `index.html` having landed. Confirmed directly on
+the live site itself: `NFL_DRAMA_PROFILES` and the escalating-milestone
+`period>=5` code are both present on `main`, both correct, and both
+**completely absent from the deployed site** — two separate curl
+checks, minutes apart, identical stale byte count.
 
-**Root cause, confirmed by reading `.github/workflows/deploy-gate.yml`
-directly:** this is the only workflow that actually deploys (via
-`wrangler`). It triggers ONLY on a push to `main` touching `index.html`/
-`sw.js`/`field_utils.js`/`wrangler.jsonc`, and `[skip ci]` in a commit
-message skips it entirely, by explicit design (its own header comment
-says so). Every relevant commit today apparently carried `[skip ci]`.
-**This workflow has no `workflow_dispatch` trigger — it cannot be
-manually re-fired.** The only way to unblock it is a genuine, ordinary,
-non-`[skip ci]` push touching one of those four paths.
+**This CC-CMD exists only because chat's own write access is
+correctly restricted to `docs/` — it cannot touch `index.html`
+directly, by design. This is that restriction working as intended,
+not a workaround for it.**
 
-## The single task
+## Task 1 — the fix (single line, already fully specified)
 
-Make any trivial, harmless, non-`[skip ci]` commit touching `index.html`
-— a comment addition is sufficient, no logic change needed or wanted.
-Since deploy-gate.yml's own first step (`Sync SW_VERSION to deploy
-date`) already handles version bumping automatically once triggered, no
-other file needs to change.
+Bump `SW_VERSION` by one suffix letter in **both** `sw.js` and
+`src/legacy/field.js` (matching this repo's own existing convention —
+same pattern `deploy-gate.yml`'s own "Sync SW_VERSION" step performs
+automatically on every real deploy). Confirm the exact current value
+fresh from HEAD before editing (do not assume it is still
+`'2026-08-01f'` — re-verify, since this doc's own writing and this
+CC-CMD's execution are not simultaneous).
 
-Suggested exact change (or equivalent — the content doesn't matter, only
-that it's a real, non-skip-ci push to `index.html`):
+- **Do NOT use `[skip ci]` in the commit message.** This commit's
+  entire purpose is to trigger `deploy-gate.yml`'s push-path trigger.
+- No other change. This is a pure trigger commit — the real content
+  (NFL data, milestone modifiers, BracketDO guard) is already on
+  `main` and will deploy automatically once this commit lands.
 
-```html
-<!-- deploy-gate trigger 2026-08-02: unblocks NFL drama profiles +
-     escalating milestone modifiers, both already correct on main,
-     blocked only by prior [skip ci] commits never reaching this
-     workflow's push-path trigger -->
-```
+## Task 2 — confirm the real deploy actually happened
 
-Placed anywhere safe (e.g. immediately after `<title>`).
-
-**Commit message must NOT contain `[skip ci]`** — that's the entire
-point of this commit.
-
-## Verification
-
-- `node smoke.js` — 0 failures required (should pass trivially, no
-  logic touched).
-- After push, confirm `deploy-gate.yml` actually fires and succeeds
-  (`get_ci_status` / GitHub Actions tab).
-- Real, live confirmation once deployed:
-```
-curl -s https://jubilant-bassoon.jeffunglesbee.workers.dev/ | grep -c "NFL_DRAMA_PROFILES\|period>=5"
-```
-Should return a nonzero count. Currently returns 0.
+- After pushing, poll `get_deploy_status`/`get_ci_status` for a real
+  `deploy-gate.yml` run against this commit, and wait for it to
+  complete (~24s per the workflow's own header comment).
+- Real, live verification — do not just trust a green CI checkmark:
+  ```
+  curl -s https://jubilant-bassoon.jeffunglesbee.workers.dev/ | grep -o "NFL_DRAMA_PROFILES = {[^}]\{0,80\}"
+  ```
+  Must show real per-team data (e.g. `"KC":56.2`), not empty or absent.
+  Also confirm `period>=5` is present (the milestone-modifiers change).
 
 ---
 
 ## Explicitly NOT in scope
 
-- No logic changes of any kind.
-- Do not touch anything related to the BracketDO guard — separate,
-  already resolved (confirmed working, see chat history same session).
-- Do not re-litigate whether the NFL data or milestone code themselves
-  are correct — both already independently verified by chat directly
-  against committed source.
+- Do not touch any feature logic — this is a version-bump-only commit.
+- Do not investigate why past commits carried `[skip ci]` as a
+  separate task here — that's worth a follow-up, not blocking this fix.
 
 ---
 
 ## Outbox
 
-`outbox/cc-session-2026-08-02-urgent-deploy-gate-trigger.md`: confirm
-deploy-gate.yml fired and succeeded, and confirm via the live curl check
-above that both features are now genuinely live, not just deployed.
+`outbox/cc-session-2026-08-02-trigger-deploy-gate.md`: the real
+deploy-gate run confirmed, and the real curl output proving the live
+site now reflects what's been sitting correct-but-undeployed on main.
