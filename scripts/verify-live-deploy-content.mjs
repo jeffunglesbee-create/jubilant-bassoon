@@ -26,6 +26,19 @@ async function main() {
     out.swVersionMatch = swMatch ? swMatch[1] : null;
     out.swVersionSample = swMatch ? html.slice(Math.max(0, swMatch.index - 40), swMatch.index + 60) : null;
     out.htmlLength = html.length;
+    // Round 2 diagnostic: swVersionMatch came back null even with real,
+    // full-length (1.9MB) HTML fetched. Find out whether "SW_VERSION" as a
+    // bare substring exists ANYWHERE in the deployed bundle, and if so, in
+    // what shape -- esbuild's ESM bundler renames top-level identifiers to
+    // avoid cross-module collisions even with minify:false, which could
+    // turn `const SW_VERSION = '...'` into `const SW_VERSION2 = '...'` or
+    // similar in the bundled output actually served.
+    const idx = html.indexOf('SW_VERSION');
+    out.rawSwVersionIndexOf = idx;
+    out.rawSwVersionContext = idx === -1 ? null : html.slice(Math.max(0, idx - 60), idx + 120);
+    // Also check the window-global assignment form and the sw.js registration line.
+    out.hasWindowSwVersion = /window\.SW_VERSION/.test(html);
+    out.hasSwJsQueryParam = /\/sw\.js\?v=/.test(html);
   } catch (e) {
     out.error = String(e).slice(0, 300);
   }
