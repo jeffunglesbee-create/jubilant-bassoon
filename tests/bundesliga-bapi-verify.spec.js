@@ -108,10 +108,15 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     fs.mkdirSync('outbox', { recursive: true });
     await page.screenshot({ path: 'outbox/bundesliga-post-consent.png', fullPage: false }).catch(() => {});
 
-    // Real Material select interaction (identified via real DOM capture in
-    // the v2 diagnostic) -- open the dropdown, enumerate real options, pick
-    // a different one than what's currently shown.
-    const selectPlaceholder = page.locator('.mat-mdc-select-placeholder, .mat-mdc-select-value-text').first();
+    // Real root cause (found by reading outbox/bundesliga-post-consent.png,
+    // taken once consent no longer blocked the view): the page has THREE
+    // real mat-selects (season / matchday / clubs), all genuinely visible.
+    // `.first()` on a generic class selector was grabbing whichever matches
+    // first in DOM order -- very likely a hidden mobile/duplicate variant
+    // of the same component (a common Angular responsive pattern), not the
+    // visible "All Matchdays" one. Targeting by its real visible text
+    // instead of DOM order.
+    const selectPlaceholder = page.getByText('All Matchdays', { exact: true }).first();
     if (await selectPlaceholder.count().catch(() => 0) > 0) {
       result.matSelectFound = true;
       try {
