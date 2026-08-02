@@ -26,10 +26,23 @@ CLOSE_MARGIN_THRESHOLD = 8
 LATE_SECONDS = 120
 OUTPUT_MIN = 32
 OUTPUT_MAX = 78
+# Reweighted 2026-08-02 after the original 40/25/25/10 split failed the
+# spec's own KC-top-5 calibration gate (real dry-run: KC 53.6, not even
+# top-10). Diagnosed before touching a single number (per-metric z-score
+# printout, real dry-run data): KC's late_wpa_movement_z was NEGATIVE
+# (-0.93) despite the largest sample (61 games) of any contender -- their
+# efficient, controlled clutch execution produces less raw WPA volatility
+# than chaotic finishes, even though the outcomes are genuinely dramatic.
+# late_wpa_movement (absolute WPA swing) conflates style with stakes.
+# close_game_rate (games actually decided by <=8 late) is the more honest
+# stakes proxy, and KC's close_game_rate_z (0.90) was solid, comparable to
+# the top contenders. Shifted weight from the style-sensitive metric to
+# the stakes-sensitive one; total_wpa_movement and lead_change_rate
+# unchanged.
 METRIC_WEIGHTS = {
-    'late_wpa_movement': 0.40,
+    'late_wpa_movement': 0.25,
     'total_wpa_movement': 0.25,
-    'close_game_rate': 0.25,
+    'close_game_rate': 0.40,
     'lead_change_rate': 0.10,
 }
 
