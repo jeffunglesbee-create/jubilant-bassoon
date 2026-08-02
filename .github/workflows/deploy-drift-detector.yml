@@ -1,0 +1,49 @@
+name: Deploy Drift Detector
+
+# CC-CMD-2026-08-02-discovery-discipline-rule-and-deploy-drift-detector
+# TASK 2. Compares the latest real commit touching a deploy-gate.yml-
+# watched path against the live site's SW_VERSION. Detection only --
+# never attempts to auto-remediate. Cadence matches field-autodeploy.yml
+# (every 30 min), the most similar existing deploy-related scheduled
+# workflow in this repo.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run drift detector
+        run: node scripts/detect-deploy-drift.mjs
+
+      - name: Commit incident record (only when real drift is detected)
+        # Deliberately does NOT commit the routine per-run check file --
+        # this runs every 30 min and a "no drift, all healthy" result
+        # would otherwise create a commit every 30 min forever, noise
+        # this repo's other scheduled workflows don't produce. Only a
+        # real incident (drift:true) is worth a committed record.
+        run: |
+          git config user.email "deploy-drift-detector@field"
+          git config user.name "Deploy-Drift-Detector"
+          git add outbox/incident-deploy-drift-*.md 2>/dev/null || true
+          git diff --cached --quiet && echo "No drift incident, nothing to commit" && exit 0
+          git commit -m "deploy-drift INCIDENT detected [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done

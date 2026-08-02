@@ -4840,3 +4840,65 @@ written down. The `went_to_ot` invariant and the completion field-list
 superset check (same CC-CMD) are both live in that same workflow as of this
 rule's addition.
 
+---
+
+## Rule 98 — Undocumented-API discovery discipline (DISCOVERY-DISCIPLINE-A)
+
+Both LaLiga (`apim.laliga.com`) and Bundesliga (`wapp.bapi.bundesliga.com`)
+were found by watching real site traffic, not from any published API
+documentation. That discovery work was handled carefully each time —
+`apim-int.laliga.com` identified passively and never contacted,
+`api.laliga.com`'s `robots.txt` respected, discovered keys treated with
+full credential discipline despite shipping in plaintext to every site
+visitor — but the discipline lived in individual judgment calls, re-derived
+from scratch each session, not in a written, citable standard. As this
+pattern scales to more leagues and more undocumented integrations, that's a
+real gap: the next discovery deserves the same care by default.
+
+### Operational rules
+
+1. **Passive identification is not authorization to contact.** If a
+   variant or neighboring endpoint is found only by reference inside
+   another response (e.g. an internal/admin subdomain named in a payload,
+   a sibling path implied by URL structure) — do not navigate to it,
+   request it, or probe it. Identification and authorization are different
+   things; only the endpoint actually confirmed live and intended for the
+   traffic you observed is in scope.
+2. **Respect `robots.txt` on every newly-discovered host independently.**
+   A disallow on one host never implies anything about a different,
+   functionally-similar host — check each host's own `robots.txt`, even
+   when a sibling endpoint elsewhere is fair game.
+3. **Every discovered key or credential gets full Rule 80 discipline,
+   regardless of "technically public" status.** A key shipped in
+   plaintext to every visitor (e.g. embedded in a page's own
+   `__NEXT_DATA__`) is not thereby exempt from server-side-only handling
+   — its real secrecy is nominal, but the operational discipline (never
+   in conversation context, never client-exposed by this codebase, relay
+   as sole holder) applies exactly as it would to any other credential.
+   There is no separate, lesser standard for "technically public" values.
+4. **Any integration built on an undocumented, reverse-engineered
+   endpoint must have a real, tested fallback path, or an explicitly
+   accepted single point of failure.** Undocumented endpoints do not come
+   with an SLA the way a licensed, contracted data source can. If no
+   fallback is feasible (e.g. Bundesliga broadcasts, which has none), that
+   absence must be stated plainly, not silently assumed equivalent in
+   reliability to a source that does have one.
+5. **Re-verify a discovery fresh before trusting it as still stable —
+   never assume an earlier session's capture still holds.** Undocumented
+   endpoints can change shape, auth requirements, or behavior without
+   notice. A same-day case study: a real LaLiga "key rotated" alarm this
+   session turned out to be a misread, not an actual rotation — treating
+   an unverified assumption as fact wasted a full CC-CMD cycle before the
+   real explanation surfaced. The fix was checking fresh, not trusting the
+   inherited claim (Rule 72 applies here specifically to undocumented-API
+   claims, not just general session handoffs).
+
+### Why this is Rule 98, not a rewrite of Rule 80
+
+Rule 80 governs credential *handling* once a credential exists. This rule
+governs the *discovery and integration-design* phase before and around
+that — what's in scope to probe, what host-level boundaries to respect,
+and what reliability posture an undocumented dependency requires. They
+compose: Rule 98 point 3 explicitly extends Rule 80's discipline rather
+than restating it.
+
