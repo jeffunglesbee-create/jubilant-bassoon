@@ -1,3 +1,42 @@
+## SESSION CLOSE-OUT — 2026-08-02, wire-bsd-epl-live-stats (supersedes previous)
+
+**HEAD:** 67e7885c (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-08-01b (bumped from 2026-08-01a)
+**Session doc:** outbox/cc-session-2026-08-01-wire-bsd-epl-live-stats.md
+
+**BSD EPL xG/possession wired into journalism context, `[XG]` line.**
+Executed `CC-CMD-2026-08-01-wire-bsd-epl-live-stats.md` (found queued,
+executed per standard confidence-gate pattern). Real finding: event_id
+resolution needed zero new code — the relay's existing generic BSD live
+enrichment already sets `game.bsdEventId` for any sport, reused as-is.
+Pre-build probe caught the CC-CMD's assumed field names
+(`home_xg`/`away_xg`/`possession_home`) were wrong — real shape is
+`stats.{home,away}.expected_goals`/`.ball_possession`, verified against
+a real finished match (BSD event 383) before writing code. Verified via
+direct evaluation (real data + negative control), both passed.
+
+**Honest limit:** EPL 2026-27 season hasn't started (Aug 21) — no live
+match exists yet to verify the full path end-to-end. Code-complete,
+direct-evaluation-verified; E2E verification has explicit unblock
+criteria in the session doc (Rule 74), not an open carry-forward.
+
+**Companion, same session, field-relay-nba:** `CC-CMD-2026-07-30-audit-
+bracketdo-rule-a.md` also executed (investigation only, no code change)
+— see `field-relay-nba/outbox/cc-session-2026-08-02-audit-bracketdo-rule-a.md`.
+Verdict: partial mitigation, not a clean violation or pass — WebSocket
+connection establishment is genuinely pull-gated, but no
+`visibilitychange` handler exists, so the channel stays open and keeps
+processing pushed messages while the tab is backgrounded (not navigated
+away from in-app). Outlined, not implemented, two fix options with their
+real tradeoffs.
+
+### Carry-forwards
+- Live E2E verification of BSD EPL stats — auto-unblocks Aug 21 2026, exact verify steps in the session doc.
+- Whether to close the BracketDO visibilitychange gap — Jeff's call, per the audit's own framing.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-07-30, uefa-flags-flip (supersedes previous)
 
 **HEAD:** 2452594e (jubilant-bassoon)
