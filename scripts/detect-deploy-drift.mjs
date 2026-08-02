@@ -33,7 +33,13 @@ function extractSwVersionFromCommit(sha) {
 async function extractLiveSwVersion() {
   const r = await fetch(SITE);
   const html = await r.text();
-  const m = html.match(/SW_VERSION\s*=\s*'([^']+)'/);
+  // Real bug (found via outbox/verify-live-deploy-content-result.json round-2
+  // probe, 2026-08-02): esbuild's printer re-quotes string literals to double
+  // quotes when bundling (build-bundle.mjs), so the deployed
+  // `const SW_VERSION = "2026-08-02f";` no longer matches a single-quote-only
+  // regex even though the source (src/legacy/field.js) uses single quotes.
+  // Match either quote style against the live bundle.
+  const m = html.match(/\bSW_VERSION\s*=\s*['"]([^'"]+)['"]/);
   return { status: r.status, swVersion: m ? m[1] : null };
 }
 
