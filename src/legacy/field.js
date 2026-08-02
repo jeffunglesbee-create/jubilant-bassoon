@@ -14124,10 +14124,25 @@ const EFL_PLAYOFF_END   = new Date("2026-05-25T23:59:00Z");
 const inEFLPlayoffs = () => { const n=new Date(); return n>=EFL_PLAYOFF_START && n<=EFL_PLAYOFF_END; };
 
 const SOCCER_LEAGUES = [
-  // All soccer now on api-sports.io V2 (fetchV2AllScores).
+  // All soccer now on api-sports.io V2 (fetchV2AllScores) for SCORE OVERLAYS
+  // only -- V2/fetchV2AllScores and FD's fdPrefetchSoccerLive both only
+  // overlay scores onto game objects that already exist in allData.sports;
+  // neither one ever creates a new game card. Confirmed by direct read
+  // (CC-CMD-2026-08-02-wire-bundesliga-broadcasts-into-client, novel-
+  // thinking retry): with this array empty, Bundesliga (and every other
+  // non-EPL top-5 league) had NO card-creation mechanism at all -- a real,
+  // systemic gap masked entirely by the May-Aug summer break, not visible
+  // until each league's real resume date.
   // EFL Championship/League One/League Two moved Phase 2b (2026-05-29).
-  // EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS, WC26, UCL, Europa, Conference: Phase 1/2.
-  // This array retained for any future ESPN-only soccer additions.
+  // La Liga, Serie A, Ligue 1, MLS, WC26, UCL, Europa, Conference: Phase 1/2.
+  // Bundesliga re-added here -- this array's own comment already flagged it
+  // as "retained for any future ESPN-only soccer additions"; this is that
+  // addition, not a new mechanism. Gated automatically and correctly by the
+  // existing isDomesticLeagueInBreak('Bundesliga') check inside
+  // fetchSoccerFixtures (DOMESTIC_LEAGUE_BREAK_2026: resume 2026-08-22) --
+  // creates zero cards until that real date, same as it would for any
+  // other league in this array.
+  { league: 'ger.1', section: 'Bundesliga', bundle: 'BUNDESLIGA', leagueLabel: 'Bundesliga' },
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
@@ -21612,7 +21627,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-02c';
+  const SW_VERSION = '2026-08-02d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
