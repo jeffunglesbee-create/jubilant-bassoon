@@ -56,6 +56,26 @@ jobs:
 
           echo "--- bracketdo visibilitychange guard ---" >> "$OUT"
           grep -o "visibilitychange" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          echo "" >> "$OUT"
+
+          echo "--- getMatchupDramaBaseline (function name, call site) ---" >> "$OUT"
+          grep -o "getMatchupDramaBaseline" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          echo "" >> "$OUT"
+
+          echo "--- DRAMA_PROFILES marker leftover (should be absent, comment-stripped) ---" >> "$OUT"
+          grep -o "DRAMA_PROFILES_START" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND (expected)" >> "$OUT"
+          echo "" >> "$OUT"
+
+          echo "--- loose NFL_DRAMA search (any casing/spacing variant) ---" >> "$OUT"
+          grep -o ".\{0,20\}NFL_DRAMA.\{0,60\}" /tmp/live.html | head -3 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          echo "" >> "$OUT"
+
+          echo "--- literal KC drama value fragment (\"KC\":56.2) ---" >> "$OUT"
+          grep -o '"KC":56\.2' /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          echo "" >> "$OUT"
+
+          echo "--- ViewingConditions (sanity: pre-existing feature in the same file) ---" >> "$OUT"
+          grep -o "ViewingConditions" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
 
           echo "OUT=$OUT" >> $GITHUB_ENV
           cat "$OUT"
