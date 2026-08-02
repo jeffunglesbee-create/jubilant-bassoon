@@ -1,0 +1,53 @@
+{
+  "scenarios": [
+    {
+      "name": "open WC mode -> hidden -> socket closes",
+      "afterOpen": {
+        "bracketWSExists": true,
+        "wcMode": false,
+        "liveIndicator": false
+      },
+      "afterHidden": {
+        "bracketWSExists": true,
+        "wcMode": false,
+        "liveIndicator": false
+      },
+      "pass": false
+    },
+    {
+      "name": "hidden -> visible (still wc-mode) -> socket reopens",
+      "afterVisible": {
+        "bracketWSExists": true,
+        "wcMode": false,
+        "liveIndicator": false
+      },
+      "pass": false
+    },
+    {
+      "name": "hidden -> navigate away from WC mode (while hidden) -> visible -> must NOT reopen",
+      "afterToggleAwayWhileHidden": {
+        "bracketWSExists": true,
+        "wcMode": false,
+        "liveIndicator": false
+      },
+      "afterVisibleNotWcMode": {
+        "bracketWSExists": true,
+        "wcMode": false,
+        "liveIndicator": false
+      },
+      "pass": true
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ]
+}
