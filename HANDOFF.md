@@ -1,3 +1,55 @@
+## SESSION CLOSE-OUT — 2026-08-02, laliga-apim + bundesliga-bapi retry (supersedes previous)
+
+**HEAD:** d352d0cd (jubilant-bassoon)
+**Smoke count:** 965/0
+**SW version:** 2026-08-02a (bumped from 2026-08-01g, ET date rollover)
+**Session docs:**
+- outbox/cc-session-2026-08-02-wire-laliga-apim-standings.md
+- outbox/cc-session-2026-08-02-wire-bundesliga-bapi-broadcasts.md
+
+**Both CC-CMDs retried per instruction; both STOPPED at Task 1, no
+Task 2/3/4 shipped.** Correction applied first: `field-playground` was
+NOT added to the session despite both CC-CMDs originally citing scripts
+there — re-reading Task 1's actual text (independently updated in both
+docs before this retry) showed it already requires an independent,
+jubilant-bassoon-only re-verification, not reuse of that repo's
+tooling. Built two new self-contained Playwright CI probes
+(`tests/laliga-apim-verify.spec.js`,
+`tests/bundesliga-bapi-verify.spec.js` + matching workflows) instead.
+
+**LaLiga:** subscription key genuinely rotated since original discovery
+(`06969d3c...` vs `c13c3a8e...`). 4 real auth-shape attempts (header,
+header+Origin/Referer, lowercase header, query param) all returned 401.
+Task 1's gate ("confirm... authenticates before building anything")
+not met — stopped honestly rather than shipping a route with no
+working data behind it.
+
+**Bundesliga:** both originally-captured endpoints now return 403 (was
+200) — real access change since discovery. Live capture also found a
+concrete, real correction to the CC-CMD's own assumption: the site
+currently requests competition ID `DFL-COM-000003`, not `DFL-COM-000001`
+as the doc called "almost certainly stable." The actual date→ID
+resolution question (Task 1's core ask) was never tested — generic
+matchday-nav-click selectors found zero matching elements on the real
+live DOM, a genuine tooling gap, not a negative finding.
+
+Both outbox docs include explicit Rule 74 unblock criteria. No relay
+routes, no client wiring, no fallback handling written for either —
+correctly out of scope once Task 1 failed its own confidence gate.
+
+### Carry-forwards
+- LaLiga: needs a real-browser DevTools capture of the exact
+  authenticated request shape to `clasificacion` (headers/cookies) —
+  this probe's 4 variants weren't exhaustive.
+- Bundesliga: needs (1) a real selector for the live site's matchday
+  navigation UI (found via a Playwright trace/screenshot, not guessed),
+  and (2) diagnosis of the new 403s (real access tightening vs. a
+  missing header this headless probe doesn't send).
+- File-size ceiling (2,600,000 bytes) — still unresolved, flagged
+  again in this session's earlier close-out; no reply yet.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-08-02, nfl-drama-profiles + bracketdo-guard + milestones (supersedes previous)
 
 **HEAD:** b764215f (jubilant-bassoon)
