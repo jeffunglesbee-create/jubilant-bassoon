@@ -1,110 +1,125 @@
 // tests/bundesliga-bapi-verify.spec.js
-// CC-CMD-2026-08-02-wire-bundesliga-bapi-broadcasts Task 1.
+// CC-CMD-2026-08-02-wire-bundesliga-bapi-broadcasts-v2 Task 1.
 // Independent, jubilant-bassoon-only re-verification (no field-playground
-// dependency). Real fix over the first attempt: (1) use the REAL page's
-// own request to wapp.bapi.bundesliga.com (captured via page.on('response'))
-// to get the real headers/status rather than a bare API-context request
-// that got 403 -- a headless bare request likely lacks Origin/Referer/
-// session artifacts the real page sends; (2) take a real screenshot before
-// guessing nav selectors, so any second attempt is informed by what the
-// page actually looks like instead of blind CSS-selector guessing.
+// dependency). Real, confirmed answers from the v2 CC-CMD's own diagnostic:
+// (1) a real x-api-key (60ETUJ4j5YagIHdu-PROD) was missing from the first
+// attempt, explaining the 403s; (2) the matchday switcher is an Angular
+// Material <mat-select>, not a button -- click .mat-mdc-select-placeholder
+// to open it, then pick a different option from the opened panel.
+//
+// Hardened after a real LaLiga-probe failure with the same root cause risk:
+// waitUntil:'networkidle' can hang indefinitely on sites with persistent
+// analytics connections. Using domcontentloaded + explicit wait, and
+// wrapping in try/finally so any failure still writes a real partial
+// result instead of leaving stale data looking current.
 
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 
-test('bundesliga bapi fresh re-verification via real page network capture', async ({ page }) => {
+const CONFIRMED_API_KEY = '60ETUJ4j5YagIHdu-PROD';
+
+test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', async ({ page }) => {
   const result = {
     timestamp: new Date().toISOString(),
-    realBroadcastersRequestCaptured: false,
-    realBroadcastersStatus: null,
+    confirmedKeyStillWorks: null,
+    confirmedShapeStatus: null,
     realBroadcastsRequestCaptured: false,
-    realBroadcastsStatus: null,
     realBroadcastsUrl: null,
     distinctDflDayIds: [],
     distinctDflComIds: [],
-    navLinksFound: [],
-    matchdayNavClickCount: 0,
+    matSelectFound: false,
+    matSelectOptionsSeen: [],
+    matchdaySwitchAttempted: false,
+    matchdaySwitchSucceeded: false,
+    error: null,
   };
 
   const dayIds = new Set();
   const comIds = new Set();
 
-  page.on('response', (resp) => {
-    const url = resp.url();
-    if (url.includes('bapi.bundesliga.com')) {
-      if (url.includes('/broadcasters')) {
-        result.realBroadcastersRequestCaptured = true;
-        result.realBroadcastersStatus = resp.status();
-      }
-      if (url.includes('/broadcasts/')) {
+  try {
+    page.on('response', (resp) => {
+      const url = resp.url();
+      if (url.includes('bapi.bundesliga.com') && url.includes('/broadcasts/')) {
         result.realBroadcastsRequestCaptured = true;
-        result.realBroadcastsStatus = resp.status();
         result.realBroadcastsUrl = url;
         const dm = url.match(/DFL-DAY-[A-Z0-9]+/);
         const cm = url.match(/DFL-COM-[A-Z0-9]+/);
         if (dm) dayIds.add(dm[0]);
         if (cm) comIds.add(cm[0]);
       }
-    }
-  });
-
-  await page.goto('https://www.bundesliga.com/en/bundesliga/matchday', {
-    waitUntil: 'networkidle',
-    timeout: 30000,
-  }).catch(async () => {
-    await page.goto('https://www.bundesliga.com/en/bundesliga', {
-      waitUntil: 'networkidle',
-      timeout: 30000,
     });
-  });
-  await page.waitForTimeout(3000);
 
-  // Real screenshot -- ground truth for what nav elements actually exist,
-  // instead of guessing CSS selectors against an unknown DOM a second time.
-  fs.mkdirSync('outbox', { recursive: true });
-  await page.screenshot({ path: 'outbox/bundesliga-matchday-page.png', fullPage: false }).catch(() => {});
+    await page.goto('https://www.bundesliga.com/en/bundesliga/matchday', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    }).catch(async () => {
+      await page.goto('https://www.bundesliga.com/en/bundesliga', {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      });
+    });
+    await page.waitForTimeout(5000);
 
-  // Real DOM enumeration -- list every clickable element whose visible text
-  // or aria-label mentions a matchday-like word, with its real selector-
-  // relevant attributes, so any second-pass automation has real data to
-  // act on instead of another blind guess.
-  const candidates = await page.evaluate(() => {
-    const els = Array.from(document.querySelectorAll('button, a, [role="button"]'));
-    return els
-      .filter(el => {
-        const t = (el.textContent || '').trim();
-        const aria = el.getAttribute('aria-label') || '';
-        return /matchday|spieltag|round|week/i.test(t) || /matchday|spieltag/i.test(aria);
-      })
-      .slice(0, 15)
-      .map(el => ({
-        tag: el.tagName,
-        text: (el.textContent || '').trim().slice(0, 40),
-        ariaLabel: el.getAttribute('aria-label') || null,
-        className: (el.className || '').toString().slice(0, 80),
-        id: el.id || null,
-      }));
-  });
-  result.navLinksFound = candidates;
+    // Real Material select interaction (identified via real DOM capture in
+    // the v2 diagnostic) -- open the dropdown, enumerate real options, pick
+    // a different one than what's currently shown.
+    const selectPlaceholder = page.locator('.mat-mdc-select-placeholder, .mat-mdc-select-value-text').first();
+    if (await selectPlaceholder.count().catch(() => 0) > 0) {
+      result.matSelectFound = true;
+      try {
+        await selectPlaceholder.click({ timeout: 5000 });
+        await page.waitForTimeout(1000);
+        const options = await page.locator('.mat-mdc-option, [role="option"]').allTextContents().catch(() => []);
+        result.matSelectOptionsSeen = options.slice(0, 20);
+        if (options.length > 1) {
+          result.matchdaySwitchAttempted = true;
+          // Pick an option that isn't "All Matchdays" / index 0, to force a
+          // genuinely different matchday than whatever is currently shown.
+          const targetIdx = options.findIndex((o, i) => i > 0 && !/all matchdays/i.test(o));
+          if (targetIdx >= 0) {
+            await page.locator('.mat-mdc-option, [role="option"]').nth(targetIdx).click({ timeout: 5000 });
+            result.matchdaySwitchSucceeded = true;
+            await page.waitForTimeout(4000);
+          }
+        }
+      } catch (e) {
+        result.matSelectError = String(e).slice(0, 300);
+      }
+    }
 
-  // Attempt clicks using the REAL enumerated candidates (not a guessed
-  // selector list) if any exist.
-  for (const c of candidates.slice(0, 3)) {
-    try {
-      const locator = c.id
-        ? page.locator(`[id="${c.id}"]`)
-        : page.getByText(c.text, { exact: false }).first();
-      await locator.click({ timeout: 3000 });
-      result.matchdayNavClickCount++;
-      await page.waitForTimeout(2000);
-    } catch (e) { /* not clickable, skip */ }
+    result.distinctDflDayIds = [...dayIds];
+    result.distinctDflComIds = [...comIds];
+
+    // Direct confirmation of the real, already-verified auth key shape,
+    // called from within the page context (real Origin/Referer handling).
+    if (result.realBroadcastsUrl) {
+      const confirmed = await page.evaluate(async ({ url, key }) => {
+        try {
+          const r = await fetch(url, {
+            headers: {
+              'x-api-key': key,
+              'accept': 'application/json, text/plain, */*',
+              'accept-language': 'en-EN',
+            },
+          });
+          const status = r.status;
+          return { status, ok: r.ok };
+        } catch (e) {
+          return { status: null, ok: false, error: String(e) };
+        }
+      }, { url: result.realBroadcastsUrl, key: CONFIRMED_API_KEY });
+      result.confirmedShapeStatus = confirmed.status;
+      result.confirmedKeyStillWorks = confirmed.ok;
+    }
+  } catch (e) {
+    result.error = String(e).slice(0, 500);
+  } finally {
+    fs.mkdirSync('outbox', { recursive: true });
+    await page.screenshot({ path: 'outbox/bundesliga-matchday-page.png', fullPage: false }).catch(() => {});
+    fs.writeFileSync('outbox/bundesliga-bapi-verify-result.json', JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
   }
-
-  result.distinctDflDayIds = [...dayIds];
-  result.distinctDflComIds = [...comIds];
-
-  fs.writeFileSync('outbox/bundesliga-bapi-verify-result.json', JSON.stringify(result, null, 2));
-  console.log(JSON.stringify(result, null, 2));
 
   // Don't hard-fail CI on a negative/incomplete result -- honest limits
   // are a valid Task 1 outcome per the CC-CMD's own instructions.
