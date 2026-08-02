@@ -48,6 +48,23 @@ construction — as a real query param, not embedded inside the league
 path segment, matching a real, previously-caught bug of exactly that
 shape.
 
+**Also check whether this path threads `curatedRank` at all.** The
+July 15 featured-tier/overflow work (`isFeaturedTierGame`/
+`buildRankBadge`/`buildOverflowStrip`, confirmed live) specifically
+needed `mapV2ToESPN` to thread `homeCuratedRank`/`awayCuratedRank`
+from ESPN's real `curatedRank.current` field for the *live* `/v2/games`
+path — without that, rank badges silently don't render even though the
+overflow mechanism itself works. `fetchESPNFixturesForDate` is a
+separate code path entirely. Confirm directly whether its own
+event-mapping already carries `curatedRank` through (check the real
+ESPN scoreboard response for a CFB event — the field is present at
+`competitor.curatedRank.current`), and if it doesn't, either thread it
+the same way `mapV2ToESPN` does, or explicitly state in the outbox that
+forward-navigated CFB games will render without rank badges until a
+follow-up threads it. Do not let this go unnoticed either way — a
+future CFB Saturday reached via the `›` arrow should not silently miss
+rank badges without that being a known, stated limitation.
+
 ## Task 2 — Add the two entries, correctly
 
 Add NFL and CFB to `FETCH_LEAGUES`, using the confirmed real
