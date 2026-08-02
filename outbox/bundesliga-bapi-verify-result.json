@@ -1,20 +1,41 @@
 {
-  "timestamp": "2026-08-02T05:48:01.328Z",
+  "timestamp": "2026-08-02T05:50:39.674Z",
   "confirmedKeyStillWorks": true,
   "confirmedShapeStatus": 200,
   "consentDismissed": true,
   "realBroadcastsRequestCaptured": true,
-  "realBroadcastsUrl": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000003/DFL-DAY-004CBT",
+  "realBroadcastsUrl": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000001/DFL-DAY-004CBT",
   "distinctDflDayIds": [
     "DFL-DAY-004CBT"
   ],
   "distinctDflComIds": [
-    "DFL-COM-000003"
+    "DFL-COM-000003",
+    "DFL-COM-000001"
   ],
   "matSelectFound": true,
-  "matSelectOptionsSeen": [],
-  "matchdaySwitchAttempted": false,
-  "matchdaySwitchSucceeded": false,
-  "error": null,
-  "matSelectError": "Error: locator.click: Element is outside of the viewport\nCall log:\n\u001b[2m  - waiting for locator('.mat-mdc-select-placeholder, .mat-mdc-select-value-text').first()\u001b[22m\n\u001b[2m    - locator resolved to <span class=\"mat-mdc-select-value-text\">…</span>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - sc"
+  "matSelectOptionsSeen": [
+    " Franz Beckenbauer Supercup",
+    " Matchday 1 ",
+    " Matchday 2 ",
+    " Matchday 3 ",
+    " Matchday 4 ",
+    " Matchday 5 ",
+    " Matchday 6 ",
+    " Matchday 7 ",
+    " Matchday 8 ",
+    " Matchday 9 ",
+    " Matchday 10 ",
+    " Matchday 11 ",
+    " Matchday 12 ",
+    " Matchday 13 ",
+    " Matchday 14 ",
+    " Matchday 15 ",
+    " Matchday 16 ",
+    " Matchday 17 ",
+    " Matchday 18 ",
+    " Matchday 19 "
+  ],
+  "matchdaySwitchAttempted": true,
+  "matchdaySwitchSucceeded": true,
+  "error": null
 }
