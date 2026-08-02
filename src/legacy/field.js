@@ -21608,7 +21608,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-01c';
+  const SW_VERSION = '2026-08-01d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -22136,18 +22136,19 @@ function getStatisticalExtremes(eData, sport){
     }
   }
 
-  // ── MLB: No-hitter / perfect game through 6+ innings ─────────────────
-  // outs null check: eData.innings populated by fetchMLBLiveGame
-  if((sp.includes('mlb')||sp.includes('baseball')) && period>=6){
+  // MLB no-hitter, escalating by inning (was flat +20). Perfect-game +5
+  // sub-bonus not implemented -- eData.innings has no walk/HBP data.
+  if((sp.includes('mlb')||sp.includes('baseball')) && period>=5){
     const inns = eData.innings||[];
-    if(inns.length >= 5){
+    if(inns.length >= 4){
       const homeHits = inns.reduce((s,i)=>s+(i.away?.hits||0),0); // away hits against home pitcher
       const awayHits = inns.reduce((s,i)=>s+(i.home?.hits||0),0); // home hits against away pitcher
-      if(homeHits===0 && period>=6){
-        result.dramaBonus += 20;
+      const _noHitTier = p => p>=9?40:p===8?30:p===7?20:12;
+      if(homeHits===0){
+        result.dramaBonus += _noHitTier(period);
         result.note = `No-hitter through ${period} innings — ${teamNick(eData.awayName)||'Away'} pitcher`;
-      } else if(awayHits===0 && period>=6){
-        result.dramaBonus += 20;
+      } else if(awayHits===0){
+        result.dramaBonus += _noHitTier(period);
         result.note = `No-hitter through ${period} innings — ${teamNick(eData.homeName)||'Home'} pitcher`;
       }
     }
