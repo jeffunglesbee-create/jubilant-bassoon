@@ -18,6 +18,15 @@ groups.forEach(g => {
     });
   });
 });
-const out = { httpStatus: r.status, groupCount: groups.length, sample };
+const out = {
+  httpStatus: r.status,
+  groupCount: groups.length,
+  sample,
+  topLevelKeys: Object.keys(json),
+  firstGroupKeys: groups[0] ? Object.keys(groups[0]) : null,
+  firstGroupStandingsKeys: groups[0]?.standings ? Object.keys(groups[0].standings) : null,
+  childrenLength: (json.children || []).length,
+  rawSnippet: JSON.stringify(json).slice(0, 2000),
+};
 writeFileSync('outbox/espn-mlb-standings-streak-shape.json', JSON.stringify(out, null, 2));
 console.log(JSON.stringify(out, null, 2));
