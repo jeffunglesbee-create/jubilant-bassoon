@@ -62,13 +62,17 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     });
     await page.waitForTimeout(5000);
 
-    // Real evidence from the prior run: a cookie-consent overlay from
-    // cp.bundesliga.com (seen loading on every page load in the earlier
-    // network capture) intercepted the matchday-select click (real
-    // TimeoutError: "attempting click action" against a covered element).
-    // Dismiss it first via its real accept-button pattern before any other
-    // interaction, rather than guessing at the select click again.
+    // Real root cause, found by actually reading the committed screenshot
+    // (outbox/bundesliga-matchday-page.png) rather than iterating on the
+    // click mechanism again: the "outside of viewport" error was accurate,
+    // not a scrolling bug -- a full-screen Sourcepoint/Contentpass consent
+    // modal was still covering the entire page in every prior run. Every
+    // guessed selector (OneTrust ID, generic "Accept"/"I agree" text) was
+    // wrong -- the real buttons are "Agree & continue" / "Deny & surf
+    // ad-free". Using the exact real text now.
     const consentSelectors = [
+      'button:has-text("Agree & continue")',
+      'button:has-text("Deny & surf ad-free")',
       'button:has-text("Accept")',
       'button:has-text("I agree")',
       'button:has-text("Alle akzeptieren")',
@@ -91,7 +95,7 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     if (!result.consentDismissed) {
       for (const frame of page.frames()) {
         try {
-          const btn = frame.locator('button:has-text("Accept"), button:has-text("Alle akzeptieren")').first();
+          const btn = frame.locator('button:has-text("Agree & continue"), button:has-text("Accept"), button:has-text("Alle akzeptieren")').first();
           if (await btn.count().catch(() => 0) > 0) {
             await btn.click({ timeout: 3000 });
             result.consentDismissed = true;
@@ -101,6 +105,8 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
         } catch (e) { /* not this frame */ }
       }
     }
+    fs.mkdirSync('outbox', { recursive: true });
+    await page.screenshot({ path: 'outbox/bundesliga-post-consent.png', fullPage: false }).catch(() => {});
 
     // Real Material select interaction (identified via real DOM capture in
     // the v2 diagnostic) -- open the dropdown, enumerate real options, pick
