@@ -88,6 +88,19 @@ SW_VERSION bumped `2026-08-02d` → `2026-08-02e` (real behavior change).
 against a real historical fixture (above). The only remaining real
 limit is the broadcast field-name mapping:
 
+**Additional real finding (this update, responding to "e2e should
+include broadcast info"):** searched 8 real matchdays spanning the
+entire completed 2025-26 season — 1, 5, 10, 15, 20, 25, 30, 34 (start,
+middle, and end) — via `outbox/find-bundesliga-nonempty-broadcasts-result.json`.
+**All 8 returned a real, confirmed-live, empty `broadcasts` array.**
+This is no longer "haven't found one yet" — 8/8 across the full season
+is strong, real evidence that `wapp.bapi.bundesliga.com/broadcasts/`
+only serves current/near-term schedule data, not a historical archive.
+**Answering the direct question: no, this specific field-name
+validation genuinely cannot be completed on previous fixtures** — not
+a depth-of-search limitation, a structural one. It requires a real,
+current/near-future matchday, i.e. the Aug 22+ window.
+
 **Broadcast field-name mapping unconfirmed against real data:**
 **Blocked by:** every live check so far has returned an empty
 `broadcasts` array — no real entry to inspect.
