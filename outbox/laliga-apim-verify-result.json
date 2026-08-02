@@ -1,8 +1,30 @@
 {
-  "timestamp": "2026-08-02T04:29:33.584Z",
+  "timestamp": "2026-08-02T04:33:02.296Z",
   "nextDataKeyFound": true,
   "subscriptionKey": "06969d3c68ed97998b7e0f6b97e06766",
   "clasificacionStatus": 401,
   "clasificacionOk": false,
-  "sampleTeams": []
+  "sampleTeams": [],
+  "authAttempts": [
+    {
+      "label": "Ocp-Apim-Subscription-Key header only",
+      "status": 401,
+      "ok": false
+    },
+    {
+      "label": "Ocp-Apim-Subscription-Key + Origin/Referer",
+      "status": 401,
+      "ok": false
+    },
+    {
+      "label": "lowercase subscription-key header",
+      "status": 401,
+      "ok": false
+    },
+    {
+      "label": "query param subscription-key",
+      "status": 401,
+      "ok": false
+    }
+  ]
 }
