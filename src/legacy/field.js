@@ -13028,26 +13028,15 @@ function buildGolfPromptContext(pgaData) {
   return parts.join('\n');
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Home Run Derby — bracket structure + journalism context (CC-CMD-2026-07-13-
-// hrd-bracket-client). Single-night, fixed 8-slot bracket, known field in
-// advance — unlike golf's multi-day tournament shape, the bracket structure
-// itself doesn't need live data to build and test correctly, only the live
-// results do. Companion relay work (field-relay-nba's /homeRunDerby/{gamePk}
-// proxy) was not confirmed landed as of this build — see buildHRDBracket's
-// own doc comment for the live-results hook this is built against, not
-// wired to any live source yet.
-//
-// Real, verified 2026 field (cross-checked across 5 sources):
-// Kyle Schwarber (Phillies, MLB HR leader), Bryce Harper (Phillies, 2018
-// champion / 2013 runner-up, home stadium), Munetaka Murakami (White Sox,
-// second-ever Japanese-born participant after Ohtani 2021), Junior Caminero
-// (Rays, 2025 runner-up), Ben Rice (Yankees), Jac Caglianone (Royals,
-// youngest at 23), Willson Contreras (Red Sox), Jordan Walker (Cardinals).
-// Format: Round 1 all eight, 20 swings each, top 4 HR totals advance (ties
-// broken by longest HR distance); semis/final 15 swings each, seeded
-// 1v4/2v3; ties broken by 3-swing swing-off.
-// ══════════════════════════════════════════════════════════════════════════════
+// Home Run Derby -- bracket structure + journalism context (CC-CMD-2026-07-13-
+// hrd-bracket-client). Fixed 8-slot single-night bracket, known field in
+// advance; relay live-results hook not confirmed landed as of this build --
+// see buildHRDBracket's own doc comment.
+// Real 2026 field: Schwarber (Phillies, HR leader), Harper (Phillies, 2018
+// champ/2013 runner-up), Murakami (White Sox), Caminero (Rays, 2025 runner-
+// up), Rice (Yankees), Caglianone (Royals), Contreras (Red Sox), Walker
+// (Cardinals). Round 1: 20 swings, top 4 HR totals advance (ties by longest
+// HR); semis/final 15 swings, seeded 1v4/2v3, 3-swing swing-off for ties.
 
 const HRD_FIELD_2026 = [
   { name: 'Kyle Schwarber',     team: 'Phillies',  note: 'MLB HR leader' },
@@ -13548,13 +13537,16 @@ function renderFDStandingsPanel(panel, rows, sportName){
   <div style="font-size:.5rem;text-align:right;margin-top:.4rem;opacity:.4;letter-spacing:.03em">data: football-data.org</div>`;
 }
 
+// ESPN_BASE's /standings now returns only {fullViewLink}; apis/v2 (no
+// "site") has real entries -- verified live across MLB/NBA/NHL/NFL.
+const ESPN_STANDINGS_BASE = "https://site.api.espn.com/apis/v2/sports";
 async function fetchESPNStandings(sportName){
   const map = ESPN_STANDINGS_MAP[sportName];
   if(!map) return null;
   const cacheKey = map.sport+"/"+map.league;
   if(espnStandingsCache[cacheKey]) return espnStandingsCache[cacheKey];
   try{
-    const url = `${ESPN_BASE}/${map.sport}/${map.league}/standings`;
+    const url = `${ESPN_STANDINGS_BASE}/${map.sport}/${map.league}/standings`;
     const r = await fetch(url);
     if(!r.ok) throw new Error("ESPN standings HTTP "+r.status);
     const json = await r.json();
@@ -21610,7 +21602,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-02a';
+  const SW_VERSION = '2026-08-02b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -22135,6 +22127,28 @@ function getStatisticalExtremes(eData, sport){
       result.note = result.note || `${teamNick(eData.homeName)||'Home'} scored 0 in last 2 periods`;
     } else if(aLast2===0 && period>=3){
       result.note = result.note || `${teamNick(eData.awayName)||'Away'} scored 0 in last 2 periods`;
+    }
+  }
+
+  if((sp.includes('mlb')||sp.includes('baseball'))){
+    if(!espnStandingsCache['baseball/mlb']) fetchESPNStandings('Baseball (MLB)').catch(()=>{});
+    const mlbSt = espnStandingsCache['baseball/mlb'];
+    if(mlbSt && !result.note){
+      const _tier = n => n>=8?30:n>=6?20:n>=5?12:0;
+      const _chk = (tn, lbl) => {
+        const row = mlbSt.find(r => r.team===tn || r.abbrev===tn);
+        const m = /^([WL])(\d+)$/.exec(row?.streak||'');
+        if(!m) return false;
+        const [, ltr, cnt] = m;
+        const bonus = _tier(parseInt(cnt,10));
+        if(bonus>0){
+          result.dramaBonus += bonus;
+          result.note = `${teamNick(tn)||lbl} on a ${cnt}-game ${ltr==='W'?'win':'losing'} streak`;
+          return true;
+        }
+        return false;
+      };
+      _chk(eData.homeName, 'Home') || _chk(eData.awayName, 'Away');
     }
   }
 
