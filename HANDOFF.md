@@ -1,3 +1,36 @@
+## SESSION CLOSE-OUT — 2026-08-02, bundesliga day-ID novel-thinking retry (supersedes previous)
+
+**HEAD:** 6a8e014b (jubilant-bassoon)
+**Smoke count:** 965/0 (unchanged, docs/test-only session)
+**Session doc:** outbox/cc-session-2026-08-02-wire-bundesliga-bapi-broadcasts-v2.md
+
+**Corrected an earlier wrong conclusion in this same file's prior
+entry below.** The prior session had declared "DFL-DAY id stays
+constant regardless of matchday" as a final negative finding. That was
+wrong — a real bug in the test itself (always re-selecting the same
+matchday option) made every "independent" check test the identical
+selection. A decisive retest (`tests/bundesliga-matchday-url-decisive.spec.js`,
+direct navigation to `/en/bundesliga/matchday/{season}/{N}` for 3
+distinct N) proved the id DOES vary correctly per matchday
+(`004CBT`/`004CBX`/`004CC2` for MD 1/5/10, `conclusiveVariation: true`).
+
+**Real remaining blocker (infra, not diagnosis):** the working
+resolution mechanism is the site's own client-side URL router in a
+real browser — no plain HTTP endpoint serves matchday->dayId directly.
+A Workers relay has no headless browser. Two real unblock paths
+documented with Rule 74 criteria in the outbox doc: Cloudflare Browser
+Rendering (new infra, needs explicit approval) or a verified formula
+from a full-season sample set (only 3 samples collected so far, not
+enough to trust). Task 2/3 (relay route, client wiring) still not
+shipped — correctly gated on one of those two paths.
+
+**Also note (ROI caveat, not chased further):** all captured broadcasts
+data during this session was empty (`{"broadcasts":[]}`) — real
+preseason state, not a bug. Even a working per-matchday route would
+show nothing until broadcasters are actually announced for 2026/27.
+
+---
+
 ## SESSION CLOSE-OUT — 2026-08-02, laliga-apim + bundesliga-bapi retry (supersedes previous)
 
 **HEAD:** d352d0cd (jubilant-bassoon)
