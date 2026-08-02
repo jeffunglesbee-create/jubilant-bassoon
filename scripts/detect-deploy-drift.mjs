@@ -19,7 +19,7 @@ function sh(cmd) {
 }
 
 function findLatestWatchedCommit() {
-  const log = sh(`git log -1 --format=%H|%cI -- ${WATCHED_PATHS.join(' ')}`);
+  const log = sh(`git log -1 --format='%H|%cI' -- ${WATCHED_PATHS.join(' ')}`);
   const [sha, isoDate] = log.split('|');
   return { sha, isoDate };
 }
