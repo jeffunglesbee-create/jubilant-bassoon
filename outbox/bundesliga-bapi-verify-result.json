@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-02T05:50:39.674Z",
+  "timestamp": "2026-08-02T06:05:32.455Z",
   "confirmedKeyStillWorks": true,
   "confirmedShapeStatus": 200,
   "consentDismissed": true,
@@ -37,5 +37,33 @@
   ],
   "matchdaySwitchAttempted": true,
   "matchdaySwitchSucceeded": true,
+  "initialPayloadCaptureCount": 5,
+  "initialPayloadCaptures": [
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000003/DFL-DAY-004CBT",
+      "status": 200,
+      "bodyPreview": "{\"broadcasts\":[]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000003/DFL-DAY-004CBT",
+      "status": 200,
+      "bodyPreview": "{\"broadcasts\":[]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasters?promoteInHeader=true",
+      "status": 200,
+      "bodyPreview": "{\"country\":\"US\",\"broadcasters\":[{\"name\":\"ESPN+\",\"url\":\"https://www.espn.com/watch/espnplus\",\"rank\":1,\"logos\":{\"light\":\"https://img.bundesliga.com/tachyon/sites/2/2020/09/ESPN-BLACK-TEXT.png?fit=1024\",\"dark\":\"https://img.bundesliga.com/tachyon/sites/2/2020/09/ESPN-WHITE-TEXT.png?fit=1024\"}}]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/broadcasts/DFL-COM-000001/DFL-DAY-004CBT",
+      "status": 200,
+      "bodyPreview": "{\"broadcasts\":[]}"
+    },
+    {
+      "url": "https://wapp.bapi.bundesliga.com/editorial?category=fixturesbl1&editorialtype=feature,news,live_match&pageSize=3&pageNumber=0",
+      "status": 200,
+      "bodyPreview": "{\"totalElementCount\":2180,\"totalPageCount\":727,\"currentPageNumber\":0,\"elementsPerPage\":3,\"elementsOnPage\":3,\"elements\":[{\"author\":\"dflds066@dfl.de\",\"categories\":[\"tablebl1\",\"bundesliga\",\"fixturesbl1\"],\"cisId\":\"CON-37680\",\"clubs\":[],\"editorialAbstract\":\"Life has returned to Bundesliga training grounds as teams start to get back to business preparing for the 2026/27 campaign. Find out what every club has planned for their pre-season preparations this summer...\",\"headlines\":{\"defaultHeadline\":\"Bundesliga clubs' 2026/27 pre-season schedules: tours, friendlies and training\",\"shortHeadline\":\"Follow your team through pre-season\"},\"isVideo\":false,\"language\":\"en\",\"media\":[{\"type\":\"image\",\"desktop\":{\"alt\":\"Fabio Silva Dortmund, AUGUST 1, 2026 - Football / Soccer : International Friendly, Länderspiel, Nationalmannschaft match between FC Tokyo -1 Borussia Dortmund at MUFG STADIUM National Stadium in Tokyo, Japan. PUBLICATIONxNOTxINxJPN aflo_339773690 KenxAsakurax\",\"caption\":\"Fabio Silva was on target for Borussia Dortmund in their 1-0 win against FC Tokyo. \",\"copyright\":\"IMAGO/Ken Asakura\",\"credit\":\"\",\"src\":\"https://assets.bundesliga.com/contender/2026/7/imago1080604318.jpg?crop=0px%2C446px%2C4550px%2C2555px\"},\"mobile\":{\"alt\":\"Fabio Silva Dortmund, AUGUST 1, 2026 - Football / Soccer : International Friendly, Länderspiel, Nationalmannschaft match between FC Tokyo -1 Borussia Dortmund at MUFG STADIUM National Stadium in Tokyo, Japan. PUBLICATIONxNOTxINxJPN aflo_339773690 KenxAsakurax\",\"caption\":\"Fabio Silva was on target for Borussia Dortmund in their 1-0 win against FC Tokyo. \",\"copyright\":\"IMAGO/Ken Asakura\",\"credit\":\"\",\"src\":\"https://assets.bundesliga.com/contender/2026/7/imago1080604318.jpg?crop=0px%2C414px%2C3295px%2C2638px\"}},{\"type\":\"liveMatch\",\"liveMatchId\":\"Preseasontraining2026\"},{\"type\":\"video\",\"aspectRatio\":\"16:9\",\"description\":\"Bayern's record-breaking season\",\"duration\":1003,\"headline\":\"Bayern's record-breaking season\",\"poster\":\"https://assets.bundesliga.com/video/j"
+    }
+  ],
   "error": null
 }
