@@ -18792,6 +18792,56 @@ async function fetchPLFixtures() {
 const _plMatchCache = new Map();
 const _PL_MATCH_TTL = 30000;
 
+// ── Bundesliga real per-match broadcast enrichment (CC-CMD-2026-08-02-
+// wire-bundesliga-broadcasts-date-mode) ──────────────────────────────────
+// field-relay-nba's resolve-dayid date-mode (real, live-verified,
+// 2026-08-02) needs only a real date -- no matchday number, sidestepping
+// the confirmed absence of a matchday field on ESPN's Bundesliga events.
+// Called at most once per fetchSoccerFixtures poll (one date, shared by
+// every Bundesliga game returned that call) -- not once per game, per
+// Rule 78. Real, honest limit: this session could not observe a real
+// NON-EMPTY broadcasts array (every live check has been preseason,
+// {"broadcasts":[]}), so the per-entry field-name extraction below is
+// defensive/best-effort, not confirmed against real data -- returns null
+// (existing static BUNDESLIGA bundle stays as the display) whenever the
+// real shape doesn't match any of the guessed field names, rather than
+// showing something wrong. Task 3's own outbox flags this as the exact
+// thing to re-verify once real data exists (Aug 22+).
+const BUNDESLIGA_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev';
+function _bundesligaSeasonFromDate(year, month){
+  // Same real convention field-relay-nba's own date-mode already uses:
+  // Jul-Dec -> season starts this year; Jan-Jun -> season started last year.
+  return month >= 7 ? `${year}-${year+1}` : `${year-1}-${year}`;
+}
+async function _fetchBundesligaRealBroadcastStreams(dateStr8){
+  try{
+    const y = parseInt(dateStr8.slice(0,4),10), mo = parseInt(dateStr8.slice(4,6),10);
+    const isoDate = `${dateStr8.slice(0,4)}-${dateStr8.slice(4,6)}-${dateStr8.slice(6,8)}`;
+    const season = _bundesligaSeasonFromDate(y, mo);
+    const rResolve = await fetch(
+      `${BUNDESLIGA_RELAY_BASE}/bundesliga-bapi/resolve-dayid?season=${season}&date=${isoDate}`,
+      { signal: AbortSignal.timeout(15000) }
+    );
+    if(!rResolve.ok) return null;
+    const resolveBody = await rResolve.json();
+    if(!resolveBody?.ok || !resolveBody.dayId || !resolveBody.comId) return null;
+
+    const rBroadcasts = await fetch(
+      `${BUNDESLIGA_RELAY_BASE}/bundesliga-bapi/broadcasts?comId=${encodeURIComponent(resolveBody.comId)}&dayId=${encodeURIComponent(resolveBody.dayId)}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    if(!rBroadcasts.ok) return null;
+    const broadcastsBody = await rBroadcasts.json();
+    if(!broadcastsBody?.available || !Array.isArray(broadcastsBody.data?.broadcasts) || !broadcastsBody.data.broadcasts.length) return null;
+
+    const names = broadcastsBody.data.broadcasts
+      .map(b => b?.name || b?.broadcaster || b?.channel || b?.title || null)
+      .filter(Boolean);
+    if(!names.length) return null;
+    return names.map(n => ({ name:n, label:n, auth:'tv' }));
+  }catch(e){ return null; }
+}
+
 async function fetchPLMatch(fixtureId) {
   if (!fixtureId) return null;
   const hit = _plMatchCache.get(fixtureId);
@@ -18880,6 +18930,16 @@ async function fetchSoccerFixtures(){
           awayLogo: away.team?.logos?.[0]?.href || null,
         };
       }).filter(Boolean);
+      // Real per-match broadcast enrichment, Bundesliga only, one call for
+      // the whole date (not per game) -- see _fetchBundesligaRealBroadcastStreams.
+      // Falls back to the static bundle already set on each game
+      // (streams:resolveBundle(bundle) above) when unavailable/empty/failed.
+      if(league === 'ger.1' && games.length){
+        const realStreams = await _fetchBundesligaRealBroadcastStreams(dateStr);
+        if(realStreams && realStreams.length){
+          games.forEach(g => { g.streams = realStreams; });
+        }
+      }
       if(games.length && !scoresOnly) newSections.push({sport:section,games}); // scoresOnly: scores only, no new section
     }catch(e){ if(FIELD_DEBUG) console.debug("FIELD soccer:",league,e.message); }
   }));
@@ -21627,7 +21687,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-02d';
+  const SW_VERSION = '2026-08-02e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
