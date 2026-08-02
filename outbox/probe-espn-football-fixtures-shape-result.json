@@ -1,0 +1,45 @@
+{
+  "nfl": {
+    "status": 200,
+    "eventCount": 1,
+    "sample": {
+      "hasCompetitions": true,
+      "competitorCount": 2,
+      "homeAwayFieldPresent": true,
+      "home": {
+        "displayName": "Los Angeles Rams",
+        "homeAway": "home"
+      },
+      "away": {
+        "displayName": "San Francisco 49ers",
+        "homeAway": "away"
+      },
+      "venueFullName": "Melbourne Cricket Ground",
+      "evDate": "2026-09-11T00:35Z"
+    }
+  },
+  "cfbNoGroups": {
+    "status": 200,
+    "eventCount": 8
+  },
+  "cfbWithGroups": {
+    "status": 200,
+    "eventCount": 8,
+    "sample": {
+      "hasCompetitions": true,
+      "competitorCount": 2,
+      "homeAwayFieldPresent": true,
+      "home": {
+        "displayName": "TCU Horned Frogs",
+        "homeAway": "home"
+      },
+      "away": {
+        "displayName": "North Carolina Tar Heels",
+        "homeAway": "away"
+      },
+      "venueFullName": "Aviva Stadium",
+      "evDate": "2026-08-29T16:00Z"
+    }
+  },
+  "error": null
+}
