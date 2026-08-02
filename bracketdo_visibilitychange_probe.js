@@ -24,8 +24,14 @@ async function setVisibility(page, state) {
 // target state deterministically instead of assuming a blind toggle() call
 // always turns wc-mode ON.
 async function setWCMode(page, wantOn) {
-  const isOn = await page.evaluate(() => document.body.classList.contains('wc-mode'));
-  if (isOn !== wantOn) await page.evaluate(() => window.toggleWCView());
+  const before = await page.evaluate(() => document.body.classList.contains('wc-mode'));
+  let toggleReturn = null;
+  if (before !== wantOn) {
+    toggleReturn = await page.evaluate(() => window.toggleWCView());
+  }
+  const after = await page.evaluate(() => document.body.classList.contains('wc-mode'));
+  console.log(`  [setWCMode wantOn=${wantOn}] before=${before} toggleReturn=${JSON.stringify(toggleReturn)} after=${after}`);
+  return { before, toggleReturn, after };
 }
 
 async function wsState(page) {
