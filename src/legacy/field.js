@@ -21608,7 +21608,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-01b';
+  const SW_VERSION = '2026-08-01c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31232,11 +31232,7 @@ function renderCascadeNarrative(bracketUpdate) {
   if (isNew) bracketTab.insertBefore(container, bracketTab.firstChild);
 }
 
-// ── BracketDO WebSocket client ────────────────────────────────────────────────
-// Connects to /wc/bracket/live when WC mode is active.
-// Receives bracket:updated on every confirmed result → re-renders active tab.
-// One connection for the whole WC section — not per-tab.
-// Singleton: window._bracketWS. Reconnects on unexpected close (max 3 attempts).
+// BracketDO WebSocket client. window._bracketWS singleton, one connection for the whole WC section.
 (function() {
   const RELAY_WSS  = (typeof V2_RELAY_BASE !== 'undefined' ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev')
     .replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
@@ -31319,6 +31315,12 @@ function renderCascadeNarrative(bracketUpdate) {
   }
 
   window._bracketWS = { open: _open, close: _close };
+
+  document.addEventListener('visibilitychange', () => {
+    const v = document.visibilityState;
+    if (v === 'hidden' && _ws) _close();
+    else if (v === 'visible' && document.body.classList.contains('wc-mode')) _open();
+  });
 })();
 
 async function renderWCSection() {
