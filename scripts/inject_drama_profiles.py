@@ -31,8 +31,7 @@ with open(PROFILES_JSON) as f:
 seasons_comment = f"// Generated {date.today().isoformat()} | Scale {OUTPUT_MIN}-{OUTPUT_MAX}"
 js_block = f"""{START_MARKER}
 {seasons_comment}
-const NFL_DRAMA_PROFILES = {json.dumps(drama_dict, sort_keys=True, indent=2)};
-
+const NFL_DRAMA_PROFILES = {json.dumps(drama_dict, sort_keys=True, separators=(',', ':'))};
 function getMatchupDramaBaseline(home, away, sport) {{
   const profiles = sport === 'NFL' || sport === 'American Football' ? NFL_DRAMA_PROFILES : null;
   if (!profiles) return null;

@@ -25451,7 +25451,6 @@ async function fetchSchedule(){
       }
     } catch(e){}
   })();
-  // ─────────────────────────────────────────────────────────────────────────in full MLB slate from ESPN (supplements hardcoded games)
   setTimeout(fetchSoccerFixtures, 500); // no-op with empty SOCCER_LEAGUES (all soccer on V2)
   setTimeout(fetchMLSLive, 800);         // MLS relay: stats-api.mlssoccer.com → canonical opta_id keys in espnScores
   fetchFPLLiveScores();  // FPL relay — EPL live scores (team IDs, scorer names, xG)
@@ -26002,10 +26001,7 @@ const CHEAP_SEATS_COPY = {
   local:   {note:"Local broadcast game. Check your regional sports network."},
 };
 
-// ── PULSE: Viewing Conditions Score & Badge Engine (Wow#33 / Combo B-1+) ──
-// Replaces Delta8. Fixes '3pt' dead branch. Adds SPORT_CRUNCH_RULES.
-// isBlowout flag for J5 caller — this function does NOT suppress anything.
-// Source: PULSE spec (16pkgCd8nz9fjfK32M6qu4qYGmslyNv30jhVqjgn8lj8)
+// PULSE Viewing Conditions Score/Badge Engine (Wow#33/Combo B-1+). Replaces Delta8, fixes '3pt' dead branch. isBlowout is for the J5 caller only, does not suppress.
 const SPORT_CRUNCH_RULES = {
   'Basketball':                 ['4th','q4'],
   'Baseball':                   ['9th'],
@@ -26014,12 +26010,7 @@ const SPORT_CRUNCH_RULES = {
   'Australian Football (AFL)':  ['q4','qt4','qtr4'], // Q4 = crunch regardless of margin
 };
 
-// AFL drama thresholds differ — 6-point goals make margin scale ~3× wider than NBA
-// margin <6  = EXTREME (less than 1 goal difference — literally 1 kick wins it)
-// margin 7-18 = HIGH (1–3 goals — anyone's game)
-// margin 19-36 = MEDIUM (4–6 goals — large but chaseable in AFL)
-// margin >36 = low (7+ goals, typically too far in last Q)
-// Q4 last 5 min: 1.4× multiplier regardless of margin
+// AFL drama thresholds (6pt goals => margin scale ~3x NBA): <6=EXTREME, 7-18=HIGH, 19-36=MEDIUM, >36=low. Q4 last 5min: 1.4x multiplier.
 function _aflDramaScore(margin, period, dramaScorePeak){
   let score = dramaScorePeak;
   const p = String(period||'').toLowerCase();
@@ -26652,7 +26643,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-01e';
+  const SW_VERSION = '2026-08-01f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
