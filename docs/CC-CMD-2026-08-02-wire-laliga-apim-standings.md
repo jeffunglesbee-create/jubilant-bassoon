@@ -36,6 +36,17 @@ codebase.
 
 ## Task 1 — Re-verify from HEAD before writing anything (Rule 87)
 
+**The re-verification script must live in THIS repo** (e.g.
+`jubilant-bassoon/scripts/probe-laliga-apim.mjs`), matching this
+repo's own existing probe-workflow convention (dozens already exist
+under `.github/workflows/`, e.g. `apisports-probe.yml`,
+`cf-api-probe.yml`) — not a call out to `field-playground`'s script.
+That script is cited above only as provenance for where the original
+discovery came from; production's own CI must not depend on a
+separate, explicitly non-production repo's scripts continuing to
+exist. Write an independent capture script here, even though it will
+be near-identical in shape to field-playground's.
+
 - Re-run the real network capture fresh — the subscription key, or the
   whole `apim.laliga.com` backend, could plausibly have changed in the
   time since discovery. Confirm the same key (or a new one) still
