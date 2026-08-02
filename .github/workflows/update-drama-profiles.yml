@@ -30,7 +30,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: pip
+          # No cache: pip -- that requires a requirements.txt/pyproject.toml
+          # to key the cache; this repo has neither (real failure, confirmed
+          # via a live run: "No file matched to [**/requirements.txt or
+          # **/pyproject.toml]", before the real pipeline ever ran).
 
       - run: pip install nfl_data_py pandas numpy
 
