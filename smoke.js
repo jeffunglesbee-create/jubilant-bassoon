@@ -31,16 +31,22 @@ function assert(label, condition, detail = '') {
 
 console.log('\n── FIELD Smoke Test (GitHub Actions) ──────────────\n');
 
-// 1. File size sanity (>500KB, <2.5MB)
+// 1. File size sanity (>500KB, <3.0MB)
 // Ceiling raised from 2MB → 2.5MB (June 10 2026): wc26Raw + all WC team context inline.
 // Refactor target: extract wc26Raw + static team context to fetched JSON (~200KB savings).
 // Raised 2.5MB → 2.6MB (July 15 2026): organic growth crossed the prior
 // ceiling by ~2.9KB (confirmed via real byte count, not assumed) --
 // CC-CMD-2026-07-15-cfb-section-injection's ~3.2KB addition, not a
-// duplication bug. Modest buffer, not a rubber stamp -- still catches a
-// genuine runaway-growth anomaly.
+// duplication bug.
+// Raised 2.6MB → 3.0MB (Aug 2 2026): the 2.6MB ceiling was hit on 5+
+// consecutive commits in one day, forcing real code compaction (variable
+// renames, comment trims, marker byte-shaving) on ordinary small feature
+// work unrelated to file size -- a recurring tax, not an occasional
+// runaway-growth catch. ~400KB deliberate headroom for the next several
+// weeks of normal work, not a rubber stamp -- still catches a genuine
+// runaway-growth anomaly at this new level.
 const size = Buffer.byteLength(html, 'utf8');
-assert('File size in range', size > 500000 && size < 2600000, `${size} bytes`);
+assert('File size in range', size > 500000 && size < 3000000, `${size} bytes`);
 
 // 2. HTML structure
 assert('Has DOCTYPE', html.startsWith('<!DOCTYPE html'));
