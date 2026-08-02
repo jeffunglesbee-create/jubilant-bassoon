@@ -45,6 +45,14 @@ situation. Do not attempt to find one.
 **This is the actual hard part of this CC-CMD — do not skip to Task 2
 with a guessed or hardcoded ID.**
 
+**Any capture/probe scripts this task needs must live in THIS repo**
+(e.g. `jubilant-bassoon/scripts/probe-bundesliga-bapi.mjs`), matching
+this repo's own existing probe-workflow convention — not a call out
+to `field-playground`'s script, which is cited above only as
+provenance for where the original discovery came from. Production's
+own CI must not depend on a separate, explicitly non-production
+repo's scripts continuing to exist. Write an independent script here.
+
 - Re-verify both captured endpoints still return real 200 data fresh,
   via CI (this sandbox cannot reach `bundesliga.com` directly — same
   pattern as the LaLiga investigation, use GitHub Actions).
