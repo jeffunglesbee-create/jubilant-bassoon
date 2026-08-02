@@ -32,23 +32,43 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     matSelectOptionsSeen: [],
     matchdaySwitchAttempted: false,
     matchdaySwitchSucceeded: false,
+    initialPayloadCaptureCount: 0,
+    initialPayloadCaptures: [],
     error: null,
   };
 
   const dayIds = new Set();
   const comIds = new Set();
+  const initialPayloadCaptures = [];
 
   try {
     page.on('response', (resp) => {
       const url = resp.url();
-      if (url.includes('bapi.bundesliga.com') && url.includes('/broadcasts/')) {
+      if (!url.includes('bapi.bundesliga.com')) return;
+
+      const dm = url.match(/DFL-DAY-[A-Z0-9]+/);
+      const cm = url.match(/DFL-COM-[A-Z0-9]+/);
+      if (dm) dayIds.add(dm[0]);
+      if (cm) comIds.add(cm[0]);
+
+      if (url.includes('/broadcasts/')) {
         result.realBroadcastsRequestCaptured = true;
         result.realBroadcastsUrl = url;
-        const dm = url.match(/DFL-DAY-[A-Z0-9]+/);
-        const cm = url.match(/DFL-COM-[A-Z0-9]+/);
-        if (dm) dayIds.add(dm[0]);
-        if (cm) comIds.add(cm[0]);
       }
+
+      // Capture every bapi.bundesliga.com response seen from page load itself
+      // (not just /broadcasts/) to check whether a single upfront call
+      // already returns a full-season fixture list with day-IDs attached --
+      // per the v2 outbox's own Rule 74 unblock criteria.
+      resp.json().then((body) => {
+        initialPayloadCaptures.push({
+          url,
+          status: resp.status(),
+          bodyPreview: JSON.stringify(body).slice(0, 2000),
+        });
+      }).catch(() => {
+        initialPayloadCaptures.push({ url, status: resp.status(), bodyPreview: null, nonJson: true });
+      });
     });
 
     await page.goto('https://www.bundesliga.com/en/bundesliga/matchday', {
@@ -61,6 +81,13 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
       });
     });
     await page.waitForTimeout(5000);
+
+    // Snapshot whatever bapi.bundesliga.com responses fired during the raw
+    // page load itself, before any consent dismissal or UI interaction --
+    // this is the actual answer to "does the initial payload already carry
+    // a full-season day-ID mapping."
+    result.initialPayloadCaptureCount = initialPayloadCaptures.length;
+    result.initialPayloadCaptures = initialPayloadCaptures.slice(0, 10);
 
     // Real root cause, found by actually reading the committed screenshot
     // (outbox/bundesliga-matchday-page.png) rather than iterating on the
@@ -170,6 +197,12 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
   } catch (e) {
     result.error = String(e).slice(0, 500);
   } finally {
+    // response.json() promises may resolve after the point captured above --
+    // take a final snapshot so late-resolving bodies aren't lost.
+    result.initialPayloadCaptureCount = initialPayloadCaptures.length;
+    result.initialPayloadCaptures = initialPayloadCaptures.slice(0, 10);
+    result.distinctDflDayIds = [...dayIds];
+    result.distinctDflComIds = [...comIds];
     fs.mkdirSync('outbox', { recursive: true });
     await page.screenshot({ path: 'outbox/bundesliga-matchday-page.png', fullPage: false }).catch(() => {});
     fs.writeFileSync('outbox/bundesliga-bapi-verify-result.json', JSON.stringify(result, null, 2));
