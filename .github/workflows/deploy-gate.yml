@@ -22,6 +22,15 @@
 #   outbox/, scripts/sport-meta.json, STANDARDS.md, GOVERNANCE.json etc.
 #   are NOT in the paths list → this workflow never fires for data commits.
 #
+# MANUAL TRIGGER (added 2026-08-02, CC-CMD-2026-08-02-deploy-gate-workflow-dispatch):
+#   workflow_dispatch exists as a fallback for the case where a real,
+#   path-matching, non-[skip ci] push commit doesn't fire the push
+#   trigger above for reasons outside this repo's control (confirmed
+#   real incident: commit c6f3ac90, CC-CMD-2026-08-02-URGENT-trigger-
+#   deploy-gate -- push trigger never fired, root cause undetermined,
+#   likely a GitHub-side webhook delivery issue not visible from here).
+#   Use it to force a deploy of whatever is currently on main.
+#
 # REQUIRES: CLOUDFLARE_API_TOKEN secret in this repo's Actions secrets (set May 23 2026).
 
 name: Deploy gate (fast smoke)
@@ -34,6 +43,7 @@ on:
       - 'sw.js'
       - 'field_utils.js'
       - 'wrangler.jsonc'
+  workflow_dispatch: {}
 
 concurrency:
   group: deploy-gate-main
