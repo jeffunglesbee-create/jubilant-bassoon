@@ -26029,8 +26029,15 @@ function _aflDramaScore(margin, period, dramaScorePeak){
 }
 
 //DRAMA_PROFILES_START
-const NFL_DRAMA_PROFILES = {};
-function getMatchupDramaBaseline(home, away, sport) { return null; }
+// Generated 2026-08-02 | Scale 32-78
+const NFL_DRAMA_PROFILES = {"ARI":42.7,"ATL":78.0,"BAL":41.7,"BUF":52.2,"CAR":39.3,"CHI":58.3,"CIN":53.6,"CLE":51.8,"DAL":44.8,"DEN":51.1,"DET":47.6,"GB":57.7,"HOU":67.0,"IND":70.3,"JAX":59.2,"KC":56.2,"LA":56.6,"LAC":60.6,"LV":49.6,"MIA":47.9,"MIN":69.8,"NE":52.1,"NO":48.6,"NYG":55.2,"NYJ":67.8,"PHI":51.6,"PIT":63.3,"SEA":59.3,"SF":32.0,"TB":58.9,"TEN":63.3,"WAS":71.3};
+function getMatchupDramaBaseline(home, away, sport) {
+  const profiles = sport === 'NFL' || sport === 'American Football' ? NFL_DRAMA_PROFILES : null;
+  if (!profiles) return null;
+  const h = profiles[home] ?? 50;
+  const a = profiles[away] ?? 50;
+  return Math.round((h + a) / 2 + Math.abs(h - a) * 0.10);
+}
 //DRAMA_PROFILES_END
 const ViewingConditions = {
   evaluate(gameId, period, margin, sport) {
