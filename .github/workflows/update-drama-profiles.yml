@@ -1,0 +1,72 @@
+name: Update Drama Profiles
+
+on:
+  schedule:
+    - cron: '0 10 1 9 *' # Sep 1 at 10:00 UTC — pre-NFL season
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: 'Comma-separated seasons e.g. 2022,2023,2024'
+        required: false
+        default: '2022,2023,2024'
+      dry_run:
+        description: 'Dry run — compute but do not commit'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  update-drama-profiles:
+    name: Rebuild NFL Drama Profiles
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - run: pip install nfl_data_py pandas numpy
+
+      - name: Run drama profile builder
+        run: python scripts/drama_profile_builder.py
+        env:
+          DRAMA_SEASONS: ${{ github.event.inputs.seasons || '2022,2023,2024' }}
+
+      - name: Inject into field.js (regenerates index.html via sync-source.mjs)
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: python scripts/inject_drama_profiles.py
+
+      - name: Run smoke test
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: node smoke.js index.html
+
+      - name: Commit and push if changed
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add index.html src/legacy/field.js team_drama_profiles_nfl.json
+          if git diff --staged --quiet; then
+            echo "No changes — skipping commit"
+          else
+            YEAR=$(date +%Y)
+            git commit -m "chore: update NFL drama profiles ${YEAR} [skip ci]"
+            git push
+            echo "✓ Drama profiles updated and pushed"
+          fi
+
+      - name: Upload as artifact (dry run only)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: drama-profiles-dry-run
+          path: |
+            team_drama_profiles_nfl.json
+          retention-days: 7

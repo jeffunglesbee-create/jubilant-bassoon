@@ -6089,6 +6089,7 @@ if (typeof location !== 'undefined') {
 // Format: 'feature-key': 'YYYY-MM-DD' (date shipped)
 // Rule: add a line here + a smoke assertion = feature is documented as built.
 const FIELD_FEATURES = {
+  'nfl-drama':'2026-08-02',
   // Game Thread (July 20 2026)
   'game-thread':             '2026-07-20',  // _getThreadToken + GameSocket.onThreadNote/onThreadCatchup/sendThreadNote + buildThreadNoteHTML + toggleThreadDrawer + _threadSend + .thread-drawer/.thread-note/.thread-input UI
   // Featured tier + compact overflow (July 15 2026)
@@ -26036,28 +26037,31 @@ function _aflDramaScore(margin, period, dramaScorePeak){
   return Math.max(0, Math.min(100, score));
 }
 
+//DRAMA_PROFILES_START
+const NFL_DRAMA_PROFILES = {};
+function getMatchupDramaBaseline(home, away, sport) { return null; }
+//DRAMA_PROFILES_END
 const ViewingConditions = {
   evaluate(gameId, period, margin, sport) {
-    // score field retained for back-compat (internal callers may inspect it);
-    // ADR-002 (M1): badge comes from named tier, not composite + dial threshold.
-    const dramaScorePeak = Number(localStorage.getItem('field_drama_peak_' + gameId)) || 50;
-    let score = dramaScorePeak;
+    const _g = findGameById ? findGameById(gameId) : null;
+    const peak = Number(localStorage.getItem('field_drama_peak_' + gameId)) || (_g && getMatchupDramaBaseline(_g.home, _g.away, sport)) || (_g && preGameScore(_g)) || 50;
+    let score = peak;
     let isCrunchTime = false;
     if (period && sport && SPORT_CRUNCH_RULES[sport]) {
       const p = String(period).toLowerCase();
-      isCrunchTime = SPORT_CRUNCH_RULES[sport].some(rule => p.includes(rule));
+      isCrunchTime = SPORT_CRUNCH_RULES[sport].some(r => p.includes(r));
     }
     if (sport === 'Australian Football (AFL)') {
-      score = _aflDramaScore(margin, period, dramaScorePeak);
+      score = _aflDramaScore(margin, period, peak);
     } else {
       if (isCrunchTime && margin <= 5) score += 30;
-      if (margin > 20)                 score -= 20;
+      if (margin > 20) score -= 20;
       score = Math.max(0, Math.min(100, score));
     }
     const isBlowout = sport === 'Australian Football (AFL)' ? margin > 36 : margin > 20;
     const tier = fieldGameTier(gameId);
     if (tier === 'CRUNCH' || tier === 'EXTRA_TIME')
-      return { score, badge: 'CRUNCH TIME',    color: 'var(--c-nba)', pulse: true,  isBlowout };
+      return { score, badge: 'CRUNCH TIME', color: 'var(--c-nba)', pulse: true, isBlowout };
     if (tier === 'CLOSE_LATE')
       return { score, badge: 'WORTH WATCHING', color: 'var(--c-nhl)', pulse: false, isBlowout };
     return   { score, badge: null,             color: null,           pulse: false, isBlowout };
@@ -26648,7 +26652,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-01d';
+  const SW_VERSION = '2026-08-01e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
