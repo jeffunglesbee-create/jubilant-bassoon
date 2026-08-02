@@ -3,7 +3,7 @@
 **Anchor:** CLIENT HEAD 353b1f9 · 2026-08-02T18:00Z · via chat (mid-session, not a close)
 RELAY HEAD f711797 · 2026-08-02T18:00Z · via chat
 Smoke: 965/0 (client, verified fresh this update, not reused from an earlier check)
-SW version: 2026-08-02e (index.html/sw.js in sync as of this update — added to satisfy A704, an unrelated real gap found while executing a separate CC-CMD)
+SW version: 2026-08-02f (index.html/sw.js in sync as of this update)
 
 **Note: this is a mid-session handoff write, not a session close.** Jeff
 explicitly asked for the handoff written without ending the session —

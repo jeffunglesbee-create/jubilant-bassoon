@@ -8241,6 +8241,21 @@ async function fetchESPNFixturesForDate(iso){
     {sport:"golf",       league:"pga",           section:"Golf",         bundle:"GOLF_CBS",  prefix:"R"},
     {sport:"hockey",     league:"nhl",           section:"NHL",          bundle:"NHL_ESPN",  prefix:"P"},
     {sport:"baseball",   league:"mlb",           section:"Baseball (MLB)",bundle:"MLB_LOCAL",prefix:"T"},
+    // NFL/CFB — CC-CMD-2026-08-02-add-football-to-date-fixtures-sweep.
+    // Real espnSport/espnLeague values re-confirmed fresh from
+    // field-relay-nba's own adaptESPNFootball config (football/nfl,
+    // football/college-football), not trusted from memory. No real
+    // NFL/CFB broadcast bundle exists anywhere in this codebase --
+    // bundle intentionally omitted (resolveBundle safely returns an
+    // empty streams array for an unset key) rather than inventing one.
+    // groups=80 scopes CFB to FBS -- real, confirmed live query param
+    // (8 real games either way today, but explicit is the robust
+    // choice, matching field-relay-nba's own stated reasoning) --
+    // appended as an actual query param below, not embedded in the
+    // league path segment (the exact bug shape previously caught
+    // elsewhere in this codebase).
+    {sport:"football",   league:"nfl",             section:"NFL",          prefix:"Q"},
+    {sport:"football",   league:"college-football",section:"CFB",          prefix:"Q", groupsParam:"80"},
     ...SOCCER_LEAGUES.map(l=>({sport:"soccer",league:l.league,section:l.section,bundle:l.bundle,prefix:"'"})),
   ];
 
@@ -8262,9 +8277,10 @@ async function fetchESPNFixturesForDate(iso){
   // recording real telemetry when any league fetch fails.
   let _leagueFailures = 0;
 
-  await Promise.all(FETCH_LEAGUES.map(async ({sport,league,section,bundle,prefix})=>{
+  await Promise.all(FETCH_LEAGUES.map(async ({sport,league,section,bundle,prefix,groupsParam})=>{
     try{
-      const url = `${ESPN_BASE}/${sport}/${league}/scoreboard?dates=${dateStr}&limit=50`;
+      const url = `${ESPN_BASE}/${sport}/${league}/scoreboard?dates=${dateStr}&limit=50`
+        + (groupsParam ? `&groups=${groupsParam}` : "");
       // L6 (May 11): User-Agent header removed — browsers strip it (Chrome) or trigger
       // a CORS preflight (Firefox) that ESPN's unofficial API does not satisfy.
       // The header was non-functional in production and risked breaking Firefox fetches.
@@ -26727,7 +26743,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-02e';
+  const SW_VERSION = '2026-08-02f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
