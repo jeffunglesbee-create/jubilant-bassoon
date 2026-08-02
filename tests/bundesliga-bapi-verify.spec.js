@@ -34,12 +34,15 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     matchdaySwitchSucceeded: false,
     initialPayloadCaptureCount: 0,
     initialPayloadCaptures: [],
+    postConsentPayloadCaptureCount: 0,
+    postConsentPayloadCaptures: [],
     error: null,
   };
 
   const dayIds = new Set();
   const comIds = new Set();
   const initialPayloadCaptures = [];
+  let postConsentStartIdx = null;
 
   try {
     page.on('response', (resp) => {
@@ -135,6 +138,17 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     fs.mkdirSync('outbox', { recursive: true });
     await page.screenshot({ path: 'outbox/bundesliga-post-consent.png', fullPage: false }).catch(() => {});
 
+    // Post-consent capture window: the prior run only captured traffic
+    // BEFORE consent was dismissed. Real CMP-gated sites commonly defer
+    // their real data fetches until consent is granted -- this is the
+    // exact caveat disclosed as the remaining unblock criterion in the
+    // v2 outbox doc. Mark the capture-array boundary now, wait for any
+    // consent-triggered refetch, then diff against that boundary.
+    postConsentStartIdx = initialPayloadCaptures.length;
+    await page.waitForTimeout(5000);
+    result.postConsentPayloadCaptureCount = initialPayloadCaptures.length - postConsentStartIdx;
+    result.postConsentPayloadCaptures = initialPayloadCaptures.slice(postConsentStartIdx, postConsentStartIdx + 15);
+
     // Real root cause (found by reading outbox/bundesliga-post-consent.png,
     // taken once consent no longer blocked the view): the page has THREE
     // real mat-selects (season / matchday / clubs), all genuinely visible.
@@ -201,6 +215,10 @@ test('bundesliga bapi fresh re-verification + real matchday-nav ID resolution', 
     // take a final snapshot so late-resolving bodies aren't lost.
     result.initialPayloadCaptureCount = initialPayloadCaptures.length;
     result.initialPayloadCaptures = initialPayloadCaptures.slice(0, 10);
+    if (typeof postConsentStartIdx === 'number') {
+      result.postConsentPayloadCaptureCount = initialPayloadCaptures.length - postConsentStartIdx;
+      result.postConsentPayloadCaptures = initialPayloadCaptures.slice(postConsentStartIdx, postConsentStartIdx + 15);
+    }
     result.distinctDflDayIds = [...dayIds];
     result.distinctDflComIds = [...comIds];
     fs.mkdirSync('outbox', { recursive: true });
