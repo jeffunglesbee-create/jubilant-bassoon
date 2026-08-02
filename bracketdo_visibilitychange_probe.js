@@ -61,10 +61,30 @@ async function wsState(page) {
   // renderAll() call) rather than just "the globals exist" -- 3 prior real
   // runs showed intermittent wc-mode state races when acting before the
   // app's own initial render/class-setting had actually settled.
-  await page.waitForFunction(() => !!window._fieldDataReady, { timeout: 20000 }).catch(() => {});
-  await page.waitForFunction(() => typeof window.toggleWCView === 'function' && !!window._bracketWS, { timeout: 15000 }).catch(() => {});
+  const bootReady = await page.waitForFunction(() => !!window._fieldDataReady, { timeout: 20000 })
+    .then(() => true).catch(() => false);
+  console.log('bootReady (waited for _fieldDataReady):', bootReady);
+  const bracketReady = await page.waitForFunction(() => typeof window.toggleWCView === 'function' && !!window._bracketWS, { timeout: 15000 })
+    .then(() => true).catch(() => false);
+  console.log('bracketReady (waited for toggleWCView + _bracketWS):', bracketReady);
 
   const results = { scenarios: [] };
+
+  // CC-CMD-2026-08-02-bracketdo-probe-diagnostics Task 1: exact pre-scenario
+  // state so a failure explains itself instead of just showing wcMode:false.
+  const diag = await page.evaluate(() => ({
+    toggleWCViewType: typeof window.toggleWCView,
+    bracketWSExists: !!window._bracketWS,
+    fieldDataReady: !!window._fieldDataReady,
+    wcNavLinkExists: !!document.getElementById('wc-nav-link'),
+    wcSectionExists: !!document.getElementById('wc-section'),
+    bodyClassList: document.body.className,
+    readyState: document.readyState,
+  }));
+  diag.bootReady = bootReady;
+  diag.bracketReady = bracketReady;
+  console.log('DIAGNOSTIC (pre-scenario state):', JSON.stringify(diag, null, 2));
+  results.diagnostic = diag;
 
   // ── Scenario 1: open WC mode -> hidden -> confirm the socket closes ──────
   await setWCMode(page, true);
