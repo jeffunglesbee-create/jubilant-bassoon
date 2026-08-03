@@ -3067,6 +3067,13 @@ function setCached(iso,data){
 // actually work). Migrated the return contract from `array|null` to
 // `{ok:true,sections}` / `{ok:false,reason}` so the caller can show an
 // accurate message for each case.
+// 2026-08-03 (CC-CMD-2026-08-02-shared-schedule-ai-cache-client): migrated
+// from calling CLAUDE_PROXY_URL directly to calling the relay's shared,
+// cross-session KV-cached /schedule/ai-fallback route (field-relay-nba
+// commit 53c1d45). The relay returns the raw, non-sport-expanded
+// {ok:true, rows} shape (documented in that route's own header comment,
+// to avoid duplicating inferSport/expandStreams relay-side) -- sport
+// expansion below is unchanged from the prior direct-fetch implementation.
 async function fetchDateSchedule(iso){
   // Check cache first — zero tokens if already fetched
   const cached = getCached(iso);
@@ -3075,31 +3082,14 @@ async function fetchDateSchedule(iso){
     return {ok:true, sections:cached};
   }
 
-  const d   = new Date(iso+"T12:00:00Z");
-  const dow = d.toLocaleDateString("en-US",{weekday:"long"});
-  const mon = d.toLocaleDateString("en-US",{month:"long",year:"numeric"});
-
-  const prompt = `${iso} (${dow}, ${mon}). Sports schedule for this date. Respond with JSON only — no prose, no markdown fences.
-Schema: {"s":[["HomeTeam","AwayTeam","League","${iso}THH:MM:00Z","streamkey"],...]} or {"s":[]}.
-Replace HH:MM with actual UTC kick-off time. Use 24-hour UTC (GMT+0). A 7pm ET game = 23:00 UTC. A 7pm PT game = 02:00 UTC next day. Do not use local timezone. If unsure of the exact time, omit the game entirely rather than guessing.
-Include if games exist: NBA playoffs, NHL playoffs, MLB, NFL, UCL/UEL/UECL, EPL, IPL, AFL, Grand Slam tennis, Top14/URC rugby.
-Stream keys (pick best fit): espn,abc,nbc,tnt,tbs,fox,fs1,peacock,paramount,apple,prime,netflix,max,mlbtv,tc,willow,bein,sky,watchafl,mlbn.
-Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highly confident a specific game is scheduled on this exact date, omit it. An empty {"s":[]} is preferable to inventing a game that is not happening.`;
-
-  let rawTxt = "";
   if(!canUseAPI()) return {ok:false, reason:'budget-exhausted'};
   try{
     incrementUsage();
     if(FIELD_DEBUG) console.debug("FIELD: fetching schedule for",iso);
-    const r = await fetch(CLAUDE_PROXY_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      signal:AbortSignal.timeout(15000),
-      body:JSON.stringify({
-        model:"claude-haiku-4-5-20251001",
-        max_tokens:800,
-        messages:[{role:"user",content:prompt}]
-      })
+    const base = (typeof V2_RELAY_BASE !== 'undefined')
+      ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    const r = await fetch(`${base}/schedule/ai-fallback?date=${encodeURIComponent(iso)}`,{
+      signal:AbortSignal.timeout(15000)
     });
 
     if(!r.ok){
@@ -3108,30 +3098,12 @@ Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highl
     }
 
     const data = await r.json();
+    if(!data.ok) throw new Error(data.message||data.reason||"relay returned ok:false");
 
-    // Surface API-level errors
-    if(data.type==="error"||data.error){
-      throw new Error(data.error?.message||JSON.stringify(data));
-    }
-
-    rawTxt = (data.content||[]).map(b=>b.text||"").join("").trim();
-    if(FIELD_DEBUG) console.debug("FIELD: raw response for",iso,"→",rawTxt.slice(0,200));
-
-    // Strip any markdown fences the model adds despite instructions
-    const cleaned = rawTxt
-      .replace(/^```(?:json)?\s*/i,"")
-      .replace(/\s*```\s*$/,"")
-      .trim();
-
-    // Extract JSON object if there's leading/trailing prose
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error("No JSON object in response: "+cleaned.slice(0,80));
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    const rows = parsed.s||[];
+    const rows = data.rows||[];
 
     if(!rows.length){
-      if(FIELD_DEBUG) console.debug("FIELD: no games for",iso,"(model returned empty)");
+      if(FIELD_DEBUG) console.debug("FIELD: no games for",iso,"(relay returned empty)");
       setCached(iso,[]); // Cache empty — correct, no games that day
       return {ok:true, sections:[]};
     }
@@ -3159,7 +3131,6 @@ Return {"s":[]} if no major sport games that day. CRITICAL: If you are not highl
   }catch(e){
     // Don't cache errors — allow retry on next navigation
     if(FIELD_DEBUG) console.warn("FIELD date fetch error for",iso+":",e.message);
-    if(FIELD_DEBUG&&rawTxt) console.warn("FIELD raw response was:",rawTxt.slice(0,300));
     return {ok:false, reason:'error', message:e.message}; // distinct from a legitimate {ok:true, sections:[]}
   }
 }
@@ -21703,7 +21674,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-02g';
+  const SW_VERSION = '2026-08-02h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
