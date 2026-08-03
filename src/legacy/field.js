@@ -21703,7 +21703,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-02f';
+  const SW_VERSION = '2026-08-02g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -23657,13 +23657,62 @@ function hasWireCopy(text){
   return [...hits];
 }
 
+// ── CC-CMD-2026-08-02-retry-chain-telemetry: instrumentation only, zero
+// behavior change to any gate below. Confirmed via Task 1 re-verification
+// that no existing telemetry answers "how often do multiple quality gates
+// fire on the same piece of content" -- field_jq_scores (localStorage) is
+// local-only and never reaches the server. Records real events to the
+// relay's new POST /jq/retry-telemetry (field-relay-nba, paired change
+// per Rule 70) only on the branch where a gate genuinely commits to
+// retrying -- never on every call.
+//
+// Correlation id: rather than threading a new id through the 12+ call
+// sites that chain these gates (a much larger, riskier diff), this reuses
+// originalPrompt -- confirmed identical (same reference, unmodified) across
+// every gate call within one retry chain at every real call site. A cheap
+// synchronous hash of it is a stable per-generation correlation id with
+// zero call-site changes required. Collision risk between two DIFFERENT
+// real generations sharing a byte-identical prompt is negligible (prompts
+// embed specific game/team/date/score data).
+function _jqPromptGenId(prompt) {
+  let h = 0;
+  const s = String(prompt || '').slice(0, 300);
+  for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
+  return (h >>> 0).toString(36) + '_' + s.length;
+}
+// In-memory only (resets on page reload -- fine for telemetry, matches this
+// being a lightweight observation, not a durable client-side record). Maps
+// genId -> count of gates that have already fired for this generation, so
+// each new fire can report its own 1st/2nd/3rd+ order without a race
+// (JS is single-threaded; each call reads-then-writes synchronously before
+// the next microtask can interleave).
+const _jqFireOrder = new Map();
+function _jqRetryTelemetry(gate, label, originalPrompt) {
+  try {
+    const genId = _jqPromptGenId(originalPrompt);
+    const order = (_jqFireOrder.get(genId) || 0) + 1;
+    _jqFireOrder.set(genId, order);
+    const base = typeof V2_RELAY_BASE !== 'undefined'
+      ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+    // Fire-and-forget, non-blocking (Rule 5: must never affect journalism
+    // delivery) -- no await at any call site, errors swallowed.
+    fetch(`${base}/jq/retry-telemetry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gate, label: label || '', genId, order }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (_) { /* telemetry must never throw into a gate's real logic */ }
+}
+
 // Layer 2f: retry chain for wire-copy patterns. One retry budget, ship either way.
 // Names the specific matched phrases + cites the six FIELD-voice patterns from
 // the v3 NUMBERS-IN-PROSE GRAMMAR block. Sibling of retryWithoutCliches.
-async function retryWithoutWireCopy(originalPrompt, text, proxyUrl){
+async function retryWithoutWireCopy(originalPrompt, text, proxyUrl, label){
   const hits = hasWireCopy(text);
   if (!hits.length) return text;
   if (FIELD_DEBUG) console.warn('[JQ Layer 2f] Wire-copy verbs:', hits);
+  _jqRetryTelemetry('wire-copy', label, originalPrompt);
   try {
     await _jqDelay();
     const flagged = hits.slice(0, 6).map(h => '"'+h+'"').join(', ');
@@ -23777,10 +23826,11 @@ function hasNarrativeHallucination(text, ctx){
 // retryWithoutWireCopy. Names the matched phrases AND the actual series state
 // to teach the rewrite — model can't fabricate stakes when the state is
 // named explicitly in the retry prompt.
-async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl, ctx){
+async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl, ctx, label){
   const hits = hasNarrativeHallucination(text, ctx);
   if (!hits.length) return text;
   if (FIELD_DEBUG) console.warn('[JQ Layer 2g] Narrative hallucination:', hits);
+  _jqRetryTelemetry('narrative-hallucination', label, originalPrompt);
   try {
     await _jqDelay();
     const flagged = hits.slice(0, 8).map(h => `"${h.phrase}" (${h.group})`).join(', ');
@@ -23879,10 +23929,11 @@ function hasRecordAttributionError(text, ctx){
 }
 
 // Layer 2h retry. Names the misattribution explicitly and the correct attribution.
-async function retryWithRecordAttribution(originalPrompt, text, proxyUrl, ctx){
+async function retryWithRecordAttribution(originalPrompt, text, proxyUrl, ctx, label){
   const hits = hasRecordAttributionError(text, ctx);
   if (!hits.length) return text;
   if (FIELD_DEBUG) console.warn('[JQ Layer 2h] Record attribution errors:', hits);
+  _jqRetryTelemetry('record-attribution', label, originalPrompt);
   try {
     await _jqDelay();
     const fixes = hits.slice(0, 4).map(h => {
@@ -24204,11 +24255,12 @@ function stripPromptLeaks(text) {
 }
 
 // Layer 2: one-retry wrapper — re-prompts if clichés found
-async function retryWithoutCliches(originalPrompt,text,proxyUrl){
+async function retryWithoutCliches(originalPrompt,text,proxyUrl,label){
   const found=hasCliche(text);
   const overused=countSparingly(text); // phrases used 2+ times
   if(!found.length && !overused.length) return text;
   if(FIELD_DEBUG) console.warn('[JQ Layer 2] Clichés:',found,'Overused:',overused.map(r=>r.phrase+'×'+r.count));
+  _jqRetryTelemetry('cliches', label, originalPrompt);
   try{
     await _jqDelay(); // Gemini RPM guard
     const banNote = found.length ? 'BANNED PHRASES to remove: '+found.join(', ')+'. ' : '';
@@ -24293,7 +24345,7 @@ function _computeSpecificity(text) {
 // correctly flags. Full survey + every classification:
 // docs/outbox/cc-lead-specificity-scoring-2026-07-12.md
 const LEAD_SPECIFICITY_THRESHOLD = 25;
-async function checkLeadSentence(originalPrompt, text, proxyUrl) {
+async function checkLeadSentence(originalPrompt, text, proxyUrl, label) {
   if (!text) return text;
   const firstSentence = (text.trim().split(/[.!?]+/).filter(Boolean)[0] || '').trim();
   if (!firstSentence) return text;
@@ -24301,6 +24353,7 @@ async function checkLeadSentence(originalPrompt, text, proxyUrl) {
   const specPct = spec ? Math.round(spec.ratio * 100) : 100;
   if (specPct >= LEAD_SPECIFICITY_THRESHOLD) return text; // lead is fine
   if (FIELD_DEBUG) console.warn(`[JQ Layer 2c] Generic lead detected (specificity ${specPct}%):`, firstSentence.slice(0, 60));
+  _jqRetryTelemetry('lead-sentence', label, originalPrompt);
   try {
     await _jqDelay(); // Gemini RPM guard
     const retryPrompt = originalPrompt +
@@ -24353,7 +24406,7 @@ function _extractNums(line, stats) {
       stats.push(w);
   }
 }
-async function checkStatVerification(originalPrompt, text, proxyUrl) {
+async function checkStatVerification(originalPrompt, text, proxyUrl, label) {
   if (!text || !originalPrompt) return text;
   const requiredStats = extractStatsFromContext(originalPrompt);
   if (!requiredStats.length) return text;
@@ -24361,6 +24414,7 @@ async function checkStatVerification(originalPrompt, text, proxyUrl) {
   const missing = requiredStats.filter(s => !lower.includes(s.toLowerCase()));
   if (!missing.length) return text; // all stats present
   if (FIELD_DEBUG) console.warn('[JQ Layer 2d] Missing stats in output:', missing);
+  _jqRetryTelemetry('stat-verification', label, originalPrompt);
   try {
     await _jqDelay(); // Gemini RPM guard
     const retryPrompt = originalPrompt +
@@ -24521,11 +24575,12 @@ function hasCrossSportHallucination(text) {
 }
 
 // Layer 2e retry — same pattern as retryWithoutCliches() but for cross-sport hallucinations
-async function checkCrossSport(originalPrompt, text, proxyUrl) {
+async function checkCrossSport(originalPrompt, text, proxyUrl, label) {
   if (!text) return text;
   const violations = hasCrossSportHallucination(text);
   if (!violations.length) return text;
   if (FIELD_DEBUG) console.warn('[JQ Layer 2e] Cross-sport hallucination(s):', violations.map(v => `[${v.leagues.join('+')}] "${v.sentence.slice(0,80)}..."`));
+  _jqRetryTelemetry('cross-sport', label, originalPrompt);
   try {
     await _jqDelay(); // Gemini RPM guard
     // Build explicit error description for the model
@@ -24573,6 +24628,7 @@ async function maybeScoreRetry(originalPrompt, text, proxyUrl, label, game) {
   renderProseScore(scoreObj, label + ' [pre-retry]');
   if (!scoreObj || scoreObj.score >= JQ_SCORE_THRESHOLD) return text;
   if (FIELD_DEBUG) console.warn(`[JQ Layer 3b] Score ${scoreObj.score}/300 below ${JQ_SCORE_THRESHOLD} — triggering score-based rewrite`);
+  _jqRetryTelemetry('score-retry', label, originalPrompt);
   try {
     await _jqDelay(); // Gemini RPM guard
     const weakDims = [];
@@ -25525,16 +25581,16 @@ async function fetchCompoundEditorial(sections) {
         const prompt = window._lastCompoundPrompt || buildCompoundPrompt(sections); // reuse captured prompt
         // Layer 2f: wire-copy verb retry (PM-17 — runs before lead/stat checks
         // because wire-copy is the highest-frequency v3 violation in compound briefs)
-        improved = await retryWithoutWireCopy(prompt, improved, CLAUDE_PROXY_URL);
+        improved = await retryWithoutWireCopy(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief');
         // Layer 2g: narrative hallucination retry (PM-18). Compound brief covers
         // the whole slate; strictest pattern set (no series context).
-        improved = await retryWithoutNarrativeHallucination(prompt, improved, CLAUDE_PROXY_URL, {seriesRecord:'',isGame1:false});
+        improved = await retryWithoutNarrativeHallucination(prompt, improved, CLAUDE_PROXY_URL, {seriesRecord:'',isGame1:false}, 'Compound Brief');
         // Layer 2c: lead sentence check
-        improved = await checkLeadSentence(prompt, improved, CLAUDE_PROXY_URL);
+        improved = await checkLeadSentence(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief');
         // Layer 2d: stat verification
-        improved = await checkStatVerification(prompt, improved, CLAUDE_PROXY_URL);
+        improved = await checkStatVerification(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief');
         // Layer 2e: cross-sport hallucination check (critical for big-game slates with multiple parallel championships)
-        improved = await checkCrossSport(prompt, improved, CLAUDE_PROXY_URL);
+        improved = await checkCrossSport(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief');
         // Layer 3b: score-triggered rewrite (also logs before/after scores)
         improved = await maybeScoreRetry(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief');
         if(improved !== result.brief){
@@ -25657,8 +25713,8 @@ async function fetchCompoundEditorial(sections) {
         const nh = hasNarrativeHallucination(b.brief, ctx);
         if (!wc.length && !nh.length) continue;
         let improved = b.brief;
-        if (wc.length) { improved = await retryWithoutWireCopy(compoundPrompt, improved, CLAUDE_PROXY_URL); retryBudget--; }
-        if (retryBudget > 0 && nh.length) { improved = await retryWithoutNarrativeHallucination(compoundPrompt, improved, CLAUDE_PROXY_URL, ctx); retryBudget--; }
+        if (wc.length) { improved = await retryWithoutWireCopy(compoundPrompt, improved, CLAUDE_PROXY_URL, 'Compound GameBrief'); retryBudget--; }
+        if (retryBudget > 0 && nh.length) { improved = await retryWithoutNarrativeHallucination(compoundPrompt, improved, CLAUDE_PROXY_URL, ctx, 'Compound GameBrief'); retryBudget--; }
         if (improved && improved !== b.brief && improved.length > 30) {
           b.brief = improved;
           if (game && game._id) {
@@ -25679,8 +25735,8 @@ async function fetchCompoundEditorial(sections) {
         const nh = hasNarrativeHallucination(s.preview, ctx);
         if (!wc.length && !nh.length) continue;
         let improved = s.preview;
-        if (wc.length) { improved = await retryWithoutWireCopy(compoundPrompt, improved, CLAUDE_PROXY_URL); retryBudget--; }
-        if (retryBudget > 0 && nh.length) { improved = await retryWithoutNarrativeHallucination(compoundPrompt, improved, CLAUDE_PROXY_URL, ctx); retryBudget--; }
+        if (wc.length) { improved = await retryWithoutWireCopy(compoundPrompt, improved, CLAUDE_PROXY_URL, 'Compound SeriesPreview'); retryBudget--; }
+        if (retryBudget > 0 && nh.length) { improved = await retryWithoutNarrativeHallucination(compoundPrompt, improved, CLAUDE_PROXY_URL, ctx, 'Compound SeriesPreview'); retryBudget--; }
         if (improved && improved !== s.preview && improved.length > 30) {
           s.preview = improved;
           // Series previews persist via seriesPreviewCacheKey + sessionStorage
@@ -25952,13 +26008,13 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>30){
-      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
-      text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL);
-      text=await retryWithoutNarrativeHallucination(prompt,text,CLAUDE_PROXY_URL,{seriesRecord:g.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(g.league||'')});
-      text=await retryWithRecordAttribution(prompt,text,CLAUDE_PROXY_URL,_recordCtx);
-      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
-      text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
-      text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
+      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL,'J2 Series');budget.inc();
+      text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
+      text=await retryWithoutNarrativeHallucination(prompt,text,CLAUDE_PROXY_URL,{seriesRecord:g.seriesRecord||'', isGame1:/\bG1\b|Game\s*1\b/i.test(g.league||'')},'J2 Series');
+      text=await retryWithRecordAttribution(prompt,text,CLAUDE_PROXY_URL,_recordCtx,'J2 Series');
+      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
+      text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
+      text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J2 Series');
       scoreProse(text, g||null).then(s=>renderProseScore(s,'J2 Series'));
       return stripPromptLeaks(text.trim());
@@ -28644,12 +28700,12 @@ async function fetchFIELDBriefFromClaude(sections){
     const data=await r.json();
     let text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text&&text.length>50){
-      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL);budget.inc();
-      text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL);
-      text=await retryWithoutNarrativeHallucination(prompt,text,CLAUDE_PROXY_URL,{seriesRecord:'',isGame1:false}); // J3 is multi-game slate — strictest pattern set is appropriate
-      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL);
-      text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL);
-      text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL);
+      text=await retryWithoutCliches(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');budget.inc();
+      text=await retryWithoutWireCopy(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
+      text=await retryWithoutNarrativeHallucination(prompt,text,CLAUDE_PROXY_URL,{seriesRecord:'',isGame1:false},'J3 Brief'); // J3 is multi-game slate — strictest pattern set is appropriate
+      text=await checkLeadSentence(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
+      text=await checkStatVerification(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
+      text=await checkCrossSport(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
       text=await maybeScoreRetry(prompt,text,CLAUDE_PROXY_URL,'J3 Brief');
       scoreProse(text, null).then(s=>renderProseScore(s,'J3 Brief'));
       return {ok:true, text: text.replace(/\[ANTI-HYPE\]/gi,'').replace(/\s{2,}/g,' ').trim()};
@@ -29095,11 +29151,11 @@ async function fetchMLBGameBriefFromClaude(g) {
     const data = await r.json();
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if (text && text.length > 20) {
-      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       text = await retryWithSportVocab(prompt, text, 'baseball', CLAUDE_PROXY_URL, 'MLB Brief');
-      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
-      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
-      text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
+      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
+      text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'MLB Brief');
       cardBudget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'MLB Brief'));
@@ -29284,8 +29340,8 @@ async function fetchWNBAGameBriefFromClaude(g) {
     const data = await r.json();
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if (text && text.length > 20) {
-      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
-      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'WNBA Brief');
       cardBudget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'WNBA Brief'));
@@ -29420,10 +29476,10 @@ async function fetchStakesBriefFromClaude(g) {
     const data = await r.json();
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if (text && text.length > 20) {
-      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
-      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
-      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
-      text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL);
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
+      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
+      text = await checkCrossSport(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
       text = await maybeScoreRetry(prompt, text, CLAUDE_PROXY_URL, 'Stakes Brief');
       cardBudget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'Stakes Brief'));
@@ -29822,8 +29878,8 @@ Write this brief at the level the moment deserves. Do not undersell a championsh
         const data = await r.json();
         text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
         if (text) {
-          text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
-          text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+          text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'Game Brief');
+          text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL, 'Game Brief');
           budget.inc();
         }
       }
@@ -29907,9 +29963,9 @@ async function fetchEPLMatchBriefFromClaude(g) {
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
     if(text && text.length > 20) {
       // Layer 2: cliché + sport vocab + lead checks (same chain as J3/J5)
-      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'EPL Brief');
       text = await retryWithSportVocab(prompt, text, 'soccer', CLAUDE_PROXY_URL, 'EPL Brief');
-      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+      text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL, 'EPL Brief');
       budget.inc();
       scoreProse(text, g||null).then(s=>renderProseScore(s,'EPL Brief'));
       return stripPromptLeaks(text.trim());
@@ -32796,8 +32852,8 @@ async function fetchFinalsDesk(game, sport) {
     const data = await r.json();
     let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
     if (text && text.length > 80) {
-      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
-      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL);
+      text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'Finals Desk');
+      text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL, 'Finals Desk');
       try { sessionStorage.setItem(cacheKey, text); } catch(e_) {}
       try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, text, null); } catch(_){}
       return text;
@@ -40071,9 +40127,9 @@ async function renderNightOwlRecap(){
         const data = await r.json();
         let text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').trim();
         if (text && text.length > 20) {
-          text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL);
+          text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'Bottom Sheet');
           text = await retryWithSportVocab(prompt, text, sp, CLAUDE_PROXY_URL, 'Bottom Sheet');
-          text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL);
+          text = await checkLeadSentence(prompt, text, CLAUDE_PROXY_URL, 'Bottom Sheet');
           budget.inc();
           const noText = div.querySelector('.no-text');
           if (noText) { noText.textContent = trimToCompleteSentence(text); noText.classList.replace('pending','loaded'); }

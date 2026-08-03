@@ -2443,7 +2443,7 @@ assert('A377 — Tier A FIELD_FEATURES dated entries present',
 // ── A378-A380: Layer 2f Wire-Copy Retry (PM-17, June 2 2026) ────────────────
 assert('A378 — JQ Layer 2f: hasWireCopy detector + retryWithoutWireCopy retry function present',
   html.includes('function hasWireCopy(text)') &&
-  html.includes('async function retryWithoutWireCopy(originalPrompt, text, proxyUrl)') &&
+  html.includes('async function retryWithoutWireCopy(originalPrompt, text, proxyUrl, label)') &&
   // Three pattern families with gerund extension (PM-18 Item B)
   html.includes('verbNumRe = /\\b(holds?|holding|carries|carrying|brings?|bringing|maintains?|maintaining|owns?|owning|posts?|posting|averages?|averaging)') &&
   html.includes('ledWithRe = /\\b(leads?|leading|enters?\\s+for|entering\\s+for|enters?|entering)') &&
@@ -2456,11 +2456,11 @@ assert('A378 — JQ Layer 2f: hasWireCopy detector + retryWithoutWireCopy retry 
 
 assert('A379 — JQ Layer 2f: retryWithoutWireCopy wired into J3 + J2 + compound brief retry chains',
   // J3 standalone path (fetchFIELDBriefFromClaude)
-  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,600}'J3 Brief'/.test(html) &&
+  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL,'J3 Brief'\);[\s\S]{0,600}'J3 Brief'/.test(html) &&
   // J2 series preview path (fetchSeriesPreviewFromClaude)
-  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL\);[\s\S]{0,600}'J2 Series'/.test(html) &&
+  /text=await retryWithoutWireCopy\(prompt,text,CLAUDE_PROXY_URL,'J2 Series'\);[\s\S]{0,600}'J2 Series'/.test(html) &&
   // Compound editorial main brief — retryWithoutWireCopy in the async IIFE before checkLeadSentence
-  /improved = await retryWithoutWireCopy\(prompt, improved, CLAUDE_PROXY_URL\);[\s\S]{0,600}checkLeadSentence/.test(html),
+  /improved = await retryWithoutWireCopy\(prompt, improved, CLAUDE_PROXY_URL, 'Compound Brief'\);[\s\S]{0,600}checkLeadSentence/.test(html),
   'Layer 2f must run in all three brief retry chains: J3 standalone, J2 series, and compound main brief. Position: AFTER retryWithoutCliches (so clichés are caught first when present), BEFORE checkLeadSentence (so wire-copy rewrites land before line-by-line checks)');
 
 assert('A380 — JQ Layer 2f: telemetry on compound game_briefs + series previews (Phase 1 — log only, retry/re-render is Phase 2)',
@@ -2494,7 +2494,7 @@ assert('A382 — Item D: Layer 2g hasNarrativeHallucination + retryWithoutNarrat
   html.includes("tighten(?:ing)?\\s+(?:their|the)\\s+grip\\s+on\\s+the\\s+(?:cup|title|trophy|championship)") &&
   html.includes('high[- ]?stakes\\s+collision') &&
   // Retry function references state explicitly
-  html.includes('async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl, ctx)') &&
+  html.includes('async function retryWithoutNarrativeHallucination(originalPrompt, text, proxyUrl, ctx, label)') &&
   html.includes('The series is 0-0. There is no elimination, no momentum, no slipping away') &&
   // Wired into J3 + J2 + compound
   /text=await retryWithoutNarrativeHallucination\(prompt,text,CLAUDE_PROXY_URL,\{seriesRecord:''/.test(html) &&
@@ -2505,7 +2505,7 @@ assert('A382 — Item D: Layer 2g hasNarrativeHallucination + retryWithoutNarrat
 assert('A383 — Item E: Layer 2h hasRecordAttributionError + retryWithRecordAttribution + J2 wiring',
   // Detector + retry function presence
   html.includes('function hasRecordAttributionError(text, ctx)') &&
-  html.includes('async function retryWithRecordAttribution(originalPrompt, text, proxyUrl, ctx)') &&
+  html.includes('async function retryWithRecordAttribution(originalPrompt, text, proxyUrl, ctx, label)') &&
   // Detector uses three-tier name matching: full name + nick + city-first-word
   html.includes('homeCity = home.split(/\\s+/)[0]') &&
   html.includes('awayCity = away.split(/\\s+/)[0]') &&
@@ -2516,7 +2516,7 @@ assert('A383 — Item E: Layer 2h hasRecordAttributionError + retryWithRecordAtt
   html.includes('Ground truth: ${ctx.home || \'home\'} record is') &&
   // Wired into J2 with _recordCtx parsed from buildGameStandingsContext
   html.includes('const _standingsCtx = (typeof buildGameStandingsContext') &&
-  /text=await retryWithRecordAttribution\(prompt,text,CLAUDE_PROXY_URL,_recordCtx\)/.test(html),
+  /text=await retryWithRecordAttribution\(prompt,text,CLAUDE_PROXY_URL,_recordCtx,'J2 Series'\)/.test(html),
   'Item E Layer 2h: detects when a team record is attributed to the wrong team (PM-18 production failure: "Vegas... holding a 53-22-7 record" where 53-22-7 is Carolina). Three-tier name matching (full/nick/city) handles variants. J2 standings context injected so model has ground truth + detector has the records to verify against');
 
 assert('A384 — Item F: Phase 2 per-card retry IIFE on compound game_briefs + series previews with DOM/cache refresh',
