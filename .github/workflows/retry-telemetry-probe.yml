@@ -1,0 +1,56 @@
+name: Retry Telemetry Probe
+# CC-CMD-2026-08-02-retry-chain-telemetry TASK 3 real live verification.
+# Loads the live site in a fresh browser context, watches for a real
+# POST to /jq/retry-telemetry during a real compound-editorial journalism
+# generation, and confirms a real row landed in field-relay-nba's
+# jq_retry_telemetry D1 table (not just that a request was sent).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run retry telemetry probe
+        run: node retry_telemetry_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+          RELAY_URL: https://field-relay-nba.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Retry Telemetry Probe"
+          git add outbox/retry-telemetry-probe-*.json
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "retry-telemetry probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
