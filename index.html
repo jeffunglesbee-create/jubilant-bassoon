@@ -19170,6 +19170,24 @@ const SOCCER_LEAGUES = [
   // creates zero cards until that real date, same as it would for any
   // other league in this array.
   { league: 'ger.1', section: 'Bundesliga', bundle: 'BUNDESLIGA', leagueLabel: 'Bundesliga' },
+  // EFL Cup (Carabao) — CC-CMD-2026-08-08-efl-carabao-cup-coverage.
+  // Paired with the relay side (field-relay-nba 0b779d7): SOCCER_LEAGUE_LABELS
+  // .eflcup / V2_LEAGUES.eflcup / LEAGUES all use the SAME label 'EFL Cup',
+  // verified live -- /v2/games?sport=eflcup returns league:"EFL Cup".
+  //
+  // bundle 'EFL' is reused, not invented: BUNDLES.EFL is already
+  // ["paramount","fubo","hulu"] (CBS/Paramount+), which matches the real
+  // broadcast data probed on Round 1 ties (Paramount+ on QPR v Millwall,
+  // Burnley v Notts County, Derby v Lincoln). Most ties carry no US
+  // broadcast at all, which is correct and not a gap.
+  //
+  // Deliberately NOT added to DOMESTIC_LEAGUE_BREAK_2026: that table gates
+  // summer breaks for league competitions. This is a cup running Aug-Feb,
+  // and isDomesticLeagueInBreak does a case-insensitive substring match on
+  // its keys (Premier League / La Liga / Serie A / Ligue 1 / Bundesliga) --
+  // 'EFL Cup' matches none of them, so it is correctly ungated. Verified,
+  // not assumed.
+  { league: 'eng.league_cup', section: 'EFL Cup', bundle: 'EFL', leagueLabel: 'EFL Cup' },
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
@@ -26714,7 +26732,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-08a';
+  const SW_VERSION = '2026-08-08b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
