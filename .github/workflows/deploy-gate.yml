@@ -94,6 +94,9 @@ jobs:
           sed -i "s/const SW_VERSION = '[^']*'/const SW_VERSION = '${NEW_VERSION}'/" src/legacy/field.js
           node scripts/sync-source.mjs
           echo "✅ SW_VERSION synced to ${NEW_VERSION} in sw.js + src/legacy/field.js → index.html (ET)"
+          # Exported so the post-deploy Confirm step can assert the LIVE bundle
+          # actually carries this exact version (see that step's comment).
+          echo "NEW_VERSION=${NEW_VERSION}" >> "$GITHUB_ENV"
 
       - name: Commit SW_VERSION sync back to repo
         run: |
@@ -141,7 +144,46 @@ jobs:
           wranglerVersion: "3.109.0"
           # gitHubToken removed: CF GitHub integration disconnected May 23 2026
 
-      - name: Confirm
+      - name: Confirm — assert the LIVE site actually serves this deploy
         run: |
-          echo "✅ Deployed ${{ github.sha }}"
-          echo "   Full CI (viewport + browser tests) running asynchronously in smoke-and-verify.yml"
+          # This step used to `echo "✅ Deployed $SHA"` and nothing else, so a
+          # green deploy-gate proved only that wrangler exited 0 -- never that
+          # the live site changed. That gap is not hypothetical: on 2026-08-08
+          # commit 739ff868 sat on main for 922 MINUTES with SW_VERSION
+          # 2026-08-08a while the live site still served 2026-08-06a, and the
+          # only thing that noticed was a separate drift detector, hours late
+          # (outbox/incident-deploy-drift-2026-08-08T20-28-33-507Z.md).
+          #
+          # Now asserts the deployed bundle really carries the version this run
+          # stamped. Matches on the literal VERSION STRING, not the SW_VERSION
+          # identifier: live-deploy-verify-probe.yml greps
+          # `SW_VERSION=\{0,1\}['\"]`, which allows no spaces around `=` and so
+          # matches nothing against `SW_VERSION = '...'` -- an assertion that
+          # silently proves nothing. The version string is spacing-independent
+          # and cannot be minified away.
+          #
+          # Bounded retry covers real propagation delay. If it never appears
+          # this FAILS -- deliberately not a warning. A deploy that did not
+          # reach users is a failed deploy, and a gate that shrugs at that is
+          # the thing being fixed here.
+          set -u
+          URL="https://jubilant-bassoon.jeffunglesbee.workers.dev/"
+          EXPECT="${NEW_VERSION:-}"
+          if [ -z "$EXPECT" ]; then
+            echo "::error::NEW_VERSION was not exported by the sync step — cannot verify the deploy."
+            exit 1
+          fi
+          echo "Asserting live site serves SW_VERSION ${EXPECT}"
+          for i in 1 2 3 4 5 6; do
+            CODE=$(curl -s -o /tmp/live.html -w "%{http_code}" --max-time 30 "$URL" || echo "000")
+            if [ "$CODE" = "200" ] && grep -qF "$EXPECT" /tmp/live.html; then
+              echo "✅ Deployed ${{ github.sha }} — live site confirmed serving ${EXPECT} (attempt $i)"
+              echo "   Full CI (viewport + browser tests) running asynchronously in smoke-and-verify.yml"
+              exit 0
+            fi
+            echo "attempt $i: HTTP ${CODE}, ${EXPECT} not present yet — retrying"
+            sleep 10
+          done
+          echo "::group::live response head"; head -c 600 /tmp/live.html || true; echo; echo "::endgroup::"
+          echo "::error::DEPLOY DRIFT — wrangler reported success but the live site never served ${EXPECT}. This is the 2026-08-08 drift shape, caught at deploy time instead of hours later."
+          exit 1
