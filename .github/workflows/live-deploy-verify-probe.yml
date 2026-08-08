@@ -76,6 +76,19 @@ jobs:
 
           echo "--- ViewingConditions (sanity: pre-existing feature in the same file) ---" >> "$OUT"
           grep -o "ViewingConditions" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          echo "" >> "$OUT"
+
+          # CC-CMD-2026-08-08-efl-carabao-cup-coverage Task 4. The relay half is
+          # verified live (/v2/games?sport=eflcup -> league:"EFL Cup"), but the
+          # client half only creates cards if this SOCCER_LEAGUES entry actually
+          # reaches the deployed bundle -- and deploy-gate's "Confirm" step only
+          # echoes, it asserts nothing against the live site.
+          echo "--- EFL Cup SOCCER_LEAGUES entry (eng.league_cup) ---" >> "$OUT"
+          grep -o "eng\.league_cup" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          echo "" >> "$OUT"
+
+          echo "--- EFL Cup section/leagueLabel in the deployed bundle ---" >> "$OUT"
+          grep -o "section: *'EFL Cup'" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
 
           echo "OUT=$OUT" >> $GITHUB_ENV
           cat "$OUT"
