@@ -51,7 +51,7 @@ jobs:
           echo "" >> "$OUT"
 
           echo "--- SW_VERSION ---" >> "$OUT"
-          grep -o "SW_VERSION=\{0,1\}['\"][^'\"]*['\"]" /tmp/live.html | head -2 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          grep -oE "SW_VERSION[[:space:]]*=[[:space:]]*['\"][^'\"]*['\"]" /tmp/live.html | head -2 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
           echo "" >> "$OUT"
 
           echo "--- bracketdo visibilitychange guard ---" >> "$OUT"
@@ -87,8 +87,12 @@ jobs:
           grep -o "eng\.league_cup" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
           echo "" >> "$OUT"
 
-          echo "--- EFL Cup section/leagueLabel in the deployed bundle ---" >> "$OUT"
-          grep -o "section: *'EFL Cup'" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          # Was `section: *'EFL Cup'`, which returned NOT FOUND on run
+          # 31278050296 -- my own assertion was written against unminified
+          # source spacing and the deploy pipeline runs esbuild +
+          # strip-comments. Matching the bare label string is build-agnostic.
+          echo "--- EFL Cup label in the deployed bundle ---" >> "$OUT"
+          grep -oE "['\"]EFL Cup['\"]" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
 
           echo "OUT=$OUT" >> $GITHUB_ENV
           cat "$OUT"
