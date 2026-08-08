@@ -19188,6 +19188,11 @@ const SOCCER_LEAGUES = [
   // 'EFL Cup' matches none of them, so it is correctly ungated. Verified,
   // not assumed.
   { league: 'eng.league_cup', section: 'EFL Cup', bundle: 'EFL', leagueLabel: 'EFL Cup' },
+  // EFL Trophy (eng.trophy, ESPN id 18481). Same shape and same bundle as
+  // the EFL Cup entry above: BUNDLES.EFL already exists and the group-stage
+  // fixtures probed 2026-08-08 carried no US broadcast, which is correct for
+  // this competition rather than a gap.
+  { league: 'eng.trophy', section: 'EFL Trophy', bundle: 'EFL', leagueLabel: 'EFL Trophy' },
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
@@ -26732,7 +26737,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-08b';
+  const SW_VERSION = '2026-08-08c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
