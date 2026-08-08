@@ -78,21 +78,26 @@ jobs:
           grep -o "ViewingConditions" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
           echo "" >> "$OUT"
 
-          # CC-CMD-2026-08-08-efl-carabao-cup-coverage Task 4. The relay half is
-          # verified live (/v2/games?sport=eflcup -> league:"EFL Cup"), but the
-          # client half only creates cards if this SOCCER_LEAGUES entry actually
-          # reaches the deployed bundle -- and deploy-gate's "Confirm" step only
-          # echoes, it asserts nothing against the live site.
-          echo "--- EFL Cup SOCCER_LEAGUES entry (eng.league_cup) ---" >> "$OUT"
-          grep -o "eng\.league_cup" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          # English soccer competitions wired into SOCCER_LEAGUES. That entry is
+          # the card-CREATION mechanism -- V2/FD only overlay scores onto cards
+          # that already exist -- so a competition renders zero cards unless its
+          # slug reaches the deployed bundle, no matter what the relay serves.
+          #
+          # Enumerated rather than asserted one competition at a time, so adding
+          # the next cup does not require editing this workflow. Compare the
+          # printed list against SOCCER_LEAGUES in src/legacy/field.js.
+          #
+          # Slug, not label spacing: an earlier version of this block grepped
+          # `section: *'EFL Cup'` and reported NOT FOUND on run 31278050296 for
+          # a feature that had shipped fine -- the pipeline runs esbuild +
+          # strip-comments, so unminified spacing cannot survive. Slugs and bare
+          # label strings are build-agnostic.
+          echo "--- English soccer slugs present in the deployed bundle ---" >> "$OUT"
+          grep -oE "eng\.[a-z_]+" /tmp/live.html | sort -u >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
           echo "" >> "$OUT"
 
-          # Was `section: *'EFL Cup'`, which returned NOT FOUND on run
-          # 31278050296 -- my own assertion was written against unminified
-          # source spacing and the deploy pipeline runs esbuild +
-          # strip-comments. Matching the bare label string is build-agnostic.
-          echo "--- EFL Cup label in the deployed bundle ---" >> "$OUT"
-          grep -oE "['\"]EFL Cup['\"]" /tmp/live.html | head -1 >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
+          echo "--- Cup labels in the deployed bundle ---" >> "$OUT"
+          grep -oE "['\"](EFL Cup|EFL Trophy|FA Cup)['\"]" /tmp/live.html | sort -u >> "$OUT" 2>/dev/null || echo "NOT FOUND" >> "$OUT"
 
           echo "OUT=$OUT" >> $GITHUB_ENV
           cat "$OUT"
