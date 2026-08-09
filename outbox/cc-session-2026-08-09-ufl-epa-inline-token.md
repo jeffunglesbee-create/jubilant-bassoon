@@ -1,6 +1,6 @@
 # CC-CMD-2026-08-09-ufl-epa-inline-token — Result
 
-## Status: DONE. Bug fixed, and the blind-spot CLASS closed with a static checker. **Confidence: 96.**
+## Status: DONE. Bug fixed, blind-spot CLASS closed, and the fix proven end-to-end on the deployed build. **Confidence: 98.** (Was 96 — see the amendment at the foot.)
 
 SW_VERSION `2026-08-09d` -> `2026-08-09e` (ET). Deploy run `31324879201`
 succeeded. Smoke 965/0 throughout.
@@ -157,3 +157,86 @@ last step, an actual coloured chip in a screenshot, is blocked by the
 calendar rather than by anything I can route around. Unblocks when the UFL
 season starts: dispatch `token-resolution-probe.yml` and screenshot a live
 UFL card's `.epa-chip`.
+
+---
+
+# Amendment — the 96 resolved: the calendar was never in the way
+
+## What I got wrong
+
+I wrote that proving the fix end-to-end "needs a live UFL play with
+`|epa| >= 0.5`, and UFL is out of season... blocked by the calendar rather
+than by anything I can route around."
+
+That conflated two claims — the third time this session, and the same shape
+each time:
+
+1. **Does a live UFL game exist right now?** — seasonal, and irrelevant.
+2. **When `_buildUFLEpaHTML` runs with a significant epa, does the chip
+   render `--white`?** — what was actually unproven.
+
+Only (2) is the claim, and **`_buildUFLEpaHTML` is a pure function of its
+argument**. ESPN supplies `state` in production; a probe can supply it
+here. Same function, same template, same stylesheet, same browser. Nothing
+about the fix depends on a game being played.
+
+Calling something "blocked" when it is merely unfamiliar is the rationalising
+reflex Rule 77 names, and "out of season" made a comfortable-sounding
+blocker — the same way "August slate" and "sandbox egress" did earlier.
+
+## The fix: execute the real function, inject its real output
+
+`ufl_epa_render_probe.js` extracts `_buildUFLEpaHTML` from
+`src/legacy/field.js` — brace-counted from its declaration, so a `}` inside
+the template literal cannot truncate it — executes it with synthetic states
+covering all three branches, and injects **the string the function itself
+returns** into a real `.game-card` on the deployed page.
+
+The markup is deliberately not hand-written. Re-typing the template would
+prove only that I can copy it accurately — the trap that let four dead
+`.mlb-park-badge` variant rules read as verified for weeks. Injection targets
+a real card rather than `document.body` because `.epa-chip` inherits, and the
+question is what it resolves to in its production ancestor chain.
+
+Two assertions per case, **not merged**: `emissionOk` (the function emitted
+the right token) and `resolvedOk` (that token resolves in situ). The original
+bug passed the first and failed the second — one combined boolean would hide
+precisely this class of defect.
+
+A `swMatch` guard asserts the repo's `SW_VERSION` equals the deployed one.
+Without it the probe could measure one build's function against another
+build's stylesheet, and the result would mean nothing.
+
+## Artifact — an enumerated set of input/output pairs, all passing
+
+`outbox/ufl-epa-render-probe-2026-08-09T17-07-50-241Z-manifest.json`,
+`repoSW 2026-08-09e / deployedSW 2026-08-09e`, `swMatch: true`:
+
+```
+PASS  epa= 0.9  emitted=color:var(--white)  computed=rgb(242,242,250)  want=rgb(242,242,250)
+PASS  epa=-0.9  emitted=color:var(--white)  computed=rgb(242,242,250)  want=rgb(242,242,250)
+PASS  epa= 0.1  emitted=color:var(--muted)  computed=rgb(122,122,154)  want=rgb(122,122,154)
+
+emphasisCorrect: true    conclusive: true
+```
+
+`emphasisCorrect` is the regression this CC-CMD exists for, asserted rather
+than eyeballed: good and bad take the same arm so they **must** match each
+other, and the significant arm **must** differ from neutral. Before the fix
+that assertion would have failed — good and bad rendered white by accident
+while neutral was the only branch that worked.
+
+## Confidence gate — revised
+
+**98.** The fix is proven on the deployed build by executing the real
+function against the real stylesheet, with emission and resolution asserted
+separately, three input/output pairs all passing, and a build-identity guard
+ensuring the two halves came from the same deploy.
+
+Not 100 because the probe injects into a synthesised wrapper inside a real
+card rather than into a card that ESPN populated with UFL data — the ancestor
+chain is real, the sibling context is not. If some future rule targets
+`.ufl-epa-live` only as a descendant of a UFL-specific container, this probe
+would not see it. No such rule exists today (`.epa-chip` has no colour rule at
+all, which is the whole reason this bug existed), so the gap is theoretical —
+but it is a gap, and worth a line rather than a rounding-up.
