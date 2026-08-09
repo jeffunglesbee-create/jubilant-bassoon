@@ -45,7 +45,17 @@ const SMOKE = 'rgb(106, 106, 138)';   // --smoke #6a6a8a
       const cs = getComputedStyle(el);
       return {
         text: (el.textContent || '').trim(),
-        variant: (el.className.match(/park-[a-z-]+/) || [])[0] || null,
+        // Split-and-filter, NOT a regex. The class string is
+        //   "mlb-park-badge mlb-park-hitter"
+        // and /park-[a-z-]+/ matches the FIRST occurrence -- "park-badge",
+        // the base class -- so every row of the 2026-08-09T04:04 manifest
+        // reported variantsFound: ["park-badge"] and the real variant was
+        // never captured. It broke no assertion (all four read colour and
+        // font) but made the field actively misleading.
+        // This cannot mis-fire on ordering or on a future extra class.
+        variant: (el.className || '').split(/\s+/)
+                   .filter(c => c.startsWith('mlb-park-') && c !== 'mlb-park-badge')
+                   .map(c => c.replace(/^mlb-/, ''))[0] || null,
         color: cs.color,
         fontFamily: cs.fontFamily,
       };
