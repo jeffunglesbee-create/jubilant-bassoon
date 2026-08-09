@@ -203,7 +203,7 @@ body::before{
 .wc-bars{margin-top:.5rem;display:grid;gap:.28rem}
 .wc-bar-row{display:grid;grid-template-columns:2rem 1fr 2.2rem;
   gap:.35rem;align-items:center;font-size:.62rem;font-family:var(--ff-mono)}
-.wc-bar-team{color:var(--text);font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-bar-team{color:var(--white);font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wc-bar-track{position:relative;height:10px;background:var(--card-bg,#14141f);
   border-radius:3px;overflow:hidden;border:1px solid var(--edge)}
 .wc-bar-wp{position:absolute;left:0;top:0;bottom:0;
@@ -1453,7 +1453,7 @@ body.wf-mode .np-inner{max-width:100%}
 .arb-have{border-left:3px solid var(--teal,#2dd4bf);background:rgba(45,212,191,.07)}
 .arb-add {border-left:3px solid #8b5cf6;background:rgba(139,92,246,.07)}
 .arb-icon{font-size:.95rem;flex-shrink:0;line-height:1}
-.arb-text{flex:1;font-size:.77rem;color:var(--fg);line-height:1.4}
+.arb-text{flex:1;font-size:.77rem;color:var(--white);line-height:1.4}
 .arb-text strong{color:var(--white);font-weight:700}
 .arb-svcs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.15rem}
 .arb-svc-chip{font-size:.62rem;font-weight:700;letter-spacing:.06em;
@@ -1673,12 +1673,12 @@ body.wf-mode .np-inner{max-width:100%}
   color:var(--text-secondary,var(--muted));font-family:var(--ff-mono);letter-spacing:.03em}
 .golf-lb-title{font-size:.62rem;color:var(--gold2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.8;margin-bottom:.2rem}
 .golf-lb-row{display:grid;grid-template-columns:1.8rem 1fr auto;font-size:.61rem;line-height:1.65;color:var(--muted);gap:0 .35rem;white-space:nowrap}
-.golf-lb-row.lb-top3{color:var(--text)}
+.golf-lb-row.lb-top3{color:var(--white)}
 .golf-lb-pos{text-align:right;opacity:.55;font-family:var(--ff-mono)}
 .golf-lb-name{overflow:hidden;text-overflow:ellipsis}
 .golf-lb-score{font-family:var(--ff-mono);text-align:right;min-width:2.5rem}
 .golf-lb-score.lb-under{color:var(--c-live,#f87171)}
-.golf-lb-score.lb-even{color:var(--text);opacity:.7}
+.golf-lb-score.lb-even{color:var(--white);opacity:.7}
 .golf-lb-score.lb-over{color:var(--muted);opacity:.7}
 @media(max-width:600px){.golf-leaderboard{padding:.25rem .65rem .35rem}.golf-lb-row{font-size:.62rem}}
 /* ESPN PGA enriched leaderboard — supplements SlashGolf with GIR/drive stats.
@@ -1696,9 +1696,9 @@ body.wf-mode .np-inner{max-width:100%}
 .pga-leaderboard th{text-align:right;color:var(--gold2);font-weight:600;font-size:.55rem;letter-spacing:.05em;text-transform:uppercase;opacity:.75;padding:.15rem .25rem .2rem;border-bottom:1px solid rgba(201,168,76,.18);white-space:nowrap}
 .pga-leaderboard th:nth-child(2){text-align:left}
 .pga-leaderboard td{padding:.2rem .25rem;text-align:right;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}
-.pga-leaderboard tr.pga-row td.pga-name{text-align:left;overflow:hidden;text-overflow:ellipsis;max-width:8rem;color:var(--text)}
+.pga-leaderboard tr.pga-row td.pga-name{text-align:left;overflow:hidden;text-overflow:ellipsis;max-width:8rem;color:var(--white)}
 .pga-leaderboard tr.pga-row td.pga-pos{opacity:.6}
-.pga-leaderboard tr.pga-row:nth-child(-n+3) td{color:var(--text);font-weight:600}
+.pga-leaderboard tr.pga-row:nth-child(-n+3) td{color:var(--white);font-weight:600}
 .pga-leaderboard tr.pga-row:hover td{background:rgba(255,255,255,.03)}
 @media(max-width:600px){
   .pga-card{padding:.25rem .65rem .35rem}
@@ -2092,11 +2092,11 @@ body.wf-mode .np-inner{max-width:100%}
 
 /* FREE filter pill */
 /* Gap 11: filter suggestion chip — shown on LATE/DAWN transition when sport filter has all-final games */
-.filter-suggestion-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;margin:4px 0;font-size:11px;color:var(--text2);background:rgba(255,255,255,.04);border:1px solid var(--edge1);border-radius:8px}
+.filter-suggestion-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;margin:4px 0;font-size:11px;color:var(--platinum);background:rgba(255,255,255,.04);border:1px solid var(--edge1);border-radius:8px}
 .filter-suggestion-text{opacity:.8}
 .filter-suggestion-action{background:none;border:1px solid var(--edge2);border-radius:6px;color:var(--gold2);font-size:11px;padding:2px 7px;cursor:pointer}
 .filter-suggestion-action:hover{background:rgba(201,168,76,.1)}
-.filter-suggestion-dismiss{background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0 2px;line-height:1}
+.filter-suggestion-dismiss{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0 2px;line-height:1}
 .filter-btn.free-toggle{color:#4ade80;border-color:rgba(74,222,128,.3)}
 .filter-btn.free-toggle:hover{color:#86efac;border-color:rgba(74,222,128,.5);background:rgba(74,222,128,.08)}
 .filter-btn.free-toggle.active{color:var(--obsidian);border-color:#4ade80;background:linear-gradient(135deg,#86efac,#4ade80);font-weight:700}
@@ -2487,7 +2487,7 @@ body:not(:has(#main .game-card)) :is(
 .desk-card-label{font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-bottom:.4rem;display:flex;align-items:center;gap:.35rem}
 .desk-card-label-icon{opacity:.8}
 .desk-card-title{font-size:.82rem;font-weight:700;color:var(--white);margin-bottom:.35rem;line-height:1.3}
-.desk-card-body{font-size:.72rem;color:var(--fg);line-height:1.6}
+.desk-card-body{font-size:.72rem;color:var(--white);line-height:1.6}
 .desk-card-body.muted{color:var(--smoke);font-style:italic}
 .desk-card.tappable{cursor:pointer;transition:opacity .15s}
 .desk-card.tappable:active{opacity:.75}
@@ -2518,13 +2518,13 @@ body:not(:has(#main .game-card)) :is(
 .jrn-back-pill{display:none;align-self:flex-start;padding:.4rem .75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);border-radius:18px;font-size:.66rem;color:var(--gold2);cursor:pointer;margin-bottom:1rem;letter-spacing:.04em;transition:.15s}
 .jrn-back-pill:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.38)}
 .jrn-content{display:flex;flex-direction:column;gap:1.75rem}
-.jrn-editorial{font-size:.92rem;line-height:1.75;color:var(--fg);white-space:pre-wrap}
+.jrn-editorial{font-size:.92rem;line-height:1.75;color:var(--white);white-space:pre-wrap}
 .jrn-editorial-label{font-size:.62rem;font-weight:700;letter-spacing:.12em;color:var(--gold);opacity:.7;margin-bottom:.5rem;text-transform:uppercase}
 .jrn-section-divider{height:1px;background:var(--edge);margin:.5rem 0;opacity:.6}
 .jrn-series{padding:.25rem 0}
 .jrn-series-marker{font-family:var(--ff-display);font-size:1.05rem;font-weight:600;color:var(--gold2);margin-bottom:.4rem;letter-spacing:.02em}
 .jrn-series-game{font-size:.74rem;color:var(--platinum);margin-bottom:.85rem;letter-spacing:.03em}
-.jrn-series-text{font-size:.85rem;line-height:1.75;color:var(--fg);margin-bottom:.85rem}
+.jrn-series-text{font-size:.85rem;line-height:1.75;color:var(--white);margin-bottom:.85rem}
 .jrn-series-tonight{font-size:.78rem;color:var(--text-muted,#b0b0c0);line-height:1.6;padding:.6rem .85rem;background:rgba(255,255,255,.02);border-left:2px solid var(--gold);border-radius:0 6px 6px 0}
 .jrn-series-tonight-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--gold2);opacity:.7;text-transform:uppercase;margin-right:.4rem}
 .jrn-card-link{display:inline-block;font-size:.66rem;color:var(--smoke);text-decoration:none;margin-top:.65rem;letter-spacing:.04em;transition:color .15s}
@@ -2534,7 +2534,7 @@ body:not(:has(#main .game-card)) :is(
 .jrn-slate-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.85rem}
 .jrn-slate-item{padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .jrn-slate-item:last-child{border-bottom:none}
-.jrn-slate-game{font-size:.78rem;color:var(--fg);font-weight:500;margin-bottom:.2rem}
+.jrn-slate-game{font-size:.78rem;color:var(--white);font-weight:500;margin-bottom:.2rem}
 .jrn-slate-meta{font-size:.62rem;color:var(--muted);letter-spacing:.04em;margin-bottom:.3rem}
 .jrn-slate-brief{font-size:.74rem;line-height:1.65;color:var(--text-muted,#b0b0c0)}
 .jrn-empty{padding:2rem 0;text-align:center;color:var(--smoke);font-size:.78rem;font-style:italic}
@@ -2738,10 +2738,10 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .wc-impact-delta{font-weight:600;font-variant-numeric:tabular-nums}
 .wc-impact-delta.pos{color:#4ade80}
 .wc-impact-delta.neg{color:#f87171}
-.wc-trap-team{font-weight:700;color:var(--fg);min-width:5rem;flex-shrink:0}
+.wc-trap-team{font-weight:700;color:var(--white);min-width:5rem;flex-shrink:0}
 .wc-trap-grp{color:var(--smoke);font-size:.56rem;min-width:3rem}
 .wc-trap-stat{color:var(--platinum);white-space:nowrap}
-.wc-trap-stat strong{color:var(--fg)}
+.wc-trap-stat strong{color:var(--white)}
 .wc-trap-delta{color:var(--gold);font-weight:600;margin-left:auto;white-space:nowrap}
 /* Retain R32 matchup CSS */
 .wc-r32-grid{display:grid;grid-template-columns:1fr;gap:.6rem}
@@ -2843,7 +2843,7 @@ body.attn-bar-active .main{padding-bottom:60px}
 /* Footnote + empty + loading */
 .wc-footnote{font-size:.62rem;color:var(--smoke);margin-top:1rem;line-height:1.5}
 .wc-preview-header{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem}
-.wc-preview-intro{font-size:.78rem;color:var(--fg);line-height:1.65;margin:0}
+.wc-preview-intro{font-size:.78rem;color:var(--white);line-height:1.65;margin:0}
 .wc-empty{color:var(--smoke);font-style:italic;text-align:center;padding:.5rem;font-size:.65rem}
 .wc-skeleton{height:12px;background:var(--card2);border-radius:4px;margin:.3rem 0;animation:shimmer 1.4s ease-in-out infinite}
 
@@ -3238,17 +3238,17 @@ body.stats-mode .main{margin-right:0 !important}
 .jrn-companion-block{margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--edge)}
 .jrn-companion-block:last-child{border-bottom:none}
 .jrn-companion-label{font-size:.62rem;font-weight:700;letter-spacing:.14em;color:var(--gold2);opacity:.85;text-transform:uppercase;margin-bottom:.65rem}
-.jrn-companion-summary{font-size:.78rem;line-height:1.6;color:var(--fg)}
+.jrn-companion-summary{font-size:.78rem;line-height:1.6;color:var(--white)}
 .jrn-companion-summary strong{color:var(--gold)}
 .jrn-companion-link{display:inline-block;margin-top:.5rem;font-size:.66rem;color:var(--smoke);text-decoration:none;letter-spacing:.04em;cursor:pointer;transition:color .15s}
 .jrn-companion-link:hover{color:var(--gold2)}
 .jrn-companion-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.55rem}
-.jrn-companion-item{font-size:.7rem;line-height:1.5;color:var(--fg)}
+.jrn-companion-item{font-size:.7rem;line-height:1.5;color:var(--white)}
 .jrn-companion-item-meta{font-size:.6rem;color:var(--muted);letter-spacing:.04em;margin-top:.1rem}
 .jrn-quality-row{display:flex;justify-content:space-between;align-items:baseline;padding:.3rem 0;font-size:.7rem;border-bottom:1px solid rgba(255,255,255,.03)}
 .jrn-quality-row:last-child{border-bottom:none}
 .jrn-quality-row-label{color:var(--muted);letter-spacing:.03em}
-.jrn-quality-row-value{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.jrn-quality-row-value{color:var(--white);font-weight:600;font-variant-numeric:tabular-nums}
 .jrn-quality-row-value.good{color:var(--gold2)}
 .jrn-quality-row-value.warn{color:var(--smoke)}
 .jrn-companion-empty{font-size:.7rem;color:var(--muted);font-style:italic}
@@ -3830,7 +3830,7 @@ body.stats-mode .main{margin-right:0 !important}
 .ap-score-row{display:flex;justify-content:space-between;align-items:center;
   gap:.5rem;padding:.28rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .ap-score-row:last-child{border-bottom:none}
-.ap-score-teams{font-size:.8rem;color:var(--fg);flex:1;min-width:0;
+.ap-score-teams{font-size:.8rem;color:var(--white);flex:1;min-width:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ap-score-num{color:var(--white);font-size:.92rem;font-weight:800;
   margin:0 .2rem;letter-spacing:-.02em}
@@ -3902,11 +3902,11 @@ body.stats-mode .main{margin-right:0 !important}
 .ap-card-game{font-size:.75rem;font-weight:700;color:var(--white);margin-bottom:.2rem;line-height:1.25}
 .ap-card-text{font-size:.69rem;color:var(--fg,#e8e8f0);line-height:1.6;margin:0}
 .ap-card-arb-rows{display:flex;flex-direction:column;gap:.25rem;margin-top:.2rem}
-.ap-brief-text{font-size:.72rem;color:var(--fg);line-height:1.65;margin:0;
+.ap-brief-text{font-size:.72rem;color:var(--white);line-height:1.65;margin:0;
   white-space:pre-wrap}
 /* Arbitrage summary in ambient panel (compact — #field-arb hidden on iPad) */
 .ap-arb-summary{display:flex;flex-direction:column;gap:.35rem}
-.ap-arb-line{font-size:.72rem;color:var(--fg);line-height:1.4}
+.ap-arb-line{font-size:.72rem;color:var(--white);line-height:1.4}
 .ap-arb-line strong{color:var(--white)}
 /* Upcoming game in SOON state */
 .ap-soon{display:flex;flex-direction:column;gap:.35rem;
@@ -4181,20 +4181,20 @@ body.stats-mode .main{margin-right:0 !important}
 .sgb-tag{font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;opacity:.7;margin-bottom:.18rem}
 .sport-game-brief-mlb .sgb-tag{color:#ef4444}
 .sport-game-brief-wnba .sgb-tag{color:#a855f7}
-.sgb-text{font-size:.72rem;line-height:1.55;color:var(--text)}
+.sgb-text{font-size:.72rem;line-height:1.55;color:var(--white)}
 .sgb-text.pending{opacity:.5;font-style:italic}
 .sgb-text.loaded{opacity:1;font-style:normal}
 /* ── Stakes Brief Card (elimination / clinch / series-deciding) ─────────── */
 .stakes-brief-card{border-radius:6px 6px 0 0;overflow:hidden;margin-bottom:0;border:1px solid rgba(255,59,59,.25);border-bottom:none;background:rgba(255,59,59,.06)}
 .stakes-inner{padding:.55rem .85rem .45rem}
 .stakes-tag{font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--live,#ff3b3b);margin-bottom:.18rem}
-.stakes-text{font-size:.74rem;line-height:1.5;color:var(--text);font-weight:500}
+.stakes-text{font-size:.74rem;line-height:1.5;color:var(--white);font-weight:500}
 .stakes-text.pending{opacity:.5;font-style:italic}
 .stakes-text.loaded{opacity:1}
 /* ── Night Owl secondary capsules ─────────────────────────────────────────── */
 .night-owl-secondary{margin-top:.65rem;padding-top:.55rem;border-top:1px solid rgba(255,255,255,.08)}
 .night-owl-secondary .no-team{font-size:.7rem;font-weight:600;color:var(--gold2,#c9a84c);margin-bottom:.15rem}
-.night-owl-secondary .no-text{font-size:.7rem;line-height:1.5;color:var(--text-muted)}
+.night-owl-secondary .no-text{font-size:.7rem;line-height:1.5;color:var(--muted)}
 
 /* PM-26-M-1 (June 3 2026): #upper-slots wrapper reserves 120px between
  * the controls bar and the schedule. Inside this wrapper sit ~9 elements
