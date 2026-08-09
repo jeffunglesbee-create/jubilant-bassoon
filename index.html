@@ -1774,7 +1774,7 @@ body.wf-mode .np-inner{max-width:100%}
    one element would be a second font load for an effect DM Mono already
    achieves on adjacent elements. Colour comes from the token rule below --
    no hex here (Rule 37). */
-.mlb-park-badge{font-family:'DM Mono',ui-monospace,monospace;font-size:.62rem;font-weight:600;letter-spacing:.04em;padding:.1rem .42rem;border-radius:3px;border:1px solid;white-space:nowrap}
+.mlb-park-badge{color:var(--smoke);border-color:color-mix(in srgb,var(--smoke) 35%,transparent);background:color-mix(in srgb,var(--smoke) 8%,transparent);font-family:'DM Mono',ui-monospace,monospace;font-size:.62rem;font-weight:600;letter-spacing:.04em;padding:.1rem .42rem;border-radius:3px;border:1px solid;white-space:nowrap}
 /* COLOUR-SYS-A / Rule 37 (CC-CMD-2026-08-09-park-badge-token-compliance).
    All four park variants collapse to --smoke. Park factor is honest
    contextual information, not a priority signal, and the spec's own
@@ -1785,10 +1785,14 @@ body.wf-mode .np-inner{max-width:100%}
    hitter-friendly park is none of those. Direction and intensity stay in
    the badge TEXT, which already carries them -- ADR-002's "named tier,
    never a raw number" applied to colour. */
-.mlb-park-badge.park-hitter-extreme,
-.mlb-park-badge.park-hitter,
-.mlb-park-badge.park-pitcher,
-.mlb-park-badge.park-pitcher-extreme{color:var(--smoke);border-color:color-mix(in srgb,var(--smoke) 35%,transparent);background:color-mix(in srgb,var(--smoke) 8%,transparent)}
+/* Variant colour rules DELETED. They never matched: the markup emits
+   class="mlb-park-badge mlb-park-${pf.badgeClass}" (e.g. mlb-park-hitter)
+   while the selectors read .park-hitter -- dead CSS since it was written,
+   proven by badge-visual-probe run 31293587581 which measured the rendered
+   colour as rgb(242,242,250) (--white, inherited) rather than any variant
+   hue. Reading the file could not show this; only a real render could.
+   All four variants collapse to --smoke per the accepted resolution, so the
+   colour belongs on the base rule where it actually applies. */
 .mlb-ump-badge{font-size:.62rem;font-weight:600;color:#f87171;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);padding:.1rem .42rem;border-radius:3px;white-space:nowrap}
 .mlb-analytics-badges{margin-top:2px}
 .nhl-analytics-badges{margin-top:2px}
@@ -26754,7 +26758,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-08d';
+  const SW_VERSION = '2026-08-09a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
