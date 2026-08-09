@@ -20171,7 +20171,7 @@ function renderNewspaper(bundle) {
     if (lines.length) {
       parts.push(`<div class="np-section np-quality-alert">
         <div class="np-label">⚠ BRIEF QUALITY</div>
-        <p class="np-prose" style="font-size:.72rem;color:var(--c-muted,#888)">${lines.join(' · ')}</p>
+        <p class="np-prose" style="font-size:.72rem;color:var(--muted)">${lines.join(' · ')}</p>
       </div>`);
     }
   }
@@ -20686,15 +20686,15 @@ function renderAFLStandingsWidget(){
     const border=cutline?'border-bottom:2px solid var(--accent,#f97316);':'';
     const bg=finals?'background:rgba(249,115,22,0.06);':'';
     return `<tr style="${border}${bg}">
-      <td style="padding:2px 6px;color:${finals?'var(--accent,#f97316)':'var(--text-muted,#888)'};font-weight:${rank<=4?'bold':'normal'}">${rank}</td>
+      <td style="padding:2px 6px;color:${finals?'var(--accent,#f97316)':'var(--muted)'};font-weight:${rank<=4?'bold':'normal'}">${rank}</td>
       <td style="padding:2px 6px;font-weight:500">${abbr}</td>
       <td style="padding:2px 6px;text-align:center">${t.wins||0}-${t.losses||0}${t.draws?'-'+t.draws:''}</td>
-      <td style="padding:2px 6px;text-align:right;color:var(--text-muted,#888)">${pct}</td>
+      <td style="padding:2px 6px;text-align:right;color:var(--muted)">${pct}</td>
       <td style="padding:2px 6px;text-align:right">${t.pts||0}</td>
     </tr>`;
   }).join('');
   container.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
-    <thead><tr style="color:var(--text-muted,#888);border-bottom:1px solid var(--border,#333)">
+    <thead><tr style="color:var(--muted);border-bottom:1px solid var(--edge)">
       <th style="padding:2px 6px;text-align:left">#</th>
       <th style="padding:2px 6px;text-align:left">Team</th>
       <th style="padding:2px 6px;text-align:center">W-L</th>
@@ -20703,7 +20703,7 @@ function renderAFLStandingsWidget(){
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
-  <div style="font-size:0.68rem;color:var(--text-muted,#777);margin-top:4px;padding:0 4px">
+  <div style="font-size:0.68rem;color:var(--muted);margin-top:4px;padding:0 4px">
     Top 10 qualify for finals (Wildcard Round) · Orange = finals · Line = cut
   </div>`;
 }
@@ -20868,7 +20868,7 @@ async function injectSquiggleTips(){
     let tipEl=card.querySelector('.squiggle-tip-chip');
     if(!tipEl){
       const matchup=card.querySelector('.matchup,.card-body,.game-teams');
-      if(matchup){tipEl=document.createElement('div');tipEl.className='squiggle-tip-chip';tipEl.style.cssText='font-size:0.72rem;color:var(--text-muted,#888);margin-top:2px;';matchup.appendChild(tipEl);}
+      if(matchup){tipEl=document.createElement('div');tipEl.className='squiggle-tip-chip';tipEl.style.cssText='font-size:0.72rem;color:var(--muted);margin-top:2px;';matchup.appendChild(tipEl);}
     }
     if(tipEl) tipEl.textContent=chipText;
   });
@@ -21644,7 +21644,7 @@ const lazyObs=new IntersectionObserver(entries=>{
   // Inject indicator element
   const ind = document.createElement('div');
   ind.id = 'ptr-indicator';
-  ind.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-48px);z-index:9999;background:var(--panel,#1a1a2e);border:1px solid rgba(255,255,255,.12);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform .2s,opacity .2s;opacity:0;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,.4)';
+  ind.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-48px);z-index:9999;background:var(--card2);border:1px solid rgba(255,255,255,.12);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform .2s,opacity .2s;opacity:0;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,.4)';
   ind.textContent = '↓';
   document.body.appendChild(ind);
 
@@ -21664,7 +21664,7 @@ const lazyObs=new IntersectionObserver(entries=>{
       const progress = Math.min(pull / PTR_THRESHOLD, 1);
       ind.style.opacity = String(progress);
       ind.style.transform = `translateX(-50%) translateY(${Math.min(pull * 0.6, 44)}px)`;
-      ind.style.background = progress >= 1 ? 'var(--c-nba,#f97316)' : 'var(--panel,#1a1a2e)';
+      ind.style.background = progress >= 1 ? 'var(--c-nba,#f97316)' : 'var(--card2)';
       ind.textContent = progress >= 1 ? '↺' : '↓';
     }
   }, {passive:true});
