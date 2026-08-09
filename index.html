@@ -1745,7 +1745,7 @@ body.wf-mode .np-inner{max-width:100%}
 .free-badge.free-cable{background:#0d6e3f}
 .game-card.free-tonight-card{border-color:rgba(22,163,74,.35)!important}
 .free-tonight-card .card-accent{background:#16a34a!important}
-.free-tonight-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.62rem;font-weight:800;letter-spacing:.05em;color:#16a34a;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.3);border-radius:4px;padding:.12rem .4rem;margin-top:.18rem}
+.free-tonight-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.62rem;font-weight:800;letter-spacing:.05em;color:var(--access-free);background:color-mix(in srgb,var(--access-free) 12%,transparent);border:1px solid color-mix(in srgb,var(--access-free) 30%,transparent);border-radius:4px;padding:.12rem .4rem;margin-top:.18rem}
 /* ── Tonight Summary Card (Wow #23) ─────────────────────────────────── */
 .tonight-summary{background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(99,102,241,.05));border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:1rem 1.1rem .9rem;margin-bottom:1.1rem}
 .ts-header{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin-bottom:.7rem;flex-wrap:wrap}
@@ -2094,7 +2094,7 @@ body.wf-mode .np-inner{max-width:100%}
 .chip-auth.auth-tv{color:#f0c040}
 .chip-auth.auth-sub{color:#00ffcc}
 .chip-auth.auth-geo{color:#f8a847}
-.chip-auth.auth-free{color:#4ade80}
+.chip-auth.auth-free{color:var(--access-free)}
 
 /* FREE filter pill */
 /* Gap 11: filter suggestion chip — shown on LATE/DAWN transition when sport filter has all-final games */
@@ -2338,7 +2338,7 @@ body:not(:has(#main .game-card)) :is(
 .badge-live{color:var(--live);border-color:rgba(255,68,68,.4);background:rgba(255,68,68,.08)}
 .badge-daily{color:var(--gold);border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.06)}
 .badge-ongoing{color:#818cf8;border-color:rgba(129,140,248,.3);background:rgba(129,140,248,.06)}
-.badge-incl{color:#4ade80;border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.06)}
+.badge-incl{color:var(--access-free);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.06)}
 .app-footer{
   padding:.4rem 1rem .55rem;border-top:1px solid var(--edge);
   display:flex;align-items:center;justify-content:space-between;gap:.5rem;
@@ -3398,7 +3398,7 @@ body.stats-mode .main{margin-right:0 !important}
 
 /* Chip "have access" annotation */
 .chip-have{
-  font-size:.62rem;font-weight:700;color:#4ade80;
+  font-size:.62rem;font-weight:700;color:var(--access-free);
   margin-left:1px;flex-shrink:0;
 }
 /* Wow#32: Marginal cost display — shown when user doesn't have service */
