@@ -2210,9 +2210,15 @@ function getStatus(iso, opts){
 // Not yet wired into existing surfaces — that is Phase 2 (Schedule Compound).
 
 // Primitive 1: fieldChip(text, tier, opts)
-// Tier color mapping verified against COLOUR-SYS-A tokens in index.html:
-//   #ef4444 = --angle-elim  #f59e0b = --caution  #2dd4bf = --access-free
-//   #60a5fa = --sport-nhl
+// Tier colours live in index.html's .field-chip--* rules and now reference
+// the Rule 37 token whose NAME matches the tier
+// (CC-CMD-2026-08-09-badge-chip-token-sweep):
+//   MUST -> --drama-must   WATCH/INFO -> --drama-watch
+//   DISCOVERY -> --access-free   CAUTION -> --caution   QUIET -> --drama-low
+// The mapping this comment used to record was the reason for that change:
+// it read "#ef4444 = --angle-elim ... #60a5fa = --sport-nhl", i.e. MUST was
+// painted with the hue Rule 37 reserves for elimination ONLY, and INFO with
+// a sport identity colour Rule 37 bans on chips outright.
 function fieldChip(text, tier, opts = {}) {
   const el = document.createElement('span');
   el.className = 'field-chip field-chip--' + tier;
