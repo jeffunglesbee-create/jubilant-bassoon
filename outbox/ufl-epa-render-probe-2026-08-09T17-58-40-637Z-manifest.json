@@ -1,0 +1,67 @@
+{
+  "ts": "2026-08-09T17-58-40-637Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "ccCmd": "CC-CMD-2026-08-09-ufl-epa-inline-token",
+  "repoSW": "2026-08-09e",
+  "deployedSW": "2026-08-09e",
+  "swMatch": true,
+  "fnSourceSha": "95bc9380b4beb945",
+  "summary": {
+    "pass": 3,
+    "fail": 0,
+    "total": 3
+  },
+  "emphasisCorrect": true,
+  "conclusive": true,
+  "rows": [
+    {
+      "key": "good",
+      "epa": 0.9,
+      "expectToken": "--white",
+      "emittedHtml": "<div class=\"ufl-epa-live\"><span class=\"epa-chip\" style=\"color:var(--white)\">+0.9 EPA</span><span class=\"epa-sit\">2nd & 7 at MEM 42</span><sp",
+      "emittedStyle": "color:var(--white)",
+      "chipFound": true,
+      "tokenValue": "#f2f2fa",
+      "expectedRgb": "rgb(242, 242, 250)",
+      "computed": "rgb(242, 242, 250)",
+      "parentComputed": "rgb(242, 242, 250)",
+      "emissionOk": true,
+      "resolvedOk": true,
+      "verdict": "PASS"
+    },
+    {
+      "key": "bad",
+      "epa": -0.9,
+      "expectToken": "--white",
+      "emittedHtml": "<div class=\"ufl-epa-live\"><span class=\"epa-chip\" style=\"color:var(--white)\">-0.9 EPA</span><span class=\"epa-sit\">2nd & 7 at MEM 42</span><sp",
+      "emittedStyle": "color:var(--white)",
+      "chipFound": true,
+      "tokenValue": "#f2f2fa",
+      "expectedRgb": "rgb(242, 242, 250)",
+      "computed": "rgb(242, 242, 250)",
+      "parentComputed": "rgb(242, 242, 250)",
+      "emissionOk": true,
+      "resolvedOk": true,
+      "verdict": "PASS"
+    },
+    {
+      "key": "neutral",
+      "epa": 0.1,
+      "expectToken": "--muted",
+      "emittedHtml": "<div class=\"ufl-epa-live\"><span class=\"epa-chip\" style=\"color:var(--muted)\">+0.1 EPA</span><span class=\"epa-sit\">2nd & 7 at MEM 42</span><sp",
+      "emittedStyle": "color:var(--muted)",
+      "chipFound": true,
+      "tokenValue": "#7a7a9a",
+      "expectedRgb": "rgb(122, 122, 154)",
+      "computed": "rgb(122, 122, 154)",
+      "parentComputed": "rgb(242, 242, 250)",
+      "emissionOk": true,
+      "resolvedOk": true,
+      "verdict": "PASS"
+    }
+  ]
+}
