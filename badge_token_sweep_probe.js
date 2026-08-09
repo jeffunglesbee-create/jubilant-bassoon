@@ -24,6 +24,12 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
 const VIEWPORT = { width: 1440, height: 900 };
 
 // selector -> [token it must now resolve to, hex it must NO LONGER render]
+//
+// .ts-badge.* and .free-tonight-badge were dropped by
+// CC-CMD-2026-08-09-dead-badge-css-removal. Their rules no longer exist, so
+// the synthetic pass would read the inherited colour and report a spurious
+// FAIL -- a probe asserting on selectors the stylesheet no longer defines is
+// measuring nothing and failing loudly about it.
 const TARGETS = {
   '.field-chip--MUST':                 ['--drama-must',     '#ef4444'],
   '.field-chip--WATCH':                ['--drama-watch',    '#f59e0b'],
@@ -31,14 +37,11 @@ const TARGETS = {
   '.field-chip--CAUTION':              ['--caution',        null],
   '.field-chip--QUIET':                ['--drama-low',      '#888888'],
   '.field-chip--INFO':                 ['--drama-watch',    '#60a5fa'],
-  '.free-tonight-badge':               ['--access-free',    '#16a34a'],
   '.chip-auth.auth-free':              ['--access-free',    '#4ade80'],
   '.chip-have':                        ['--access-free',    '#4ade80'],
   '.badge-incl':                       ['--access-free',    '#4ade80'],
   '.importance-badge.elimination':     ['--angle-elim',     '#f87171'],
   '.importance-badge.series-deciding': ['--angle-deciding', '#fbbf24'],
-  '.ts-badge.ts-elimination':          ['--angle-elim',     '#f87171'],
-  '.ts-badge.ts-series_deciding':      ['--angle-deciding', '#fbbf24'],
   '.rival-badge':                      ['--angle-rivalry',  '#f97316'],
 };
 
