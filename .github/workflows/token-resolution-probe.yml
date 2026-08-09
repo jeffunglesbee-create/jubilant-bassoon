@@ -30,6 +30,14 @@ jobs:
         run: |
           npm install @playwright/test
           npx playwright install chromium --with-deps
+      # Static scan of the JS-embedded var() references -- the blind spot the
+      # browser probe can only SIZE, not look inside (a var() in a JS string
+      # is not a style until that code path renders). Runs first: it needs no
+      # browser, and a fatal finding here is worth failing on before spending
+      # a Chromium launch.
+      - name: Check JS-embedded var() tokens
+        run: node scripts/check-js-var-tokens.mjs
+
       - name: Run token resolution probe
         run: node token_resolution_probe.js
         env:
