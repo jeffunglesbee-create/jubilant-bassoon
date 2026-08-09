@@ -72,3 +72,61 @@ tested direction is the only evidence this change has.
 
 No CSS changed. No production styling touched. smoke not re-run — no
 code was modified.
+
+---
+
+# ADDENDUM — 2026-08-09, after "no playground needed, proceed with best recommendations"
+
+## The playground dependency is gone, but a different premise failed
+
+With the playground requirement lifted, I went to apply the tag styling
+using `DM Mono` (already loaded — the finding above). Task 2 assumes
+production has *"an existing bracketed-condition display"* to restyle.
+**It does not.** Read from HEAD:
+
+```js
+// src/legacy/field.js
+3918:  if (pf?.badge)    lines.push(`  Park: [${pf.badge}] ${pf.context}`);
+3924:  ...`${ump.badge ? '[' + ump.badge + '] ' : ''}${umpName} ${ump.context}`
+3934:  if (tempo?.badge) lines.push(`  ${who} pace: [${tempo.badge}] ${tempo.context}`);
+```
+
+The bracketed conditions are **interpolated into plain-text strings**
+inside larger `lines.push(...)` blocks. There is no element, no class, no
+styling hook — nothing to restyle. Monospace + tier-coloured glow needs a
+DOM node; these are text fragments inside sentences.
+
+## Why I stopped rather than proceeding
+
+Making this stylable means wrapping each `[TAG]` in a `<span>` at every
+emit site, threading a tier class through, and changing text-building code
+paths into markup-building ones. That is not *"one real, low-risk,
+directly-applicable piece"* — it is a rendering change across several call
+sites, in text that also feeds non-DOM consumers (these strings go into
+journalism context lines, not only the screen). Wrapping them in HTML
+would put markup into strings that are read as prose elsewhere.
+
+**Confidence in the CC-CMD as written: ~45.** Its scope was sized against
+an assumption about production that turns out not to hold. Proceeding
+would deliver something materially larger than what was approved, which
+Rule 69 forbids and the CC-CMD itself explicitly disclaims ("NOT a request
+to reskin the whole app").
+
+## What is now known, so the next session starts ahead
+
+1. **No new font needed** — `DM Mono` is loaded and used on adjacent
+   chip-like elements (`.otw-changed`, `.fan-out-chip`).
+2. **No styling hook exists** — the tags are string-interpolated at
+   ≥3 sites (3918, 3924, 3934) plus the `opts.badge` path at 2281.
+3. **`fieldChip()` already exists** (2280) and is the established way this
+   codebase renders a small labelled chip as a real element. **That, not a
+   new span convention, is the right vehicle** if this proceeds.
+4. **The blocker is a scope decision, not access.** Someone has to decide
+   whether converting these text fragments into elements is wanted — and
+   whether the prose consumers of those same strings are affected.
+
+## Recommendation
+
+Re-scope into a new CC-CMD built on `fieldChip()`, targeting one emit site
+first as a real test, rather than executing this one as written. Not
+written here: the re-scope needs the decision in point 4, which is Jeff's.
