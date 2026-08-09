@@ -59,6 +59,36 @@ const TOUCHED = JSON.parse(fs.readFileSync('outbox/touched-selectors.json', 'utf
 // ignored within a week. With it, any NEW unresolvable token fails loudly.
 const STOP_LISTED = ['--green', '--red', '--orange', '--accent'];
 
+// UNDECIDED_BUDGET — CC-CMD-2026-08-10-data-dependent-observability, Option C.
+//
+// 42 of the 74 touched selectors mount only when real data exists: a
+// journalism brief in KV, a live golf event, a tennis match in progress, a
+// game gone final. Twelve app states reach none of them, and their renderers
+// are module-scoped so they cannot be called with synthetic input the way
+// _buildUFLEpaHTML was. Their observability is therefore unmeasured.
+//
+// That is accepted rather than chased, because L2a resolves ALL 74 selectors
+// whether or not they render -- so a future change to any of the 42 still
+// gets rule-level verification, and only observability (a property of the
+// past, carrying no defect risk) stays open.
+//
+// The guard is TWO-SIDED on purpose. A fixed ceiling only ratchets one way:
+// if a later run decides more selectors because data happened to be present,
+// a fail-only guard would silently permit regression back to 42 forever.
+//   undecided >  budget -> FAIL. A new selector joined the unmeasured bucket.
+//   undecided <  budget -> WARN, naming the lower number, so the budget is
+//                          tightened rather than left with quiet slack.
+//
+// Blank-safe on purpose. `??` falls back only on null/undefined, and GitHub
+// sets an unfilled workflow_dispatch input to the EMPTY STRING -- so
+// `Number(process.env.X ?? 42)` yields 0 and every ordinary run fails at
+// budget 0. Caught before pushing. An explicit 0 is still honoured, because
+// 0 is the legitimate end state once nothing is undecided; `|| 42` would
+// have silently discarded it.
+const _rawBudget = (process.env.UNDECIDED_BUDGET || '').trim();
+const UNDECIDED_BUDGET =
+  _rawBudget === '' || Number.isNaN(Number(_rawBudget)) ? 42 : Number(_rawBudget);
+
 // Views reachable through the app's own API. window.* only — the app ships as
 // an ES module, so nothing is global except what it explicitly assigns.
 // Signatures were read from source, not guessed: toggleThreadDrawer takes a
@@ -266,6 +296,8 @@ const STATES = [
   const visible = decided.filter((r) => r.observable);
   const invisible = decided.filter((r) => !r.observable);
 
+  const manifestUndecided = rows.length - decided.length;
+
   const manifest = {
     ts: TS, url: URL, viewport: VIEWPORT,
     ccCmd: 'CC-CMD-2026-08-09-observability-coverage',
@@ -290,7 +322,13 @@ const STATES = [
       provablyInvisibleChanges: invisible.length,
       verdict: l2aFail === 0 && notFound === 0 ? 'PASS' : 'FAIL',
     },
-    conclusive: l1Regressions.length === 0 && l2aFail === 0 && notFound === 0,
+    undecidedBudget: UNDECIDED_BUDGET,
+    undecidedBudgetVerdict:
+      manifestUndecided > UNDECIDED_BUDGET ? 'FAIL-OVER-BUDGET'
+      : manifestUndecided < UNDECIDED_BUDGET ? 'WARN-TIGHTEN-BUDGET'
+      : 'PASS',
+    conclusive: l1Regressions.length === 0 && l2aFail === 0 && notFound === 0
+                && manifestUndecided <= UNDECIDED_BUDGET,
     l1UnresolvedNoFallback: l1.unresolvedNoFallback,
     l1UnresolvedWithFallback: l1.unresolvedWithFallback,
     rows,
@@ -309,6 +347,12 @@ const STATES = [
   console.log(`   observability: measured ${measured.size}, static ${manifest.l2.decidedStatically}, undecided ${manifest.l2.undecided}`);
   console.log(`   observable ${visible.length}, provably-invisible ${invisible.length}`);
   for (const s of stateLog) console.log(`   state ${s.state.padEnd(11)} rendered ${String(s.selectorsRenderedHere).padStart(3)}  new ${String(s.newlyMeasured).padStart(3)}  err=${s.error}`);
+  const budgetVerdict = manifest.undecidedBudgetVerdict;
+  if (budgetVerdict === 'FAIL-OVER-BUDGET') {
+    console.log(`UNDECIDED BUDGET FAIL: ${manifestUndecided} undecided > budget ${UNDECIDED_BUDGET}. A selector joined the unmeasured bucket -- identify it in rows[] where observable === null.`);
+  } else if (budgetVerdict === 'WARN-TIGHTEN-BUDGET') {
+    console.log(`UNDECIDED BUDGET WARN: only ${manifestUndecided} undecided, budget is ${UNDECIDED_BUDGET}. Tighten UNDECIDED_BUDGET to ${manifestUndecided}.`);
+  }
   console.log(`conclusive=${manifest.conclusive}`);
   process.exit(manifest.conclusive ? 0 : 1);
 })().catch((e) => { console.error('probe failed:', e.stack || e.message); process.exit(1); });

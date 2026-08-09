@@ -8,6 +8,11 @@ on:
   push:
     paths: ['outbox/.trigger-token-resolution-probe']
   workflow_dispatch:
+    inputs:
+      undecided_budget:
+        description: 'Override UNDECIDED_BUDGET (leave blank for the default 42). Set to 41 to reproduce the deliberate over-budget failure.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -42,6 +47,11 @@ jobs:
         run: node token_resolution_probe.js
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+          # Passed as data, never interpolated into a shell line: a
+          # workflow_dispatch input is attacker-controllable by anyone who can
+          # dispatch, and this runner holds `contents: write`. The probe coerces
+          # it with Number() and falls back to its own default when blank.
+          UNDECIDED_BUDGET: ${{ inputs.undecided_budget }}
       # Same family: proves the UFL EPA chip renders the token its own function
       # emits, by executing that function with synthetic input rather than
       # waiting for a live UFL play. Runs after the sweep because it needs a
