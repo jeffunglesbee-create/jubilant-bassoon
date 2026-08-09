@@ -61,11 +61,27 @@ const STOP_LISTED = ['--green', '--red', '--orange', '--accent'];
 
 // Views reachable through the app's own API. window.* only — the app ships as
 // an ES module, so nothing is global except what it explicitly assigns.
+// Signatures were read from source, not guessed: toggleThreadDrawer takes a
+// gameId and returns early if no matching card exists, and setViewerIntelMode
+// only accepts 'stories' | 'myteams' | 'stakes'. Calling either with the wrong
+// argument would silently mount nothing and be indistinguishable from "this
+// view has no touched selectors" -- a false NOT-RENDERED.
 const STATES = [
   { key: 'load', fn: null },
   { key: 'journalism', fn: 'toggleJournalismView' },
   { key: 'wc-groups', fn: 'toggleWCView', then: ['switchWCTab', 'groups'] },
   { key: 'wc-bracket', fn: null, then: ['switchWCTab', 'bracket'] },
+  { key: 'wc-off', fn: 'toggleWCView' },
+  { key: 'pickem', fn: 'togglePickEmView' },
+  { key: 'pickem-off', fn: 'togglePickEmView' },
+  { key: 'stats', fn: 'toggleStatsView' },
+  { key: 'stats-off', fn: 'toggleStatsView' },
+  { key: 'viewer-intel-stories', fn: 'setViewerIntelMode', arg: 'stories' },
+  { key: 'viewer-intel-stakes', fn: 'setViewerIntelMode', arg: 'stakes' },
+  // toggleThreadDrawer needs a real card id, taken from the DOM at call time.
+  { key: 'thread', fnRaw: `const c=document.querySelector('.game-card[data-gameid]');
+      if(!c) throw new Error('no .game-card[data-gameid] on the page');
+      window.toggleThreadDrawer(c.getAttribute('data-gameid'));` },
 ];
 
 (async () => {
@@ -186,14 +202,15 @@ const STATES = [
   const stateLog = [];
   for (const st of STATES) {
     let err = null;
-    if (st.fn || st.then) {
-      err = await page.evaluate(({ fn, then }) => {
+    if (st.fn || st.then || st.fnRaw) {
+      err = await page.evaluate(({ fn, arg, then, fnRaw }) => {
         try {
-          if (fn) window[fn]();
+          if (fnRaw) { new Function(fnRaw)(); return null; }
+          if (fn) arg === undefined ? window[fn]() : window[fn](arg);
           if (then) window[then[0]](then[1]);
           return null;
         } catch (e) { return String(e && e.message || e).slice(0, 160); }
-      }, { fn: st.fn, then: st.then });
+      }, { fn: st.fn, arg: st.arg, then: st.then, fnRaw: st.fnRaw });
       await page.waitForTimeout(600);
     }
     const found = await page.evaluate((sels) => {
