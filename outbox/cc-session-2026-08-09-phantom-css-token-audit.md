@@ -1,6 +1,6 @@
 # CC-CMD-2026-08-09-phantom-css-token-audit — Result
 
-## Status: DONE. 98 of 111 phantom-token declarations resolved; 13 stop-listed with reasons. **Confidence: 95.**
+## Status: DONE. 98 of 111 phantom-token declarations resolved; 13 stop-listed with reasons. **Confidence: 97.** (Was 95 — the named ceiling was closed, see the amendment at the foot.)
 
 SW_VERSION `2026-08-09c` -> `2026-08-09d` (ET). Deploy run `31317956504`
 succeeded. Smoke 965/0 at every commit — with one real drop to 963
@@ -158,3 +158,36 @@ assert `background` is not `rgba(0, 0, 0, 0)`. That is a genuinely
 different probe shape (it must trigger UI state, not just read computed
 style), so it is written up rather than bolted on here:
 `docs/CC-CMD-2026-08-09-surface-render-probe.md`.
+
+---
+
+# Amendment — 2026-08-09: the 95 ceiling closed at 97
+
+The reason this doc was held at 95, in its own words: the 50 no-fallback
+declarations were rendering nothing before the change, so each is now a
+visible difference, and *"the privacy modal now has a background" is a
+claim resting on CSS reasoning, not on a committed image of the privacy
+modal.*
+
+`CC-CMD-2026-08-09-surface-render-probe` produced that image, and three
+more. `outbox/surface-render-probe-2026-08-09T14-36-40-723Z-manifest.json`,
+`swVersion: "2026-08-09d"`, `moduleBooted: true`:
+
+```
+{"pass":4,"fail":0,"notOpened":0,"total":4}  conclusive: true
+
+PASS  privacy-banner    bg=rgb(18, 18, 36)  want=rgb(18, 18, 36)
+PASS  privacy-modal     bg=rgb(18, 18, 36)  want=rgb(18, 18, 36)
+PASS  jrn-companion     bg=rgb(7, 7, 16)    want=rgb(7, 7, 16)
+PASS  eu-push-consent   bg=rgb(18, 18, 36)  want=rgb(18, 18, 36)
+```
+
+Each surface was opened by the app's own reveal path, measured against
+tokens read from the live page, and imaged. All four were
+`rgba(0, 0, 0, 0)` before this audit.
+
+**97, not higher**, because those four are the surfaces I could name. The
+other ~46 fixed declarations are text colours that remain unimaged — no
+evidence suggests they are wrong, but they are not individually proven.
+
+Full detail: `outbox/cc-session-2026-08-09-surface-render-probe.md`.
