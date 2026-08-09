@@ -76,18 +76,41 @@ const STOP_LISTED = ['--green', '--red', '--orange', '--accent'];
 // if a later run decides more selectors because data happened to be present,
 // a fail-only guard would silently permit regression back to 42 forever.
 //   undecided >  budget -> FAIL. A new selector joined the unmeasured bucket.
-//   undecided <  budget -> WARN, naming the lower number, so the budget is
-//                          tightened rather than left with quiet slack.
+//   undecided <  budget -> WARN, so the budget is tightened, not left slack.
+//
+// THAT GATE WAS WRONG, and running the deliberate failure case is what showed
+// it. Two runs three minutes apart gave undecided 42 then 45, measuredByRender
+// 16 then 13, with per-state counts that disagreed (journalism 8 then 6, stats
+// 15 then 10). The app polls ESPN every 15-30s and re-renders, so a fixed
+// post-toggle wait sometimes samples a view before it has populated, and the
+// live slate differs between runs. `undecided` is NON-DETERMINISTIC: a ceiling
+// on it fails on timing rather than on a regression.
+//
+// The gate moves to a metric deterministic by construction:
+//
+//   total                    74  <- the committed diff-derived selector list
+//   decidedStatically        16  <- CSSOM only: no element, no network, no wait
+//   structurallyUndecidable  58  = total - decidedStatically
+//
+// Neither input touches the DOM or the network, so it is identical on every
+// run of a given build. It also gates what is worth gating: a future colour
+// fix touching a data-dependent selector raises `total` without raising
+// `decidedStatically`, and trips the budget.
+//
+// `undecided` and `measuredByRender` remain in the manifest as INFORMATIONAL --
+// useful for seeing what a run happened to catch, never pass/fail.
+//
+// Two-sided, so a later improvement that makes more selectors statically
+// decidable tightens the budget instead of leaving silent slack.
 //
 // Blank-safe on purpose. `??` falls back only on null/undefined, and GitHub
 // sets an unfilled workflow_dispatch input to the EMPTY STRING -- so
-// `Number(process.env.X ?? 42)` yields 0 and every ordinary run fails at
-// budget 0. Caught before pushing. An explicit 0 is still honoured, because
-// 0 is the legitimate end state once nothing is undecided; `|| 42` would
-// have silently discarded it.
+// `Number(process.env.X ?? 58)` yields 0 and every ordinary run fails at
+// budget 0. An explicit 0 is still honoured, because 0 is the legitimate end
+// state; `|| 58` would have discarded it.
 const _rawBudget = (process.env.UNDECIDED_BUDGET || '').trim();
-const UNDECIDED_BUDGET =
-  _rawBudget === '' || Number.isNaN(Number(_rawBudget)) ? 42 : Number(_rawBudget);
+const STRUCTURAL_BUDGET =
+  _rawBudget === '' || Number.isNaN(Number(_rawBudget)) ? 58 : Number(_rawBudget);
 
 // Views reachable through the app's own API. window.* only — the app ships as
 // an ES module, so nothing is global except what it explicitly assigns.
@@ -296,7 +319,11 @@ const STATES = [
   const visible = decided.filter((r) => r.observable);
   const invisible = decided.filter((r) => !r.observable);
 
-  const manifestUndecided = rows.length - decided.length;
+  const manifestUndecided = rows.length - decided.length;   // informational only
+  // Deterministic: both terms come from the committed selector list and the
+  // stylesheet, neither from a rendered element nor a network round trip.
+  const structurallyUndecidable =
+    rows.length - rows.filter((r) => r.observabilityBasis === 'static').length;
 
   const manifest = {
     ts: TS, url: URL, viewport: VIEWPORT,
@@ -322,13 +349,14 @@ const STATES = [
       provablyInvisibleChanges: invisible.length,
       verdict: l2aFail === 0 && notFound === 0 ? 'PASS' : 'FAIL',
     },
-    undecidedBudget: UNDECIDED_BUDGET,
-    undecidedBudgetVerdict:
-      manifestUndecided > UNDECIDED_BUDGET ? 'FAIL-OVER-BUDGET'
-      : manifestUndecided < UNDECIDED_BUDGET ? 'WARN-TIGHTEN-BUDGET'
+    structurallyUndecidable,
+    structuralBudget: STRUCTURAL_BUDGET,
+    structuralBudgetVerdict:
+      structurallyUndecidable > STRUCTURAL_BUDGET ? 'FAIL-OVER-BUDGET'
+      : structurallyUndecidable < STRUCTURAL_BUDGET ? 'WARN-TIGHTEN-BUDGET'
       : 'PASS',
     conclusive: l1Regressions.length === 0 && l2aFail === 0 && notFound === 0
-                && manifestUndecided <= UNDECIDED_BUDGET,
+                && structurallyUndecidable <= STRUCTURAL_BUDGET,
     l1UnresolvedNoFallback: l1.unresolvedNoFallback,
     l1UnresolvedWithFallback: l1.unresolvedWithFallback,
     rows,
@@ -347,11 +375,13 @@ const STATES = [
   console.log(`   observability: measured ${measured.size}, static ${manifest.l2.decidedStatically}, undecided ${manifest.l2.undecided}`);
   console.log(`   observable ${visible.length}, provably-invisible ${invisible.length}`);
   for (const s of stateLog) console.log(`   state ${s.state.padEnd(11)} rendered ${String(s.selectorsRenderedHere).padStart(3)}  new ${String(s.newlyMeasured).padStart(3)}  err=${s.error}`);
-  const budgetVerdict = manifest.undecidedBudgetVerdict;
+  const budgetVerdict = manifest.structuralBudgetVerdict;
+  console.log(`   structurallyUndecidable ${structurallyUndecidable} (budget ${STRUCTURAL_BUDGET}) -- deterministic`);
+  console.log(`   undecided ${manifestUndecided} this run -- INFORMATIONAL, varies with live data and render timing`);
   if (budgetVerdict === 'FAIL-OVER-BUDGET') {
-    console.log(`UNDECIDED BUDGET FAIL: ${manifestUndecided} undecided > budget ${UNDECIDED_BUDGET}. A selector joined the unmeasured bucket -- identify it in rows[] where observable === null.`);
+    console.log(`STRUCTURAL BUDGET FAIL: ${structurallyUndecidable} > ${STRUCTURAL_BUDGET}. A touched selector is neither statically decidable nor budgeted -- inspect rows[] where observabilityBasis !== 'static'.`);
   } else if (budgetVerdict === 'WARN-TIGHTEN-BUDGET') {
-    console.log(`UNDECIDED BUDGET WARN: only ${manifestUndecided} undecided, budget is ${UNDECIDED_BUDGET}. Tighten UNDECIDED_BUDGET to ${manifestUndecided}.`);
+    console.log(`STRUCTURAL BUDGET WARN: only ${structurallyUndecidable}, budget is ${STRUCTURAL_BUDGET}. Tighten it to ${structurallyUndecidable}.`);
   }
   console.log(`conclusive=${manifest.conclusive}`);
   process.exit(manifest.conclusive ? 0 : 1);
