@@ -1,0 +1,1899 @@
+{
+  "ts": "2026-08-09T17-59-32-932Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "ccCmd": "CC-CMD-2026-08-09-observability-coverage",
+  "swVersion": "2026-08-09e",
+  "bodyColor": "rgb(242, 242, 250)",
+  "sourceCommits": [
+    "87257cd4",
+    "2b35f7a1",
+    "6459cad5",
+    "db924059",
+    "58132f36",
+    "77e7986a",
+    "fffbfe7f"
+  ],
+  "jsInlineStyleSitesNotCovered": 8,
+  "stateLog": [
+    {
+      "state": "load",
+      "error": null,
+      "selectorsRenderedHere": 4,
+      "newlyMeasured": 4
+    },
+    {
+      "state": "journalism",
+      "error": null,
+      "selectorsRenderedHere": 6,
+      "newlyMeasured": 2
+    },
+    {
+      "state": "wc-groups",
+      "error": null,
+      "selectorsRenderedHere": 10,
+      "newlyMeasured": 4
+    },
+    {
+      "state": "wc-bracket",
+      "error": null,
+      "selectorsRenderedHere": 10,
+      "newlyMeasured": 0
+    },
+    {
+      "state": "wc-off",
+      "error": null,
+      "selectorsRenderedHere": 10,
+      "newlyMeasured": 0
+    },
+    {
+      "state": "pickem",
+      "error": null,
+      "selectorsRenderedHere": 10,
+      "newlyMeasured": 0
+    },
+    {
+      "state": "pickem-off",
+      "error": null,
+      "selectorsRenderedHere": 10,
+      "newlyMeasured": 0
+    },
+    {
+      "state": "stats",
+      "error": null,
+      "selectorsRenderedHere": 10,
+      "newlyMeasured": 0
+    },
+    {
+      "state": "stats-off",
+      "error": null,
+      "selectorsRenderedHere": 12,
+      "newlyMeasured": 3
+    },
+    {
+      "state": "viewer-intel-stories",
+      "error": null,
+      "selectorsRenderedHere": 12,
+      "newlyMeasured": 0
+    },
+    {
+      "state": "viewer-intel-stakes",
+      "error": null,
+      "selectorsRenderedHere": 13,
+      "newlyMeasured": 0
+    },
+    {
+      "state": "thread",
+      "error": null,
+      "selectorsRenderedHere": 13,
+      "newlyMeasured": 0
+    }
+  ],
+  "l1": {
+    "rulesScanned": 1891,
+    "sheetsScanned": 1,
+    "sheetsBlocked": 1,
+    "unresolvedNoFallback": [
+      {
+        "selector": ".wc-scenario",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".wc-group-pill",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".vibe.blood",
+        "property": "border-color",
+        "token": "--red"
+      },
+      {
+        "selector": ".vibe.blood",
+        "property": "color",
+        "token": "--red"
+      },
+      {
+        "selector": ".vibe.volatile",
+        "property": "border-color",
+        "token": "--orange"
+      },
+      {
+        "selector": ".vibe.volatile",
+        "property": "color",
+        "token": "--orange"
+      },
+      {
+        "selector": ".vibe.post",
+        "property": "border-color",
+        "token": "--green"
+      },
+      {
+        "selector": ".vibe.post",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".narrative-line.narrative-hi",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "selector": ".golf-pack-chip.dense",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".ts-title",
+        "property": "color",
+        "token": "--accent"
+      }
+    ],
+    "unresolvedWithFallback": [
+      {
+        "selector": ".filter-btn",
+        "property": "animation-delay",
+        "token": "--i"
+      },
+      {
+        "selector": ".sport-section",
+        "property": "animation-delay",
+        "token": "--i"
+      },
+      {
+        "selector": ".game-card",
+        "property": "animation-delay",
+        "token": "--i"
+      },
+      {
+        "selector": ".game-card",
+        "property": "animation-delay",
+        "token": "--cols"
+      },
+      {
+        "selector": ".pin-btn:hover, .pin-btn.active",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "property": "box-shadow",
+        "token": "--pulse-color"
+      },
+      {
+        "property": "box-shadow",
+        "token": "--pulse-color"
+      },
+      {
+        "selector": ".game-card.pulse-med",
+        "property": "animation",
+        "token": "--pulse-speed"
+      },
+      {
+        "selector": ".game-card.pulse-high",
+        "property": "animation",
+        "token": "--pulse-speed"
+      },
+      {
+        "selector": "#score-ticker-wrap::before",
+        "property": "opacity",
+        "token": "--m5-left-opacity"
+      },
+      {
+        "selector": ".card-stage-soon .stage-countdown",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "selector": ".cal-btn:hover",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "selector": ".golf-lb-score.lb-under",
+        "property": "color",
+        "token": "--c-live"
+      },
+      {
+        "selector": ".cg.verified",
+        "property": "background",
+        "token": "--green"
+      },
+      {
+        "selector": ".field-chip--MUST",
+        "property": "opacity",
+        "token": "--chip-must-opacity"
+      },
+      {
+        "selector": ".field-chip--WATCH",
+        "property": "opacity",
+        "token": "--chip-watch-opacity"
+      },
+      {
+        "selector": ".field-chip--DISCOVERY",
+        "property": "opacity",
+        "token": "--chip-discovery-opacity"
+      },
+      {
+        "selector": ".field-chip--QUIET",
+        "property": "opacity",
+        "token": "--chip-quiet-opacity"
+      },
+      {
+        "selector": ".stats-row-val.neg",
+        "property": "color",
+        "token": "--orange"
+      }
+    ],
+    "stopListed": [
+      "--green",
+      "--red",
+      "--orange",
+      "--accent"
+    ],
+    "knownStopListed": 11,
+    "regressions": [],
+    "verdict": "PASS"
+  },
+  "l2": {
+    "total": 74,
+    "pass": 73,
+    "fail": 0,
+    "ruleNotFound": 0,
+    "notInThisEngine": 1,
+    "measuredByRender": 13,
+    "decidedStatically": 16,
+    "undecided": 45,
+    "observableChanges": 23,
+    "provablyInvisibleChanges": 6,
+    "verdict": "PASS"
+  },
+  "undecidedBudget": 41,
+  "undecidedBudgetVerdict": "FAIL-OVER-BUDGET",
+  "conclusive": false,
+  "l1UnresolvedNoFallback": [
+    {
+      "selector": ".wc-scenario",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".wc-group-pill",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".vibe.blood",
+      "property": "border-color",
+      "token": "--red"
+    },
+    {
+      "selector": ".vibe.blood",
+      "property": "color",
+      "token": "--red"
+    },
+    {
+      "selector": ".vibe.volatile",
+      "property": "border-color",
+      "token": "--orange"
+    },
+    {
+      "selector": ".vibe.volatile",
+      "property": "color",
+      "token": "--orange"
+    },
+    {
+      "selector": ".vibe.post",
+      "property": "border-color",
+      "token": "--green"
+    },
+    {
+      "selector": ".vibe.post",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".narrative-line.narrative-hi",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "selector": ".golf-pack-chip.dense",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".ts-title",
+      "property": "color",
+      "token": "--accent"
+    }
+  ],
+  "l1UnresolvedWithFallback": [
+    {
+      "selector": ".filter-btn",
+      "property": "animation-delay",
+      "token": "--i"
+    },
+    {
+      "selector": ".sport-section",
+      "property": "animation-delay",
+      "token": "--i"
+    },
+    {
+      "selector": ".game-card",
+      "property": "animation-delay",
+      "token": "--i"
+    },
+    {
+      "selector": ".game-card",
+      "property": "animation-delay",
+      "token": "--cols"
+    },
+    {
+      "selector": ".pin-btn:hover, .pin-btn.active",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "property": "box-shadow",
+      "token": "--pulse-color"
+    },
+    {
+      "property": "box-shadow",
+      "token": "--pulse-color"
+    },
+    {
+      "selector": ".game-card.pulse-med",
+      "property": "animation",
+      "token": "--pulse-speed"
+    },
+    {
+      "selector": ".game-card.pulse-high",
+      "property": "animation",
+      "token": "--pulse-speed"
+    },
+    {
+      "selector": "#score-ticker-wrap::before",
+      "property": "opacity",
+      "token": "--m5-left-opacity"
+    },
+    {
+      "selector": ".card-stage-soon .stage-countdown",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "selector": ".cal-btn:hover",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "selector": ".golf-lb-score.lb-under",
+      "property": "color",
+      "token": "--c-live"
+    },
+    {
+      "selector": ".cg.verified",
+      "property": "background",
+      "token": "--green"
+    },
+    {
+      "selector": ".field-chip--MUST",
+      "property": "opacity",
+      "token": "--chip-must-opacity"
+    },
+    {
+      "selector": ".field-chip--WATCH",
+      "property": "opacity",
+      "token": "--chip-watch-opacity"
+    },
+    {
+      "selector": ".field-chip--DISCOVERY",
+      "property": "opacity",
+      "token": "--chip-discovery-opacity"
+    },
+    {
+      "selector": ".field-chip--QUIET",
+      "property": "opacity",
+      "token": "--chip-quiet-opacity"
+    },
+    {
+      "selector": ".stats-row-val.neg",
+      "property": "color",
+      "token": "--orange"
+    }
+  ],
+  "rows": [
+    {
+      "selector": ".ap-arb-line",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".ap-brief-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".ap-card-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".ap-score-teams",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".atp-score-live",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".bottom-sheet",
+      "properties": [
+        "background"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".bs-handle-row",
+      "properties": [
+        "background"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".card-brief-inline-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".cascade-line",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".crew-chip",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".cut-line-badge",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "inheritedProps": [
+        "color",
+        "font-family"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "stats-off",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(122, 122, 154)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": true
+        },
+        {
+          "property": "font-family",
+          "computed": "\"JetBrains Mono\", monospace",
+          "parentComputed": "\"DM Sans\", \"DM Sans Fallback\", Arial, sans-serif",
+          "observable": true
+        }
+      ],
+      "observable": true,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".desk-card-body",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".drama-dial-track::-moz-range-thumb",
+      "properties": [
+        "background",
+        "border"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background",
+        "border"
+      ],
+      "ruleFound": false,
+      "unresolved": [],
+      "l2aVerdict": "NOT-IN-THIS-ENGINE",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".drama-dial-track::-webkit-slider-thumb",
+      "properties": [
+        "background",
+        "border"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background",
+        "border"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".epl-brief-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".epl-brief-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".eu-push-consent",
+      "properties": [
+        "background",
+        "border-top"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background",
+        "border-top"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".fan-out-chip",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".field-brief-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "wc-groups",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": false
+        }
+      ],
+      "observable": false,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".field-row__label",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "inheritedProps": [
+        "color",
+        "font-family"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".field-row__value",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "inheritedProps": [
+        "color",
+        "font-family"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".field-section__title",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "inheritedProps": [
+        "color",
+        "font-family"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".filter-btn:active",
+      "properties": [
+        "background"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".filter-suggestion-chip",
+      "properties": [
+        "border",
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [
+        "border"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".filter-suggestion-dismiss",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".gline",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".golf-lb-row.lb-top3",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".golf-lb-score.lb-even",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".jrn-arch-type.game_recap,.jrn-arch-type.night_owl",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".jrn-companion-item",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "journalism",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": false
+        }
+      ],
+      "observable": false,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".jrn-companion-summary",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "wc-groups",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": false
+        }
+      ],
+      "observable": false,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".jrn-quality-row-value",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "wc-groups",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(232, 201, 122)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": true
+        }
+      ],
+      "observable": true,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".jrn-series-tonight",
+      "properties": [
+        "border-left",
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [
+        "border-left"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".jrn-slate-brief",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".jrn-slate-game",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".mlb-chip-teams",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".night-owl-secondary .no-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".night-owl-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".night-owl-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".no-label",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".np-degraded",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".np-divider",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "load",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(106, 106, 138)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": true
+        }
+      ],
+      "observable": true,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".np-freshness",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".np-missed-list li::before",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".pga-leaderboard tr.pga-row td.pga-name",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "stats-off",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(122, 122, 154)",
+          "observable": true
+        }
+      ],
+      "observable": true,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".pga-leaderboard tr.pga-row:nth-child(-n+3) td",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "stats-off",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(122, 122, 154)",
+          "observable": true
+        }
+      ],
+      "observable": true,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".pin-widget",
+      "properties": [
+        "background"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".privacy-modal",
+      "properties": [
+        "background",
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": "load",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": false
+        }
+      ],
+      "observable": false,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".pulse-chip",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "inheritedProps": [
+        "color",
+        "font-family"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".score-status",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "journalism",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(168, 168, 192)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": true
+        }
+      ],
+      "observable": true,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".score-tbd::after",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".series-preview-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".series-preview-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".sgb-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "wc-groups",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": false
+        }
+      ],
+      "observable": false,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".stakes-text",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".team-picker",
+      "properties": [
+        "background"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".thread-input",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "load",
+      "inheritedMeasurements": [
+        {
+          "property": "color",
+          "computed": "rgb(242, 242, 250)",
+          "parentComputed": "rgb(242, 242, 250)",
+          "observable": false
+        }
+      ],
+      "observable": false,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".thread-note",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".tp-btn",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".vibe",
+      "properties": [
+        "font-family"
+      ],
+      "inheritedProps": [
+        "font-family"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": "load",
+      "inheritedMeasurements": [
+        {
+          "property": "font-family",
+          "computed": "\"JetBrains Mono\", monospace",
+          "parentComputed": "\"DM Sans\", \"DM Sans Fallback\", Arial, sans-serif",
+          "observable": true
+        }
+      ],
+      "observable": true,
+      "observabilityBasis": "measured"
+    },
+    {
+      "selector": ".vibe.crunch",
+      "properties": [
+        "border-color",
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [
+        "border-color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".vibe.long",
+      "properties": [
+        "border-color",
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [
+        "border-color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".wc-bar-team",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".wc-bar-track",
+      "properties": [
+        "background",
+        "border"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background",
+        "border"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".wc-bar-val",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "inheritedProps": [
+        "color",
+        "font-family"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".wc-group-block.group-highlight",
+      "properties": [
+        "border-color"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "border-color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".wc-mini-card",
+      "properties": [
+        "background"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": ".wc-preview-intro",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".wc-third-cutline span",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".wc-trap-stat strong",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".wc-trap-team",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": ".ww-game",
+      "properties": [
+        "color"
+      ],
+      "inheritedProps": [
+        "color"
+      ],
+      "nonInheritedProps": [],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": null,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": null,
+      "observabilityBasis": null
+    },
+    {
+      "selector": "#privacy-banner",
+      "properties": [
+        "background",
+        "border-bottom"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background",
+        "border-bottom"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    },
+    {
+      "selector": "body.journalism-mode .jrn-companion",
+      "properties": [
+        "background",
+        "border-left"
+      ],
+      "inheritedProps": [],
+      "nonInheritedProps": [
+        "background",
+        "border-left"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "staticallyObservable": true,
+      "measuredInState": null,
+      "inheritedMeasurements": null,
+      "observable": true,
+      "observabilityBasis": "static"
+    }
+  ]
+}
