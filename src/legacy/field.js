@@ -6505,7 +6505,20 @@ async function _fetchUFLGameEpa(srGameId,fieldGameId){
 function _buildUFLEpaHTML(state){
   if(!state?.lastPlay) return '';
   const lp=state.lastPlay;
-  const c=lp.epa>=0.5?'var(--green)':lp.epa<=-0.5?'var(--red)':'var(--muted)';
+  // --green and --red are defined NOWHERE (CC-CMD-2026-08-09-ufl-epa-inline-token).
+  // Both branches emitted an inline `color:var(--green|--red)` that is invalid
+  // at computed-value time, so the declaration was dropped and .epa-chip -- which
+  // sets no colour of its own -- inherited --white. Net effect: good and bad
+  // plays rendered identically bright, and NEUTRAL was the only branch that
+  // worked, rendering dim. The emphasis was inverted.
+  //
+  // Rule 37 reserves no good/bad colour pair, and red is "elimination urgency
+  // ONLY", so neither hue can be honestly restored. But the author's INTENT --
+  // emphasise a significant play, de-emphasise a neutral one -- is expressible
+  // on an axis that needs no new meaning: full vs dim foreground. The branch
+  // structure is kept verbatim rather than collapsed to Math.abs(), so any
+  // non-numeric epa lands in exactly the same arm it does today.
+  const c=(lp.epa>=0.5||lp.epa<=-0.5)?'var(--white)':'var(--muted)';
   const s=lp.epa>0?'+':'';
   const ds=state.driveEpa>=0?'+':'';
   return `<div class="ufl-epa-live"><span class="epa-chip" style="color:${c}">${s}${lp.epa} EPA</span><span class="epa-sit">${lp.situation}</span><span class="epa-drive-tot">${ds}${state.driveEpa} drive · ${state.drivePlayCount} pl</span></div>`;
