@@ -212,7 +212,7 @@ body::before{
 .wc-bar-adv{position:absolute;left:0;top:0;bottom:0;
   background:rgba(74,222,128,.5);mix-blend-mode:screen;
   transition:width .4s ease}
-.wc-bar-val{color:var(--label);text-align:right;font-size:.62rem;font-family:var(--ff-mono)}
+.wc-bar-val{color:var(--smoke);text-align:right;font-size:.62rem;font-family:var(--ff-mono)}
 .wc-scenario{margin-top:.35rem;background:rgba(74,222,128,.04);
   border:1px solid rgba(74,222,128,.15);border-radius:4px;
   padding:.28rem .45rem;font-size:.62rem;color:var(--green);
@@ -232,7 +232,7 @@ body::before{
 .vibe{order:-1}
 
 /* 2. Touch feedback — :hover doesn't fire on mobile, :active does */
-.filter-btn:active{transform:scale(0.96);background:var(--gold-dim)}
+.filter-btn:active{transform:scale(0.96);background:color-mix(in srgb,var(--gold) 15%,transparent)}
 .game-card:active{transform:scale(0.99);box-shadow:0 0 0 1px rgba(255,255,255,.08)}
 .watch-btn:active{transform:scale(0.97);opacity:.85}
 
@@ -963,7 +963,7 @@ body.wf-mode .np-inner{max-width:100%}
 }
 
 /* ── Privacy Banner + Modal + EU Push Consent ──────────────── */
-#privacy-banner{display:none;align-items:center;gap:.75rem;padding:.65rem 1rem;background:var(--bg2);border-bottom:1px solid var(--edge);}
+#privacy-banner{display:none;align-items:center;gap:.75rem;padding:.65rem 1rem;background:var(--card);border-bottom:1px solid var(--edge);}
 .privacy-banner-body{display:flex;align-items:center;gap:.6rem;flex:1;min-width:0}
 .privacy-icon{font-size:1.2rem;flex-shrink:0}
 .privacy-title{font-size:.82rem;font-weight:700;color:var(--white)}
@@ -974,7 +974,7 @@ body.wf-mode .np-inner{max-width:100%}
 .privacy-btn-accept{background:rgba(45,212,191,.2);color:#2dd4bf;border:1px solid rgba(45,212,191,.3)}
 .privacy-btn-decline{background:transparent;color:var(--smoke);border:1px solid var(--edge)}
 .privacy-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);justify-content:center;align-items:center;padding:1rem}
-.privacy-modal{background:var(--bg2);border-radius:12px;max-width:540px;width:100%;max-height:80vh;overflow-y:auto;padding:1.5rem;position:relative;color:var(--white)}
+.privacy-modal{background:var(--card);border-radius:12px;max-width:540px;width:100%;max-height:80vh;overflow-y:auto;padding:1.5rem;position:relative;color:var(--white)}
 .privacy-modal-close{position:absolute;top:.75rem;right:.75rem;background:none;border:none;color:var(--smoke);font-size:1.2rem;cursor:pointer}
 .privacy-modal-title{font-size:1.1rem;font-weight:700;margin:0 0 .25rem}
 .privacy-modal-updated{font-size:.65rem;color:var(--smoke);margin-bottom:1rem}
@@ -982,7 +982,7 @@ body.wf-mode .np-inner{max-width:100%}
 .privacy-modal-body h3{font-size:.85rem;color:var(--white);margin:1rem 0 .4rem;font-weight:600}
 .privacy-modal-body p{margin:0 0 .6rem}
 .privacy-modal-body strong{color:var(--white)}
-.eu-push-consent{position:fixed;bottom:0;left:0;right:0;z-index:9998;background:var(--bg2);border-top:1px solid var(--edge);padding:1rem;animation:slideUp .3s ease}
+.eu-push-consent{position:fixed;bottom:0;left:0;right:0;z-index:9998;background:var(--card);border-top:1px solid var(--edge);padding:1rem;animation:slideUp .3s ease}
 .eu-push-body{max-width:540px;margin:0 auto}
 .eu-push-title{font-size:.88rem;font-weight:700;color:var(--white);margin-bottom:.4rem}
 .eu-push-detail{font-size:.68rem;color:var(--smoke);line-height:1.5;margin-bottom:.6rem}
@@ -1356,8 +1356,8 @@ body.wf-mode .np-inner{max-width:100%}
 /* [DRAMA-LINE-A] */
 .card-drama-line{font-size:.62rem;color:var(--smoke);line-height:1.4;margin-top:.3rem;padding-top:.25rem;border-top:1px solid var(--edge);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:1.5em}
 /* VIBE-A (2026-05-28): named-state badge strip */
-.ganalytics{border-top:1px solid var(--border);margin:.3rem -.7rem -.55rem;padding:.4rem .7rem;background:rgba(255,255,255,.02);display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
-.vibe{font-size:.62rem;font-family:var(--mono);padding:.18rem .5rem;border-radius:3px;border:1px solid;white-space:nowrap;letter-spacing:.04em;font-weight:500;}
+.ganalytics{border-top:1px solid var(--edge);margin:.3rem -.7rem -.55rem;padding:.4rem .7rem;background:rgba(255,255,255,.02);display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+.vibe{font-size:.62rem;font-family:var(--ff-mono);padding:.18rem .5rem;border-radius:3px;border:1px solid;white-space:nowrap;letter-spacing:.04em;font-weight:500;}
 .vibe.crunch{background:rgba(251,191,36,.12);border-color:var(--amber);color:var(--amber)}
 .vibe.blood{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red)}
 .vibe.grind{background:rgba(107,114,128,.12);border-color:#6b7280;color:#9ca3af}
@@ -2092,7 +2092,7 @@ body.wf-mode .np-inner{max-width:100%}
 
 /* FREE filter pill */
 /* Gap 11: filter suggestion chip — shown on LATE/DAWN transition when sport filter has all-final games */
-.filter-suggestion-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;margin:4px 0;font-size:11px;color:var(--platinum);background:rgba(255,255,255,.04);border:1px solid var(--edge1);border-radius:8px}
+.filter-suggestion-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;margin:4px 0;font-size:11px;color:var(--platinum);background:rgba(255,255,255,.04);border:1px solid var(--edge);border-radius:8px}
 .filter-suggestion-text{opacity:.8}
 .filter-suggestion-action{background:none;border:1px solid var(--edge2);border-radius:6px;color:var(--gold2);font-size:11px;padding:2px 7px;cursor:pointer}
 .filter-suggestion-action:hover{background:rgba(201,168,76,.1)}
@@ -3216,7 +3216,7 @@ body.stats-mode .main{margin-right:0 !important}
     position:fixed;right:0;top:0;
     width:280px;max-height:100vh;overflow-y:auto;
     z-index:5;padding:1.5rem 1rem;
-    background:var(--bg);border-left:1px solid var(--edge);
+    background:var(--obsidian);border-left:1px solid var(--edge);
   }
 }
 
