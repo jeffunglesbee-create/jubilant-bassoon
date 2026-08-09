@@ -111,3 +111,9 @@ no code changed).
 ## Scope
 
 Ceiling not raised. File not split. Nothing decided.
+
+## Confidence gate
+
+**97.** Report-only, and every fact was read from HEAD rather than from the CC-CMD's own description -- which mattered, because its framing implied a hard constraint and the ceiling turned out to be a self-imposed anomaly detector with no platform limit behind it. Not higher because the Cloudflare 25 MiB static-asset figure is documented rather than measured against this account.
+
+*(Backfilled 2026-08-09. Stated in session at execution time but never written into this doc. Chat is ephemeral; this file is the record, and a gate that exists only in scrollback is not a gate.)*

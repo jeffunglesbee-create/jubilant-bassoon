@@ -70,3 +70,9 @@ that competition over to 2026-27 at all — its league season object still
 reports `year: 2025, type: "Final"` — and has its own CC-CMD with an
 explicit unblock probe: `docs/CC-CMD-2026-08-08-fa-cup-coverage.md` in
 field-relay-nba.
+
+## Confidence gate
+
+**97.** Closed against its own tasks rather than re-run, with live artifacts from both halves already in hand. Not higher because two of its premises were false when written -- the host it names 403s Worker egress, and it left open whether SOCCER_LEAGUES was separately required -- so this doc records a task satisfied by different work than it specified, not a clean execution of it.
+
+*(Backfilled 2026-08-09. Stated in session at execution time but never written into this doc. Chat is ephemeral; this file is the record, and a gate that exists only in scrollback is not a gate.)*

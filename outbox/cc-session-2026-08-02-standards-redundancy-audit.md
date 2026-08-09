@@ -102,3 +102,9 @@ tensions are all cross-file numbering, above.
 
 STANDARDS.md unmodified. No rule deleted, merged, or rewritten. No
 finding acted on.
+
+## Confidence gate
+
+**93.** **Below the 95 gate, deliberately.** Task 1 asked for STANDARDS.md's full current text. I read all 91 rule headings and opening statements (extracted programmatically, so none were skipped) plus the full body of the eight rules in the two candidate clusters -- but NOT all 4,904 lines. The cross-file findings (Rule 86 missing, three number collisions, one rule with two numbers) are each verified by direct file comparison and would stand at 98 alone; the redundancy conclusions rest on statements rather than full text, and that is what holds the score down.
+
+*(Backfilled 2026-08-09. Stated in session at execution time but never written into this doc. Chat is ephemeral; this file is the record, and a gate that exists only in scrollback is not a gate.)*
