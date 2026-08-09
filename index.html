@@ -189,7 +189,7 @@ body::before{
 .score-tbd{font-family:var(--ff-mono);color:var(--muted);font-size:.7rem;
   display:inline-flex;align-items:center;gap:.2rem}
 .score-tbd::after{content:'•••';animation:pulse 1.6s ease-in-out infinite;
-  color:var(--amber);letter-spacing:.1em}
+  color:var(--caution);letter-spacing:.1em}
 
 /* ── WC bar legend at all viewports (Jun 9 2026) ──────────────────────────── */
 .wc-bar-legend{display:flex;gap:.5rem;font-family:var(--ff-mono);font-size:.62rem;
@@ -241,7 +241,7 @@ body::before{
 
 /* 4. Night Owl → amber to disambiguate from Finals Desk (both were violet) */
 /* Finals Desk = violet (series intelligence) · Night Owl = amber (post-game) · Brief = teal (editorial) */
-.no-label{color:var(--amber)}
+.no-label{color:var(--caution)}
 #night-owl{border-left-color:rgba(251,191,36,.3)}
 
 /* 5. GPU promotion on frequently animated elements only */
@@ -1358,7 +1358,7 @@ body.wf-mode .np-inner{max-width:100%}
 /* VIBE-A (2026-05-28): named-state badge strip */
 .ganalytics{border-top:1px solid var(--edge);margin:.3rem -.7rem -.55rem;padding:.4rem .7rem;background:rgba(255,255,255,.02);display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
 .vibe{font-size:.62rem;font-family:var(--ff-mono);padding:.18rem .5rem;border-radius:3px;border:1px solid;white-space:nowrap;letter-spacing:.04em;font-weight:500;}
-.vibe.crunch{background:rgba(251,191,36,.12);border-color:var(--amber);color:var(--amber)}
+.vibe.crunch{background:rgba(251,191,36,.12);border-color:var(--caution);color:var(--caution)}
 .vibe.blood{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red)}
 .vibe.grind{background:rgba(107,114,128,.12);border-color:#6b7280;color:#9ca3af}
 .vibe.alone{background:rgba(45,212,191,.08);border-color:var(--teal);color:var(--teal)}
@@ -1367,7 +1367,7 @@ body.wf-mode .np-inner{max-width:100%}
 .vibe.mission{background:rgba(201,168,76,.1);border-color:var(--gold);color:var(--gold)}
 .vibe.mute{background:rgba(55,65,81,.2);border-color:#374151;color:#6b7280}
 .vibe.post{background:rgba(74,222,128,.08);border-color:var(--green);color:var(--green);font-size:.62rem}
-.vibe.long{background:rgba(251,191,36,.08);border-color:var(--amber);color:var(--amber);font-variant-numeric:tabular-nums}
+.vibe.long{background:rgba(251,191,36,.08);border-color:var(--caution);color:var(--caution);font-variant-numeric:tabular-nums}
 @media(max-width:430px){.ganalytics{display:none;}}
 @media(min-width:431px) and (max-width:599px){.vibe~.vibe{display:none;}}
 @media(min-width:600px) and (max-width:819px){.vibe:nth-of-type(n+3){display:none;}}
