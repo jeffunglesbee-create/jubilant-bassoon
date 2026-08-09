@@ -28,9 +28,16 @@ const SMOKE = 'rgb(106, 106, 138)';   // --smoke #6a6a8a
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: VIEWPORT });
-  await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
-  // Cards render after the schedule fetch resolves; give the poll cycle room.
-  await page.waitForTimeout(8000);
+  // 'domcontentloaded', NOT 'networkidle' — matching ambient_skeleton_probe.js,
+  // which is the proven pattern here. My first version used networkidle and the
+  // step hung: FIELD holds an SSE connection and polls ESPN every 15-30s, so the
+  // network NEVER goes idle and the wait runs to timeout. On a live-polling PWA
+  // networkidle is not a slower wait, it is a wait that cannot succeed.
+  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  // Cards mount after the schedule fetch resolves. Wait for the badge itself
+  // rather than a blind sleep; if none appears that is a real finding (empty
+  // slate), handled below, not an error.
+  await page.waitForSelector('.mlb-park-badge', { timeout: 25000 }).catch(() => {});
 
   const result = await page.evaluate(() => {
     const els = Array.from(document.querySelectorAll('.mlb-park-badge'));
