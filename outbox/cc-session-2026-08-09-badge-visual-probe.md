@@ -1,8 +1,6 @@
 # CC-CMD-2026-08-09-badge-visual-probe — Result
 
-## Status: probe BUILT and it found a real bug. Re-verification of the fix PENDING.
-
-**Confidence in the finding: 97. In the fix being live: unverified.**
+## Status: DONE. Bug found, fixed, and the fix VERIFIED on a real render. **Confidence: 97.**
 
 ## Task 1–2 — the probe
 
@@ -56,13 +54,42 @@ selectors were redundant as well as broken.
 
 SW_VERSION `2026-08-09a` (ET). smoke **965 passed, 0 failed**.
 
-## NOT DONE — stated plainly
+## Re-verified after deploy — the done condition, met
 
-**The probe has not been re-run against the deployed fix.** Until
-`assert_colorIsSmoke` is true and `distinctColors` is 1 from a real
-render, the colour claim is unverified — which is exactly the state that
-produced this CC-CMD. One dispatch of `badge-visual-probe.yml` after
-deploy-gate completes closes it.
+Deploy `6bebf06e` completed success; probe re-run **31293745342**
+completed success. Manifest
+`outbox/badge-visual-probe-manifest-2026-08-09T04-04-06-265Z.json`,
+screenshot committed alongside:
+
+```
+badgePresent:              True
+badgeCount:                4
+badgeComputedColor:        rgb(106, 106, 138)      <- --smoke #6a6a8a
+distinctColors:            1
+badgeFontFamily:           "DM Mono", ui-monospace, monospace
+assert_colorIsSmoke:       True
+assert_noRetiredHue:       True
+assert_collapsedToOne:     True
+assert_isMonospace:        True
+retiredHuesStillRendering: []
+```
+
+`badgeComputedColor` is the *computed* value from a live browser, not the
+CSS source — `rgb(106,106,138)` is exactly `#6a6a8a`. `distinctColors: 1`
+across 4 rendered badges proves the collapse landed. `retiredHuesStillRendering`
+is empty against the named known-bad set.
+
+**Before → after on the same measurement:**
+`rgb(242,242,250)` (--white, inherited, colour rule dead) →
+`rgb(106,106,138)` (--smoke, applied).
+
+## One honest note on the manifest
+
+`variantsFound: ['park-badge']` is my regex still matching the base class
+rather than the real variant — the cosmetic defect noted below. It does
+not affect any assertion (all four assertions read colour and font, not
+variant names), but the field is misleading and should be corrected
+before anyone relies on it.
 
 ## Two probe defects of my own, both fixed not worked around
 
