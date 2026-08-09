@@ -43,7 +43,12 @@ const TARGETS = {
 };
 
 (async () => {
-  const browser = await chromium.launch();
+  // PW_EXECUTABLE lets this run against a locally-installed Chromium whose
+  // build number does not match the npm package's expectation, which is the
+  // case in the session sandbox. CI leaves it unset and uses the browser
+  // `npx playwright install` fetched.
+  const browser = await chromium.launch(
+    process.env.PW_EXECUTABLE ? { executablePath: process.env.PW_EXECUTABLE } : {});
   const page = await browser.newPage({ viewport: VIEWPORT });
   // 'domcontentloaded', not 'networkidle': FIELD holds an SSE connection and
   // polls every 15-30s, so networkidle is not a slower wait, it is a wait that
@@ -59,6 +64,33 @@ const TARGETS = {
       if (h.length === 3) h = h.split('').map((c) => c + c).join('');
       return `rgb(${parseInt(h.slice(0, 2), 16)}, ${parseInt(h.slice(2, 4), 16)}, ${parseInt(h.slice(4, 6), 16)})`;
     };
+    // SYNTHETIC PASS -- the correction that closed this probe's real gap.
+    //
+    // The first run left 14 of 15 rows NOT-RENDERED and I called it
+    // "blocked on an August slate." That conflated two different claims:
+    //   (1) does the DEPLOYED STYLESHEET resolve this selector to this token?
+    //   (2) does the APP EMIT this class when it should?
+    // Only (2) depends on fixtures. (1) is a pure property of the deployed
+    // CSS, and it is answerable right now by creating an element with the
+    // class in the live document and reading getComputedStyle off it. The
+    // real page, the real stylesheet, a real browser -- only the element is
+    // synthesized, and the element was never the thing under test.
+    //
+    // The two claims are reported as SEPARATE fields. A synthetic PASS is
+    // not evidence of emission, and this must never be allowed to read as if
+    // it were -- that would be the same conflation in the other direction.
+    const mkSynthetic = (sel) => {
+      const classes = sel.split('.').filter(Boolean);
+      const host = document.createElement('span');
+      host.className = classes.join(' ');
+      host.textContent = 'probe';
+      // Mounted inside a real card when one exists, so any ancestor-scoped
+      // rule applies exactly as it would in situ; body otherwise.
+      (document.querySelector('.game-card') || document.body).appendChild(host);
+      const color = getComputedStyle(host).color;
+      host.remove();
+      return color;
+    };
     const rootCS = getComputedStyle(document.documentElement);
     return Object.entries(targets).map(([sel, [token, retiredHex]]) => {
       const tokenRaw = rootCS.getPropertyValue(token).trim();
@@ -70,6 +102,7 @@ const TARGETS = {
         tokenDefined: !!tokenRaw,
         tokenValue: tokenRaw || null,
         expectedRgb: expected,
+        syntheticColor: mkSynthetic(sel),
         count: els.length,
         rendered: els.length > 0,
         // Every instance, not the first — one matching element is not proof
@@ -80,24 +113,43 @@ const TARGETS = {
     });
   }, TARGETS);
 
-  let pass = 0, fail = 0, notRendered = 0;
+  // Two verdicts per row, deliberately not merged into one.
+  //   cssVerdict       -- does the deployed stylesheet resolve this selector
+  //                       to this token? Always answerable. This is what the
+  //                       sweep changed, so this is what gates the sweep.
+  //   emissionVerdict  -- does the app currently render this class? Fixture-
+  //                       dependent, and NOT-EMITTED is a finding, not a
+  //                       failure: it means either "no qualifying game today"
+  //                       or "dead CSS", which only a grep for the emitter
+  //                       can tell apart.
+  let pass = 0, fail = 0, emitted = 0, notEmitted = 0;
   for (const r of rows) {
-    if (!r.rendered) { r.verdict = 'NOT-RENDERED'; notRendered++; continue; }
-    if (!r.tokenDefined) { r.verdict = 'FAIL-TOKEN-UNDEFINED'; fail++; continue; }
-    const allMatch = r.computedColors.every((c) => c === r.expectedRgb);
-    const anyRetired = r.retiredRgb && r.computedColors.includes(r.retiredRgb);
-    r.verdict = allMatch && !anyRetired ? 'PASS' : 'FAIL';
-    r.verdict === 'PASS' ? pass++ : fail++;
+    if (!r.tokenDefined) { r.cssVerdict = 'FAIL-TOKEN-UNDEFINED'; fail++; }
+    else {
+      const synthOk = r.syntheticColor === r.expectedRgb;
+      const synthRetired = r.retiredRgb && r.syntheticColor === r.retiredRgb;
+      // Natural instances must agree too when any exist -- a synthetic node
+      // cannot catch a more specific rule that only applies in situ.
+      const naturalOk = !r.rendered || r.computedColors.every((c) => c === r.expectedRgb);
+      r.cssVerdict = synthOk && !synthRetired && naturalOk ? 'PASS' : 'FAIL';
+      r.cssVerdict === 'PASS' ? pass++ : fail++;
+    }
+    r.emissionVerdict = r.rendered ? 'EMITTED' : 'NOT-EMITTED';
+    r.rendered ? emitted++ : notEmitted++;
+    r.verdict = r.cssVerdict;   // kept so the earlier manifest shape still reads
   }
 
   const manifest = {
     ts: TS, url: URL, viewport: VIEWPORT,
     ccCmd: 'CC-CMD-2026-08-09-badge-chip-token-sweep',
     swVersion: await page.evaluate(() => window.SW_VERSION || null),
-    summary: { pass, fail, notRendered, total: rows.length },
-    // A run where nothing rendered proves nothing. Named explicitly so the
-    // manifest cannot be read as a green result on an empty slate.
-    conclusive: pass > 0 && fail === 0,
+    summary: { pass, fail, emitted, notEmitted, total: rows.length },
+    // Every row is now decidable, so conclusiveness is no longer "did enough
+    // render" -- it is "was every selector checked and did all of them pass."
+    // The previous definition (pass > 0 && fail === 0) returned true on a run
+    // that proved 1 of 15, which is exactly the vacuous green this file's
+    // header warns about.
+    conclusive: pass + fail === rows.length && fail === 0,
     rows,
   };
 
@@ -107,6 +159,6 @@ const TARGETS = {
   await browser.close();
 
   console.log(JSON.stringify(manifest.summary), 'conclusive=', manifest.conclusive);
-  for (const r of rows) console.log(`  ${r.verdict.padEnd(20)} ${r.selector.padEnd(36)} n=${r.count} ${r.computedColors.join(',')} want ${r.expectedRgb}`);
+  for (const r of rows) console.log(`  css=${r.cssVerdict.padEnd(20)} ${r.emissionVerdict.padEnd(12)} ${r.selector.padEnd(36)} synth=${r.syntheticColor} natural=[${r.computedColors.join(',')}] want=${r.expectedRgb}`);
   process.exit(fail === 0 ? 0 : 1);
 })().catch((e) => { console.error('probe failed:', e.stack || e.message); process.exit(1); });
