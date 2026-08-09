@@ -55,7 +55,15 @@ const SMOKE = 'rgb(106, 106, 138)';   // --smoke #6a6a8a
         // This cannot mis-fire on ordering or on a future extra class.
         variant: (el.className || '').split(/\s+/)
                    .filter(c => c.startsWith('mlb-park-') && c !== 'mlb-park-badge')
-                   .map(c => c.replace(/^mlb-/, ''))[0] || null,
+                   // Strip 'mlb-park-', not 'mlb-'. The rendered class is
+                   // mlb-park-park-hitter: the template is
+                   // `mlb-park-${pf.badgeClass}` and badgeClass is ITSELF
+                   // 'park-hitter', so the prefix doubles. Stripping only
+                   // 'mlb-' produced 'park-park-hitter' in the 11:23 manifest.
+                   // This doubling is also why the old CSS was dead: the
+                   // selectors read .park-hitter, the DOM says
+                   // mlb-park-park-hitter.
+                   .map(c => c.replace(/^mlb-park-/, ''))[0] || null,
         color: cs.color,
         fontFamily: cs.fontFamily,
       };
