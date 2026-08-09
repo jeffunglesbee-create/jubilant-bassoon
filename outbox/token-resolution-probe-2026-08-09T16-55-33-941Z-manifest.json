@@ -1,0 +1,1332 @@
+{
+  "ts": "2026-08-09T16-55-33-941Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "ccCmd": "CC-CMD-2026-08-09-token-resolution-audit",
+  "swVersion": "2026-08-09e",
+  "bodyColor": "rgb(242, 242, 250)",
+  "sourceCommits": [
+    "87257cd4",
+    "2b35f7a1",
+    "6459cad5",
+    "db924059",
+    "58132f36",
+    "77e7986a",
+    "fffbfe7f"
+  ],
+  "jsInlineStyleSitesNotCovered": 8,
+  "l1": {
+    "rulesScanned": 1891,
+    "sheetsScanned": 1,
+    "sheetsBlocked": 1,
+    "unresolvedNoFallback": [
+      {
+        "selector": ".wc-scenario",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".wc-group-pill",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".vibe.blood",
+        "property": "border-color",
+        "token": "--red"
+      },
+      {
+        "selector": ".vibe.blood",
+        "property": "color",
+        "token": "--red"
+      },
+      {
+        "selector": ".vibe.volatile",
+        "property": "border-color",
+        "token": "--orange"
+      },
+      {
+        "selector": ".vibe.volatile",
+        "property": "color",
+        "token": "--orange"
+      },
+      {
+        "selector": ".vibe.post",
+        "property": "border-color",
+        "token": "--green"
+      },
+      {
+        "selector": ".vibe.post",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".narrative-line.narrative-hi",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "selector": ".golf-pack-chip.dense",
+        "property": "color",
+        "token": "--green"
+      },
+      {
+        "selector": ".ts-title",
+        "property": "color",
+        "token": "--accent"
+      }
+    ],
+    "unresolvedWithFallback": [
+      {
+        "selector": ".filter-btn",
+        "property": "animation-delay",
+        "token": "--i"
+      },
+      {
+        "selector": ".sport-section",
+        "property": "animation-delay",
+        "token": "--i"
+      },
+      {
+        "selector": ".game-card",
+        "property": "animation-delay",
+        "token": "--i"
+      },
+      {
+        "selector": ".game-card",
+        "property": "animation-delay",
+        "token": "--cols"
+      },
+      {
+        "selector": ".pin-btn:hover, .pin-btn.active",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "property": "box-shadow",
+        "token": "--pulse-color"
+      },
+      {
+        "property": "box-shadow",
+        "token": "--pulse-color"
+      },
+      {
+        "selector": ".game-card.pulse-med",
+        "property": "animation",
+        "token": "--pulse-speed"
+      },
+      {
+        "selector": ".game-card.pulse-high",
+        "property": "animation",
+        "token": "--pulse-speed"
+      },
+      {
+        "selector": "#score-ticker-wrap::before",
+        "property": "opacity",
+        "token": "--m5-left-opacity"
+      },
+      {
+        "selector": ".card-stage-soon .stage-countdown",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "selector": ".cal-btn:hover",
+        "property": "color",
+        "token": "--accent"
+      },
+      {
+        "selector": ".golf-lb-score.lb-under",
+        "property": "color",
+        "token": "--c-live"
+      },
+      {
+        "selector": ".cg.verified",
+        "property": "background",
+        "token": "--green"
+      },
+      {
+        "selector": ".field-chip--MUST",
+        "property": "opacity",
+        "token": "--chip-must-opacity"
+      },
+      {
+        "selector": ".field-chip--WATCH",
+        "property": "opacity",
+        "token": "--chip-watch-opacity"
+      },
+      {
+        "selector": ".field-chip--DISCOVERY",
+        "property": "opacity",
+        "token": "--chip-discovery-opacity"
+      },
+      {
+        "selector": ".field-chip--QUIET",
+        "property": "opacity",
+        "token": "--chip-quiet-opacity"
+      },
+      {
+        "selector": ".stats-row-val.neg",
+        "property": "color",
+        "token": "--orange"
+      }
+    ],
+    "stopListed": [
+      "--green",
+      "--red",
+      "--orange",
+      "--accent"
+    ],
+    "knownStopListed": 11,
+    "regressions": [],
+    "verdict": "PASS"
+  },
+  "l2": {
+    "total": 74,
+    "pass": 73,
+    "fail": 0,
+    "ruleNotFound": 0,
+    "notInThisEngine": 1,
+    "rendered": 2,
+    "observableChanges": 1,
+    "provablyInvisibleChanges": 1,
+    "verdict": "PASS"
+  },
+  "conclusive": true,
+  "l1UnresolvedNoFallback": [
+    {
+      "selector": ".wc-scenario",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".wc-group-pill",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".vibe.blood",
+      "property": "border-color",
+      "token": "--red"
+    },
+    {
+      "selector": ".vibe.blood",
+      "property": "color",
+      "token": "--red"
+    },
+    {
+      "selector": ".vibe.volatile",
+      "property": "border-color",
+      "token": "--orange"
+    },
+    {
+      "selector": ".vibe.volatile",
+      "property": "color",
+      "token": "--orange"
+    },
+    {
+      "selector": ".vibe.post",
+      "property": "border-color",
+      "token": "--green"
+    },
+    {
+      "selector": ".vibe.post",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".narrative-line.narrative-hi",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "selector": ".golf-pack-chip.dense",
+      "property": "color",
+      "token": "--green"
+    },
+    {
+      "selector": ".ts-title",
+      "property": "color",
+      "token": "--accent"
+    }
+  ],
+  "l1UnresolvedWithFallback": [
+    {
+      "selector": ".filter-btn",
+      "property": "animation-delay",
+      "token": "--i"
+    },
+    {
+      "selector": ".sport-section",
+      "property": "animation-delay",
+      "token": "--i"
+    },
+    {
+      "selector": ".game-card",
+      "property": "animation-delay",
+      "token": "--i"
+    },
+    {
+      "selector": ".game-card",
+      "property": "animation-delay",
+      "token": "--cols"
+    },
+    {
+      "selector": ".pin-btn:hover, .pin-btn.active",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "property": "box-shadow",
+      "token": "--pulse-color"
+    },
+    {
+      "property": "box-shadow",
+      "token": "--pulse-color"
+    },
+    {
+      "selector": ".game-card.pulse-med",
+      "property": "animation",
+      "token": "--pulse-speed"
+    },
+    {
+      "selector": ".game-card.pulse-high",
+      "property": "animation",
+      "token": "--pulse-speed"
+    },
+    {
+      "selector": "#score-ticker-wrap::before",
+      "property": "opacity",
+      "token": "--m5-left-opacity"
+    },
+    {
+      "selector": ".card-stage-soon .stage-countdown",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "selector": ".cal-btn:hover",
+      "property": "color",
+      "token": "--accent"
+    },
+    {
+      "selector": ".golf-lb-score.lb-under",
+      "property": "color",
+      "token": "--c-live"
+    },
+    {
+      "selector": ".cg.verified",
+      "property": "background",
+      "token": "--green"
+    },
+    {
+      "selector": ".field-chip--MUST",
+      "property": "opacity",
+      "token": "--chip-must-opacity"
+    },
+    {
+      "selector": ".field-chip--WATCH",
+      "property": "opacity",
+      "token": "--chip-watch-opacity"
+    },
+    {
+      "selector": ".field-chip--DISCOVERY",
+      "property": "opacity",
+      "token": "--chip-discovery-opacity"
+    },
+    {
+      "selector": ".field-chip--QUIET",
+      "property": "opacity",
+      "token": "--chip-quiet-opacity"
+    },
+    {
+      "selector": ".stats-row-val.neg",
+      "property": "color",
+      "token": "--orange"
+    }
+  ],
+  "rows": [
+    {
+      "selector": ".ap-arb-line",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".ap-brief-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".ap-card-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".ap-score-teams",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".atp-score-live",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".bottom-sheet",
+      "properties": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": true,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".bs-handle-row",
+      "properties": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": true,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".card-brief-inline-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".cascade-line",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".crew-chip",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".cut-line-badge",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".desk-card-body",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".drama-dial-track::-moz-range-thumb",
+      "properties": [
+        "background",
+        "border"
+      ],
+      "ruleFound": false,
+      "unresolved": [],
+      "l2aVerdict": "NOT-IN-THIS-ENGINE",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".drama-dial-track::-webkit-slider-thumb",
+      "properties": [
+        "background",
+        "border"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".epl-brief-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".epl-brief-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".eu-push-consent",
+      "properties": [
+        "background",
+        "border-top"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": true,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".fan-out-chip",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".field-brief-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".field-row__label",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".field-row__value",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".field-section__title",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".filter-btn:active",
+      "properties": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".filter-suggestion-chip",
+      "properties": [
+        "border",
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".filter-suggestion-dismiss",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".gline",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".golf-lb-row.lb-top3",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".golf-lb-score.lb-even",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".jrn-arch-type.game_recap,.jrn-arch-type.night_owl",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".jrn-companion-item",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".jrn-companion-summary",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".jrn-quality-row-value",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".jrn-series-tonight",
+      "properties": [
+        "border-left",
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".jrn-slate-brief",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".jrn-slate-game",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".mlb-chip-teams",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".night-owl-secondary .no-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".night-owl-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".night-owl-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".no-label",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".np-degraded",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".np-divider",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": true,
+      "computed": "rgb(106, 106, 138)",
+      "parentComputed": "rgb(242, 242, 250)",
+      "observable": true
+    },
+    {
+      "selector": ".np-freshness",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".np-missed-list li::before",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".pga-leaderboard tr.pga-row td.pga-name",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".pga-leaderboard tr.pga-row:nth-child(-n+3) td",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".pin-widget",
+      "properties": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".privacy-modal",
+      "properties": [
+        "background",
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": true,
+      "computed": "rgb(242, 242, 250)",
+      "parentComputed": "rgb(242, 242, 250)",
+      "observable": false
+    },
+    {
+      "selector": ".pulse-chip",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".score-status",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".score-tbd::after",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".series-preview-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".series-preview-text.loaded",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".sgb-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".stakes-text",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".team-picker",
+      "properties": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".thread-input",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".thread-note",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".tp-btn",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".vibe",
+      "properties": [
+        "font-family"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": true,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".vibe.crunch",
+      "properties": [
+        "border-color",
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".vibe.long",
+      "properties": [
+        "border-color",
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-bar-team",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-bar-track",
+      "properties": [
+        "background",
+        "border"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-bar-val",
+      "properties": [
+        "color",
+        "font-family"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-group-block.group-highlight",
+      "properties": [
+        "border-color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-mini-card",
+      "properties": [
+        "background"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-preview-intro",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-third-cutline span",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-trap-stat strong",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".wc-trap-team",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": ".ww-game",
+      "properties": [
+        "color"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": "#privacy-banner",
+      "properties": [
+        "background",
+        "border-bottom"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": true,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    },
+    {
+      "selector": "body.journalism-mode .jrn-companion",
+      "properties": [
+        "background",
+        "border-left"
+      ],
+      "ruleFound": true,
+      "unresolved": [],
+      "l2aVerdict": "PASS",
+      "elementPresent": false,
+      "computed": null,
+      "parentComputed": null,
+      "observable": null
+    }
+  ]
+}
