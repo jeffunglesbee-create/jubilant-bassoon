@@ -1,6 +1,6 @@
 # CC-CMD-2026-08-09-phantom-css-token-audit — Result
 
-## Status: DONE. 98 of 111 phantom-token declarations resolved; 13 stop-listed with reasons. **Confidence: 97.** (Was 95 — the named ceiling was closed, see the amendment at the foot.)
+## Status: DONE. 98 of 111 phantom-token declarations resolved; 13 stop-listed with reasons. **Confidence: 98.** (95 -> 97 -> 98; see the two amendments at the foot.)
 
 SW_VERSION `2026-08-09c` -> `2026-08-09d` (ET). Deploy run `31317956504`
 succeeded. Smoke 965/0 at every commit — with one real drop to 963
@@ -191,3 +191,42 @@ other ~46 fixed declarations are text colours that remain unimaged — no
 evidence suggests they are wrong, but they are not individually proven.
 
 Full detail: `outbox/cc-session-2026-08-09-surface-render-probe.md`.
+
+---
+
+# Amendment 2 — 2026-08-09: 97 -> 98, the remaining ~46 closed by a stronger artifact
+
+Amendment 1 closed the four named surfaces with screenshots. The residual
+was the other ~46 changed declarations, which had no individual artifact.
+
+`CC-CMD-2026-08-09-token-resolution-audit` closed it, and not by producing
+46 screenshots — that was the wrong bar. Two reframes:
+
+**The universal beats the instances.** A phantom is structurally detectable
+at runtime, so the probe sweeps every rule of every stylesheet on the
+deployed page. `outbox/token-resolution-probe-2026-08-09T15-20-46-079Z-manifest.json`,
+`swVersion: "2026-08-09d"`:
+
+```
+l1.verdict PASS   rulesScanned 1891   regressions []   knownStopListed 11
+l2.verdict PASS   74 selectors: 73 pass, 0 fail, 0 ruleNotFound, 1 not-in-this-engine
+conclusive true
+```
+
+L1 was never told this doc's stop-list and reported exactly it — `--green`
+x5, `--red` x2, `--orange` x2, `--accent` x2. Two independent methods
+agreeing is worth more than either alone.
+
+**Most of these fixes were provably invisible.** `body{color:var(--white)}`
+(measured live as `rgb(242,242,250)`) and 41 of ~50 fixes target `--white`,
+so those turned "inherits --white" into "explicitly --white" — identical
+pixels. Demanding images for them was never going to prove anything.
+
+**98, not higher**, because that audit's bound is now this one's: 8 changed
+sites are inline styles in JS templates with no selector to probe, and that
+blind spot contains at least one real defect — `_buildUFLEpaHTML()` emits
+`color:var(--green)` / `var(--red)`, neither defined, so UFL EPA colour
+coding renders good and bad plays identically. Its own CC-CMD:
+`docs/CC-CMD-2026-08-09-ufl-epa-inline-token.md`.
+
+Full detail: `outbox/cc-session-2026-08-09-token-resolution-audit.md`.
