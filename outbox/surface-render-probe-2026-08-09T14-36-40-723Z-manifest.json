@@ -1,0 +1,77 @@
+{
+  "ts": "2026-08-09T14-36-40-723Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "ccCmd": "CC-CMD-2026-08-09-surface-render-probe",
+  "swVersion": "2026-08-09d",
+  "moduleBooted": true,
+  "toggleError": null,
+  "summary": {
+    "pass": 4,
+    "fail": 0,
+    "notOpened": 0,
+    "total": 4
+  },
+  "conclusive": true,
+  "rows": [
+    {
+      "key": "privacy-banner",
+      "selector": "#privacy-banner",
+      "token": "--card",
+      "how": "auto: initPrivacyBanner() shows it when localStorage.field_privacy_v1 is unset",
+      "present": true,
+      "opened": true,
+      "tokenValue": "#121224",
+      "expectedBackground": "rgb(18, 18, 36)",
+      "background": "rgb(18, 18, 36)",
+      "opaque": true,
+      "matchesToken": true,
+      "verdict": "PASS"
+    },
+    {
+      "key": "privacy-modal",
+      "selector": ".privacy-modal",
+      "token": "--card",
+      "how": "click #privacy-policy-link, the real control whose listener calls showPrivacyPolicyModal()",
+      "present": true,
+      "opened": true,
+      "tokenValue": "#121224",
+      "expectedBackground": "rgb(18, 18, 36)",
+      "background": "rgb(18, 18, 36)",
+      "opaque": true,
+      "matchesToken": true,
+      "verdict": "PASS"
+    },
+    {
+      "key": "jrn-companion",
+      "selector": "#jrn-companion",
+      "token": "--obsidian",
+      "how": "toggleJournalismView(), global at runtime (index.html carries onclick=\"toggleJournalismView()\")",
+      "present": true,
+      "opened": true,
+      "tokenValue": "#070710",
+      "expectedBackground": "rgb(7, 7, 16)",
+      "background": "rgb(7, 7, 16)",
+      "opaque": true,
+      "matchesToken": true,
+      "verdict": "PASS"
+    },
+    {
+      "key": "eu-push-consent",
+      "selector": "#eu-push-consent",
+      "token": "--card",
+      "how": "el.style.display='block' -- byte-identical to showEUPushConsent()'s own reveal line; that function is not exposed on window and its natural trigger needs an EU timezone plus the push flow",
+      "present": true,
+      "opened": true,
+      "tokenValue": "#121224",
+      "expectedBackground": "rgb(18, 18, 36)",
+      "background": "rgb(18, 18, 36)",
+      "opaque": true,
+      "matchesToken": true,
+      "verdict": "PASS"
+    }
+  ]
+}
