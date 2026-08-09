@@ -1,6 +1,6 @@
 # CC-CMD-2026-08-09-badge-chip-token-sweep — Result
 
-## Status: Tasks 1, 2 and 4 DONE. Task 3 applied 15 of 55 rules — the ones Rule 37's own text decides. **Confidence: 93 — below the 95 gate, disclosed below.**
+## Status: DONE. Task 3 applied 15 of 55 rules — the ones Rule 37's own text decides — and all 15 are now proven against the live deployment. **Confidence: 96.** (Was 93; see the amendment at the foot.)
 
 SW_VERSION `2026-08-09a` -> `2026-08-09b` (ET). Smoke 965/0 before, 965/0
 after every commit. Deploy run `31316318595` succeeded.
@@ -185,3 +185,88 @@ their rows move from NOT-RENDERED to PASS. The workflow and the
 assertions already exist; only the fixture list is missing. The
 `.field-chip--*` rows cannot pass until Phase 2 wires the primitive in,
 and that is a genuine block, not a deferral.
+
+---
+
+# Amendment — the 93 resolved: the verification gap was mine, not the calendar's
+
+## What I got wrong
+
+I recorded 14 of 15 rows as NOT-RENDERED and wrote that closing the gate
+needed "a date with playoff or rivalry fixtures in the slate." That was a
+rationalisation dressed as a schedule constraint, and it conflated two
+different claims:
+
+1. **Does the deployed stylesheet resolve `.importance-badge.elimination`
+   to `--angle-elim`?**
+2. **Does the app emit that class when a game qualifies?**
+
+Only (2) depends on fixtures. (1) is a pure property of the deployed CSS.
+And **this sweep changed only (1)** — it was colour-only, no markup, no
+emitter touched. I had made the sweep's verification wait on a variable
+the sweep does not affect.
+
+## The fix
+
+The probe now creates an element carrying the class in the live document
+and reads `getComputedStyle` off it. Real page, real deployed stylesheet,
+real browser — only the *element* is synthesized, and the element was
+never the thing under test. Synthetic nodes mount inside a real
+`.game-card` when one exists so ancestor-scoped rules still apply, and
+natural instances must agree wherever any do render.
+
+The two claims are reported as separate fields and never merged.
+`NOT-EMITTED` remains a finding in its own right — it means either "no
+qualifying game today" or "dead CSS", which only a grep for the emitter
+can tell apart, and for `.ts-badge.*` it was the second.
+
+`conclusive` was also wrong: `pass > 0 && fail === 0` returned `true` on a
+run that proved 1 of 15. It now requires every row decided.
+
+## Artifact
+
+`outbox/badge-token-sweep-probe-2026-08-09T13-58-12-026Z-manifest.json`,
+`swVersion: "2026-08-09b"` — the deployed sweep, not a local build.
+
+```
+{"pass":15,"fail":0,"emitted":1,"notEmitted":14,"total":15}  conclusive: true
+
+css=PASS  NOT-EMITTED  .field-chip--MUST                 synth=rgb(201, 168, 76)
+css=PASS  NOT-EMITTED  .field-chip--WATCH                synth=rgb(74, 158, 255)
+css=PASS  NOT-EMITTED  .field-chip--DISCOVERY            synth=rgb(45, 212, 191)
+css=PASS  NOT-EMITTED  .field-chip--CAUTION              synth=rgb(245, 158, 11)
+css=PASS  NOT-EMITTED  .field-chip--QUIET                synth=rgb(106, 106, 138)
+css=PASS  NOT-EMITTED  .field-chip--INFO                 synth=rgb(74, 158, 255)
+css=PASS  NOT-EMITTED  .free-tonight-badge               synth=rgb(45, 212, 191)
+css=PASS  NOT-EMITTED  .chip-auth.auth-free              synth=rgb(45, 212, 191)
+css=PASS  EMITTED      .chip-have                        synth=rgb(45, 212, 191)  natural=[rgb(45, 212, 191)]
+css=PASS  NOT-EMITTED  .badge-incl                       synth=rgb(45, 212, 191)
+css=PASS  NOT-EMITTED  .importance-badge.elimination     synth=rgb(239, 68, 68)
+css=PASS  NOT-EMITTED  .importance-badge.series-deciding synth=rgb(201, 168, 76)
+css=PASS  NOT-EMITTED  .ts-badge.ts-elimination          synth=rgb(239, 68, 68)
+css=PASS  NOT-EMITTED  .ts-badge.ts-series_deciding      synth=rgb(201, 168, 76)
+css=PASS  NOT-EMITTED  .rival-badge                      synth=rgb(167, 139, 250)
+```
+
+Every changed rule resolves to the token it now claims, in the deployed
+build, with none still rendering its retired hue. Expected colours are
+still read off `document.documentElement` at runtime rather than
+hardcoded, so a PASS means the element agrees with the live token — not
+that I typed the same number twice.
+
+The mechanism was verified locally against source `index.html`
+(15/15 `css=PASS`) before the CI dispatch, rather than spending a runner
+to discover a typo.
+
+## Confidence gate — revised
+
+**96.** All 15 changed rules are proven correct against the live
+deployment, by a probe whose expected values come from the deployed
+tokens themselves, and whose conclusiveness test can no longer return
+green on a partial run. The 14 `NOT-EMITTED` rows are no longer a gap in
+this CC-CMD: emission is unchanged by a colour-only sweep, and the three
+dead ones are identified as dead with a CC-CMD to remove them.
+
+Not higher because three of the fifteen rules I tokenised turned out to
+be dead CSS — correct and inert. The probe caught it; static review did
+not, and I applied those edits before the probe existed to tell me.
