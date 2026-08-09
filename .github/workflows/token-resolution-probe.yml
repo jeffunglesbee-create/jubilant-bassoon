@@ -42,6 +42,15 @@ jobs:
         run: node token_resolution_probe.js
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+      # Same family: proves the UFL EPA chip renders the token its own function
+      # emits, by executing that function with synthetic input rather than
+      # waiting for a live UFL play. Runs after the sweep because it needs a
+      # rendered .game-card to inject into.
+      - name: Run UFL EPA render probe
+        run: node ufl_epa_render_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
       - name: Commit results
         # always(): a FAIL is the result worth keeping, and the probe exits
         # non-zero on one.
@@ -51,6 +60,7 @@ jobs:
           git config user.name "Token Resolution Probe"
           git add outbox/token-resolution-probe-*-manifest.json || echo "(no manifest)"
           git add outbox/token-resolution-probe-*.png || echo "(no screenshots)"
+          git add outbox/ufl-epa-render-probe-*-manifest.json || echo "(no ufl manifest)"
           git status --short
           if git diff --cached --quiet; then echo "Nothing to commit"; exit 0; fi
           git commit -m "token resolution probe result [skip ci]"
