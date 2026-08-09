@@ -4809,7 +4809,7 @@ assert('A696 — .field-newspaper CSS + applyFieldPickBadge + renderAll re-tag h
   // CSS rules present.
   /\.field-newspaper\{margin-bottom:1\.2rem\}/.test(html) &&
   /\.field-pick-badge\{font-size:\.6rem/.test(html) &&
-  /\.np-inner\{background:var\(--c-card/.test(html) &&
+  /\.np-inner\{background:var\(--card2\)/.test(html) &&
   // Pick-badge function + DOM selector chain (data-game-id | data-gameid | data-espn-id).
   /^function applyFieldPickBadge\(\)/m.test(html) &&
   /\[data-game-id="\$\{safe\}"\], \[data-gameid="\$\{safe\}"\], \[data-espn-id="\$\{safe\}"\]/.test(html) &&
@@ -5063,7 +5063,7 @@ assert('A654 — WC card group pill has onclick → openWcGroup with stopPropaga
   // Loading-state render also carries data-group so a scroll on cold cache still lands somewhere.
   /<div class="wc-group-block" data-group="\$\{g\}">/.test(html) &&
   // CSS flash rule exists.
-  /\.wc-group-block\.group-highlight\{border-color:var\(--accent-gold/.test(html),
+  /\.wc-group-block\.group-highlight\{border-color:var\(--gold\)/.test(html),
   'CC-CMD-2026-06-19 WC group pill navigation bridge: tapping the GRP X chip on a WC schedule card now activates wc-mode (via existing toggleWCView), selects the Groups sub-tab (switchWCTab), scrolls to .wc-group-block[data-group="X"], and flashes a gold border for 600ms so the destination is obvious. Pill is role=button + tabindex=0 + Enter/Space keyboard handler; stopPropagation prevents the surrounding card click from also firing. data-group was already on the full-data render path (line 30330); added to the loading-skeleton render path too so a cold-cache scroll still finds its target.');
 
 // ── A653 / CC-CMD-2026-06-18 Desktop back-to-schedule pill visibility ──
