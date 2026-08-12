@@ -12,6 +12,8 @@ Session docs (Rule 67):
 - `outbox/cc-session-2026-08-12-comeback-probability-liveness-gate.md` — DONE, confidence 95
 - `outbox/cc-session-2026-08-12-mlb-pitcher-payload-audit.md` — DONE, confidence 96
 - `outbox/cc-session-2026-08-12-scouting-coverage-gaps.md` — DONE, confidence 95
+- `outbox/cc-session-2026-08-12-arsenal-gap.md` — DONE, confidence 96
+  (root cause in field-relay-nba: `7588b24` + `112c8f7`)
 - `outbox/cc-session-2026-08-11-archive-gap-real-write-path.md` — relay repo, DONE, confidence 96
 
 **What changed, all verified against the LIVE deployment via
@@ -43,10 +45,21 @@ intersecting `PARK_FACTORS` keys (parsed from source at HEAD) against the
 API's abbreviations — exact and enumerated, where a DOM text probe had
 produced an indefensible number. See the coverage-gaps doc.
 
-**Open, not started:** `gamesWithArsenal: 0` of 15 — `PITCHER_ARSENAL` has
-no entry for any current starter. Settle it the same way: intersect that
-table's keys against the day's actual `lastNameOf(pitcher)` values before
-deciding whether it is a coverage gap or a key-shape mismatch.
+5. **Pitch arsenal restored** (relay `7588b24`, `112c8f7`).
+   `gamesWithArsenal` 0 → 14 of 15. NOT a client bug: the relay's
+   `/mlb-stats/*.json` is R2-first with an existence-only miss test, and
+   `runMLBSavantUpdate` had written an EMPTY pitch_arsenals object to R2,
+   which is a hit — permanently shadowing the 194-entry GitHub fallback.
+   Writer now refuses to overwrite with an empty payload; reader treats
+   zero rows as a miss so the endpoint self-heals. 14 not 15 is correct:
+   Savant's leaderboard uses min=100 pitches, so a starter below that has
+   no entry and the segment is rightly omitted.
+
+**Watch, not deferred:** the R2 arsenals object is still empty and the
+serving path routes around it. The next Monday cron will either repair it or
+report `ok:false` — visible now rather than a silent wipe. If Savant blocks
+Cloudflare Worker egress (documented here for the umpire scrape), that write
+keeps failing and the fallback keeps serving.
 
 ---
 
