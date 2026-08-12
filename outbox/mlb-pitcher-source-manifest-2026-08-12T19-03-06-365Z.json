@@ -1,0 +1,484 @@
+{
+  "ts": "2026-08-12T19-03-06-365Z",
+  "date": "2026-08-12",
+  "hydrate": "broadcasts(all),team,linescore,probablePitcher(stats),officials",
+  "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-08-12&hydrate=broadcasts(all),team,linescore,probablePitcher(stats),officials",
+  "games": [
+    {
+      "gamePk": 823672,
+      "homeTeam": "Minnesota Twins",
+      "awayTeam": "Baltimore Orioles",
+      "homeProbable": "Zebby Matthews",
+      "awayProbable": "Shane Baz",
+      "home": {
+        "side": "home",
+        "team": "Minnesota Twins",
+        "pitcher": "Zebby Matthews",
+        "lastName": "Matthews",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Baltimore Orioles",
+        "pitcher": "Shane Baz",
+        "lastName": "Baz",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 823017,
+      "homeTeam": "St. Louis Cardinals",
+      "awayTeam": "Philadelphia Phillies",
+      "homeProbable": "Kyle Leahy",
+      "awayProbable": "Zack Wheeler",
+      "home": {
+        "side": "home",
+        "team": "St. Louis Cardinals",
+        "pitcher": "Kyle Leahy",
+        "lastName": "Leahy",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Philadelphia Phillies",
+        "pitcher": "Zack Wheeler",
+        "lastName": "Wheeler",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 824967,
+      "homeTeam": "Athletics",
+      "awayTeam": "Tampa Bay Rays",
+      "homeProbable": "Jack Perkins",
+      "awayProbable": "Drew Rasmussen",
+      "home": {
+        "side": "home",
+        "team": "Athletics",
+        "pitcher": "Jack Perkins",
+        "lastName": "Perkins",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Tampa Bay Rays",
+        "pitcher": "Drew Rasmussen",
+        "lastName": "Rasmussen",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 825047,
+      "homeTeam": "Arizona Diamondbacks",
+      "awayTeam": "Colorado Rockies",
+      "homeProbable": "Merrill Kelly",
+      "awayProbable": "Ryan Feltner",
+      "home": {
+        "side": "home",
+        "team": "Arizona Diamondbacks",
+        "pitcher": "Merrill Kelly",
+        "lastName": "Kelly",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Colorado Rockies",
+        "pitcher": "Ryan Feltner",
+        "lastName": "Feltner",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 823187,
+      "homeTeam": "San Francisco Giants",
+      "awayTeam": "Houston Astros",
+      "homeProbable": "Adrian Houser",
+      "awayProbable": "Bryan King",
+      "home": {
+        "side": "home",
+        "team": "San Francisco Giants",
+        "pitcher": "Adrian Houser",
+        "lastName": "Houser",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Houston Astros",
+        "pitcher": "Bryan King",
+        "lastName": "King",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 823263,
+      "homeTeam": "San Diego Padres",
+      "awayTeam": "Milwaukee Brewers",
+      "homeProbable": "Robbie Ray",
+      "awayProbable": "Dustin May",
+      "home": {
+        "side": "home",
+        "team": "San Diego Padres",
+        "pitcher": "Robbie Ray",
+        "lastName": "Ray",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Milwaukee Brewers",
+        "pitcher": "Dustin May",
+        "lastName": "May",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 824241,
+      "homeTeam": "Detroit Tigers",
+      "awayTeam": "Cleveland Guardians",
+      "homeProbable": "Framber Valdez",
+      "awayProbable": "Foster Griffin",
+      "home": {
+        "side": "home",
+        "team": "Detroit Tigers",
+        "pitcher": "Framber Valdez",
+        "lastName": "Valdez",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Cleveland Guardians",
+        "pitcher": "Foster Griffin",
+        "lastName": "Griffin",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 823833,
+      "homeTeam": "Miami Marlins",
+      "awayTeam": "Pittsburgh Pirates",
+      "homeProbable": "Janson Junk",
+      "awayProbable": "Carmen Mlodzinski",
+      "home": {
+        "side": "home",
+        "team": "Miami Marlins",
+        "pitcher": "Janson Junk",
+        "lastName": "Junk",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Pittsburgh Pirates",
+        "pitcher": "Carmen Mlodzinski",
+        "lastName": "Mlodzinski",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 822698,
+      "homeTeam": "Washington Nationals",
+      "awayTeam": "Chicago Cubs",
+      "homeProbable": "Jackson Kent",
+      "awayProbable": "David Peterson",
+      "home": {
+        "side": "home",
+        "team": "Washington Nationals",
+        "pitcher": "Jackson Kent",
+        "lastName": "Kent",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Chicago Cubs",
+        "pitcher": "David Peterson",
+        "lastName": "Peterson",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 823511,
+      "homeTeam": "New York Yankees",
+      "awayTeam": "Seattle Mariners",
+      "homeProbable": "Will Warren",
+      "awayProbable": "Bryce Miller",
+      "home": {
+        "side": "home",
+        "team": "New York Yankees",
+        "pitcher": "Will Warren",
+        "lastName": "Warren",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Seattle Mariners",
+        "pitcher": "Bryce Miller",
+        "lastName": "Miller",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 822779,
+      "homeTeam": "Toronto Blue Jays",
+      "awayTeam": "Boston Red Sox",
+      "homeProbable": "José Soriano",
+      "awayProbable": "Ranger Suarez",
+      "home": {
+        "side": "home",
+        "team": "Toronto Blue Jays",
+        "pitcher": "José Soriano",
+        "lastName": "Soriano",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Boston Red Sox",
+        "pitcher": "Ranger Suarez",
+        "lastName": "Suarez",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 824883,
+      "homeTeam": "Atlanta Braves",
+      "awayTeam": "New York Mets",
+      "homeProbable": "Tyler Mahle",
+      "awayProbable": "Zac Thornton",
+      "home": {
+        "side": "home",
+        "team": "Atlanta Braves",
+        "pitcher": "Tyler Mahle",
+        "lastName": "Mahle",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "New York Mets",
+        "pitcher": "Zac Thornton",
+        "lastName": "Thornton",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 824562,
+      "homeTeam": "Chicago White Sox",
+      "awayTeam": "Cincinnati Reds",
+      "homeProbable": "Luis Castillo",
+      "awayProbable": "Rhett Lowder",
+      "home": {
+        "side": "home",
+        "team": "Chicago White Sox",
+        "pitcher": "Luis Castillo",
+        "lastName": "Castillo",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Cincinnati Reds",
+        "pitcher": "Rhett Lowder",
+        "lastName": "Lowder",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 823916,
+      "homeTeam": "Los Angeles Dodgers",
+      "awayTeam": "Kansas City Royals",
+      "homeProbable": "Eric Lauer",
+      "awayProbable": "Daniel Lynch IV",
+      "home": {
+        "side": "home",
+        "team": "Los Angeles Dodgers",
+        "pitcher": "Eric Lauer",
+        "lastName": "Lauer",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Kansas City Royals",
+        "pitcher": "Daniel Lynch IV",
+        "lastName": "IV",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    },
+    {
+      "gamePk": 823994,
+      "homeTeam": "Los Angeles Angels",
+      "awayTeam": "Texas Rangers",
+      "homeProbable": "George Klassen",
+      "awayProbable": "Cal Quantrill",
+      "home": {
+        "side": "home",
+        "team": "Los Angeles Angels",
+        "pitcher": "George Klassen",
+        "lastName": "Klassen",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      },
+      "away": {
+        "side": "away",
+        "team": "Texas Rangers",
+        "pitcher": "Cal Quantrill",
+        "lastName": "Quantrill",
+        "statsBlockCount": 0,
+        "statTypeNames": [],
+        "seasonSplitFound": false,
+        "era": null,
+        "wins": null,
+        "losses": null
+      }
+    }
+  ],
+  "httpStatus": 200,
+  "gameCount": 15,
+  "summary": {
+    "gamesWithAnyProbable": 15,
+    "pitcherRecords": 30,
+    "seasonSplitFound": 0,
+    "eraPresent": 0,
+    "winsPresent": 0,
+    "allStatTypeDisplayNames": [],
+    "seasonLiteralPresent": false
+  }
+}
