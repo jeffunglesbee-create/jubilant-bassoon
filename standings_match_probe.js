@@ -56,9 +56,29 @@ function multiWordNicksFromSource(path) {
       return parts.length > 1 ? parts[parts.length - 1] : name;
     };
 
-    const sr = await fetch(`${MLB_STATS_BASE}/standings?leagueId=103,104&season=${SEASON}&standingsTypes=regularSeason`,
-      { signal: AbortSignal.timeout(30000) });
-    const sj = await sr.json();
+    // The un-hydrated call is what fetchMLBStandingsParsed makes today, and it
+    // returns a MINIMAL team object -- id/name/link, no abbreviation. So its
+    // `abbrev: t.team?.abbreviation || ''` has been an empty string for all 30
+    // teams the whole time, and the abbreviation second key added to the
+    // matcher could never fire. Measured, after the fix shipped and the DOM
+    // still showed the same game missing.
+    //
+    // Both forms are fetched here so the difference is the artifact rather
+    // than a claim about what hydrate does.
+    const SURL = `${MLB_STATS_BASE}/standings?leagueId=103,104&season=${SEASON}&standingsTypes=regularSeason`;
+    const bare = await (await fetch(SURL, { signal: AbortSignal.timeout(30000) })).json();
+    const hyd = await (await fetch(`${SURL}&hydrate=team`, { signal: AbortSignal.timeout(30000) })).json();
+    const abbrevCount = (j) => (j.records || []).flatMap((d) => d.teamRecords || [])
+      .filter((t) => t.team?.abbreviation).length;
+    out.abbrevAvailability = {
+      bare: abbrevCount(bare),
+      hydrated: abbrevCount(hyd),
+      total: (bare.records || []).flatMap((d) => d.teamRecords || []).length,
+    };
+    console.log('abbrev availability:', JSON.stringify(out.abbrevAvailability));
+    // Use whichever actually carries abbreviations for the predicate test.
+    const sj = out.abbrevAvailability.hydrated > out.abbrevAvailability.bare ? hyd : bare;
+    out.usedHydrated = sj === hyd;
     const standings = [];
     for (const div of (sj.records || [])) {
       for (const t of (div.teamRecords || [])) {
