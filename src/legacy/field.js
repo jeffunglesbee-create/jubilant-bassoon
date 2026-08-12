@@ -21782,7 +21782,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-12d';
+  const SW_VERSION = '2026-08-12e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31100,8 +31100,30 @@ function renderStatsSection() {
       if (_tgStandings?.length) {
         const hSlug = teamNick(game.home).toLowerCase();
         const aSlug = teamNick(game.away).toLowerCase();
-        const hT = _tgStandings.find(t => (t.team || '').toLowerCase().includes(hSlug));
-        const aT = _tgStandings.find(t => (t.team || '').toLowerCase().includes(aSlug));
+        // CC-CMD-2026-08-12-scouting-coverage-gaps.
+        //
+        // Nickname-substring alone silently dropped this whole line for any
+        // team the standings source names differently from the schedule
+        // source. Measured 2026-08-12 across a 15-game slate: 14 matched and
+        // exactly one did not, because MLB's /standings returns team.name
+        // "D-backs" while its own /schedule returns "Arizona Diamondbacks",
+        // so `includes('diamondbacks')` cannot hit
+        // (outbox/standings-match-manifest-*.json).
+        //
+        // Abbreviation is the second key, NOT another name alias: both sides
+        // take it from the same API field (team.abbreviation), so it cannot
+        // drift the way display names do, and it needs no table to maintain
+        // as clubs rebrand -- "Rate Field" and the Athletics' move are recent
+        // proof that they do.
+        //
+        // Note `if (hT && aT)` below: one unmatched side suppresses the OTHER
+        // team's record too, which is why the failure looked like a missing
+        // line rather than a half-populated one.
+        const _findStandee = (slug, abbr) => _tgStandings.find(t =>
+          (t.team || '').toLowerCase().includes(slug) ||
+          (abbr && (t.abbrev || '').toUpperCase() === String(abbr).toUpperCase()));
+        const hT = _findStandee(hSlug, game._homeAbbr);
+        const aT = _findStandee(aSlug, game._awayAbbr);
         if (hT && aT) _tgStandingsStr = `${teamNick(game.home)}: ${hT.wins}–${hT.losses} \xb7 ${teamNick(game.away)}: ${aT.wins}–${aT.losses}`;
       }
       const _tgSeriesMargins = buildSeriesMarginsDots(game);
