@@ -1,0 +1,180 @@
+{
+  "ts": "2026-08-12T19-51-54-906Z",
+  "date": "2026-08-12",
+  "parkFactorKeys": [
+    "ARI",
+    "ATL",
+    "BAL",
+    "BOS",
+    "CHC",
+    "CHW",
+    "CIN",
+    "CLE",
+    "COL",
+    "DET",
+    "HOU",
+    "KC",
+    "LAA",
+    "LAD",
+    "MIA",
+    "MIL",
+    "MIN",
+    "NYM",
+    "NYY",
+    "OAK",
+    "PHI",
+    "PIT",
+    "SD",
+    "SEA",
+    "SF",
+    "STL",
+    "TB",
+    "TEX",
+    "TOR",
+    "WSH"
+  ],
+  "parkFactorKeyCount": 30,
+  "httpStatus": 200,
+  "games": [
+    {
+      "homeTeam": "Minnesota Twins",
+      "awayTeam": "Baltimore Orioles",
+      "apiAbbr": "MIN",
+      "normalized": "MIN",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "St. Louis Cardinals",
+      "awayTeam": "Philadelphia Phillies",
+      "apiAbbr": "STL",
+      "normalized": "STL",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Athletics",
+      "awayTeam": "Tampa Bay Rays",
+      "apiAbbr": "ATH",
+      "normalized": "ATH",
+      "resolvesToParkFactor": false
+    },
+    {
+      "homeTeam": "Arizona Diamondbacks",
+      "awayTeam": "Colorado Rockies",
+      "apiAbbr": "AZ",
+      "normalized": "AZ",
+      "resolvesToParkFactor": false
+    },
+    {
+      "homeTeam": "San Francisco Giants",
+      "awayTeam": "Houston Astros",
+      "apiAbbr": "SF",
+      "normalized": "SF",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "San Diego Padres",
+      "awayTeam": "Milwaukee Brewers",
+      "apiAbbr": "SD",
+      "normalized": "SD",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Detroit Tigers",
+      "awayTeam": "Cleveland Guardians",
+      "apiAbbr": "DET",
+      "normalized": "DET",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Miami Marlins",
+      "awayTeam": "Pittsburgh Pirates",
+      "apiAbbr": "MIA",
+      "normalized": "MIA",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Washington Nationals",
+      "awayTeam": "Chicago Cubs",
+      "apiAbbr": "WSH",
+      "normalized": "WSH",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "New York Yankees",
+      "awayTeam": "Seattle Mariners",
+      "apiAbbr": "NYY",
+      "normalized": "NYY",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Toronto Blue Jays",
+      "awayTeam": "Boston Red Sox",
+      "apiAbbr": "TOR",
+      "normalized": "TOR",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Atlanta Braves",
+      "awayTeam": "New York Mets",
+      "apiAbbr": "ATL",
+      "normalized": "ATL",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Chicago White Sox",
+      "awayTeam": "Cincinnati Reds",
+      "apiAbbr": "CWS",
+      "normalized": "CWS",
+      "resolvesToParkFactor": false
+    },
+    {
+      "homeTeam": "Los Angeles Dodgers",
+      "awayTeam": "Kansas City Royals",
+      "apiAbbr": "LAD",
+      "normalized": "LAD",
+      "resolvesToParkFactor": true
+    },
+    {
+      "homeTeam": "Los Angeles Angels",
+      "awayTeam": "Texas Rangers",
+      "apiAbbr": "LAA",
+      "normalized": "LAA",
+      "resolvesToParkFactor": true
+    }
+  ],
+  "summary": {
+    "gameCount": 15,
+    "resolves": 12,
+    "doesNotResolve": 3,
+    "unresolvedAbbrs": [
+      "ATH",
+      "AZ",
+      "CWS"
+    ],
+    "unresolvedTeams": [
+      "Athletics (ATH)",
+      "Arizona Diamondbacks (AZ)",
+      "Chicago White Sox (CWS)"
+    ],
+    "tableKeysUnusedToday": [
+      "ARI",
+      "BAL",
+      "BOS",
+      "CHC",
+      "CHW",
+      "CIN",
+      "CLE",
+      "COL",
+      "HOU",
+      "KC",
+      "MIL",
+      "NYM",
+      "OAK",
+      "PHI",
+      "PIT",
+      "SEA",
+      "TB",
+      "TEX"
+    ]
+  }
+}
