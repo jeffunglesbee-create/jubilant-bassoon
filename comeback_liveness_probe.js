@@ -31,7 +31,17 @@
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
 
-const URL = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
+const BASE = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
+// ?wpt is this repo's OWN first-visit-modal bypass, whose comment
+// (index.html ~L5097) names Playwright as an intended consumer. Not an
+// invented dismissal (Rule 62).
+//
+// It is here because the first baseline run measured NOTHING: the click on
+// #stats-nav-link timed out with `<div id="setup-overlay"> intercepts pointer
+// events`. That run's `pass: false` did NOT mean the tie string was absent or
+// present — the probe never reached the Stats tab. Recording it as a baseline
+// would have been recording an unmeasured result as evidence.
+const URL = BASE + (BASE.includes('?') ? '&' : '?') + 'wpt=1';
 const PHASE = process.env.PROBE_PHASE || 'unknown';   // 'baseline' | 'postfix'
 const TS = new Date().toISOString().replace(/[:.]/g, '-');
 
@@ -60,6 +70,15 @@ const TIED = 'Tied — anyone’s game';
     manifest.swVersion = await page.evaluate(() => window.SW_VERSION || null);
     manifest.liveCardCount = await page.evaluate(
       () => document.querySelectorAll('.game-card.espn-live').length);
+
+    // Recorded, not worked around. If ?wpt ever stops bypassing the modal,
+    // this field says so plainly and the click below fails loudly -- rather
+    // than the probe quietly hiding the overlay itself and reporting a clean
+    // run against a state no user is in.
+    manifest.setupOverlayVisible = await page.evaluate(() => {
+      const ov = document.getElementById('setup-overlay');
+      return !!ov && getComputedStyle(ov).display !== 'none';
+    });
 
     // Open the Stats tab the way a user does -- click the nav link, which
     // calls toggleStatsView(). Not by un-hiding the section directly: that
@@ -90,7 +109,10 @@ const TIED = 'Tied — anyone’s game';
     Object.assign(manifest, stats);
 
     await page.screenshot({ path: `outbox/comeback-liveness-${PHASE}-${TS}.png`, fullPage: false });
-    const tgBox = await page.$('.stats-sport-block:has(.stats-sport-label)');
+    // The Today's Games block specifically -- `:has(.stats-sport-label)` alone
+    // would match the FIRST stats block (NBA), screenshotting the wrong thing.
+    const tgBox = await page.$(
+      '#stats-section .stats-sport-block:has(.stats-sport-label:text-matches("Today.s Games"))');
     if (tgBox) await tgBox.screenshot({ path: `outbox/comeback-liveness-${PHASE}-block-${TS}.png` }).catch(() => {});
   } catch (e) {
     // Captured into the manifest rather than swallowed. A bare catch{} on this
