@@ -3828,10 +3828,31 @@ function getUmpireABSRating(umpireLastName) {
            badge, context, diffFromLeague: pct - leaguePct };
 }
 
+// CC-CMD-2026-08-12-scouting-coverage-gaps.
+// MLB Stats API `team.abbreviation` (which is what game._homeAbbr carries --
+// src/legacy/field.js:17806) disagrees with three PARK_FACTORS keys. Measured
+// 2026-08-12 across a full 15-game slate: 12 of 15 home abbreviations resolved
+// and exactly these three did not, while the table's OAK / ARI / CHW entries
+// went unused that day (outbox/park-abbr-resolution-manifest-*.json).
+//
+// So the park factors were never missing -- they were filed under the other
+// name, and three games silently lost their Park row.
+//
+// Aliases, not new data. Each target was checked before mapping to it, because
+// pointing at a stale venue would be worse than showing nothing (Rule 1):
+//   OAK -> "Sutter Health Park"  the Athletics' current park, already correct
+//   ARI -> "Chase Field"
+//   CHW -> "Rate Field"
+// This is one normalisation step, not a fallback chain -- Rule 76 caps the
+// chain at 2 and the call site's `game._homeAbbr || game.homeTeam` already
+// spends both levels.
+const PARK_ABBR_ALIASES = { ATH: 'OAK', AZ: 'ARI', CWS: 'CHW' };
+
 function getParkFactor(teamAbbr) {
   if (!teamAbbr) return null;
   // Try direct abbr, also try stripping city from full team name
-  const abbr = (teamAbbr||'').toUpperCase().replace(/^THE /,'');
+  const raw = (teamAbbr||'').toUpperCase().replace(/^THE /,'');
+  const abbr = PARK_ABBR_ALIASES[raw] || raw;
   const d = PARK_FACTORS[abbr];
   if (!d) return null;
   let badge = null, badgeClass = '';
@@ -21761,7 +21782,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-12c';
+  const SW_VERSION = '2026-08-12d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
