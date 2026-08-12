@@ -1,9 +1,58 @@
 # FIELD HANDOFF
 
-**Anchor:** CLIENT HEAD 353b1f9 · 2026-08-02T18:00Z · via chat (mid-session, not a close)
-RELAY HEAD f711797 · 2026-08-02T18:00Z · via chat
-Smoke: 965/0 (client, verified fresh this update, not reused from an earlier check)
-SW version: 2026-08-02f (index.html/sw.js in sync as of this update)
+**Anchor:** CLIENT HEAD 11943f2c · 2026-08-12T21:30Z · via Claude Code
+RELAY HEAD 6b57eb1 · 2026-08-12 · via Claude Code
+Smoke: 965/0 (client, run fresh after every commit below, not reused)
+SW version: 2026-08-12f (index.html/sw.js in sync; bumped a→f across six
+deploying commits this session)
+
+## Session 2026-08-12 — Stats tab, four CC-CMDs
+
+Session docs (Rule 67):
+- `outbox/cc-session-2026-08-12-comeback-probability-liveness-gate.md` — DONE, confidence 95
+- `outbox/cc-session-2026-08-12-mlb-pitcher-payload-audit.md` — DONE, confidence 96
+- `outbox/cc-session-2026-08-12-scouting-coverage-gaps.md` — DONE, confidence 95
+- `outbox/cc-session-2026-08-11-archive-gap-real-write-path.md` — relay repo, DONE, confidence 96
+
+**What changed, all verified against the LIVE deployment via
+`stats-scouting-probes.yml` / `comeback-liveness-probe.yml`:**
+
+1. **Comeback probability gated on live state** (`d8fe74aa`). Every
+   scheduled game rendered "Tied — anyone's game" — 16 occurrences against
+   3 live games, including Athletics 47-73 vs Rays 73-46, sitting directly
+   under the records line so it read as a verdict on them. Old guard tested
+   only `state === 'post'`, letting both `'pre'` and `'final'` through.
+   Now whitelists the file's own canonical isLive
+   (`'in' || 'live' || 'halftime'`). Post-fix: 3, equal to liveCardCount.
+2. **Pitcher ERA / W-L wired** (`288db1d8`, `fcb48871`). `gamesWithEra`
+   and `gamesWithRecord` both 0 → 15. The schedule endpoint serves no
+   probable-pitcher stats under ANY hydrate form (six measured); the data
+   was already being loaded by `mlbPitcherStatsInit()` and simply not wired
+   to `buildScoutingReport`.
+3. **Park row aliases** (`b7ff0c42`). ATH→OAK, AZ→ARI, CWS→CHW.
+   `parkRowMissing` 3 → 0 for MLB.
+4. **MLB standings hydrated** (`4acbdc7d`, `e5f74464`). `&hydrate=team` —
+   without it `/standings` returns a minimal team object, so `abbrev` was
+   `''` for all 30 teams (silent no-op since written) and `team.name` read
+   "D-backs" where the schedule says "Arizona Diamondbacks".
+   `recordsRowMissing` 1 → 0 for MLB.
+
+**Method worth reusing:** for a render that is a pure function of its
+inputs, measure the INPUTS, not the DOM. The park question was settled by
+intersecting `PARK_FACTORS` keys (parsed from source at HEAD) against the
+API's abbreviations — exact and enumerated, where a DOM text probe had
+produced an indefensible number. See the coverage-gaps doc.
+
+**Open, not started:** `gamesWithArsenal: 0` of 15 — `PITCHER_ARSENAL` has
+no entry for any current starter. Settle it the same way: intersect that
+table's keys against the day's actual `lastNameOf(pitcher)` values before
+deciding whether it is a coverage gap or a key-shape mismatch.
+
+---
+
+## Earlier anchor (2026-08-02T18:00Z, mid-session write via chat)
+
+CLIENT HEAD 353b1f9 · RELAY HEAD f711797 · SW version 2026-08-02f
 
 **Note: this is a mid-session handoff write, not a session close.** Jeff
 explicitly asked for the handoff written without ending the session —
