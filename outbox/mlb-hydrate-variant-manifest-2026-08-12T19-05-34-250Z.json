@@ -1,0 +1,87 @@
+{
+  "ts": "2026-08-12T19-05-34-250Z",
+  "date": "2026-08-12",
+  "season": "2026",
+  "results": [
+    {
+      "hydrate": "broadcasts(all),team,linescore,probablePitcher(stats),officials",
+      "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-08-12&hydrate=broadcasts(all),team,linescore,probablePitcher(stats),officials",
+      "httpStatus": 200,
+      "gameCount": 15,
+      "pitcherRecords": 30,
+      "withStatsArray": 0,
+      "withSeasonType": 0,
+      "withAnyEra": 0,
+      "statTypeNames": [],
+      "sample": [],
+      "works": false
+    },
+    {
+      "hydrate": "probablePitcher(stats)",
+      "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-08-12&hydrate=probablePitcher(stats)",
+      "httpStatus": 200,
+      "gameCount": 15,
+      "pitcherRecords": 30,
+      "withStatsArray": 0,
+      "withSeasonType": 0,
+      "withAnyEra": 0,
+      "statTypeNames": [],
+      "sample": [],
+      "works": false
+    },
+    {
+      "hydrate": "probablePitcher(stats(type=season,season=2026))",
+      "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-08-12&hydrate=probablePitcher(stats(type=season,season=2026))",
+      "httpStatus": 200,
+      "gameCount": 15,
+      "pitcherRecords": 30,
+      "withStatsArray": 0,
+      "withSeasonType": 0,
+      "withAnyEra": 0,
+      "statTypeNames": [],
+      "sample": [],
+      "works": false
+    },
+    {
+      "hydrate": "probablePitcher(note,stats)",
+      "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-08-12&hydrate=probablePitcher(note,stats)",
+      "httpStatus": 200,
+      "gameCount": 15,
+      "pitcherRecords": 30,
+      "withStatsArray": 0,
+      "withSeasonType": 0,
+      "withAnyEra": 0,
+      "statTypeNames": [],
+      "sample": [],
+      "works": false
+    },
+    {
+      "hydrate": "probablePitcher(person(stats(type=season,season=2026,group=pitching)))",
+      "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-08-12&hydrate=probablePitcher(person(stats(type=season,season=2026,group=pitching)))",
+      "httpStatus": 200,
+      "gameCount": 15,
+      "pitcherRecords": 30,
+      "withStatsArray": 0,
+      "withSeasonType": 0,
+      "withAnyEra": 0,
+      "statTypeNames": [],
+      "sample": [],
+      "works": false
+    },
+    {
+      "hydrate": "probablePitcher(stats(group=pitching,type=season,season=2026))",
+      "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-08-12&hydrate=probablePitcher(stats(group=pitching,type=season,season=2026))",
+      "httpStatus": 200,
+      "gameCount": 15,
+      "pitcherRecords": 30,
+      "withStatsArray": 0,
+      "withSeasonType": 0,
+      "withAnyEra": 0,
+      "statTypeNames": [],
+      "sample": [],
+      "works": false
+    }
+  ],
+  "workingVariants": [],
+  "currentProductionWorks": false
+}
