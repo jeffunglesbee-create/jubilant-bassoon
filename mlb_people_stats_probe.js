@@ -91,6 +91,40 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
       console.log(`${res.works ? 'WORKS  ' : 'no     '} era=${res.withEra}/${res.tested} wins=${res.withWins}/${res.tested}  ${shape}`);
     }
     out.workingUrlShapes = out.candidates.filter((c) => c.works).map((c) => c.urlShape);
+
+    // BULK. The per-id routes work, but a slate is 30 probables and 30 calls
+    // per schedule refresh is exactly the shape Rule 78 exists to catch. If
+    // /people?personIds= carries the same stats, the whole fix is ONE extra
+    // request and the rate-limit question disappears rather than being
+    // mitigated.
+    const ids = pitchers.map((p) => p.id).join(',');
+    const bulkUrl = `${MLB_STATS_BASE}/people?personIds=${ids}&hydrate=stats(group=pitching,type=season,season=${SEASON})`;
+    const bulk = { urlShape: `${MLB_STATS_BASE}/people?personIds={csv}&hydrate=stats(group=pitching,type=season,season=${SEASON})`, requested: pitchers.length };
+    try {
+      const r = await fetch(bulkUrl, { signal: AbortSignal.timeout(30000) });
+      bulk.httpStatus = r.status;
+      bulk.urlLength = bulkUrl.length;
+      if (r.ok) {
+        const j = await r.json();
+        const people = j.people || [];
+        bulk.returned = people.length;
+        bulk.withEra = people.filter((p) => p.stats?.[0]?.splits?.[0]?.stat?.era != null).length;
+        bulk.withWins = people.filter((p) => p.stats?.[0]?.splits?.[0]?.stat?.wins != null).length;
+        bulk.sample = people.slice(0, 2).map((p) => ({
+          id: p.id, name: p.fullName,
+          era: p.stats?.[0]?.splits?.[0]?.stat?.era ?? null,
+          wins: p.stats?.[0]?.splits?.[0]?.stat?.wins ?? null,
+          losses: p.stats?.[0]?.splits?.[0]?.stat?.losses ?? null,
+        }));
+        bulk.works = bulk.returned === bulk.requested && bulk.withEra >= bulk.requested - 1;
+      } else {
+        bulk.body = (await r.text()).slice(0, 200);
+      }
+    } catch (e) { bulk.error = String(e.message || e); }
+    out.bulk = bulk;
+    console.log(`\n${bulk.works ? 'BULK WORKS' : 'bulk no'} requested=${bulk.requested} returned=${bulk.returned} ` +
+      `era=${bulk.withEra} urlLength=${bulk.urlLength} http=${bulk.httpStatus}`);
+    console.log('bulk sample:', JSON.stringify(bulk.sample || bulk.body || bulk.error));
   } catch (e) {
     out.error = String(e && e.message ? e.message : e);
   }
