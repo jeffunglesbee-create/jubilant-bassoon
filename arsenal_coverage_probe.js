@@ -69,6 +69,11 @@ async function loadTable(name) {
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(25000) });
     out.httpStatus = r.status;
+    // X-Source distinguishes the relay's R2-first hit from its
+    // raw.githubusercontent fallback (field-relay-nba src/index.js:13623).
+    // Without it, "the relay serves 0 entries" cannot be attributed to a
+    // layer -- and the whole question here is WHICH layer is empty.
+    out.xSource = r.headers.get('x-source') || null;
     if (!r.ok) { out.body = (await r.text()).slice(0, 200); return out; }
     const json = await r.json();
     // mlbStatsInit unwraps `json.data || json` -- reproduced, because a
@@ -89,6 +94,27 @@ async function loadTable(name) {
     const [tempo, arsenal] = await Promise.all([
       loadTable('pitch_tempo'), loadTable('pitch_arsenals'),
     ]);
+
+    // The relay's own fallback target, fetched directly. If this is populated
+    // while the relay serves 0, the R2 object is shadowing good data rather
+    // than the data being absent -- two very different bugs in two different
+    // repos.
+    const RAW = 'https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/outbox/mlb';
+    for (const n of ['pitch_arsenals', 'pitch_tempo']) {
+      const o = { name: n };
+      try {
+        const rr = await fetch(`${RAW}/${n}.json`, { signal: AbortSignal.timeout(25000) });
+        o.httpStatus = rr.status;
+        if (rr.ok) {
+          const jj = await rr.json();
+          const dd = jj.data || jj;
+          o.entryCount = dd && typeof dd === 'object' ? Object.keys(dd).length : 0;
+          o.updated = jj.updated ?? null;
+        }
+      } catch (e) { o.error = String(e.message || e); }
+      (out.githubRaw ||= {})[n] = o;
+    }
+    console.log('github raw:', JSON.stringify(out.githubRaw));
 
     const sr = await fetch(`${MLB_STATS_BASE}/schedule?sportId=1&date=${DATE}&hydrate=probablePitcher`,
       { signal: AbortSignal.timeout(30000) });
@@ -130,8 +156,9 @@ async function loadTable(name) {
     const n = out.pitchers.length;
     out.summary = {
       tables: {
-        pitch_tempo:    { status: tempo.httpStatus,   entries: tempo.entryCount,   sampleKeys: tempo.sampleKeys },
-        pitch_arsenals: { status: arsenal.httpStatus, entries: arsenal.entryCount, sampleKeys: arsenal.sampleKeys, error: arsenal.error, body: arsenal.body },
+        pitch_tempo:    { status: tempo.httpStatus,   xSource: tempo.xSource,   entries: tempo.entryCount,   sampleKeys: tempo.sampleKeys },
+        pitch_arsenals: { status: arsenal.httpStatus, xSource: arsenal.xSource, entries: arsenal.entryCount, sampleKeys: arsenal.sampleKeys, error: arsenal.error, body: arsenal.body },
+        githubRawFallback: out.githubRaw,
       },
       probables: n,
       tempoKeyHits:   out.pitchers.filter((x) => x.tempoHit).length,
