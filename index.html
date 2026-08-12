@@ -44403,7 +44403,29 @@ function updatePinWidget() {
 // DO NOT INVENT: probability from real deficit × time remaining curves only.
 // No ML, no external data — pure mathematical approximation from game state.
 function buildComebackProbability(gameId, eData, sport) {
-  if (!eData || eData.state === 'post') return null;
+  // LIVENESS GATE (CC-CMD-2026-08-12-comeback-probability-liveness-gate).
+  // This is a LIVE in-game estimate. Do not remove this condition as
+  // redundant -- it is load-bearing, and its absence was measured in
+  // production on 2026-08-12: 16 occurrences of "Tied - anyone's game" in
+  // the Stats tab against only 3 live games
+  // (outbox/comeback-liveness-manifest-baseline-2026-08-12T18-43-46-565Z.json),
+  // including Athletics 47-73 vs Rays 73-46. A pre-game has no scores, so
+  // the parseInt below makes both sides 0, margin is 0, and the tie string
+  // returns before any period check runs -- printing a fabricated
+  // competitive assessment directly beneath the win-loss records.
+  //
+  // Whitelist, not a blacklist. The guard this replaced tested only
+  // `state === 'post'`, which left BOTH 'pre' and 'final' falling through
+  // ('final' is a real terminal value here -- see the Today's Games caller
+  // at ~L31051, `state === 'post' || state === 'final'`), so a completed
+  // game could also draw a comeback number. A blacklist has now missed a
+  // state twice; an unlisted value fails closed instead.
+  //
+  // The three live values are this file's own established idiom, not a set
+  // invented here -- identical to the canonical isLive at ~L2437/L2476.
+  // 'in' alone is NOT sufficient: V2/WC26 sources report 'live'.
+  const _cbLive = eData && (eData.state === 'in' || eData.state === 'live' || eData.state === 'halftime');
+  if (!_cbLive) return null;
   const home = parseInt(eData.homeScore||0), away = parseInt(eData.awayScore||0);
   const margin = Math.abs(home - away);
   if (margin === 0) return 'Tied \u2014 anyone\u2019s game';
