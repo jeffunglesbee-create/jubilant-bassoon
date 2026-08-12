@@ -1,0 +1,268 @@
+{
+  "ts": "2026-08-12T19-09-31-748Z",
+  "date": "2026-08-12",
+  "season": "2026",
+  "candidates": [
+    {
+      "urlShape": "https://statsapi.mlb.com/api/v1/people/{id}/stats?stats=season&group=pitching&season=2026",
+      "tested": 5,
+      "withEra": 5,
+      "withWins": 5,
+      "samples": [
+        {
+          "name": "Zebby Matthews",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "5.40",
+          "wins": 5,
+          "losses": 8,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        },
+        {
+          "name": "Shane Baz",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "4.00",
+          "wins": 4,
+          "losses": 11,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        },
+        {
+          "name": "Kyle Leahy",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "3.42",
+          "wins": 8,
+          "losses": 4,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        }
+      ],
+      "works": true
+    },
+    {
+      "urlShape": "https://statsapi.mlb.com/api/v1/people/{id}?hydrate=stats(group=pitching,type=season,season=2026)",
+      "tested": 5,
+      "withEra": 5,
+      "withWins": 5,
+      "samples": [
+        {
+          "name": "Zebby Matthews",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "5.40",
+          "wins": 5,
+          "losses": 8,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        },
+        {
+          "name": "Shane Baz",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "4.00",
+          "wins": 4,
+          "losses": 11,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        },
+        {
+          "name": "Kyle Leahy",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "3.36",
+          "wins": 8,
+          "losses": 4,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        }
+      ],
+      "works": true
+    },
+    {
+      "urlShape": "https://statsapi.mlb.com/api/v1/people/{id}/stats?stats=statsSingleSeason&group=pitching&season=2026",
+      "tested": 5,
+      "withEra": 5,
+      "withWins": 5,
+      "samples": [
+        {
+          "name": "Zebby Matthews",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "5.40",
+          "wins": 5,
+          "losses": 8,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        },
+        {
+          "name": "Shane Baz",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "4.00",
+          "wins": 4,
+          "losses": 11,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        },
+        {
+          "name": "Kyle Leahy",
+          "httpStatus": 200,
+          "blockCount": 1,
+          "era": "3.41",
+          "wins": 8,
+          "losses": 4,
+          "statKeys": [
+            "age",
+            "gamesPlayed",
+            "gamesStarted",
+            "groundOuts",
+            "airOuts",
+            "runs",
+            "doubles",
+            "triples",
+            "homeRuns",
+            "strikeOuts"
+          ]
+        }
+      ],
+      "works": true
+    }
+  ],
+  "pitcherCount": 30,
+  "sampleIds": [
+    {
+      "id": 805673,
+      "name": "Zebby Matthews"
+    },
+    {
+      "id": 669358,
+      "name": "Shane Baz"
+    },
+    {
+      "id": 681517,
+      "name": "Kyle Leahy"
+    },
+    {
+      "id": 554430,
+      "name": "Zack Wheeler"
+    },
+    {
+      "id": 678022,
+      "name": "Jack Perkins"
+    }
+  ],
+  "workingUrlShapes": [
+    "https://statsapi.mlb.com/api/v1/people/{id}/stats?stats=season&group=pitching&season=2026",
+    "https://statsapi.mlb.com/api/v1/people/{id}?hydrate=stats(group=pitching,type=season,season=2026)",
+    "https://statsapi.mlb.com/api/v1/people/{id}/stats?stats=statsSingleSeason&group=pitching&season=2026"
+  ],
+  "bulk": {
+    "urlShape": "https://statsapi.mlb.com/api/v1/people?personIds={csv}&hydrate=stats(group=pitching,type=season,season=2026)",
+    "requested": 30,
+    "httpStatus": 200,
+    "urlLength": 312,
+    "returned": 30,
+    "withEra": 29,
+    "withWins": 29,
+    "sample": [
+      {
+        "id": 805673,
+        "name": "Zebby Matthews",
+        "era": "5.40",
+        "wins": 5,
+        "losses": 8
+      },
+      {
+        "id": 669358,
+        "name": "Shane Baz",
+        "era": "4.00",
+        "wins": 4,
+        "losses": 11
+      }
+    ],
+    "works": true
+  }
+}
