@@ -61,7 +61,7 @@ jobs:
         run: |
           SCRIPT="${SCRIPT_INPUT:-stats_tab_scouting_probe.js}"
           case "$SCRIPT" in
-            mlb_pitcher_source_probe.js|stats_tab_scouting_probe.js|mlb_hydrate_variant_probe.js|mlb_people_stats_probe.js|park_abbr_resolution_probe.js) ;;
+            mlb_pitcher_source_probe.js|stats_tab_scouting_probe.js|mlb_hydrate_variant_probe.js|mlb_people_stats_probe.js|park_abbr_resolution_probe.js|standings_match_probe.js) ;;
             *) echo "::error::script not in allow-list: $SCRIPT"; exit 1 ;;
           esac
           export PROBE_DATE="${DATE_INPUT:-$(date -u +%F)}"
@@ -75,7 +75,7 @@ jobs:
           git config user.email "probe@field"
           git config user.name "Stats Scouting Probe"
           git add outbox/stats-tab-scouting-*.json outbox/stats-tab-scouting-*.png || echo "(none)"
-          git add outbox/mlb-pitcher-source-manifest-*.json outbox/mlb-hydrate-variant-manifest-*.json outbox/mlb-people-stats-manifest-*.json outbox/park-abbr-resolution-manifest-*.json || echo "(none)"
+          git add outbox/mlb-pitcher-source-manifest-*.json outbox/mlb-hydrate-variant-manifest-*.json outbox/mlb-people-stats-manifest-*.json outbox/park-abbr-resolution-manifest-*.json outbox/standings-match-manifest-*.json || echo "(none)"
           git status --short
           if git diff --cached --quiet; then
             echo "Nothing to commit"
