@@ -56,14 +56,26 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
         const rows = [...sub.querySelectorAll('.bs-scout-table .rai-row, .bs-scout-table > div')]
           .map((r) => r.textContent.trim()).filter(Boolean);
         const text = sub.textContent || '';
+        // EXACT label match. The first version of this probe tested the
+        // subsection text for the word "Park", which is also inside venue
+        // names ("Oracle Park") and absent from others ("Target Field"), so a
+        // rendered row could read as missing and vice versa. It produced
+        // parkRowMissing: 7 including four teams whose keys are demonstrably
+        // in PARK_FACTORS -- a number that could not be true.
+        //
+        // The row's own label element is unambiguous: buildScoutingReport
+        // emits `<span class="bs-scout-lbl">Park</span>`
+        // (src/legacy/field.js:16568).
+        const labels = [...sub.querySelectorAll('.bs-scout-lbl')].map((s) => s.textContent.trim());
         // Records line shape: "Nick: W–L · Nick: W–L" (en dash U+2013,
         // middot separator) as built at src/legacy/field.js:31036.
         const recordsRe = /:\s*\d+[–-]\d+\s*·/;
         return {
           header,
           rowTexts: rows,
-          parkRowPresent: /(^|\b)Park\b/i.test(rows.join('\n')) || /Park\s/i.test(text),
-          umpireRowPresent: /Umpire/i.test(rows.join('\n')) || /Umpire/i.test(text),
+          scoutLabels: labels,
+          parkRowPresent: labels.includes('Park'),
+          umpireRowPresent: labels.includes('Umpire'),
           recordsRowPresent: recordsRe.test(text),
           // Pitcher enrichment: these only appear when the value string
           // carries them. ERA and W-L are literal shapes from fmtP:
