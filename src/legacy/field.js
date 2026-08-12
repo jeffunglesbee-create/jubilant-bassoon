@@ -4139,6 +4139,12 @@ async function mlbPitcherStatsInit() {
       _mlbPitcherStatsCache[id] = {
         fullName:     player?.fullName ?? '',
         era:          parseFloat(stat.era) || null,
+        // CC-CMD-2026-08-12-mlb-pitcher-payload-audit: the W-L the scouting
+        // report wants was already in this response and simply not captured.
+        // Nullish-coalescing, NOT `|| null` like its neighbours -- a pitcher
+        // with 0 wins is a real record, and `0 || null` would erase it.
+        wins:         stat.wins   ?? null,
+        losses:       stat.losses ?? null,
         k9:           parseFloat(stat.strikeoutsPer9Inn) || null,
         whip:         parseFloat(stat.whip) || null,
         gamesStarted: parseInt(stat.gamesStarted) || 0,
@@ -16412,10 +16418,37 @@ function buildScoutingReport(game, sport) {
     // Probable pitchers
     const hp = game.homePitcher, ap = game.awayPitcher;
     if (hp || ap) {
-      const fmtP = p => {
+      // CC-CMD-2026-08-12-mlb-pitcher-payload-audit.
+      //
+      // p.era / p.wins / p.losses come from normalizeMLBPitcher, which reads
+      // them out of the schedule call's `probablePitcher(stats)` hydration.
+      // That hydration serves NOTHING: measured 2026-08-12 across six hydrate
+      // forms including this one, all 30 pitcher records came back with
+      // `stats: []` -- empty, not mislabelled
+      // (outbox/mlb-hydrate-variant-manifest-*.json). So every pitcher in the
+      // Stats tab rendered as a bare name with no ERA and no record.
+      //
+      // The stats were already being fetched elsewhere. mlbPitcherStatsInit()
+      // (~L4117) loads them per-id from the same /people/{id}/stats route the
+      // probe confirmed works, and getMLBProbablePitchers() exposes them --
+      // that surface simply was not wired to this one. Reading the existing
+      // cache rather than adding a second fetch path (Rule 62): a parallel
+      // loader would have doubled the API calls and duplicated a cache that
+      // already exists under the same name.
+      //
+      // Returns null before the loader's phase 2 completes (~T+4300ms), in
+      // which case nothing is added and the line degrades to the bare name it
+      // already was -- never to an invented number.
+      const _pp = (typeof getMLBProbablePitchers === 'function')
+        ? getMLBProbablePitchers(game.home) : null;
+      const fmtP = (p, side) => {
         if (!p) return 'TBD';
-        const era = p.era != null ? ` · ${p.era} ERA` : '';
-        const rec = (p.wins != null && p.losses != null) ? ` · ${p.wins}-${p.losses}` : '';
+        const _s = _pp && _pp[side];
+        const _era = p.era ?? _s?.era ?? null;
+        const _w = p.wins ?? _s?.wins ?? null;
+        const _l = p.losses ?? _s?.losses ?? null;
+        const era = _era != null ? ` · ${_era} ERA` : '';
+        const rec = (_w != null && _l != null) ? ` · ${_w}-${_l}` : '';
         // getPitchTempo/getPitchArsenal (PITCHER_TEMPO/PITCHER_ARSENAL) are
         // keyed by last-name-only, but p.name (from normalizeMLBPitcher) is
         // always a full name — extract the last name once via the shared
@@ -16434,8 +16467,13 @@ function buildScoutingReport(game, sport) {
           : '';
         return `${p.name || p.lastName || '?'}${era}${rec}${tempoStr}${arsenalStr}`;
       };
-      if (ap) rows.push({ lbl: teamNick(game.away||''), val: fmtP(ap) });
-      if (hp) rows.push({ lbl: teamNick(game.home||''), val: fmtP(hp) });
+      // The 'away'/'home' argument selects the matching side of
+      // getMLBProbablePitchers(), which is keyed by home-team name and
+      // returns {home, away}. Pairing verified against the MLB Stats API on
+      // 2026-08-12: all 15 games' teams.home/.away probables matched what
+      // rendered here (outbox/mlb-pitcher-source-manifest-*.json).
+      if (ap) rows.push({ lbl: teamNick(game.away||''), val: fmtP(ap, 'away') });
+      if (hp) rows.push({ lbl: teamNick(game.home||''), val: fmtP(hp, 'home') });
     }
   }
 
@@ -21716,7 +21754,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-12a';
+  const SW_VERSION = '2026-08-12b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
