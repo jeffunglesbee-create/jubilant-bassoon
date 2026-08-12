@@ -8404,74 +8404,57 @@ const MLB_STATS_BASE = 'https://statsapi.mlb.com/api/v1';
 // Update: replace weekly from Savant umpire leaderboard
 // Key: last name (lowercase, spaces→underscore) | weakness: 'high'|'low'|'inside'|'outside'|null
 const UMPIRE_ABS_RATINGS = {
-  'neon': { challenged:4, overturned:0, rate:0, weakness:null },
-  'gibson': { challenged:5, overturned:0, rate:0, weakness:'down-left' },
-  'hamari': { challenged:8, overturned:1, rate:0.125, weakness:'up-left' },
-  'traynor': { challenged:7, overturned:1, rate:0.143, weakness:null },
-  'vondrak': { challenged:10, overturned:2, rate:0.2, weakness:'down-left' },
-  'thomas': { challenged:5, overturned:1, rate:0.2, weakness:null },
-  'reyburn': { challenged:9, overturned:2, rate:0.222, weakness:'up-right' },
-  'kelley': { challenged:9, overturned:2, rate:0.222, weakness:'right' },
-  'eddings': { challenged:8, overturned:2, rate:0.25, weakness:'down-left' },
-  'mahrley': { challenged:7, overturned:2, rate:0.286, weakness:'down-right' },
-  'parra': { challenged:6, overturned:2, rate:0.333, weakness:'down-right' },
-  'ripperger': { challenged:18, overturned:6, rate:0.333, weakness:'down-left' },
-  'kulpa': { challenged:15, overturned:5, rate:0.333, weakness:'down-right' },
-  'hanahan': { challenged:9, overturned:3, rate:0.333, weakness:'down-left' },
-  'onora': { challenged:3, overturned:1, rate:0.333, weakness:null },
-  'rehak': { challenged:3, overturned:1, rate:0.333, weakness:null },
-  'márquez': { challenged:6, overturned:2, rate:0.333, weakness:null },
-  'bellino': { challenged:3, overturned:1, rate:0.333, weakness:null },
-  'bacchus': { challenged:8, overturned:3, rate:0.375, weakness:'up-right' },
-  'ballou': { challenged:8, overturned:3, rate:0.375, weakness:'down' },
-  'tosi': { challenged:8, overturned:3, rate:0.375, weakness:'down-left' },
-  'scheurwater': { challenged:15, overturned:6, rate:0.4, weakness:'up-right' },
-  'jesus': { challenged:5, overturned:2, rate:0.4, weakness:null },
-  'libka': { challenged:5, overturned:2, rate:0.4, weakness:null },
-  'barrett': { challenged:5, overturned:2, rate:0.4, weakness:'up-left' },
-  'johnson': { challenged:5, overturned:2, rate:0.4, weakness:'down-left' },
-  'blaser': { challenged:5, overturned:2, rate:0.4, weakness:'up-left' },
-  'wolf': { challenged:17, overturned:7, rate:0.412, weakness:'up-left' },
-  'valentine': { challenged:14, overturned:6, rate:0.429, weakness:'up' },
-  'wolcott': { challenged:16, overturned:7, rate:0.438, weakness:'right' },
-  'dreckman': { challenged:9, overturned:4, rate:0.444, weakness:'left' },
-  'additon': { challenged:24, overturned:11, rate:0.458, weakness:'up-left' },
-  'clemons': { challenged:13, overturned:6, rate:0.462, weakness:'up-left' },
-  'jean': { challenged:15, overturned:7, rate:0.467, weakness:'up-left' },
-  'miller': { challenged:24, overturned:12, rate:0.5, weakness:'up-left' },
-  'beck': { challenged:16, overturned:8, rate:0.5, weakness:'down-right' },
-  'jimenez': { challenged:12, overturned:6, rate:0.5, weakness:'down' },
-  'fairchild': { challenged:16, overturned:8, rate:0.5, weakness:'up-left' },
-  'krupa': { challenged:10, overturned:5, rate:0.5, weakness:'down-left' },
-  'lentz': { challenged:12, overturned:6, rate:0.5, weakness:'down-right' },
-  'ramos': { challenged:12, overturned:6, rate:0.5, weakness:'down-right' },
-  'jaschinski': { challenged:6, overturned:3, rate:0.5, weakness:'down-right' },
-  'metz': { challenged:4, overturned:2, rate:0.5, weakness:null },
-  'may': { challenged:6, overturned:3, rate:0.5, weakness:null },
-  'baker': { challenged:4, overturned:2, rate:0.5, weakness:null },
-  'merzel': { challenged:4, overturned:2, rate:0.5, weakness:null },
-  'moore': { challenged:17, overturned:9, rate:0.529, weakness:'up-right' },
-  'diaz': { challenged:15, overturned:8, rate:0.533, weakness:'up-left' },
-  'jones': { challenged:15, overturned:8, rate:0.533, weakness:'down-right' },
-  'tumpane': { challenged:11, overturned:6, rate:0.545, weakness:'down-left' },
-  'wegner': { challenged:11, overturned:6, rate:0.545, weakness:'down' },
-  'moscoso': { challenged:18, overturned:10, rate:0.556, weakness:'right' },
-  'little': { challenged:17, overturned:10, rate:0.588, weakness:'down-right' },
-  'carapazza': { challenged:5, overturned:3, rate:0.6, weakness:'up-right' },
-  'muchlinski': { challenged:5, overturned:3, rate:0.6, weakness:'up-left' },
-  'hudson': { challenged:5, overturned:3, rate:0.6, weakness:null },
-  'ceja': { challenged:13, overturned:8, rate:0.615, weakness:'down-right' },
-  'visconti': { challenged:8, overturned:5, rate:0.625, weakness:'down-left' },
-  'estabrook': { challenged:11, overturned:7, rate:0.636, weakness:'down-right' },
-  'mackay': { challenged:14, overturned:9, rate:0.643, weakness:'left' },
+  'neon': { challenged:3, overturned:0, rate:0, weakness:null },
+  'gibson': { challenged:4, overturned:0, rate:0, weakness:'down-left' },
+  'hamari': { challenged:4, overturned:0, rate:0, weakness:'up-left' },
+  'vondrak': { challenged:6, overturned:0, rate:0, weakness:'down-left' },
+  'mahrley': { challenged:3, overturned:0, rate:0, weakness:null },
+  'eddings': { challenged:6, overturned:1, rate:0.167, weakness:'down-left' },
+  'reyburn': { challenged:5, overturned:1, rate:0.2, weakness:'up-right' },
+  'parra': { challenged:4, overturned:1, rate:0.25, weakness:'down-right' },
+  'lentz': { challenged:7, overturned:2, rate:0.286, weakness:'down-right' },
+  'scheurwater': { challenged:12, overturned:4, rate:0.333, weakness:'up-right' },
+  'kelley': { challenged:3, overturned:1, rate:0.333, weakness:null },
+  'hanahan': { challenged:3, overturned:1, rate:0.333, weakness:null },
+  'jesus': { challenged:3, overturned:1, rate:0.333, weakness:null },
+  'ballou': { challenged:3, overturned:1, rate:0.333, weakness:null },
+  'krupa': { challenged:8, overturned:3, rate:0.375, weakness:'down-left' },
+  'kulpa': { challenged:8, overturned:3, rate:0.375, weakness:'down-right' },
+  'little': { challenged:5, overturned:2, rate:0.4, weakness:'down-right' },
+  'wegner': { challenged:5, overturned:2, rate:0.4, weakness:'down' },
+  'dreckman': { challenged:5, overturned:2, rate:0.4, weakness:'down-left' },
+  'beck': { challenged:12, overturned:5, rate:0.417, weakness:'down-right' },
+  'miller': { challenged:16, overturned:7, rate:0.438, weakness:'up-left' },
+  'ripperger': { challenged:11, overturned:5, rate:0.455, weakness:'left' },
+  'valentine': { challenged:13, overturned:6, rate:0.462, weakness:'up' },
+  'additon': { challenged:21, overturned:10, rate:0.476, weakness:'up-left' },
+  'visconti': { challenged:6, overturned:3, rate:0.5, weakness:'down-left' },
+  'diaz': { challenged:12, overturned:6, rate:0.5, weakness:'up-left' },
+  'jones': { challenged:12, overturned:6, rate:0.5, weakness:'down-right' },
+  'jimenez': { challenged:10, overturned:5, rate:0.5, weakness:'down' },
+  'wolcott': { challenged:12, overturned:6, rate:0.5, weakness:'right' },
+  'bacchus': { challenged:4, overturned:2, rate:0.5, weakness:'up-right' },
+  'moscoso': { challenged:12, overturned:6, rate:0.5, weakness:'right' },
+  'ramos': { challenged:6, overturned:3, rate:0.5, weakness:'up-left' },
+  'fairchild': { challenged:13, overturned:7, rate:0.538, weakness:'up-left' },
+  'moore': { challenged:13, overturned:7, rate:0.538, weakness:'up-right' },
+  'wolf': { challenged:11, overturned:6, rate:0.545, weakness:'down-left' },
+  'estabrook': { challenged:9, overturned:5, rate:0.556, weakness:'down-right' },
+  'clemons': { challenged:7, overturned:4, rate:0.571, weakness:'down-left' },
+  'jean': { challenged:7, overturned:4, rate:0.571, weakness:'up-left' },
+  'jaschinski': { challenged:5, overturned:3, rate:0.6, weakness:'down-right' },
   'pawol': { challenged:6, overturned:4, rate:0.667, weakness:'left' },
-  'whitson': { challenged:9, overturned:6, rate:0.667, weakness:'down-right' },
-  'hoye': { challenged:10, overturned:7, rate:0.7, weakness:'down-right' },
-  'tichenor': { challenged:14, overturned:10, rate:0.714, weakness:'left' },
-  'barber': { challenged:12, overturned:9, rate:0.75, weakness:'down-right' },
-  'barksdale': { challenged:8, overturned:6, rate:0.75, weakness:'down' },
-  'ortiz': { challenged:4, overturned:3, rate:0.75, weakness:null },
-  'tomlinson': { challenged:9, overturned:7, rate:0.778, weakness:'down' },
+  'muchlinski': { challenged:3, overturned:2, rate:0.667, weakness:'up-left' },
+  'hoye': { challenged:3, overturned:2, rate:0.667, weakness:null },
+  'tumpane': { challenged:7, overturned:5, rate:0.714, weakness:'down-left' },
+  'tichenor': { challenged:12, overturned:9, rate:0.75, weakness:'left' },
+  'carapazza': { challenged:4, overturned:3, rate:0.75, weakness:'up-right' },
+  'barber': { challenged:9, overturned:7, rate:0.778, weakness:'down-right' },
+  'mackay': { challenged:10, overturned:8, rate:0.8, weakness:'left' },
+  'whitson': { challenged:5, overturned:4, rate:0.8, weakness:'down-right' },
+  'barksdale': { challenged:6, overturned:5, rate:0.833, weakness:'down' },
+  'tomlinson': { challenged:3, overturned:3, rate:1, weakness:null },
+  'ceja': { challenged:4, overturned:4, rate:1, weakness:null },
 };
 const UMP_WATCH_THRESHOLD = 0.65; // overturn rate above league avg 53% + buffer
 
@@ -26788,7 +26771,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-09e';
+  const SW_VERSION = '2026-08-12a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -44420,7 +44403,28 @@ function updatePinWidget() {
 // DO NOT INVENT: probability from real deficit × time remaining curves only.
 // No ML, no external data — pure mathematical approximation from game state.
 function buildComebackProbability(gameId, eData, sport) {
-  if (!eData || eData.state === 'post') return null;
+  // LIVENESS GATE (CC-CMD-2026-08-12-comeback-probability-liveness-gate).
+  // This is a LIVE in-game estimate. Do not remove this condition as
+  // redundant -- it is load-bearing, and its absence was visible in
+  // production on 2026-08-12: every scheduled game in the Stats tab's
+  // Today's Games rendered "Tied - anyone's game", including Athletics
+  // 47-73 vs Rays 73-46. A pre-game has no scores, so the parseInt below
+  // makes both sides 0, margin is 0, and the tie string returns before any
+  // period check runs -- printing a fabricated competitive assessment
+  // directly beneath the win-loss records.
+  //
+  // Whitelist, not a blacklist. The guard this replaced tested only
+  // `state === 'post'`, which left BOTH 'pre' and 'final' falling through
+  // ('final' is a real terminal value here -- see the Today's Games caller
+  // at ~L31051, `state === 'post' || state === 'final'`), so a completed
+  // game could also draw a comeback number. A blacklist has now missed a
+  // state twice; an unlisted value fails closed instead.
+  //
+  // The three live values are this file's own established idiom, not a set
+  // invented here -- identical to the canonical isLive at ~L2437/L2476.
+  // 'in' alone is NOT sufficient: V2/WC26 sources report 'live'.
+  const _cbLive = eData && (eData.state === 'in' || eData.state === 'live' || eData.state === 'halftime');
+  if (!_cbLive) return null;
   const home = parseInt(eData.homeScore||0), away = parseInt(eData.awayScore||0);
   const margin = Math.abs(home - away);
   if (margin === 0) return 'Tied \u2014 anyone\u2019s game';

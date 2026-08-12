@@ -1,0 +1,80 @@
+name: Comeback Liveness Probe
+# CC-CMD-2026-08-12-comeback-probability-liveness-gate — Done Condition.
+# Verifies the Stats tab's Today's Games does not render "Tied — anyone's game"
+# on games that are not live, against the LIVE deployed URL.
+#
+# Run TWICE: PROBE_PHASE=baseline before the fix deploys, PROBE_PHASE=postfix
+# after. A post-fix zero proves nothing without a pre-fix non-zero to compare
+# against — without the baseline the probe cannot distinguish "fixed" from
+# "never rendered".
+#
+# Mechanism copied from ambient-skeleton-probe.yml (Rule 90's named reference).
+# Trigger: push to outbox/.trigger-comeback-liveness-probe OR workflow_dispatch
+
+on:
+  push:
+    paths: ['outbox/.trigger-comeback-liveness-probe']
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'baseline (before fix deploys) or postfix (after)'
+        required: false
+        default: 'postfix'
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run comeback liveness probe
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+          # A workflow_dispatch input left unfilled arrives as the EMPTY
+          # STRING, not undefined — `??` would not catch it. Defaulted in the
+          # shell instead, which does.
+          PHASE_INPUT: ${{ inputs.phase }}
+        run: |
+          export PROBE_PHASE="${PHASE_INPUT:-postfix}"
+          echo "phase=$PROBE_PHASE"
+          mkdir -p outbox
+          node comeback_liveness_probe.js
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Comeback Liveness Probe"
+          git add outbox/comeback-liveness-*.png || echo "(no screenshots)"
+          git add outbox/comeback-liveness-manifest-*.json || echo "(no manifest)"
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "comeback liveness probe result [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin main && git push origin main && exit 0
+            sleep $((i * 5))
+          done
+          echo "::error::probe result could not be pushed after 5 attempts"
+          exit 1
