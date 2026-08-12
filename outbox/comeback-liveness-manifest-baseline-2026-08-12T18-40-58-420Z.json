@@ -1,0 +1,11 @@
+{
+  "phase": "baseline",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "ts": "2026-08-12T18-40-58-420Z",
+  "tiedString": "Tied — anyone’s game",
+  "moduleBooted": true,
+  "swVersion": "2026-08-09e",
+  "liveCardCount": 3,
+  "error": "page.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('#stats-nav-link')\n    - locator resolved to <a id=\"stats-nav-link\" href=\"#stats-section\" class=\"desk-jump-link stats-nav-link\" title=\"Stats — cross-sport analytics\">📊 Stats</a>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" id=\"setup-overlay\" class=\"setup-overlay\" aria-label=\"My Services setup\">…</div> intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div role=\"dialog\" aria-modal=\"true\" id=\"setup-overlay\" class=\"setup-overlay\" aria-label=\"My Services setup\">…</div> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    22 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div role=\"dialog\" aria-modal=\"true\" id=\"setup-overlay\" class=\"setup-overlay\" aria-label=\"My Services setup\">…</div> intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n",
+  "pass": false
+}
