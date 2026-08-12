@@ -62,7 +62,17 @@ function multiWordNicksFromSource(path) {
     const standings = [];
     for (const div of (sj.records || [])) {
       for (const t of (div.teamRecords || [])) {
-        standings.push({ team: t.team?.name || '', wins: t.wins, losses: t.losses });
+        // abbrev captured because the shipped fix uses it as a second key.
+        // The first version of this probe did not capture it, so the fix was
+        // written on an ASSUMPTION that /standings and /schedule agree on
+        // team.abbreviation -- asserted in a code comment as "cannot drift",
+        // immediately after this same API was caught disagreeing with itself
+        // on team.name. That assumption is what this now measures.
+        standings.push({
+          team: t.team?.name || '',
+          abbrev: t.team?.abbreviation || '',
+          wins: t.wins, losses: t.losses,
+        });
       }
     }
     out.standingsCount = standings.length;
@@ -73,36 +83,56 @@ function multiWordNicksFromSource(path) {
     const gj = await gr.json();
     const games = (gj.dates || []).flatMap((d) => d.games || []);
 
-    const find = (slug) => standings.find((t) => (t.team || '').toLowerCase().includes(slug));
+    // OLD predicate: nickname substring only.
+    const findOld = (slug) => standings.find((t) => (t.team || '').toLowerCase().includes(slug));
+    // NEW predicate, as shipped: substring OR abbreviation equality.
+    const findNew = (slug, abbr) => standings.find((t) =>
+      (t.team || '').toLowerCase().includes(slug) ||
+      (abbr && (t.abbrev || '').toUpperCase() === String(abbr).toUpperCase()));
+
     out.games = games.map((g) => {
       const home = g.teams?.home?.team?.name || '';
       const away = g.teams?.away?.team?.name || '';
+      const hAbbr = g.teams?.home?.team?.abbreviation || null;
+      const aAbbr = g.teams?.away?.team?.abbreviation || null;
       const hSlug = teamNick(home).toLowerCase();
       const aSlug = teamNick(away).toLowerCase();
-      const hT = find(hSlug), aT = find(aSlug);
+      const hOld = findOld(hSlug), aOld = findOld(aSlug);
+      const hNew = findNew(hSlug, hAbbr), aNew = findNew(aSlug, aAbbr);
       return {
         matchup: `${away} @ ${home}`,
-        homeNick: teamNick(home), homeSlug: hSlug, homeMatched: !!hT,
-        awayNick: teamNick(away), awaySlug: aSlug, awayMatched: !!aT,
-        // The rendered condition, reproduced exactly.
-        recordsLineWouldRender: !!(hT && aT),
+        homeNick: teamNick(home), homeSlug: hSlug, homeScheduleAbbr: hAbbr,
+        awayNick: teamNick(away), awaySlug: aSlug, awayScheduleAbbr: aAbbr,
+        // The standings row this team SHOULD join to, found by nothing more
+        // than position in the league, so the two abbreviations can be
+        // compared side by side even when neither predicate matches.
+        homeStandingsAbbr: (standings.find((t) => (t.team || '').toLowerCase()
+          .includes(home.split(' ').pop().toLowerCase())) || {}).abbrev ?? null,
+        oldWouldRender: !!(hOld && aOld),
+        newWouldRender: !!(hNew && aNew),
       };
     });
 
-    const fails = out.games.filter((x) => !x.recordsLineWouldRender);
+    const fails = out.games.filter((x) => !x.newWouldRender);
     out.summary = {
       gameCount: out.games.length,
-      wouldRender: out.games.length - fails.length,
-      wouldNotRender: fails.length,
+      oldWouldRender: out.games.filter((x) => x.oldWouldRender).length,
+      newWouldRender: out.games.length - fails.length,
+      newWouldNotRender: fails.length,
+      // Every abbreviation pair, so a /standings vs /schedule disagreement is
+      // visible directly rather than inferred from a failure.
+      abbrevPairs: out.games.map((x) => ({
+        home: x.homeNick, schedule: x.homeScheduleAbbr, standings: x.homeStandingsAbbr,
+        agree: x.homeScheduleAbbr === x.homeStandingsAbbr,
+      })),
       // Which SIDE failed -- invisible from the DOM, because one miss
       // suppresses both records.
       failures: fails.map((x) => ({
         matchup: x.matchup,
-        homeSlug: x.homeSlug, homeMatched: x.homeMatched,
-        awaySlug: x.awaySlug, awayMatched: x.awayMatched,
+        homeSlug: x.homeSlug, homeScheduleAbbr: x.homeScheduleAbbr,
+        homeStandingsAbbr: x.homeStandingsAbbr,
+        awaySlug: x.awaySlug, awayScheduleAbbr: x.awayScheduleAbbr,
       })),
-      unmatchedSlugs: [...new Set(fails.flatMap((x) =>
-        [!x.homeMatched && x.homeSlug, !x.awayMatched && x.awaySlug].filter(Boolean)))],
     };
   } catch (e) {
     out.error = String(e && e.message ? e.message : e);
