@@ -21782,7 +21782,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-12e';
+  const SW_VERSION = '2026-08-12f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27381,7 +27381,20 @@ async function fetchMLBStandingsParsed() {
   try {
     const season = new Date().getFullYear();
     const r = await fetch(
-      `${MLB_STATS_BASE}/standings?leagueId=103,104&season=${season}&standingsTypes=regularSeason`,
+      // hydrate=team (CC-CMD-2026-08-12-scouting-coverage-gaps). Without it
+      // /standings returns a MINIMAL team object -- id, name, link, no
+      // abbreviation -- so `abbrev` below has been an empty string for all 30
+      // teams since this was written, a silent no-op for every consumer of it.
+      // Measured 2026-08-12: bare 0/30 teams carry an abbreviation, hydrated
+      // 30/30 (outbox/standings-match-manifest-*.json).
+      //
+      // It also repairs `team.name`, which is what actually broke the Stats
+      // tab's records line: the bare response names the Diamondbacks
+      // "D-backs" while the schedule endpoint calls them "Arizona
+      // Diamondbacks", so the nickname match could not hit and ONE unmatched
+      // side suppresses BOTH teams' records. With hydration the same
+      // predicate resolves 15 of 15.
+      `${MLB_STATS_BASE}/standings?leagueId=103,104&season=${season}&standingsTypes=regularSeason&hydrate=team`,
       { signal: AbortSignal.timeout(6000) }
     );
     if (!r.ok) return null;
