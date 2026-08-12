@@ -1,0 +1,90 @@
+name: Stats Scouting Probes
+# Serves CC-CMD-2026-08-12-mlb-pitcher-payload-audit and
+# CC-CMD-2026-08-12-scouting-coverage-gaps.
+#
+# Runner-hosted because this sandbox's proxy blocks BOTH endpoints these
+# probes need: *.workers.dev (403) and statsapi.mlb.com (HTTP 000). Same
+# CI-as-proxy escape hatch Rule 90 names.
+#
+# Two scripts, one workflow, selected by input:
+#   mlb_pitcher_source_probe.js   node only  — MLB Stats API payload shape
+#   stats_tab_scouting_probe.js   Playwright — rendered Stats tab inventory
+
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: 'mlb_pitcher_source_probe.js | stats_tab_scouting_probe.js'
+        required: false
+        default: 'stats_tab_scouting_probe.js'
+      date:
+        description: 'YYYY-MM-DD for the MLB source probe (default: today UTC)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run the probe
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+          # An unfilled workflow_dispatch input arrives as the EMPTY STRING,
+          # not undefined -- `??` would not catch it. Defaulted in the shell.
+          # SCRIPT arrives via env rather than `${{ }}` interpolated into the
+          # command line: a dispatch input is attacker-controllable by anyone
+          # who can dispatch, and inline interpolation on a job holding
+          # `contents: write` would let the value close the quote.
+          SCRIPT_INPUT: ${{ inputs.script }}
+          DATE_INPUT: ${{ inputs.date }}
+        run: |
+          SCRIPT="${SCRIPT_INPUT:-stats_tab_scouting_probe.js}"
+          case "$SCRIPT" in
+            mlb_pitcher_source_probe.js|stats_tab_scouting_probe.js) ;;
+            *) echo "::error::script not in allow-list: $SCRIPT"; exit 1 ;;
+          esac
+          export PROBE_DATE="${DATE_INPUT:-$(date -u +%F)}"
+          echo "script=$SCRIPT date=$PROBE_DATE"
+          mkdir -p outbox
+          node "$SCRIPT"
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Stats Scouting Probe"
+          git add outbox/stats-tab-scouting-*.json outbox/stats-tab-scouting-*.png || echo "(none)"
+          git add outbox/mlb-pitcher-source-manifest-*.json || echo "(none)"
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "stats scouting probe result [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin main && git push origin main && exit 0
+            sleep $((i * 5))
+          done
+          echo "::error::probe result could not be pushed after 5 attempts"
+          exit 1
