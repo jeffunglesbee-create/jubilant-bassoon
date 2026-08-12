@@ -21502,7 +21502,14 @@ function buildScoutingReport(game, sport) {
         const _era = p.era ?? _s?.era ?? null;
         const _w = p.wins ?? _s?.wins ?? null;
         const _l = p.losses ?? _s?.losses ?? null;
-        const era = _era != null ? ` · ${_era} ERA` : '';
+        // toFixed(2) because the two sources disagree on shape: the schedule
+        // payload carries ERA as the string "4.00" while the pitcher-stats
+        // cache stores parseFloat("4.00") === 4, which rendered as "4 ERA"
+        // and "3.4 ERA" in the first post-fix probe. ERA is conventionally
+        // two decimals, and the displayed value must not depend on which
+        // source answered.
+        const _eraNum = _era != null ? Number(_era) : null;
+        const era = (_eraNum != null && Number.isFinite(_eraNum)) ? ` · ${_eraNum.toFixed(2)} ERA` : '';
         const rec = (_w != null && _l != null) ? ` · ${_w}-${_l}` : '';
         // getPitchTempo/getPitchArsenal (PITCHER_TEMPO/PITCHER_ARSENAL) are
         // keyed by last-name-only, but p.name (from normalizeMLBPitcher) is
@@ -26809,7 +26816,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-12b';
+  const SW_VERSION = '2026-08-12c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
