@@ -63,10 +63,16 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     };
   });
 
+  // PASS = the EPA chip actually rendered on an NFL card (the real E2E proof;
+  // the chip shows for any game in the -10min..+5hr poll window, live or just
+  // final). FAIL = the section is missing (fix didn't work) or a live game
+  // produced no chip. INCONCLUSIVE = cards exist but no in-window game to
+  // compute EPA from yet (all upcoming).
   let verdict;
-  if (state.liveNFLCardCount > 0 && state.epaChipsOnNFLCards > 0) verdict = 'PASS';
-  else if (state.liveNFLCardCount > 0 && state.epaChipsOnNFLCards === 0) verdict = 'FAIL';
-  else verdict = 'INCONCLUSIVE_NO_LIVE_GAME';
+  if (state.epaChipsOnNFLCards > 0) verdict = 'PASS';
+  else if (state.nflCardCount === 0) verdict = 'FAIL_NO_NFL_SECTION';
+  else if (state.liveNFLCardCount > 0) verdict = 'FAIL_LIVE_GAME_NO_CHIP';
+  else verdict = 'INCONCLUSIVE_NO_INWINDOW_GAME';
 
   const manifest = { probe: 'nfl-epa', url: FIELD_URL, ts, verdict, ...state,
     consoleErrorCount: errors.length, consoleErrorsSample: errors.slice(0, 5) };
@@ -84,6 +90,6 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   } catch (e) { console.log('screenshot failed:', e.message); }
 
   await browser.close();
-  // Never fail the pipeline on INCONCLUSIVE; only a real code break (FAIL) is nonzero.
-  process.exit(verdict === 'FAIL' ? 1 : 0);
+  // Never fail the pipeline on INCONCLUSIVE; only a real code break is nonzero.
+  process.exit(verdict.startsWith('FAIL') ? 1 : 0);
 })();
