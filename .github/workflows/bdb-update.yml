@@ -22,7 +22,26 @@ jobs:
         run: |
           git config user.email "bdb-bot@field"
           git config user.name "BDB-Bot"
-          git add outbox/nfl/bdb_speed.json outbox/nfl/bdb_route_entropy.json outbox/nfl/bdb_separation.json || true
+          git add outbox/nfl/bdb_speed.json outbox/nfl/bdb_route_entropy.json \
+                  outbox/nfl/bdb_separation.json outbox/nfl/bdb_xblock_pass_rush.json \
+                  outbox/nfl/bdb_tendency_fingerprint.json || true
           git diff --cached --quiet && echo "no changes" && exit 0
-          git commit -m "NFL BDB: player max speed $(date -u +%Y-%m-%d) [skip ci]"
+          git commit -m "NFL BDB: all tracking metrics $(date -u +%Y-%m-%d) [skip ci]"
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Self-verify live serve (automated follow-up)
+        run: |
+          # Build uploads to R2 directly, so R2 is fresh immediately. This proves all
+          # 5 metrics serve through the relay every run — no manual serve-probe needed.
+          node scripts/bdb-serve-probe.mjs | tee outbox/bdb-serve-probe.log
+      - name: Commit serve-probe artifact
+        if: always()
+        run: |
+          git config user.email "bdb-bot@field"
+          git config user.name "BDB-Bot"
+          git add outbox/bdb-serve-probe.log || true
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "NFL BDB: monthly serve-verify $(date -u +%Y-%m-%d) [skip ci]"
           for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done

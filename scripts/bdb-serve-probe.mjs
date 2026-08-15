@@ -2,8 +2,11 @@
 // non-empty data, expected metric field). GitHub Actions egress reaches the worker.
 const BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nflverse';
 const CHECKS = [
+  ['bdb_speed.json', 'maxSpeedMph'],
   ['bdb_separation.json', 'avgSepYds'],
   ['bdb_route_entropy.json', 'entropyBits'],
+  ['bdb_xblock_pass_rush.json', 'pressureRate'],
+  ['bdb_tendency_fingerprint.json', 'playActionRate'],
 ];
 let bad = 0;
 for (const [file, field] of CHECKS) {

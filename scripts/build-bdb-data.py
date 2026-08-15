@@ -228,6 +228,85 @@ def build_bdb_separation(players, max_weeks=9, min_targets=8):
     print(f"  separation receivers (>= {min_targets} targets): {len(data)}")
     return data
 
+def build_bdb_pass_rush(players, min_snaps=30):
+    """Per-rusher pressure generation — commodity (PFF/NGS publish pass-rush pressures).
+    player_play.csv: wasInitialPassRusher gates rush snaps; causedPressure / quarterbackHit
+    are per-snap booleans; timeToPressureAsPassRusher is seconds (present when pressure).
+    Distinct from team-participation (pressure FACED) — this is pressure GENERATED."""
+    if not AUTH:
+        return {}
+    agg = {}  # nflId -> {team, snaps, prs, hit, ttp_sum, ttp_n}
+    try:
+        with kaggle_open(PFX + "player_play.csv") as r:
+            for row in csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")):
+                if not _truthy(row.get("wasInitialPassRusher")):
+                    continue
+                nid = row.get("nflId")
+                if not nid or nid == "NA":
+                    continue
+                e = agg.get(nid)
+                if e is None:
+                    e = agg[nid] = {"team": row.get("teamAbbr", ""), "snaps": 0, "prs": 0, "hit": 0, "ttp_sum": 0.0, "ttp_n": 0}
+                e["snaps"] += 1
+                if _truthy(row.get("causedPressure")): e["prs"] += 1
+                if _truthy(row.get("quarterbackHit")): e["hit"] += 1
+                ttp = row.get("timeToPressureAsPassRusher") or ""
+                try:
+                    if ttp and ttp != "NA":
+                        e["ttp_sum"] += float(ttp); e["ttp_n"] += 1
+                except ValueError:
+                    pass
+    except Exception as e:
+        print(f"    pass-rush read failed: {e}")
+        return {}
+    data = {}
+    for nid, e in agg.items():
+        if e["snaps"] < min_snaps:
+            continue
+        pl = players.get(nid, {})
+        data[nid] = {"name": pl.get("name", ""), "team": e["team"], "pos": pl.get("pos", ""),
+                     "rushSnaps": e["snaps"], "pressureRate": round(e["prs"] / e["snaps"], 3),
+                     "qbHitRate": round(e["hit"] / e["snaps"], 3),
+                     "avgTimeToPressure": round(e["ttp_sum"] / e["ttp_n"], 2) if e["ttp_n"] else None}
+    print(f"  pass-rush players (>= {min_snaps} rush snaps): {len(data)}")
+    return data
+
+def build_bdb_tendency(min_plays=100):
+    """Per-team offensive play-calling fingerprint — factual/commodity (ESPN publishes
+    play-action & personnel rates). plays.csv: possessionTeam, isDropback, playAction,
+    offenseFormation. Distinct from participation (which is pbp_participation-derived)."""
+    if not AUTH:
+        return {}
+    agg = {}  # team -> {plays, drop, pa, forms:{}}
+    try:
+        with kaggle_open(PFX + "plays.csv") as r:
+            for row in csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")):
+                team = row.get("possessionTeam") or ""
+                if not team or team == "NA":
+                    continue
+                e = agg.get(team)
+                if e is None:
+                    e = agg[team] = {"plays": 0, "drop": 0, "pa": 0, "forms": {}}
+                e["plays"] += 1
+                if _truthy(row.get("isDropback")): e["drop"] += 1
+                if _truthy(row.get("playAction")): e["pa"] += 1
+                f = (row.get("offenseFormation") or "").strip()
+                if f and f != "NA": e["forms"][f] = e["forms"].get(f, 0) + 1
+    except Exception as e:
+        print(f"    tendency read failed: {e}")
+        return {}
+    data = {}
+    for team, e in agg.items():
+        if e["plays"] < min_plays:
+            continue
+        top_form = max(e["forms"].items(), key=lambda kv: kv[1])[0] if e["forms"] else ""
+        data[team] = {"team": team, "plays": e["plays"],
+                      "dropbackRate": round(e["drop"] / e["plays"], 3),
+                      "playActionRate": round(e["pa"] / e["plays"], 3),
+                      "topFormation": top_form}
+    print(f"  tendency teams (>= {min_plays} plays): {len(data)}")
+    return data
+
 def upload_to_r2(r2_key, payload):
     if not CF_ACCOUNT or not CF_TOKEN:
         print(f"    ℹ️  No CF creds — skipping R2 for {r2_key}")
@@ -291,6 +370,32 @@ def main():
         print(f"✅ bdb_separation: {len(sep)} players")
     else:
         print("⛔ bdb_separation: 0 rows — not written")
+
+    # ── Pass-rush pressure generation (player_play.csv only) ──
+    rush = build_bdb_pass_rush(players)
+    if rush:
+        rp = {"updated": now.isoformat(), "season": season, "targetYear": year,
+              "source": f"kaggle {OWNER}/{SLUG} (BDB player_play)", "metric": "pass_rush_pressure", "data": rush}
+        upload_to_r2(f"nfl/{year}/bdb_xblock_pass_rush.json", rp)
+        write_outbox("bdb_xblock_pass_rush.json", rp)
+        for p in sorted(rush.values(), key=lambda p: -p["pressureRate"])[:5]:
+            print(f"    {p['pressureRate']} prs  {p['name']} ({p['team']}) {p['rushSnaps']} snaps")
+        print(f"✅ bdb_xblock_pass_rush: {len(rush)} players")
+    else:
+        print("⛔ bdb_xblock_pass_rush: 0 rows — not written")
+
+    # ── Team offensive tendency fingerprint (plays.csv only) ──
+    tend = build_bdb_tendency()
+    if tend:
+        tp = {"updated": now.isoformat(), "season": season, "targetYear": year,
+              "source": f"kaggle {OWNER}/{SLUG} (BDB plays)", "metric": "tendency_fingerprint", "data": tend}
+        upload_to_r2(f"nfl/{year}/bdb_tendency_fingerprint.json", tp)
+        write_outbox("bdb_tendency_fingerprint.json", tp)
+        for p in sorted(tend.values(), key=lambda p: -p["playActionRate"])[:5]:
+            print(f"    PA {p['playActionRate']}  {p['team']}  {p['topFormation']}")
+        print(f"✅ bdb_tendency_fingerprint: {len(tend)} teams")
+    else:
+        print("⛔ bdb_tendency_fingerprint: 0 rows — not written")
 
 if __name__ == "__main__":
     main()

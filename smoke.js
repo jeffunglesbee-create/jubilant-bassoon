@@ -1066,6 +1066,16 @@ assert('A-NFLRTE-1 — NFL P3: BDB route entropy wired (fetch + accessor + row)'
   html.includes('NFL_BDB_ROUTE') && html.includes("lbl: 'Route tree'"),
   'NFL BDB route entropy must be wired: bdb_route_entropy.json fetch, getTeamTopRoute, NFL_BDB_ROUTE, Route tree scout row');
 
+assert('A-NFLRUSH2-1 — NFL P3: BDB pass-rush pressure wired (fetch + accessor + row)',
+  html.includes('/bdb_xblock_pass_rush.json') && html.includes('getTeamTopRusher') &&
+  html.includes('NFL_BDB_RUSH') && html.includes("lbl: 'Pass rush'"),
+  'NFL BDB pass-rush must be wired: bdb_xblock_pass_rush.json fetch, getTeamTopRusher, NFL_BDB_RUSH, Pass rush scout row');
+
+assert('A-NFLTEND-1 — NFL P3: BDB tendency fingerprint wired (fetch + accessor + row)',
+  html.includes('/bdb_tendency_fingerprint.json') && html.includes('getTeamTendency') &&
+  html.includes('NFL_BDB_TEND') && html.includes("lbl: 'Tendencies'"),
+  'NFL BDB tendency must be wired: bdb_tendency_fingerprint.json fetch, getTeamTendency, NFL_BDB_TEND, Tendencies scout row');
+
 assert('A-NFLPART-1 — NFL P3: participation (formation/pressure) wired (fetch + accessor + row)',
   html.includes('/team-participation.json') && html.includes('getTeamParticipation') &&
   html.includes('NFL_PART') && html.includes("lbl: 'Pass pro'"),
