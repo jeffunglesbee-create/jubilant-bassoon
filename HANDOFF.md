@@ -1,5 +1,27 @@
 # FIELD HANDOFF
 
+## Session 2026-08-14 — /realtimesports dead-code removal + P2 injuries (Wow #7)
+
+Session docs (Rule 67): `outbox/cc-session-2026-08-14-nfl-injuries-p2.md` (client),
+`field-relay-nba/outbox/cc-session-2026-08-15-v2games-live-500.md` (relay 500 fix,
+prior task). Deploys: client `42f7c9b` green, relay `b0d9af2` green.
+
+**Dead-code cleanup (relay `b0d9af2`):** removed the `/realtimesports/*` passthrough
+(eliminated source, zero consumers, key never in wrangler.toml) — Rule 63.
+
+**P2 injuries (client `d90acb6`+`42f7c9b`, SW 2026-08-14e, smoke 967/0):** wired the
+already-served `nfl-injuries.json` into `buildScoutingReport` as an INJ row —
+`nflInjuriesInit`/`getNFLInjuries`, official Out/Doubtful/Questionable only (Rule 1).
+Caught + fixed an ESPN↔nflverse abbr mismatch (WSH/WAS, LAR/LA) at the `toNGSAbbr`
+boundary — also fixes a latent NGS miss for Washington/Rams (all 32 teams checked).
+
+**P2 reality (corrects the stale "0/6 unbuilt"):** ngs-passing/receiving = done E2E;
+injuries = now done; STILL unconsumed: ngs-rushing, player-stats; STILL unbuilt:
+snap_counts, depth_charts, weekly PBP. User directive: "best recommendations first,
+eventually build everything" — injuries was the recommended first deliverable.
+
+---
+
 ## Session 2026-08-14 — NFL EPA live wiring (P1-1/P1-2) — the prior carry-forward, now DONE
 
 Session doc (Rule 67): `outbox/cc-session-2026-08-14-nfl-epa-wiring.md` — DONE, confidence 96
