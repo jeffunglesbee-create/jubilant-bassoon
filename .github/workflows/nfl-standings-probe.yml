@@ -32,7 +32,7 @@ jobs:
         if: always()
         run: |
           git config user.email "bdb-probe@field"; git config user.name "BDB-Probe"
-          git add outbox/espn-nfl-standings-shape.txt outbox/nfl-standings-manifest-*.json outbox/nfl-standings-*.png || true
+          git add outbox/ || true
           git diff --cached --quiet && echo nothing && exit 0
           git commit -m "nfl standings probe + espn shape [skip ci]"
           for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
