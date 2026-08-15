@@ -3,5 +3,6 @@
   PASS bdb_route_entropy.json  HTTP 200  src=?  rows=354  metric=route_entropy_bits  sample.entropyBits=2.64
   PASS bdb_xblock_pass_rush.json  HTTP 200  src=?  rows=321  metric=pass_rush_pressure  sample.pressureRate=0.083
   PASS bdb_tendency_fingerprint.json  HTTP 200  src=?  rows=32  metric=tendency_fingerprint  sample.playActionRate=0.103
+  PASS bdb_time_to_throw.json  HTTP 200  src=?  rows=32  metric=time_to_throw  sample.avgTimeToThrow=2.59
 
-== RESULT: 5/5 serve non-empty ==
+== RESULT: 6/6 serve non-empty ==
