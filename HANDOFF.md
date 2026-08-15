@@ -1,5 +1,28 @@
 # FIELD HANDOFF
 
+## Session 2026-08-15 — dead-allow-list cleanup + P3 (participation, no-Kaggle)
+
+Session doc: `outbox/cc-session-2026-08-15-p3-participation.md`. Both repos on main.
+Client `1b26053` (SW 2026-08-15b, smoke 971/0); relay serving `71a9285`; cleanup `4917cd2`.
+
+**Cleanup (Rule 63):** removed 5 dead nflverse allow-list entries (qb_metrics,
+receiver_metrics, defense_metrics, schedule_refs, team_tendencies — 0 builders,
+0 consumers). Kept bdb_* marked STAGED (P3 frame-tracking targets).
+
+**P3 unlock (Rule 72/88):** probed and found the "needs Kaggle" claim overbroad —
+raw frame tracking IS Kaggle-gated (401), but nflverse **pbp_participation** is public
+(302). Built `team-participation.json` (offense-side formation/pressure: shotgun rate,
+box faced, **pressure-faced %, blitz-faced %** — DAL 31%/28%, all 32 teams). Serving
+verified (serve-probe 143657Z, 200/32 rows). Client **Pass pro** scout row (smoke
+A-NFLPART-1).
+
+**STAGED (Rule 74):** route entropy / separation / man-zone coverage — the raw x/y
+tracking layer. Blocked by Kaggle creds (none exist) + empty route/coverage columns in
+recent pbp_participation. Unblock: add KAGGLE_KEY secret + a BDB builder → populates the
+kept bdb_* allow-list entries.
+
+---
+
 ## Session 2026-08-15 — P2 COMPLETE (all 7 nflverse tables built + served + consumed)
 
 Session doc: `outbox/cc-session-2026-08-15-p2-unbuilt-tables.md`. Both repos on main.
