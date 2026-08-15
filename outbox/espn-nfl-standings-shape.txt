@@ -1,0 +1,11 @@
+HTTP 200
+top-level keys: uid, id, name, abbreviation, shortName, children, isConference, season, links, seasons
+children (groups): 2
+  [0] name="American Football Conference"  entries=16  childGroups=0
+  [1] name="National Football Conference"  entries=16  childGroups=0
+
+SAMPLE ENTRY team: Los Angeles Chargers (LAC)
+  note: null
+  stat names: differential, gamesBehind, losses, playoffSeed, pointDifferential, pointsAgainst, pointsFor, streak, ties, winPercent, wins, divisionLosses, divisionRecord, divisionTies, divisionWins, overall, Home, Road, vs. Div., vs. Conf.
+  seed stat: {"name":"playoffSeed","value":1,"display":"1"}
+  clinch-ish stat: {"name":"playoffSeed","value":1}
