@@ -1,5 +1,29 @@
 # FIELD HANDOFF
 
+## Session 2026-08-15 — P3 BDB pass-rush + tendency + automation (E2E) ✅
+
+Session doc: `outbox/cc-session-2026-08-15-p3-bdb-rush-tendency.md`. Both repos on main.
+Client SW 2026-08-15e, smoke 976/0. Relay `7561ed5`.
+
+Built the final two STAGED BDB entries; **all 5 BDB metrics now complete** (no STAGED
+BDB remains):
+- **Pass rush** (`bdb_xblock_pass_rush.json`, 321) — pressure GENERATED per rusher
+  (pressureRate/qbHitRate), player_play.csv. Client **Pass rush** scout row. Top:
+  blitzing DBs/LBs (correct). Distinct from "Pass pro" (pressure faced).
+- **Tendency** (`bdb_tendency_fingerprint.json`, 32) — team PA%/dropback%/top-formation
+  from plays.csv. Client **Tendencies** row. ATL 26.6% PA / PISTOL (validates 2022).
+- Bug (Rule 77): hRush/aRush dup-declared → renamed hPrsh/aPrsh.
+
+**Automation (follow-ups):** `bdb-update.yml` monthly cron now builds ALL 5 metrics,
+commits all 5 outputs, and **self-verifies** — runs `bdb-serve-probe.mjs` (all 5 files)
+against the live relay and commits `outbox/bdb-serve-probe.log` (FATAL on any fail).
+No manual serve-probe trigger needed. ARTIFACT: log committed by the workflow →
+`5/5 serve non-empty` (speed 1648, sep 250, route 354, rush 321, tendency 32).
+
+BDB scout rows now: Top speed · Top separation · Route tree · Pass rush · Tendencies
+(+ Team EPA, Pass pro from earlier P3 work).
+
+
 ## Session 2026-08-15 — P3 BDB separation + route entropy (E2E) ✅
 
 Session doc: `outbox/cc-session-2026-08-15-p3-bdb-sep-route.md`. Both repos on main.
