@@ -1,22 +1,19 @@
-[creds] USERNAME raw len 16 stripped 16 | KEY raw len 37 stripped 37
-[creds] USERNAME had surrounding whitespace: False | KEY had surrounding whitespace: False
-[creds] KEY stripped is 32-hex (expected shape): False
-[creds] KEY stripped char classes: hex=False alnum=False
+[creds] USERNAME len 16 | KEY len 37 | starts_with_kgat=False | 32hex=False
 
-[auth] competitions/list search='big data bowl' -> HTTP 401
-   body: {"code":401,"message":"Unauthenticated"}
+===== alexandermeau/nfl-big-data-bowl-archived-data-2025 =====
+  view [none] -> HTTP 200  {"subtitleNullable":"Archive Dataset for educational research purpose only.","creatorNameNullable":"
+  view [basic] -> HTTP 200  {"subtitleNullable":"Archive Dataset for educational research purpose only.","creatorNameNullable":"
+  view [bearer] -> HTTP 200  {"subtitleNullable":"Archive Dataset for educational research purpose only.","creatorNameNullable":"
+  dl tracking_week_1.csv [basic] -> HTTP 404  csv=True
+    HEADER: {"code":404,"message":"Data not found"}
+  dl big-data-bowl-data/tracking_week_1.csv [basic] -> HTTP 200  csv=True
+    HEADER: "gameId","playId","nflId","displayName","frameId","frameType","time","jerseyNumber","club","playDirection","x","y","s","a","dis","o","dir","event"
 
-[files] nfl-big-data-bowl-2025 -> HTTP 401
-   body: {"code":401,"message":"Unauthenticated"}
-
-[files] nfl-big-data-bowl-2024 -> HTTP 401
-   body: {"code":401,"message":"Unauthenticated"}
-
-[files] nfl-big-data-bowl-2023 -> HTTP 401
-   body: {"code":401,"message":"Unauthenticated"}
-
-[files] nfl-big-data-bowl-2022 -> HTTP 401
-   body: {"code":401,"message":"Unauthenticated"}
-
-[files] nfl-big-data-bowl-2021 -> HTTP 401
-   body: {"code":401,"message":"Unauthenticated"}
+===== llkh0a/nfl-big-data-bowl-2026-prediction-public =====
+  view [none] -> HTTP 200  {"subtitleNullable":"","creatorNameNullable":"Kh0a","totalBytesNullable":864820234,"licenseNameNulla
+  view [basic] -> HTTP 200  {"subtitleNullable":"","creatorNameNullable":"Kh0a","totalBytesNullable":864820234,"licenseNameNulla
+  view [bearer] -> HTTP 200  {"subtitleNullable":"","creatorNameNullable":"Kh0a","totalBytesNullable":864820234,"licenseNameNulla
+  dl tracking_week_1.csv [basic] -> HTTP 404  csv=True
+    HEADER: {"code":404,"message":"Data not found"}
+  dl big-data-bowl-data/tracking_week_1.csv [basic] -> HTTP 404  csv=True
+    HEADER: {"code":404,"message":"Data not found"}
