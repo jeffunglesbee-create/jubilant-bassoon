@@ -102,3 +102,31 @@ preserving it (Rule 60) would let the prefix-strip be dropped — separate conce
 
 4 withheld: the final live-card DOM render is STAGED (no deterministic live-game
 browser path from here), and the `espnEventId`-preserve tidy is deferred, not done.
+
+---
+
+## UPDATE — E2E PASS (live visual verification closed the STAGED item)
+
+The STAGED live-card render is now **VERIFIED**, not staged. Getting there via
+the CI-as-proxy Playwright probe (`nfl-epa-probe.yml` / `nfl_epa_probe.js`,
+Rule 90) surfaced four more real defects beyond the initial wiring — none of
+which smoke could catch, all found by exercising the live deployed path:
+
+1. `61ffa1e` — NFL was date-gated to the 2026-09-10 regular-season opener,
+   excluding preseason. Moved to the verified preseason opener 2026-08-06.
+2. `61ffa1e` — no `injectV2SportSection('nfl','NFL')` existed (CFB had one),
+   so NFL games sat in espnScores and never became cards. Added.
+3. `479dfd9` — `nflEpaInit` bailed at 4s if the (async-injected) NFL section
+   wasn't built yet, so the poll interval never armed. Gated on the season
+   flag instead; 30s interval (matches the relay's 25s summary cache).
+4. field-relay-nba `f949456` — **production bug**: the WC26 soccer live-WP loop
+   in `/v2/games` ran for every live game; football's numeric `g.round` made
+   `extractWCGroup((2).match(...))` throw → CF 1101 → `/v2/games?sport=nfl`
+   returned HTTP 500 the instant any NFL game went live, breaking all NFL card
+   loading (and EPA) client-side. Gated the loop to the soccer adapter.
+
+**Done-condition artifact (Rule 90):** `outbox/nfl-epa-probe-manifest-2026-08-15T02-11-46.json`
+verdict **PASS**, `epaChipsOnNFLCards: 4`, sample chip
+`"-1.37 EPA · 3rd & 10 @ OWN 44 · -2.62 drive · 3 pl"`, `/espn-summary/.../nfl/summary?event=401873278`
+(+276,+277) all 200, screenshot `outbox/nfl-epa-probe-2026-08-15T02-11-46.png`.
+Client SW_VERSION now 2026-08-14c. Both repos on main, deploys green.
