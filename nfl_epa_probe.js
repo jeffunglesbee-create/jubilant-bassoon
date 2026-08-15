@@ -22,6 +22,23 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const errors = [];
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 200)); });
 
+  // Capture every relay request the page makes + its status, so we can see
+  // exactly which EPA-path fetch (epa_table.json / espn-summary / v2 games)
+  // fails, instead of guessing from vague console text.
+  const relayHits = [];
+  page.on('response', async r => {
+    const u = r.url();
+    if (/epa_table\.json|espn-summary|v2\/games\?sport=nfl/.test(u)) {
+      relayHits.push({ status: r.status(), url: u.replace('https://field-relay-nba.jeffunglesbee.workers.dev', '') });
+    }
+  });
+  page.on('requestfailed', r => {
+    const u = r.url();
+    if (/epa_table\.json|espn-summary|v2\/games\?sport=nfl/.test(u)) {
+      relayHits.push({ status: 'FAILED:' + (r.failure()?.errorText || '?'), url: u.replace('https://field-relay-nba.jeffunglesbee.workers.dev', '') });
+    }
+  });
+
   await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
   // Wait up to 45s for an EPA chip to be injected on an NFL card. nflEpaInit fires
@@ -74,7 +91,16 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   else if (state.liveNFLCardCount > 0) verdict = 'FAIL_LIVE_GAME_NO_CHIP';
   else verdict = 'INCONCLUSIVE_NO_INWINDOW_GAME';
 
+  // Also capture the live NFL card's id attributes so we can tell if id
+  // resolution is the problem vs the fetch itself.
+  const liveCardIds = await page.evaluate(() => {
+    return [...document.querySelectorAll('[data-sport="NFL"].espn-live')]
+      .slice(0, 3).map(c => ({ dataGameId: c.getAttribute('data-gameid'),
+        home: c.getAttribute('data-home'), away: c.getAttribute('data-away') }));
+  });
+
   const manifest = { probe: 'nfl-epa', url: FIELD_URL, ts, verdict, ...state,
+    relayHits, liveCardIds,
     consoleErrorCount: errors.length, consoleErrorsSample: errors.slice(0, 5) };
 
   console.log(JSON.stringify(manifest, null, 2));
