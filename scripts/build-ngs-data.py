@@ -481,6 +481,64 @@ def build_team_epa(year):
     return data, season_used
 
 
+# ── 8. Participation tendencies (pbp_participation — P3 without Kaggle) ───────
+def build_participation(year):
+    """Offense-side formation/pressure tendencies from nflverse pbp_participation
+    (public, tracking-DERIVED). The raw x/y tracking (routes, separation, man/zone
+    coverage) is Kaggle-gated — and its route/coverage columns are EMPTY in recent
+    participation parquets (verified 2026-08-15, pbp_participation_2025) — so those
+    are STAGED, not built here. participation carries possession_team only (no
+    defteam), so every metric is OFFENSE-side: this team's offense.
+    Fields verified 2026-08-15: offense_formation, defenders_in_box,
+    number_of_pass_rushers, was_pressure. Returns (data, season_used)."""
+    print("\n[NFL Participation]")
+    tbl, season_used = _walkback_parquet("pbp_participation", "pbp_participation", year)
+    if tbl is None:
+        return {}, None
+    df = tbl.to_pydict(); n = len(df.get("play_id", []))
+    poss  = df.get("possession_team") or [None] * n
+    form  = df.get("offense_formation") or [None] * n
+    box   = df.get("defenders_in_box") or [None] * n
+    rush  = df.get("number_of_pass_rushers") or [None] * n
+    press = df.get("was_pressure") or [None] * n
+    off = {}
+    def slot(tm):
+        if tm not in off:
+            off[tm] = {"plays": 0, "shotgun": 0, "boxSum": 0.0, "boxN": 0,
+                       "drop": 0, "pressFaced": 0, "blitzFaced": 0}
+        return off[tm]
+    for i in range(n):
+        tm = poss[i]
+        if not tm or form[i] is None:   # skip special-teams / no-formation rows
+            continue
+        s = slot(str(tm)); s["plays"] += 1
+        if str(form[i]).upper() == "SHOTGUN":
+            s["shotgun"] += 1
+        b = box[i]
+        if b is not None and b > 0:
+            s["boxSum"] += float(b); s["boxN"] += 1
+        r = rush[i]
+        if r is not None and r >= 1:                 # a defensive pass rush = a dropback
+            s["drop"] += 1
+            if r >= 5:
+                s["blitzFaced"] += 1
+            if press[i] is True:
+                s["pressFaced"] += 1
+    data = {}
+    for tm, s in off.items():
+        if s["plays"] < 50:
+            continue
+        data[tm] = {
+            "team": tm, "season": season_used, "plays": s["plays"],
+            "shotgunRate":    round(s["shotgun"] / s["plays"], 3),
+            "avgBoxFaced":    round(s["boxSum"] / s["boxN"], 2) if s["boxN"] else None,
+            "pressFacedRate": round(s["pressFaced"] / s["drop"], 3) if s["drop"] else None,
+            "blitzFacedRate": round(s["blitzFaced"] / s["drop"], 3) if s["drop"] else None,
+        }
+    print(f"    Teams: {len(data)}")
+    return data, season_used
+
+
 def emit(results, name, filename, data, season, source, year, updated):
     """Write one table, refusing to publish an empty one.
 
@@ -582,6 +640,15 @@ def main():
     except Exception as e:
         print(f"  ❌ Team EPA failed: {e}")
         results["team-epa"] = {"ok": False, "error": str(e)}
+
+    # Participation tendencies (P3 — no-Kaggle formation/pressure)
+    try:
+        part, part_season = build_participation(year)
+        emit(results, "participation", "team-participation.json", part,
+             part_season, "nflverse pbp_participation", year, updated)
+    except Exception as e:
+        print(f"  ❌ Participation failed: {e}")
+        results["participation"] = {"ok": False, "error": str(e)}
 
     # Summary
     succeeded = sum(1 for r in results.values() if r.get("ok"))
