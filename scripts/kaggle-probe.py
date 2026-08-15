@@ -12,7 +12,14 @@ def log(s): print(s); out.append(s)
 if not U or not K:
     log("NO KAGGLE CREDS in env — secrets not wired to this workflow")
     open("outbox/kaggle-probe.txt", "w").write("\n".join(out)); raise SystemExit(1)
-log(f"[creds] KAGGLE_USERNAME present (len {len(U)}), KAGGLE_KEY present (len {len(K)})")  # lengths only, never values
+import re
+Us, Ks = U.strip(), K.strip()
+log(f"[creds] USERNAME raw len {len(U)} stripped {len(Us)} | KEY raw len {len(K)} stripped {len(Ks)}")  # lengths only
+log(f"[creds] USERNAME had surrounding whitespace: {U != Us} | KEY had surrounding whitespace: {K != Ks}")
+log(f"[creds] KEY stripped is 32-hex (expected shape): {bool(re.fullmatch(r'[0-9a-fA-F]{32}', Ks))}")
+log(f"[creds] KEY stripped char classes: hex={bool(re.fullmatch(r'[0-9a-fA-F]+', Ks))} alnum={Ks.isalnum()}")
+# Use STRIPPED values — trailing newline in a pasted secret is the classic 401 cause.
+U, K = Us, Ks
 AUTH = "Basic " + base64.b64encode(f"{U}:{K}".encode()).decode()
 def get(url):
     req = urllib.request.Request(url, headers={"Authorization": AUTH, "User-Agent": "FIELD/1.0"})
