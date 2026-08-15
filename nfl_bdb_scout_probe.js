@@ -74,5 +74,19 @@ const TARGET_ROWS = ['Top speed', 'Top separation', 'Route tree', 'Pass rush', '
   fs.mkdirSync('outbox', { recursive: true });
   fs.writeFileSync(`outbox/nfl-bdb-scout-manifest-${TS}.json`, JSON.stringify(manifest, null, 2));
   console.log(JSON.stringify(manifest, null, 2));
+
+  // Exit code drives the automated schedule: a REGRESSION (an NFL game is on
+  // the slate but not every BDB row rendered) is a red run. No NFL game today
+  // (off-season / no games in this window) is NOT a failure — exit 0. A boot
+  // failure or missing every row despite NFL games present is fatal.
+  const nflOnSlate = (manifest.nflGameCount || 0) > 0;
+  const regression = nflOnSlate && manifest.allFiveRowsPresent !== true;
+  if (manifest.error || regression) {
+    console.error(`[FAIL] error=${manifest.error || ''} nflGames=${manifest.nflGameCount} allFive=${manifest.allFiveRowsPresent}`);
+    process.exit(1);
+  }
+  console.log(nflOnSlate
+    ? `[PASS] ${manifest.gamesWithAllFive.length}/${manifest.nflGameCount} NFL games rendered all 5 rows`
+    : `[SKIP] no NFL game on slate this window — nothing to verify`);
   process.exit(0);
 })();

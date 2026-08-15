@@ -4,6 +4,13 @@ name: NFL BDB Scout Render Probe
 # perRowPresentAcrossNFL) — not prose. Sandbox can't reach the worker; CI can.
 on:
   workflow_dispatch:
+  schedule:
+    # Automated render check during NFL game windows (UTC). Off-season these
+    # fire and record nflGameCount=0 → exit 0 (no-op, no red run). Regression
+    # (NFL game present but a BDB row missing) → red run.
+    - cron: '0 1 * * 5'   # Thu ~9pm ET — Thursday Night Football
+    - cron: '0 21 * * 0'  # Sun ~5pm ET — afternoon slate underway
+    - cron: '0 1 * * 2'   # Mon ~9pm ET — Monday Night Football
 permissions:
   contents: write
 jobs:
