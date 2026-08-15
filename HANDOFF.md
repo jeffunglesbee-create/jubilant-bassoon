@@ -1,5 +1,29 @@
 # FIELD HANDOFF
 
+## Session 2026-08-15b — EPA table rebuild (had never shipped)
+
+Session doc (Rule 67): `outbox/cc-session-2026-08-15-epa-table-rebuild.md` — DONE, confidence 96
+Commits: `606b2e6` (fix) + `f9bb6fd` (rebuilt table, EPA-Build bot)
+Verification: `build-epa-table.yml` run 31854656251 — SUCCESS (first ever), test 15/0 on the real empirical table.
+
+**The seasonal EPA rebuild was a silent no-op.** build → test → push under bash -e;
+the builder samples nflverse `ep` (= nflfastR's model) but the test asserted hand-fit
+POLYNOMIAL anchors the real surface misses by >0.3 → test failed → push blocked →
+live table frozen at May's polynomial version since inception.
+
+Fixed: test now validates INVARIANTS (completeness, field-position monotonicity, down
+ordering, bounds, wide nflfastR bands) that BOTH surfaces satisfy — unblocks the push,
+still catches a broken table, doesn't rubber-stamp the builder (Rule 90). Builder
+completes the grid (857→1120 cells via empirical backfill) and fails loudly on
+invariant violation. Live table now `nflverse-pbp-2024-backfilled` (own20=0.693,
+opp10=5.005) — the real 2024 surface, served via /nflverse/epa_table.json, no deploy needed.
+
+**Still open (unchanged):** live EPA is not wired to NFL cards — `epa.js` speaks only
+SportRadar (`fromSRPlay`); `fromESPNPlay`/`_pollNFLEpa` don't exist (Drive P1-1/P1-2/P5-2).
+This fix makes the TABLE those functions read trustworthy — a prerequisite, not the wiring.
+
+---
+
 ## Session 2026-08-15 — NFL-B pipeline data integrity
 
 Session doc (Rule 67): `outbox/cc-session-2026-08-15-nfl-b-pipeline-fixes.md`
