@@ -1034,6 +1034,11 @@ assert('A-NFLINJ-1 — NFL-INJ: injury designations wired (init + accessor + fet
   html.includes('setTimeout(nflInjuriesInit'),
   'NFL injuries must be wired: nflInjuriesInit, getNFLInjuries, nfl-injuries.json fetch, INJ scout row, startup call');
 
+assert('A-NFLRUSH-1 — NFL-NGS: rushing (RYOE) wired (fetch + accessor + scout row)',
+  html.includes('/ngs-rushing.json') && html.includes('getNGSTeamRushers') &&
+  html.includes('NFL_NGS_RUSHING') && html.includes('RB RYOE'),
+  'NFL NGS rushing must be wired: ngs-rushing.json fetch, getNGSTeamRushers, NFL_NGS_RUSHING, RB RYOE scout row');
+
 // PLAYER_SPEED/getRegressionAlert dropped 2026-07-12 (Rule 63 dead-code
 // cleanup): confirmed via direct grep, zero real call sites anywhere in
 // index.html -- removed from index.html along with TEAM_ABS_RANKINGS/

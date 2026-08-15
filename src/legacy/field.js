@@ -4212,6 +4212,7 @@ const MLB_TEAM_PYTHAG = {};
 // NFL NGS analytics keyed by player last name (suffix-stripped via _mlbPlayerKey).
 const NFL_NGS_PASSING   = {};  // cpoe, aggressiveness, avgTimeToThrow, attempts, xCompPct
 const NFL_NGS_RECEIVING = {};  // avgYACAboveExp, avgSeparation, pctShareIntendedAirYards, targets
+const NFL_NGS_RUSHING   = {};  // rushYdsOverExpPerAtt, efficiency, rushAttempts (ngs-rushing.json)
 const NFL_INJURIES      = {};  // teamAbbr -> [{name, position, status, injury}] — Out/Doubtful/Questionable only (nfl-injuries.json)
 
 // FPL per-player xG/xA/form/ICT analytics keyed by web_name.
@@ -4302,9 +4303,10 @@ let _nflNGSLoaded = false;
 async function nflNGSInit() {
   if (_nflNGSLoaded) return;
   try {
-    const [passResp, recResp] = await Promise.all([
+    const [passResp, recResp, rushResp] = await Promise.all([
       fetch(`${_NFL_NGS_RELAY}/ngs-passing.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/ngs-receiving.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/ngs-rushing.json`, { signal: AbortSignal.timeout(8000) }),
     ]);
     let loaded = 0;
     if (passResp.ok) {
@@ -4327,9 +4329,19 @@ async function nflNGSInit() {
       }
       loaded++;
     }
+    if (rushResp.ok) {
+      const j = await rushResp.json();
+      for (const [, p] of Object.entries(j.data || {})) {
+        if (p.rushAttempts < 40) continue; // min sample
+        const key = _mlbPlayerKey(lastNameOf(p));
+        NFL_NGS_RUSHING[key] = { ryoePerAtt: p.rushYdsOverExpPerAtt, efficiency: p.efficiency,
+          team: p.team, attempts: p.rushAttempts };
+      }
+      loaded++;
+    }
     _nflNGSLoaded = true;
-    _recordRelayInit('nflNGSInit', loaded > 0, loaded > 0 ? null : 'both NGS files failed');
-    if (FIELD_DEBUG) console.log(`[FIELD] NFL NGS loaded: passing=${Object.keys(NFL_NGS_PASSING).length} QBs, receiving=${Object.keys(NFL_NGS_RECEIVING).length} WRs`);
+    _recordRelayInit('nflNGSInit', loaded > 0, loaded > 0 ? null : 'all NGS files failed');
+    if (FIELD_DEBUG) console.log(`[FIELD] NFL NGS loaded: passing=${Object.keys(NFL_NGS_PASSING).length} QBs, receiving=${Object.keys(NFL_NGS_RECEIVING).length} WRs, rushing=${Object.keys(NFL_NGS_RUSHING).length} RBs`);
   } catch(e) { _recordRelayInit('nflNGSInit', false, e?.message || 'error'); }
 }
 
@@ -4383,6 +4395,11 @@ function getNGSReceivingProfile(lastName) {
 function getNGSTeamQBs(teamAbbr) {
   if (!teamAbbr) return [];
   return Object.values(NFL_NGS_PASSING).filter(p => p.team === teamAbbr);
+}
+
+function getNGSTeamRushers(teamAbbr) {
+  if (!teamAbbr) return [];
+  return Object.values(NFL_NGS_RUSHING).filter(p => p.team === teamAbbr);
 }
 
 function getNGSTeamReceivers(teamAbbr) {
@@ -16728,6 +16745,21 @@ function buildScoutingReport(game, sport) {
       if (hRecs.length) rows.push({ lbl: `${teamNick(game.home||'')} WR`, val: fmtRec(hRecs) });
       if (aRecs.length) rows.push({ lbl: `${teamNick(game.away||'')} WR`, val: fmtRec(aRecs) });
     }
+    // Lead RB rush-yards-over-expected per attempt (NGS).
+    const hRush = ha ? getNGSTeamRushers(ha) : [];
+    const aRush = aa ? getNGSTeamRushers(aa) : [];
+    const hRB = hRush.sort((a, b) => b.attempts - a.attempts)[0];
+    const aRB = aRush.sort((a, b) => b.attempts - a.attempts)[0];
+    if (hRB || aRB) {
+      const fmtRB = (rb, team) => {
+        if (!rb) return team || '—';
+        const ryoe = rb.ryoePerAtt != null
+          ? (rb.ryoePerAtt >= 0 ? `<em>+${rb.ryoePerAtt.toFixed(2)} RYOE/att</em>` : `<span class="scout-warn">${rb.ryoePerAtt.toFixed(2)} RYOE/att</span>`)
+          : '';
+        return `${team} ${ryoe}${ryoe ? ' · ' : ''}${rb.attempts} att`;
+      };
+      rows.push({ lbl: 'RB RYOE', val: `${fmtRB(hRB, teamNick(game.home||''))} | ${fmtRB(aRB, teamNick(game.away||''))}` });
+    }
     // Injury designations (official Out/Doubtful/Questionable only — Rule 1).
     const hInj = ha ? getNFLInjuries(ha) : [];
     const aInj = aa ? getNFLInjuries(aa) : [];
@@ -21957,7 +21989,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-14e';
+  const SW_VERSION = '2026-08-14f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
