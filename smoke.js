@@ -1051,6 +1051,11 @@ assert('A-NFLTEAM-1 — NFL: team EPA + snap + depth-chart tables wired (init + 
   html.includes("lbl: 'Team EPA'") && html.includes("lbl: 'Start QB'"),
   'NFL team tables must be wired: nflTeamTablesInit, team_epa/snap-counts/depth-charts fetches, getTeamEPA/getSnapShare/getDepthStarter, Team EPA + Start QB rows');
 
+assert('A-NFLPART-1 — NFL P3: participation (formation/pressure) wired (fetch + accessor + row)',
+  html.includes('/team-participation.json') && html.includes('getTeamParticipation') &&
+  html.includes('NFL_PART') && html.includes("lbl: 'Pass pro'"),
+  'NFL participation must be wired: team-participation.json fetch, getTeamParticipation, NFL_PART, Pass pro scout row');
+
 // PLAYER_SPEED/getRegressionAlert dropped 2026-07-12 (Rule 63 dead-code
 // cleanup): confirmed via direct grep, zero real call sites anywhere in
 // index.html -- removed from index.html along with TEAM_ABS_RANKINGS/
