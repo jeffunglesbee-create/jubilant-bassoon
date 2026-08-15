@@ -1076,6 +1076,11 @@ assert('A-NFLTEND-1 — NFL P3: BDB tendency fingerprint wired (fetch + accessor
   html.includes('NFL_BDB_TEND') && html.includes("lbl: 'Tendencies'"),
   'NFL BDB tendency must be wired: bdb_tendency_fingerprint.json fetch, getTeamTendency, NFL_BDB_TEND, Tendencies scout row');
 
+assert('A-NFLTTT-1 — NFL P3: BDB time-to-throw wired (fetch + accessor + row)',
+  html.includes('/bdb_time_to_throw.json') && html.includes('getTeamTimeToThrow') &&
+  html.includes('NFL_BDB_TTT') && html.includes("lbl: 'Time to throw'"),
+  'NFL BDB time-to-throw must be wired: bdb_time_to_throw.json fetch, getTeamTimeToThrow, NFL_BDB_TTT, Time to throw scout row');
+
 assert('A-NFLPART-1 — NFL P3: participation (formation/pressure) wired (fetch + accessor + row)',
   html.includes('/team-participation.json') && html.includes('getTeamParticipation') &&
   html.includes('NFL_PART') && html.includes("lbl: 'Pass pro'"),

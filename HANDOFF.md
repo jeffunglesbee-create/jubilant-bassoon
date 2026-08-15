@@ -188,6 +188,10 @@ opp10=5.005) — the real 2024 surface, served via /nflverse/epa_table.json, no 
 **Still open (unchanged):** live EPA is not wired to NFL cards — `epa.js` speaks only
 SportRadar (`fromSRPlay`); `fromESPNPlay`/`_pollNFLEpa` don't exist (Drive P1-1/P1-2/P5-2).
 This fix makes the TABLE those functions read trustworthy — a prerequisite, not the wiring.
+> **SUPERSEDED 2026-08-15:** this "still open" is CLOSED. The 2026-08-14 NFL EPA
+> session wired live EPA onto NFL cards (`_computeESPNPlayEPA`/`_pollNFLEpa`/`nflEpaInit`,
+> card gate `[UFL,NFL]`) and verified it (`nfl-epa-probe` PASS, `epaChipsOnNFLCards:4`).
+> Do not re-chase (Rule 72).
 
 ---
 
@@ -234,6 +238,9 @@ Still open: live EPA is not wired to NFL at all (`epa.js` speaks only the
 SportRadar schema; `fromESPNPlay`/`_pollNFLEpa` do not exist), the nflverse
 Stage-1 six-table pipeline does not exist (relay serves 0/6, all 404), and the
 Aug 1 `build-epa-table.yml` rebuild FAILED (run 30706486286, 8/14 EP tests) so
+> **SUPERSEDED 2026-08-15:** all three are now CLOSED — live EPA wired+verified
+> (2026-08-14 session), P2 nflverse tables all built/served/consumed, EPA table
+> rebuilt (`nflverse-pbp-2024-backfilled`). Historical note only; do not re-chase.
 the live table is still `polynomial-calibrated` from May 27.
 
 ---

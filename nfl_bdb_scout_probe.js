@@ -13,7 +13,7 @@ const fs = require('fs');
 const BASE = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 const URL = BASE + (BASE.includes('?') ? '&' : '?') + 'wpt=1';
 const TS = new Date().toISOString().replace(/[:.]/g, '-');
-const TARGET_ROWS = ['Top speed', 'Top separation', 'Route tree', 'Pass rush', 'Tendencies'];
+const TARGET_ROWS = ['Top speed', 'Top separation', 'Route tree', 'Pass rush', 'Tendencies', 'Time to throw'];
 
 (async () => {
   const browser = await chromium.launch();

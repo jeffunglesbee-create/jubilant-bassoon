@@ -307,6 +307,44 @@ def build_bdb_tendency(min_plays=100):
     print(f"  tendency teams (>= {min_plays} plays): {len(data)}")
     return data
 
+def build_bdb_time_to_throw(min_dropbacks=50):
+    """Per-team avg time-to-throw (seconds) — commodity (NGS publishes 'time to throw').
+    plays.csv already carries the precomputed timeToThrow per dropback; average it per
+    possessionTeam. Completes the pocket story with Pass pro (pressure faced) + Pass rush
+    (pressure generated). Zero tracking compute — plays.csv only."""
+    if not AUTH:
+        return {}
+    agg = {}  # team -> {sum, n}
+    try:
+        with kaggle_open(PFX + "plays.csv") as r:
+            for row in csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")):
+                team = row.get("possessionTeam") or ""
+                if not team or team == "NA":
+                    continue
+                ttt = row.get("timeToThrow") or ""
+                if not ttt or ttt == "NA":
+                    continue
+                try:
+                    v = float(ttt)
+                except ValueError:
+                    continue
+                if v <= 0 or v > 15:   # sanity: real dropbacks are ~1.5-5s
+                    continue
+                e = agg.get(team)
+                if e is None:
+                    e = agg[team] = {"sum": 0.0, "n": 0}
+                e["sum"] += v; e["n"] += 1
+    except Exception as e:
+        print(f"    time-to-throw read failed: {e}")
+        return {}
+    data = {}
+    for team, e in agg.items():
+        if e["n"] < min_dropbacks:
+            continue
+        data[team] = {"team": team, "dropbacks": e["n"], "avgTimeToThrow": round(e["sum"] / e["n"], 2)}
+    print(f"  time-to-throw teams (>= {min_dropbacks} dropbacks): {len(data)}")
+    return data
+
 def upload_to_r2(r2_key, payload):
     if not CF_ACCOUNT or not CF_TOKEN:
         print(f"    ℹ️  No CF creds — skipping R2 for {r2_key}")
@@ -396,6 +434,19 @@ def main():
         print(f"✅ bdb_tendency_fingerprint: {len(tend)} teams")
     else:
         print("⛔ bdb_tendency_fingerprint: 0 rows — not written")
+
+    # ── Team time-to-throw (plays.csv only) ──
+    ttt = build_bdb_time_to_throw()
+    if ttt:
+        ttp = {"updated": now.isoformat(), "season": season, "targetYear": year,
+               "source": f"kaggle {OWNER}/{SLUG} (BDB plays)", "metric": "time_to_throw", "data": ttt}
+        upload_to_r2(f"nfl/{year}/bdb_time_to_throw.json", ttp)
+        write_outbox("bdb_time_to_throw.json", ttp)
+        for p in sorted(ttt.values(), key=lambda p: p["avgTimeToThrow"])[:5]:
+            print(f"    {p['avgTimeToThrow']}s  {p['team']}  ({p['dropbacks']} db)")
+        print(f"✅ bdb_time_to_throw: {len(ttt)} teams")
+    else:
+        print("⛔ bdb_time_to_throw: 0 rows — not written")
 
 if __name__ == "__main__":
     main()

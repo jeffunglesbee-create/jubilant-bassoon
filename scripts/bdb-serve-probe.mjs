@@ -7,6 +7,7 @@ const CHECKS = [
   ['bdb_route_entropy.json', 'entropyBits'],
   ['bdb_xblock_pass_rush.json', 'pressureRate'],
   ['bdb_tendency_fingerprint.json', 'playActionRate'],
+  ['bdb_time_to_throw.json', 'avgTimeToThrow'],
 ];
 let bad = 0;
 for (const [file, field] of CHECKS) {

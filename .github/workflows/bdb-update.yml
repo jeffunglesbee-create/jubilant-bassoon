@@ -24,7 +24,7 @@ jobs:
           git config user.name "BDB-Bot"
           git add outbox/nfl/bdb_speed.json outbox/nfl/bdb_route_entropy.json \
                   outbox/nfl/bdb_separation.json outbox/nfl/bdb_xblock_pass_rush.json \
-                  outbox/nfl/bdb_tendency_fingerprint.json || true
+                  outbox/nfl/bdb_tendency_fingerprint.json outbox/nfl/bdb_time_to_throw.json || true
           git diff --cached --quiet && echo "no changes" && exit 0
           git commit -m "NFL BDB: all tracking metrics $(date -u +%Y-%m-%d) [skip ci]"
           for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
