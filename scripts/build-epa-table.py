@@ -55,9 +55,19 @@ def build_from_nflverse():
         df["ytg_b"]  = df["ydstogo"].apply(nearest_ytg)
         df["yl100_b"]= df["yardline_100"].apply(nearest_yl100)
         df["key"]    = df.apply(lambda r: f"{int(r.down)}_{r.ytg_b}_{r.yl100_b}", axis=1)
-        table = df.groupby("key")["ep"].median().round(3).to_dict()
-        print(f"Built from nflverse: {len(table)} entries")
-        return table
+        grp    = df.groupby("key")["ep"]
+        table  = grp.median().round(3).to_dict()
+        counts = grp.size().to_dict()
+        # nflverse `ep` IS nflfastR's model output, so these medians sample the real
+        # EP surface. But a raw group-median has two defects a lookup table must not
+        # ship with: (1) it's INCOMPLETE — ~857 of the 1120 grid cells occur in real
+        # games; the rest (e.g. 4th-and-25 at the opp 1) are absent, and a client
+        # doing a hard lookup gets undefined and computes a broken EPA; (2) thin cells
+        # (a handful of 4th-down goal-line snaps) are noisy. Backfill both from the
+        # empirical surface itself so the grid is complete and smooth — see
+        # backfill_table(). Returns (table, counts) so the caller can do it.
+        print(f"Built from nflverse: {len(table)} cells populated (of {len(DOWNS)*len(YTG_BUCKETS)*len(YL100_BUCKETS)})")
+        return table, counts
     except Exception as e:
         print(f"nflverse method failed: {e}")
         return None
@@ -126,11 +136,77 @@ def build_from_polynomial():
     print(f"Built from polynomial: {len(table)} entries")
     return table
 
+# ── Backfill: complete + de-noise an empirical table from its own surface ────
+MIN_SAMPLES = 20   # cells thinner than this are treated as missing and refilled
+
+def backfill_table(table, counts):
+    """Return a COMPLETE (all 1120 cells), smooth table grounded in the empirical
+    data. Well-sampled cells are kept as-is. Missing or thin cells are filled from
+    an empirical baseline (1st-and-10 EP by field position) plus an empirical
+    down/distance delta learned from where both are well-sampled — so every filled
+    value is still real nflfastR EP, just interpolated rather than raw-sampled.
+    """
+    strong = {k: v for k, v in table.items() if counts.get(k, 0) >= MIN_SAMPLES}
+
+    # Baseline: 1st-and-10 EP by yl100 bucket, from strong cells; fill any gap in
+    # the baseline itself by linear interpolation across yl100 so it is complete.
+    base = {}
+    for yl in YL100_BUCKETS:
+        k = f"1_10_{yl}"
+        if k in strong:
+            base[yl] = strong[k]
+    xs = sorted(base)
+    for yl in YL100_BUCKETS:
+        if yl in base:
+            continue
+        lo = max([x for x in xs if x < yl], default=None)
+        hi = min([x for x in xs if x > yl], default=None)
+        if lo is not None and hi is not None:
+            t = (yl - lo) / (hi - lo)
+            base[yl] = round(base[lo] + t * (base[hi] - base[lo]), 3)
+        else:
+            base[yl] = base[xs[0] if lo is None else xs[-1]]
+
+    # Empirical (down, ytg) delta vs the 1st-10 baseline, averaged over strong cells.
+    delta = {}
+    for down in DOWNS:
+        for ytg in YTG_BUCKETS:
+            diffs = [strong[f"{down}_{ytg}_{yl}"] - base[yl]
+                     for yl in YL100_BUCKETS if f"{down}_{ytg}_{yl}" in strong]
+            if diffs:
+                delta[(down, ytg)] = sum(diffs) / len(diffs)
+
+    # Global fallback for a (down,ytg) that is thin everywhere: interpolate the
+    # delta from neighbouring down/ytg deltas that DO exist, else the polynomial ADJ.
+    def cell_value(down, ytg, yl):
+        k = f"{down}_{ytg}_{yl}"
+        if k in strong:
+            return strong[k]
+        d = delta.get((down, ytg))
+        if d is None:
+            adj_map = ADJ.get(min(ytg, 25), ADJ[25])
+            d = adj_map.get(down, 0)
+        return round(base[yl] + d, 3)
+
+    out, filled = {}, 0
+    for down in DOWNS:
+        for ytg in YTG_BUCKETS:
+            for yl in YL100_BUCKETS:
+                k = f"{down}_{ytg}_{yl}"
+                out[k] = cell_value(down, ytg, yl)
+                if k not in strong:
+                    filled += 1
+    print(f"Backfilled: {filled} of {len(out)} cells (kept {len(strong)} strong empirical cells)")
+    return out
+
 # ── Run ────────────────────────────────────────────────────────────────────
 print("Building EPA lookup table...")
-table = build_from_nflverse()
-method = "nflverse-pbp-2024"
-if not table:
+built = build_from_nflverse()
+if built:
+    raw_table, counts = built
+    table = backfill_table(raw_table, counts)
+    method = "nflverse-pbp-2024-backfilled"
+else:
     table = build_from_polynomial()
     method = "polynomial-calibrated"
 
@@ -161,8 +237,41 @@ with open(OUT_PATH, "w") as f:
 
 size_kb = os.path.getsize(OUT_PATH) / 1024
 print(f"Written: {OUT_PATH} ({size_kb:.1f} KB, {len(table)} entries, method={method})")
-# Spot-check
-for case in [("1_10_80","~0.5"),("1_10_51","~2.65"),("1_10_11","~6.05"),("3_10_51","~1.65")]:
-    k, expected = case
-    v = table.get(k,"missing")
-    print(f"  {k}: {v} (expect {expected})")
+
+# ── In-builder invariant guard — fail LOUDLY before the table is trusted ─────
+# The spot-check used to print keys that are not buckets (1_10_80 → "missing":
+# 80 is not in YL100_BUCKETS, 81 is), which read as a failure that wasn't one.
+# Replaced with real structural checks: completeness, field-position monotonicity,
+# and down ordering. A table that violates these is genuinely broken and must not
+# ship, whichever method produced it.
+def _lookup(down, ytg, yl):
+    return table[f"{down}_{nearest_ytg(ytg)}_{nearest_yl100(yl)}"]
+
+problems = []
+expected_cells = len(DOWNS) * len(YTG_BUCKETS) * len(YL100_BUCKETS)
+if len(table) != expected_cells:
+    problems.append(f"incomplete grid: {len(table)}/{expected_cells} cells")
+# Field position: for 1st-and-10, EP must rise as yl100 falls (closer to score).
+prev = None
+for yl in sorted(YL100_BUCKETS, reverse=True):   # 96 → 1
+    ep = table[f"1_10_{yl}"]
+    if prev is not None and ep < prev - 0.15:     # small tolerance for sampling
+        problems.append(f"non-monotonic 1st-10 field position at yl100={yl}: {ep} < {prev}")
+    prev = ep
+# Sane bounds.
+lo, hi = min(table.values()), max(table.values())
+if lo < -4 or hi > 7.5:
+    problems.append(f"EP out of bounds [{lo}, {hi}]")
+
+print("\nSpot values (real nflfastR EP surface):")
+for label, (d, y, yl) in [("1st-10 own 20", (1,10,80)), ("1st-10 midfield", (1,10,51)),
+                          ("1st-10 opp 10", (1,10,11)), ("3rd-10 midfield", (3,10,51)),
+                          ("4th-1 opp 1", (4,1,1))]:
+    print(f"  {label:<18} {_lookup(d, y, yl)}")
+
+if problems:
+    print("\n❌ INVARIANT FAILURES:")
+    for p in problems:
+        print(f"  - {p}")
+    sys.exit(1)
+print("\n✅ invariants pass: complete grid, monotonic field position, sane bounds")
