@@ -64,3 +64,29 @@ Washington/Rams. The other 30 teams are identical.
 - **Rule 62** — reused the existing NFL scout block + abbr resolver, no new surface.
 - **Rule 60** — abbr vendor-difference normalized at the boundary, not per-consumer.
 - **Rule 66** — node --check clean, smoke 967/0 before push.
+
+---
+
+## UPDATE — remaining built tables wired (ngs-rushing + player-stats)
+
+Continued P2 per "eventually build everything." Both built+served-but-unconsumed
+tables now consumed, all as scout-sheet rows mirroring the QB CPOE pattern:
+
+- `ngs-rushing.json` → `NFL_NGS_RUSHING` + `getNGSTeamRushers` + **RB RYOE** row
+  (rush-yds-over-expected/att, lead RB). Commit `dd1355d`, smoke A-NFLRUSH-1.
+- `player-stats.json` → `NFL_QB_STATS` (QB rows, ≥100 att) + `getTeamQBSeasonStats`
+  + **QB szn EPA** row (cumulative season passing EPA, complements the CPOE rate).
+  Commit `75e2d30`, smoke A-NFLQBEPA-1. SW now 2026-08-14g.
+
+**Serving E2E artifact (Rule 61):** `field-relay-nba/outbox/nfl-tables-serve-probe-20260815T024442Z.log`
+— all 5 NFL tables return HTTP 200 non-empty from the live relay (R2): ngs-rushing 81,
+player-stats 1666, nfl-injuries 1453, ngs-passing 65, ngs-receiving 212.
+
+**Built-but-unconsumed remaining:** `pfr-rec.json` only — overlaps ngs-receiving
+(PFR vs NGS receiving); likely redundant on the card, left unwired (Rule 63: don't
+add a redundant consumer). Flagged, not built.
+
+**Still genuinely UNBUILT (next P2 phase, bigger cross-repo pipeline work):**
+snap_counts, depth_charts, weekly PBP — each needs a new nflverse parquet builder
+(build-ngs-data.py pattern) + R2 write + /nflverse allow-list/NFL_R2_FILES entry +
+cron slot + client consumer. Each starts with a parquet-shape probe (Rule 68).
