@@ -20,9 +20,10 @@ if not AUTH:
     log("no creds")
 else:
     # files-list API (paginated)
-    for page in (1,2):
-        st,body=get(f"https://www.kaggle.com/api/v1/datasets/list/{OWNER}/{SLUG}?page={page}")
-        log(f"\n[files-list page {page}] HTTP {st}")
+    for url in (f"https://www.kaggle.com/api/v1/datasets/list/{OWNER}/{SLUG}",
+                f"https://www.kaggle.com/api/v1/datasets/view/{OWNER}/{SLUG}"):
+        st,body=get(url)
+        log(f"\n[{url.rsplit('/',3)[0].split('/')[-1] or url}] HTTP {st}")
         try:
             j=json.loads(body)
             files=j.get("datasetFiles") or j.get("files") or (j if isinstance(j,list) else [])
