@@ -5553,7 +5553,7 @@ function buildFieldHealthPanel() {
   // for debugging. This section makes it visible without touching any of
   // the 9 functions' existing try/catch or fallback logic.
   {
-    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit','nflNGSInit','mlbPythagInit'];
+    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit','nflNGSInit','nflInjuriesInit','mlbPythagInit'];
     const _riStatus = window._relayInitStatus || {};
     const _riFailLines = [];
     let _riOkCount = 0, _riFailCount = 0;
@@ -9267,6 +9267,7 @@ const MLB_TEAM_PYTHAG = {};
 // NFL NGS analytics keyed by player last name (suffix-stripped via _mlbPlayerKey).
 const NFL_NGS_PASSING   = {};  // cpoe, aggressiveness, avgTimeToThrow, attempts, xCompPct
 const NFL_NGS_RECEIVING = {};  // avgYACAboveExp, avgSeparation, pctShareIntendedAirYards, targets
+const NFL_INJURIES      = {};  // teamAbbr -> [{name, position, status, injury}] — Out/Doubtful/Questionable only (nfl-injuries.json)
 
 // FPL per-player xG/xA/form/ICT analytics keyed by web_name.
 // Populated by fplLoadBootstrap() alongside the existing team/player name maps.
@@ -9385,6 +9386,44 @@ async function nflNGSInit() {
     _recordRelayInit('nflNGSInit', loaded > 0, loaded > 0 ? null : 'both NGS files failed');
     if (FIELD_DEBUG) console.log(`[FIELD] NFL NGS loaded: passing=${Object.keys(NFL_NGS_PASSING).length} QBs, receiving=${Object.keys(NFL_NGS_RECEIVING).length} WRs`);
   } catch(e) { _recordRelayInit('nflNGSInit', false, e?.message || 'error'); }
+}
+
+// ── nflInjuriesInit: official NFL injury designations from nflverse R2 ────────
+// Loads nfl-injuries.json (built Mon by build-ngs-data.py, one row per player at
+// their most-recent week = current designation). Surfaces ONLY official game
+// designations — Out / Doubtful / Questionable (Rule 1: no invention, no
+// severity guessing). Keyed by team abbreviation, severity-then-position sorted.
+let _nflInjLoaded = false;
+async function nflInjuriesInit() {
+  if (_nflInjLoaded) return;
+  try {
+    const resp = await fetch(`${_NFL_NGS_RELAY}/nfl-injuries.json`, { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) { _recordRelayInit('nflInjuriesInit', false, `HTTP ${resp.status}`); return; }
+    const j = await resp.json();
+    const DESIG = { 'Out': 0, 'Doubtful': 1, 'Questionable': 2 }; // severity order (also the allow-list)
+    for (const [, p] of Object.entries(j.data || {})) {
+      if (!(p.status in DESIG)) continue;               // official designations only
+      const abbr = (p.team || '').toUpperCase();
+      if (!abbr) continue;
+      (NFL_INJURIES[abbr] = NFL_INJURIES[abbr] || []).push(
+        { name: p.name, position: p.position, status: p.status, injury: p.injury });
+    }
+    const POS = { QB:0, RB:1, WR:2, TE:3, FB:4 };        // skill-position priority
+    for (const abbr in NFL_INJURIES) {
+      NFL_INJURIES[abbr].sort((a, b) =>
+        (DESIG[a.status] - DESIG[b.status]) || ((POS[a.position] ?? 9) - (POS[b.position] ?? 9)));
+    }
+    _nflInjLoaded = true;
+    _recordRelayInit('nflInjuriesInit', true);
+    if (FIELD_DEBUG) console.log(`[FIELD] NFL injuries loaded: ${Object.keys(NFL_INJURIES).length} teams`);
+  } catch(e) { _recordRelayInit('nflInjuriesInit', false, e?.message || 'error'); }
+}
+
+// Official designated injuries (Out/Doubtful/Questionable) for an NFL team abbr,
+// severity-then-position sorted. Factual designations only (Rule 1).
+function getNFLInjuries(teamAbbr) {
+  if (!teamAbbr) return [];
+  return NFL_INJURIES[(teamAbbr || '').toUpperCase()] || [];
 }
 
 function getNGSPassingProfile(lastName) {
@@ -21739,6 +21778,20 @@ function buildScoutingReport(game, sport) {
       if (hRecs.length) rows.push({ lbl: `${teamNick(game.home||'')} WR`, val: fmtRec(hRecs) });
       if (aRecs.length) rows.push({ lbl: `${teamNick(game.away||'')} WR`, val: fmtRec(aRecs) });
     }
+    // Injury designations (official Out/Doubtful/Questionable only — Rule 1).
+    const hInj = ha ? getNFLInjuries(ha) : [];
+    const aInj = aa ? getNFLInjuries(aa) : [];
+    if (hInj.length || aInj.length) {
+      const fmtInj = list => list.slice(0, 3).map(p => {
+        const nm = (p.name || '').replace(/^(\w)\w+\s+/, '$1.'); // "Kyler Murray" → "K.Murray"
+        const s = p.status === 'Out'      ? '<span class="scout-warn">OUT</span>'
+                : p.status === 'Doubtful' ? '<span class="scout-warn">DOUBT</span>'
+                : '<em>Q</em>';
+        return `${nm} ${s}`;
+      }).join(' · ');
+      if (hInj.length) rows.push({ lbl: `${teamNick(game.home||'')} INJ`, val: fmtInj(hInj) });
+      if (aInj.length) rows.push({ lbl: `${teamNick(game.away||'')} INJ`, val: fmtInj(aInj) });
+    }
   }
 
   // ── EPL / Premier League ───────────────────────────────────────────────────
@@ -25885,6 +25938,7 @@ async function fetchSchedule(){
   setTimeout(nhlGSAXInit, 4800);          // NHL GSAX from MoneyPuck R2 (upgrades NHL_GOALIE_RATINGS from save% proxy)
   setTimeout(mlbPythagInit, 4900);        // MLB Pythagorean expected record from standings API
   setTimeout(nflNGSInit, 5000);           // NFL NGS: QB CPOE + WR YAC Above Expected from R2
+  setTimeout(nflInjuriesInit, 5500);      // NFL injuries: official Out/Doubtful/Questionable designations from R2
   setTimeout(mlsSubImpactInit, 5100);     // MLS defensive sub lead-loss metric (Stats tab, single-game)
   setTimeout(mlsNovelMetricsInit, 5200);  // MLS second-assist/shot-selection/counter-attack/cross-accuracy (Stats tab)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
@@ -26953,7 +27007,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-14c';
+  const SW_VERSION = '2026-08-14d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

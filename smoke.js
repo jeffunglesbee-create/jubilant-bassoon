@@ -1028,6 +1028,12 @@ assert('A-NFLEPA-1 — NFL-EPA: ESPN PBP EPA wired (functions + route + gate + s
   html.includes("['UFL','NFL'].includes(g._sport)") && html.includes('setTimeout(nflEpaInit'),
   'NFL EPA must be wired: _computeESPNPlayEPA/_pollNFLEpa/nflEpaInit, espn-summary route, NFL card gate, startup call');
 
+assert('A-NFLINJ-1 — NFL-INJ: injury designations wired (init + accessor + fetch + render + boot)',
+  html.includes('nflInjuriesInit') && html.includes('getNFLInjuries') &&
+  html.includes('/nfl-injuries.json') && html.includes('} INJ`') &&
+  html.includes('setTimeout(nflInjuriesInit'),
+  'NFL injuries must be wired: nflInjuriesInit, getNFLInjuries, nfl-injuries.json fetch, INJ scout row, startup call');
+
 // PLAYER_SPEED/getRegressionAlert dropped 2026-07-12 (Rule 63 dead-code
 // cleanup): confirmed via direct grep, zero real call sites anywhere in
 // index.html -- removed from index.html along with TEAM_ABS_RANKINGS/
