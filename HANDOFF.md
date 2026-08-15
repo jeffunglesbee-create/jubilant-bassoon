@@ -1,5 +1,52 @@
 # FIELD HANDOFF
 
+## Session 2026-08-15 — NFL-B pipeline data integrity
+
+Session doc (Rule 67): `outbox/cc-session-2026-08-15-nfl-b-pipeline-fixes.md`
+— DONE, confidence 97
+Commits: `317f9cb` (client) + `680ac26`, `2e5f4d8` (field-relay-nba)
+Verification: `nfl-ngs-update.yml` run 31852365822 — success, artifact commit `35a555f`
+
+**The NFL-B weekly pipeline was publishing an empty injuries table and
+reporting "4/4 succeeded".** `injuries_{year}.parquet` is a per-year file; in
+August `injuries_2026` 404s, and the empty result was written over the populated
+table in BOTH R2 and outbox. Unnoticed Aug 10 → Aug 14.
+
+Fixed, and verified live — injuries **0 → 1,453 players** (107 bytes → 185,396):
+1. `build_injuries` walks back up to 3 seasons, matching the strategy the NGS
+   builders already used (combined parquet → `max_season`), and returns the
+   season actually used.
+2. `emit()` refuses any zero-row write — the guard the relay already had for MLB
+   Savant (`7588b24`) and this path lacked.
+3. Envelope now carries `season` (the data's real season) and `targetYear` (the
+   requested year) as separate fields. It previously stamped `season: 2026` over
+   rows reading 2025. NFL.com does the same thing on its own team-stats page
+   ("NFL 2026 REG" title, 2025 selected in the dropdown) — so do NOT "correct"
+   our label against theirs; the rows are the truth in both.
+4. The job now exits non-zero if ANY table fails, not only if all four do. That
+   coarse tripwire is why nobody saw it for four days.
+
+**Cross-repo collision found mid-fix (Rule 70):** `nfl/{year}/ngs-passing.json`
+has TWO writers — this pipeline (Mon, parquet) and the relay's `runNFLR2Update`
+(Wed, legacy CSV). Wednesday runs last, so it would have stripped the new
+`season`/`targetYear` off every week. Patched in `2e5f4d8` so both envelopes
+agree; the collision itself is gated in
+`field-relay-nba/docs/CC-CMD-2026-08-15-ngs-passing-two-writers.md`.
+
+**Also:** `680ac26` adds `ngs-passing.json` to the relay's `NFLVERSE_OUT_ALLOWED`
+— it was R2-first with no GitHub-raw fallback, one failed weekly update away
+from 403ing while its two siblings kept serving.
+
+**NFL readiness (verified against the Drive checklist, not its checkboxes):**
+NFL content is live and journalism is scoring; NGS/injuries pipeline is healthy.
+Still open: live EPA is not wired to NFL at all (`epa.js` speaks only the
+SportRadar schema; `fromESPNPlay`/`_pollNFLEpa` do not exist), the nflverse
+Stage-1 six-table pipeline does not exist (relay serves 0/6, all 404), and the
+Aug 1 `build-epa-table.yml` rebuild FAILED (run 30706486286, 8/14 EP tests) so
+the live table is still `polynomial-calibrated` from May 27.
+
+---
+
 **Anchor:** CLIENT HEAD 11943f2c · 2026-08-12T21:30Z · via Claude Code
 RELAY HEAD 6b57eb1 · 2026-08-12 · via Claude Code
 Smoke: 965/0 (client, run fresh after every commit below, not reused)
