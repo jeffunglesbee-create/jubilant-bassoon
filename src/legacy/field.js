@@ -498,7 +498,7 @@ function buildFieldHealthPanel() {
   // for debugging. This section makes it visible without touching any of
   // the 9 functions' existing try/catch or fallback logic.
   {
-    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit','nflNGSInit','nflInjuriesInit','mlbPythagInit'];
+    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit','nflNGSInit','nflInjuriesInit','nflTeamTablesInit','mlbPythagInit'];
     const _riStatus = window._relayInitStatus || {};
     const _riFailLines = [];
     let _riOkCount = 0, _riFailCount = 0;
@@ -4417,6 +4417,49 @@ function getTeamQBSeasonStats(teamAbbr) {
   if (!teamAbbr) return [];
   return Object.values(NFL_QB_STATS).filter(p => p.team === teamAbbr);
 }
+
+// ── nflTeamTablesInit: team EPA/play, snap share, depth-chart starters (R2) ───
+// team_epa.json (pbp-derived, commodity), snap-counts.json (playing-time share),
+// depth-charts.json (official starters). Keyed by nflverse team abbr (matches
+// the toNGSAbbr normalization). Loaded once; degrades silently per-file.
+const NFL_TEAM_EPA = {};  // abbr -> {off, def, succ}
+const NFL_SNAP     = {};  // "TEAM|Full Name" -> offense snap share (0..1)
+const NFL_DEPTH    = {};  // abbr -> { pos_abb: player_name }
+let _nflTeamTablesLoaded = false;
+async function nflTeamTablesInit() {
+  if (_nflTeamTablesLoaded) return;
+  try {
+    const [epaR, snapR, depthR] = await Promise.all([
+      fetch(`${_NFL_NGS_RELAY}/team_epa.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/snap-counts.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/depth-charts.json`, { signal: AbortSignal.timeout(8000) }),
+    ]);
+    let loaded = 0;
+    if (epaR.ok) {
+      const j = await epaR.json();
+      for (const [, t] of Object.entries(j.data || {})) {
+        if (t.team) NFL_TEAM_EPA[t.team.toUpperCase()] = { off: t.offEpaPerPlay, def: t.defEpaPerPlay, succ: t.offSuccessRate };
+      }
+      loaded++;
+    }
+    if (snapR.ok) {
+      const j = await snapR.json();
+      for (const [k, p] of Object.entries(j.data || {})) { if (p.offPct != null) NFL_SNAP[k] = p.offPct; } // key already TEAM|Name
+      loaded++;
+    }
+    if (depthR.ok) {
+      const j = await depthR.json();
+      Object.assign(NFL_DEPTH, j.data || {});
+      loaded++;
+    }
+    _nflTeamTablesLoaded = true;
+    _recordRelayInit('nflTeamTablesInit', loaded > 0, loaded > 0 ? null : 'all team tables failed');
+    if (FIELD_DEBUG) console.log(`[FIELD] NFL team tables: epa=${Object.keys(NFL_TEAM_EPA).length} snap=${Object.keys(NFL_SNAP).length} depth=${Object.keys(NFL_DEPTH).length}`);
+  } catch(e) { _recordRelayInit('nflTeamTablesInit', false, e?.message || 'error'); }
+}
+function getTeamEPA(teamAbbr) { return NFL_TEAM_EPA[(teamAbbr || '').toUpperCase()] || null; }
+function getSnapShare(teamAbbr, fullName) { return NFL_SNAP[`${(teamAbbr || '').toUpperCase()}|${fullName}`] ?? null; }
+function getDepthStarter(teamAbbr, posAbb) { return NFL_DEPTH[(teamAbbr || '').toUpperCase()]?.[posAbb] || null; }
 
 function getNGSTeamReceivers(teamAbbr) {
   if (!teamAbbr) return [];
@@ -16763,6 +16806,11 @@ function buildScoutingReport(game, sport) {
       };
       rows.push({ lbl: 'QB szn EPA', val: `${fmtEPA(hQBe, teamNick(game.home||''))} | ${fmtEPA(aQBe, teamNick(game.away||''))}` });
     }
+    // Depth-chart starting QB (official — the real starter, esp. in preseason).
+    const hSQB = getDepthStarter(ha, 'QB'), aSQB = getDepthStarter(aa, 'QB');
+    if (hSQB || aSQB) {
+      rows.push({ lbl: 'Start QB', val: `${teamNick(game.home||'')} <em>${hSQB || '—'}</em> | ${teamNick(game.away||'')} <em>${aSQB || '—'}</em>` });
+    }
     const hRecs = ha ? getNGSTeamReceivers(ha) : [];
     const aRecs = aa ? getNGSTeamReceivers(aa) : [];
     if (hRecs.length || aRecs.length) {
@@ -16788,19 +16836,33 @@ function buildScoutingReport(game, sport) {
       };
       rows.push({ lbl: 'RB RYOE', val: `${fmtRB(hRB, teamNick(game.home||''))} | ${fmtRB(aRB, teamNick(game.away||''))}` });
     }
+    // Team offensive EPA/play (nflfastR pbp aggregate, commodity stat).
+    const hTepa = getTeamEPA(ha), aTepa = getTeamEPA(aa);
+    if (hTepa || aTepa) {
+      const fmtTepa = (e, team) => {
+        if (!e || e.off == null) return team || '—';
+        const o = e.off >= 0 ? `<em>+${e.off.toFixed(2)}</em>` : `<span class="scout-warn">${e.off.toFixed(2)}</span>`;
+        const d = e.def != null ? ` · ${e.def >= 0 ? '+' : ''}${e.def.toFixed(2)} def` : '';
+        return `${team} ${o}/play${d}`;
+      };
+      rows.push({ lbl: 'Team EPA', val: `${fmtTepa(hTepa, teamNick(game.home||''))} | ${fmtTepa(aTepa, teamNick(game.away||''))}` });
+    }
     // Injury designations (official Out/Doubtful/Questionable only — Rule 1).
+    // ● marks a starter (offense snap share ≥ 50% — snap-counts table): a starter
+    // ruled Out matters more than a backup.
     const hInj = ha ? getNFLInjuries(ha) : [];
     const aInj = aa ? getNFLInjuries(aa) : [];
     if (hInj.length || aInj.length) {
-      const fmtInj = list => list.slice(0, 3).map(p => {
+      const fmtInj = (list, abbr) => list.slice(0, 3).map(p => {
         const nm = (p.name || '').replace(/^(\w)\w+\s+/, '$1.'); // "Kyler Murray" → "K.Murray"
+        const starter = (getSnapShare(abbr, p.name) ?? 0) >= 0.5 ? '● ' : '';
         const s = p.status === 'Out'      ? '<span class="scout-warn">OUT</span>'
                 : p.status === 'Doubtful' ? '<span class="scout-warn">DOUBT</span>'
                 : '<em>Q</em>';
-        return `${nm} ${s}`;
+        return `${starter}${nm} ${s}`;
       }).join(' · ');
-      if (hInj.length) rows.push({ lbl: `${teamNick(game.home||'')} INJ`, val: fmtInj(hInj) });
-      if (aInj.length) rows.push({ lbl: `${teamNick(game.away||'')} INJ`, val: fmtInj(aInj) });
+      if (hInj.length) rows.push({ lbl: `${teamNick(game.home||'')} INJ`, val: fmtInj(hInj, ha) });
+      if (aInj.length) rows.push({ lbl: `${teamNick(game.away||'')} INJ`, val: fmtInj(aInj, aa) });
     }
   }
 
@@ -20949,6 +21011,7 @@ async function fetchSchedule(){
   setTimeout(mlbPythagInit, 4900);        // MLB Pythagorean expected record from standings API
   setTimeout(nflNGSInit, 5000);           // NFL NGS: QB CPOE + WR YAC Above Expected from R2
   setTimeout(nflInjuriesInit, 5500);      // NFL injuries: official Out/Doubtful/Questionable designations from R2
+  setTimeout(nflTeamTablesInit, 6000);    // NFL team tables: team EPA/play + snap share + depth-chart starters from R2
   setTimeout(mlsSubImpactInit, 5100);     // MLS defensive sub lead-loss metric (Stats tab, single-game)
   setTimeout(mlsNovelMetricsInit, 5200);  // MLS second-assist/shot-selection/counter-attack/cross-accuracy (Stats tab)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
@@ -22017,7 +22080,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-14g';
+  const SW_VERSION = '2026-08-15a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
