@@ -1,5 +1,20 @@
 # FIELD HANDOFF
 
+## Session 2026-08-15 — P3 BDB real-tracking: player max speed (E2E)
+
+Session doc: `outbox/cc-session-2026-08-15-p3-bdb-tracking.md`. Both repos on main.
+Client SW 2026-08-15c, smoke 972/0.
+
+Kaggle creds work as-is (I mis-diagnosed the key earlier; corrected — no changes needed).
+Unblocked via PUBLIC datasets (bypass competition-rules gate): built `bdb_speed.json`
+(player max speed from `alexandermeau/nfl-big-data-bowl-archived-data-2025` tracking,
+2022 season, 1648 players) via new monthly `bdb-update.yml` (streams 8GB, never on disk).
+Rule 77: filtered >24mph teleport-glitch frames (85.89mph → realistic 23.77 top). Serves
+200/1648 (serve-probe 211503Z); client **Top speed** scout row (getTeamTopSpeed).
+
+STAGED: separation / route-entropy (heavier per-frame compute; creds+access now proven).
+
+
 ## Session 2026-08-15 — dead-allow-list cleanup + P3 (participation, no-Kaggle)
 
 Session doc: `outbox/cc-session-2026-08-15-p3-participation.md`. Both repos on main.
