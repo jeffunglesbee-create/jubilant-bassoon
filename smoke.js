@@ -1039,6 +1039,11 @@ assert('A-NFLRUSH-1 — NFL-NGS: rushing (RYOE) wired (fetch + accessor + scout 
   html.includes('NFL_NGS_RUSHING') && html.includes('RB RYOE'),
   'NFL NGS rushing must be wired: ngs-rushing.json fetch, getNGSTeamRushers, NFL_NGS_RUSHING, RB RYOE scout row');
 
+assert('A-NFLQBEPA-1 — NFL: QB season passing EPA wired (fetch + accessor + scout row)',
+  html.includes('/player-stats.json') && html.includes('getTeamQBSeasonStats') &&
+  html.includes('NFL_QB_STATS') && html.includes('QB szn EPA'),
+  'NFL player-stats must be wired: player-stats.json fetch, getTeamQBSeasonStats, NFL_QB_STATS, QB szn EPA scout row');
+
 // PLAYER_SPEED/getRegressionAlert dropped 2026-07-12 (Rule 63 dead-code
 // cleanup): confirmed via direct grep, zero real call sites anywhere in
 // index.html -- removed from index.html along with TEAM_ABS_RANKINGS/

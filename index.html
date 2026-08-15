@@ -9268,6 +9268,7 @@ const MLB_TEAM_PYTHAG = {};
 const NFL_NGS_PASSING   = {};  // cpoe, aggressiveness, avgTimeToThrow, attempts, xCompPct
 const NFL_NGS_RECEIVING = {};  // avgYACAboveExp, avgSeparation, pctShareIntendedAirYards, targets
 const NFL_NGS_RUSHING   = {};  // rushYdsOverExpPerAtt, efficiency, rushAttempts (ngs-rushing.json)
+const NFL_QB_STATS      = {};  // player key -> {name, team, passingEPA, attempts} (player-stats.json, QB rows)
 const NFL_INJURIES      = {};  // teamAbbr -> [{name, position, status, injury}] — Out/Doubtful/Questionable only (nfl-injuries.json)
 
 // FPL per-player xG/xA/form/ICT analytics keyed by web_name.
@@ -9358,10 +9359,11 @@ let _nflNGSLoaded = false;
 async function nflNGSInit() {
   if (_nflNGSLoaded) return;
   try {
-    const [passResp, recResp, rushResp] = await Promise.all([
+    const [passResp, recResp, rushResp, statsResp] = await Promise.all([
       fetch(`${_NFL_NGS_RELAY}/ngs-passing.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/ngs-receiving.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/ngs-rushing.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/player-stats.json`, { signal: AbortSignal.timeout(8000) }),
     ]);
     let loaded = 0;
     if (passResp.ok) {
@@ -9394,9 +9396,18 @@ async function nflNGSInit() {
       }
       loaded++;
     }
+    if (statsResp.ok) {
+      const j = await statsResp.json();
+      for (const [, p] of Object.entries(j.data || {})) {
+        if (p.pos !== 'QB' || (p.attempts || 0) < 100) continue; // QB season stats, min sample
+        const key = _mlbPlayerKey(lastNameOf(p));
+        NFL_QB_STATS[key] = { name: p.name, team: p.team, passingEPA: p.passingEPA, attempts: p.attempts };
+      }
+      loaded++;
+    }
     _nflNGSLoaded = true;
     _recordRelayInit('nflNGSInit', loaded > 0, loaded > 0 ? null : 'all NGS files failed');
-    if (FIELD_DEBUG) console.log(`[FIELD] NFL NGS loaded: passing=${Object.keys(NFL_NGS_PASSING).length} QBs, receiving=${Object.keys(NFL_NGS_RECEIVING).length} WRs, rushing=${Object.keys(NFL_NGS_RUSHING).length} RBs`);
+    if (FIELD_DEBUG) console.log(`[FIELD] NFL NGS loaded: passing=${Object.keys(NFL_NGS_PASSING).length} QBs, receiving=${Object.keys(NFL_NGS_RECEIVING).length} WRs, rushing=${Object.keys(NFL_NGS_RUSHING).length} RBs, qbStats=${Object.keys(NFL_QB_STATS).length}`);
   } catch(e) { _recordRelayInit('nflNGSInit', false, e?.message || 'error'); }
 }
 
@@ -9455,6 +9466,11 @@ function getNGSTeamQBs(teamAbbr) {
 function getNGSTeamRushers(teamAbbr) {
   if (!teamAbbr) return [];
   return Object.values(NFL_NGS_RUSHING).filter(p => p.team === teamAbbr);
+}
+
+function getTeamQBSeasonStats(teamAbbr) {
+  if (!teamAbbr) return [];
+  return Object.values(NFL_QB_STATS).filter(p => p.team === teamAbbr);
 }
 
 function getNGSTeamReceivers(teamAbbr) {
@@ -21790,6 +21806,18 @@ function buildScoutingReport(game, sport) {
       };
       rows.push({ lbl: 'QB CPOE', val: `${fmtQB(hQB, teamNick(game.home||''))} | ${fmtQB(aQB, teamNick(game.away||''))}` });
     }
+    // Lead QB season passing EPA (cumulative value stat, complements CPOE rate).
+    const hQBe = (ha ? getTeamQBSeasonStats(ha) : []).sort((a, b) => b.attempts - a.attempts)[0];
+    const aQBe = (aa ? getTeamQBSeasonStats(aa) : []).sort((a, b) => b.attempts - a.attempts)[0];
+    if (hQBe || aQBe) {
+      const fmtEPA = (qb, team) => {
+        if (!qb || qb.passingEPA == null) return team || '—';
+        const e = qb.passingEPA;
+        const s = e >= 0 ? `<em>+${e.toFixed(0)} EPA</em>` : `<span class="scout-warn">${e.toFixed(0)} EPA</span>`;
+        return `${team} ${s}`;
+      };
+      rows.push({ lbl: 'QB szn EPA', val: `${fmtEPA(hQBe, teamNick(game.home||''))} | ${fmtEPA(aQBe, teamNick(game.away||''))}` });
+    }
     const hRecs = ha ? getNGSTeamReceivers(ha) : [];
     const aRecs = aa ? getNGSTeamReceivers(aa) : [];
     if (hRecs.length || aRecs.length) {
@@ -27044,7 +27072,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-14f';
+  const SW_VERSION = '2026-08-14g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
