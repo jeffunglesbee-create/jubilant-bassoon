@@ -23,6 +23,13 @@ No manual serve-probe trigger needed. ARTIFACT: log committed by the workflow �
 BDB scout rows now: Top speed · Top separation · Route tree · Pass rush · Tendencies
 (+ Team EPA, Pass pro from earlier P3 work).
 
+**Render VERIFIED (Rule 90):** `nfl-bdb-scout-probe.yml` (Playwright, live URL) →
+`outbox/nfl-bdb-scout-manifest-2026-08-15T23-12-23-725Z.json`: 7/7 live NFL preseason
+games rendered all 5 rows (`allFiveRowsPresent:true`, perRow 7/7 each); MLB/WNBA games
+show none (NFL-gated confirmed). **Automated:** probe now scheduled TNF/Sun/MNF windows,
+exits 0 when no NFL game on slate (off-season no-op), red only on a real regression
+(NFL game present but a row missing).
+
 
 ## Session 2026-08-15 — P3 BDB separation + route entropy (E2E) ✅
 
