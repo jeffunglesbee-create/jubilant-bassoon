@@ -1,0 +1,22 @@
+
+===== alexandermeau/nfl-big-data-bowl-archived-data-2025 =====
+  [big-data-bowl-data/]games.csv  HTTP 200
+    HEADER: gameId,season,week,gameDate,gameTimeEastern,homeTeamAbbr,visitorTeamAbbr,homeFinalScore,visitorFinalScore
+  [big-data-bowl-data/]plays.csv  HTTP 200
+    HEADER: "gameId","playId","playDescription","quarter","down","yardsToGo","possessionTeam","defensiveTeam","yardlineSide","yardlineNumber","gameClock","preSnapHomeScore","preSnapVisitorScore","playNullifiedByPenalty","absoluteYardlineNumber","preSnapHomeTeamWinProbability","preSnapVisitorTeamWinProbability","expectedPoints","offenseFormation","receiverAlignment","playClockAtSnap","passResult","passLength","targetX","targetY","playAction","dropbackType","dropbackDistance","passLocationType","timeToThrow","timeInTackleBox","timeToSack","passTippedAtLine","unblockedPressure","qbSpike","qbKneel","qbSneak",
+  [big-data-bowl-data/]players.csv  HTTP 200
+    HEADER: "nflId","height","weight","birthDate","collegeName","position","displayName"
+  [big-data-bowl-data/]player_play.csv  HTTP 200
+    HEADER: "gameId","playId","nflId","teamAbbr","hadRushAttempt","rushingYards","hadDropback","passingYards","sackYardsAsOffense","hadPassReception","receivingYards","wasTargettedReceiver","yardageGainedAfterTheCatch","fumbles","fumbleLost","fumbleOutOfBounds","assistedTackle","forcedFumbleAsDefense","halfSackYardsAsDefense","passDefensed","quarterbackHit","sackYardsAsDefense","safetyAsDefense","soloTackle","tackleAssist","tackleForALoss","tackleForALossYardage","hadInterception","interceptionYards","fumbleRecoveries","fumbleRecoveryYards","penaltyYards","penaltyNames","wasInitialPassRusher","causedPress
+  tackles.csv: not found under ['', 'big-data-bowl-data/']
+    tracking cols: ['gameId', 'playId', 'nflId', 'displayName', 'frameId', 'frameType', 'time', 'jerseyNumber', 'club', 'playDirection', 'x', 'y', 's', 'a', 'dis', 'o', 'dir', 'event']
+    tracking rows sampled: 400,000
+    distinct events (top 20): [('line_set', 2353), ('ball_snap', 2353), ('huddle_break_offense', 2170), ('first_contact', 1794), ('pass_forward', 1456), ('tackle', 1334), ('pass_arrived', 1180), ('man_in_motion', 989), ('pass_outcome_caught', 989), ('handoff', 713), ('play_action', 598), ('out_of_bounds', 483), ('pass_outcome_incomplete', 375), ('shift', 253), ('fumble', 115), ('run', 92), ('touchdown', 69), ('qb_sack', 69), ('fumble_defense_recovered', 69), ('fumble_offense_recovered', 46)]
+    tracking-level route labels present: False | sample: []
+
+===== llkh0a/nfl-big-data-bowl-2026-prediction-public =====
+  games.csv: not found under ['', 'big-data-bowl-data/']
+  plays.csv: not found under ['', 'big-data-bowl-data/']
+  players.csv: not found under ['', 'big-data-bowl-data/']
+  player_play.csv: not found under ['', 'big-data-bowl-data/']
+  tackles.csv: not found under ['', 'big-data-bowl-data/']
