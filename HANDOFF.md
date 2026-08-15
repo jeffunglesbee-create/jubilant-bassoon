@@ -1,5 +1,29 @@
 # FIELD HANDOFF
 
+## Session 2026-08-15 — P2 COMPLETE (all 7 nflverse tables built + served + consumed)
+
+Session doc: `outbox/cc-session-2026-08-15-p2-unbuilt-tables.md`. Both repos on main.
+Client `c194828` (SW 2026-08-15a, smoke 970/0); relay serving `7861289`; builders `e85cf36`.
+
+Built the 3 genuinely-unbuilt tables end-to-end, each against CI-probed real parquet
+schema (Rule 68): **snap-counts** (season snap share, 2311 players), **depth-charts**
+(latest-snapshot starters, 32 teams), **team_epa** (per-team off/def EPA/play from
+nflfastR pbp, 32 teams — fills an orphaned allow-list entry). New builders in
+build-ngs-data.py (Monday cron) → R2 + outbox; relay NFL_R2_FILES + NFLVERSE_OUT_ALLOWED.
+Consumers in buildScoutingReport: **Team EPA** row, **Start QB** row (depth-chart QB1),
+**● starter marker** on INJ rows (snap≥50%).
+
+**Serving artifact:** relay `outbox/nfl-tables-serve-probe-20260815T141825Z.log` —
+6/6 tables serve 200 non-empty from R2.
+
+**P2 done:** all of ngs-passing/receiving/rushing, player-stats, injuries, snap-counts,
+depth-charts, team_epa built+served+consumed. `pfr-rec.json` left unwired (redundant
+with ngs-receiving, Rule 63). Orphaned allow-list entries (team_tendencies, qb_metrics,
+receiver_metrics, defense_metrics, schedule_refs, bdb_*) have no builder → flagged for a
+future dead-allow-list cleanup (separate from P2).
+
+---
+
 ## Session 2026-08-14 — /realtimesports dead-code removal + P2 injuries (Wow #7)
 
 Session docs (Rule 67): `outbox/cc-session-2026-08-14-nfl-injuries-p2.md` (client),
