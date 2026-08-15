@@ -16697,7 +16697,12 @@ function buildScoutingReport(game, sport) {
 
   // ── NFL ────────────────────────────────────────────────────────────────────
   if (sp.includes('nfl') || (sp.includes('football') && !sp.includes('afl') && !sp.includes('cfl'))) {
-    const toNGSAbbr = name => (espnTeamAbbrevs[(name||'').toLowerCase()]?.abbrev||'').toUpperCase();
+    // ESPN team abbrevs differ from nflverse for two teams (WSH vs WAS, LAR vs
+    // LA). nflverse-derived tables (NGS, injuries) key on the nflverse code, so
+    // normalize here at the boundary (Rule 60) — fixes both consumers, incl. a
+    // latent NGS miss for Washington/Rams. All 30 other teams are identical.
+    const _NFLVERSE_ABBR = { WSH: 'WAS', LAR: 'LA' };
+    const toNGSAbbr = name => { const a = (espnTeamAbbrevs[(name||'').toLowerCase()]?.abbrev||'').toUpperCase(); return _NFLVERSE_ABBR[a] || a; };
     const ha = toNGSAbbr(game.home), aa = toNGSAbbr(game.away);
     const hQBs = ha ? getNGSTeamQBs(ha) : [];
     const aQBs = aa ? getNGSTeamQBs(aa) : [];
@@ -21952,7 +21957,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-14d';
+  const SW_VERSION = '2026-08-14e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
