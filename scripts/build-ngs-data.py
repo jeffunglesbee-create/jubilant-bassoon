@@ -242,14 +242,39 @@ def build_ngs_rushing(year):
     return data
 
 # ── 4. NFL Injuries ────────────────────────────────────────────────────────────
-def build_injuries(year):
-    print(f"\n[NFL Injuries {year}]")
-    url = f"{NFLVERSE_BASE}/injuries/injuries_{year}.parquet"
-    try:
-        tbl = fetch_parquet(url)
-    except Exception as e:
-        print(f"    ⚠️  Could not fetch injuries_{year}: {e}")
-        return {}
+def build_injuries(year, max_lookback=3):
+    """Returns (data, season_used). season_used is None when nothing was fetched.
+
+    The NGS builders read a COMBINED parquet holding every season and select
+    max_season, so when the target year has no data yet they degrade to the most
+    recent season that does. Injuries reads a PER-YEAR url and had no equivalent,
+    so every August — before the new season has been played — injuries_{year}
+    404s and this returned {}. Measured 2026-08-10 (run 31369508254):
+
+        → Fetching injuries_2026.parquet ...
+          ⚠️  Could not fetch injuries_2026: HTTP Error 404: Not Found
+          ✅ R2 OK → nfl/2026/nfl-injuries.json
+
+    ...which then overwrote the populated table with an empty one and reported
+    success. Walk back to the most recent season that actually exists, the same
+    way the NGS path already does.
+    """
+    tbl = None
+    season_used = None
+    for candidate in range(year, year - max_lookback - 1, -1):
+        print(f"\n[NFL Injuries {candidate}]")
+        url = f"{NFLVERSE_BASE}/injuries/injuries_{candidate}.parquet"
+        try:
+            tbl = fetch_parquet(url)
+            season_used = candidate
+            if candidate != year:
+                print(f"    ↩︎  injuries_{year} unavailable — using {candidate} (most recent published)")
+            break
+        except Exception as e:
+            print(f"    ⚠️  Could not fetch injuries_{candidate}: {e}")
+    if tbl is None:
+        print(f"    ❌ No injuries parquet found for {year}..{year - max_lookback}")
+        return {}, None
 
     df = tbl.to_pydict()
     n  = len(df.get("season", []))
@@ -290,9 +315,56 @@ def build_injuries(year):
     from collections import Counter
     counts = Counter(statuses)
     print(f"    Players with reports: {len(data)}  {dict(counts)}")
-    return data
+    return data, season_used
 
 # ── Main ───────────────────────────────────────────────────────────────────────
+def data_season(data, fallback=None):
+    """The season the ROWS actually carry — not the season we asked for.
+
+    The envelope used to be stamped `"season": year` (the target year) while the
+    rows carried whatever season nflverse actually had. On 2026-08-10 that meant
+    an envelope reading 2026 over rows reading 2025:
+
+        envelope season : 2026
+        row season      : 2025   (Caleb Williams, CHI, cpoe -6.875)
+
+    A consumer captioning a chip from payload.season mislabels last season's
+    numbers as this season's. NFL.com does the same thing on its own team-stats
+    page (title "NFL 2026 REG", dropdown selected 2025), so the ambiguity is
+    industry-wide — which is a reason to be explicit here, not a reason to copy it.
+    """
+    seasons = {r.get("season") for r in data.values() if isinstance(r, dict) and r.get("season")}
+    return max(seasons) if seasons else fallback
+
+
+def emit(results, name, filename, data, season, source, year, updated):
+    """Write one table, refusing to publish an empty one.
+
+    Guard rationale: an empty payload is indistinguishable, once stored, from
+    "this table legitimately has no rows" — and it silently destroys the previous
+    good copy in BOTH R2 and the repo. Same defect the relay hit with MLB Savant
+    analytics (field-relay-nba 7588b24, 'never overwrite an R2 analytics table
+    with an empty payload'); this is that guard for the NFL path.
+    """
+    if not data:
+        print(f"    ⛔ {name}: 0 rows — refusing to overwrite the existing table")
+        results[name] = {"ok": False, "error": "empty payload — refused to overwrite", "count": 0}
+        return
+    payload = {
+        "updated": updated,
+        # The season the DATA is from. Load-bearing for any consumer label.
+        "season": season,
+        # The season this run targeted. Kept separate and explicitly named so the
+        # two can never be conflated again.
+        "targetYear": year,
+        "source": source,
+        "data": data,
+    }
+    upload_to_r2(f"nfl/{year}/{filename}", payload)
+    write_outbox(filename, payload)
+    results[name] = {"ok": True, "count": len(data), "season": season}
+
+
 def main():
     # Determine active NFL year (current or most recent season)
     now = datetime.now(timezone.utc)
@@ -307,10 +379,8 @@ def main():
     # NGS Passing
     try:
         passing = build_ngs_passing(year)
-        payload = {"updated": updated, "season": year, "source": "nflverse NGS parquet", "data": passing}
-        upload_to_r2(f"nfl/{year}/ngs-passing.json", payload)
-        write_outbox("ngs-passing.json", payload)
-        results["ngs-passing"] = {"ok": True, "count": len(passing)}
+        emit(results, "ngs-passing", "ngs-passing.json", passing,
+             data_season(passing, year), "nflverse NGS parquet", year, updated)
     except Exception as e:
         print(f"  ❌ NGS Passing failed: {e}")
         results["ngs-passing"] = {"ok": False, "error": str(e)}
@@ -318,10 +388,8 @@ def main():
     # NGS Receiving
     try:
         receiving = build_ngs_receiving(year)
-        payload = {"updated": updated, "season": year, "source": "nflverse NGS parquet", "data": receiving}
-        upload_to_r2(f"nfl/{year}/ngs-receiving.json", payload)
-        write_outbox("ngs-receiving.json", payload)
-        results["ngs-receiving"] = {"ok": True, "count": len(receiving)}
+        emit(results, "ngs-receiving", "ngs-receiving.json", receiving,
+             data_season(receiving, year), "nflverse NGS parquet", year, updated)
     except Exception as e:
         print(f"  ❌ NGS Receiving failed: {e}")
         results["ngs-receiving"] = {"ok": False, "error": str(e)}
@@ -329,21 +397,17 @@ def main():
     # NGS Rushing
     try:
         rushing = build_ngs_rushing(year)
-        payload = {"updated": updated, "season": year, "source": "nflverse NGS parquet", "data": rushing}
-        upload_to_r2(f"nfl/{year}/ngs-rushing.json", payload)
-        write_outbox("ngs-rushing.json", payload)
-        results["ngs-rushing"] = {"ok": True, "count": len(rushing)}
+        emit(results, "ngs-rushing", "ngs-rushing.json", rushing,
+             data_season(rushing, year), "nflverse NGS parquet", year, updated)
     except Exception as e:
         print(f"  ❌ NGS Rushing failed: {e}")
         results["ngs-rushing"] = {"ok": False, "error": str(e)}
 
     # Injuries
     try:
-        injuries = build_injuries(year)
-        payload = {"updated": updated, "season": year, "source": "nflverse injuries parquet", "data": injuries}
-        upload_to_r2(f"nfl/{year}/nfl-injuries.json", payload)
-        write_outbox("nfl-injuries.json", payload)
-        results["nfl-injuries"] = {"ok": True, "count": len(injuries)}
+        injuries, inj_season = build_injuries(year)
+        emit(results, "nfl-injuries", "nfl-injuries.json", injuries,
+             inj_season, "nflverse injuries parquet", year, updated)
     except Exception as e:
         print(f"  ❌ Injuries failed: {e}")
         results["nfl-injuries"] = {"ok": False, "error": str(e)}
@@ -356,7 +420,17 @@ def main():
         status = f"✅ {r['count']} players" if r.get("ok") else f"❌ {r.get('error','?')}"
         print(f"  {name}: {status}")
 
-    if succeeded == 0:
+    # Exit non-zero if ANY table failed, not only if all four did.
+    #
+    # The 2026-08-10 run (31369508254) is why: injuries 404'd, an empty table was
+    # published, and the job printed "4/4 succeeded" and went green. Nobody saw it
+    # for four days. `succeeded == 0` is too coarse a tripwire — it only fires when
+    # the pipeline is totally dead, which is the one case somebody would notice
+    # anyway. A false alarm here costs a red weekly job; a missed alarm costs a
+    # silently empty table during the season.
+    failed = [n for n, r in results.items() if not r.get("ok")]
+    if failed:
+        print(f"\n❌ FAILED TABLES: {', '.join(failed)}")
         sys.exit(1)
 
 if __name__ == "__main__":
