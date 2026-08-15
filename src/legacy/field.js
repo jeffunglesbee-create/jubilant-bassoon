@@ -6673,8 +6673,9 @@ async function _pollNFLEpa(){
     if(elapsed<-600000||elapsed>18000000) continue; // not within -10min to +5hrs
     // NFL V2 game ids arrive prefixed ("espn:401873282"); the /espn-summary route
     // needs the bare numeric id. espnEventId is null on NFL game objects (only
-    // MLB/NBA/NHL fill it), so derive from _gameId. Verified live 2026-08-15.
-    const raw=String(g._gameId||'');
+    // MLB/NBA/NHL fill it). injectV2SportSection sets the id on _id; the score
+    // poll later also propagates _gameId — read either. Verified live 2026-08-15.
+    const raw=String(g._gameId||g._id||'');
     const espnGameId=raw.startsWith('espn:')?raw.slice(5):raw;
     if(!/^\d+$/.test(espnGameId)) continue;
     const st=_uflEpaState[espnGameId];
@@ -14422,7 +14423,10 @@ const FIELD_V2_SOURCES = {
   // wc26 pattern, using confirmed real 2026 season start dates (checked
   // live against ESPN before choosing these, not guessed) -- avoids
   // polling ESPN for NFL/CFB scores all year during genuine off-season.
-  nfl: new Date() >= new Date('2026-09-10T00:00:00Z'),
+  // Preseason opener verified 2026-08-06 (Car@Ari, ESPN seasontype=1) via
+  // scoreboard probe 2026-08-15 — earlier than the 2026-09-10 regular-season
+  // start so live preseason NFL (and its per-play EPA) actually render now.
+  nfl: new Date() >= new Date('2026-08-06T00:00:00Z'),
   cfb: new Date() >= new Date('2026-08-29T00:00:00Z'),
 };
 // ESPN league ID → FIELD V2 sport key (belt-and-suspenders safety net in fetchESPNScores)
@@ -15163,6 +15167,11 @@ async function fetchV2AllScores() {
   // a different sportKey/sectionLabel -- not built here, per that CC-CMD's
   // own "do not preemptively apply to a sport with no real data source yet."
   if (FIELD_V2_SOURCES.cfb) injectV2SportSection('cfb', 'College Football');
+
+  // NFL schedule section — same generic injection as CFB (NFL games flowed into
+  // espnScores with _sport:'nfl' but nothing turned them into cards). Required
+  // for NFL cards to exist at all, which live per-play EPA then attaches to.
+  if (FIELD_V2_SOURCES.nfl) injectV2SportSection('nfl', 'NFL');
 
   // WNBA schedule section (CC-CMD-2026-07-15-wnba-schedule-cards) --
   // injectV2SportSection's first real reuse. WNBA already flows through
@@ -21885,7 +21894,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-14a';
+  const SW_VERSION = '2026-08-14b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
