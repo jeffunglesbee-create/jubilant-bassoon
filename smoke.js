@@ -1051,6 +1051,11 @@ assert('A-NFLTEAM-1 — NFL: team EPA + snap + depth-chart tables wired (init + 
   html.includes("lbl: 'Team EPA'") && html.includes("lbl: 'Start QB'"),
   'NFL team tables must be wired: nflTeamTablesInit, team_epa/snap-counts/depth-charts fetches, getTeamEPA/getSnapShare/getDepthStarter, Team EPA + Start QB rows');
 
+assert('A-NFLBDB-1 — NFL P3: BDB tracking top speed wired (fetch + accessor + row)',
+  html.includes('/bdb_speed.json') && html.includes('getTeamTopSpeed') &&
+  html.includes('NFL_BDB_SPEED') && html.includes("lbl: 'Top speed'"),
+  'NFL BDB speed must be wired: bdb_speed.json fetch, getTeamTopSpeed, NFL_BDB_SPEED, Top speed scout row');
+
 assert('A-NFLPART-1 — NFL P3: participation (formation/pressure) wired (fetch + accessor + row)',
   html.includes('/team-participation.json') && html.includes('getTeamParticipation') &&
   html.includes('NFL_PART') && html.includes("lbl: 'Pass pro'"),
