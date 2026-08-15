@@ -6686,13 +6686,17 @@ async function _pollNFLEpa(){
 }
 
 async function nflEpaInit(){
-  const nflSec=(typeof allData!=='undefined'?(allData.sports||[]):[]).find(s=>s.sport==='NFL');
-  if(!nflSec||!(nflSec.games||[]).length) return;
+  // Gate on the SEASON flag, not on the NFL section existing at 4s: the section
+  // is injected asynchronously by the V2 score poll and is usually not built yet
+  // at startup. Bailing here (the original bug) meant the interval never armed
+  // and EPA never polled. _pollNFLEpa no-ops until the section appears. 30s
+  // interval aligns with the relay's 25s /espn-summary edge cache (no extra cost).
+  if(!FIELD_V2_SOURCES.nfl) return; // not NFL season — skip entirely
   await _loadEpTable();
   if(!_epTable){ _recordRelayInit('nflEpaInit', false, 'epa_table.json failed to load'); return; }
   try{
     _pollNFLEpa();
-    setInterval(_pollNFLEpa,60000);
+    setInterval(_pollNFLEpa,30000);
     _recordRelayInit('nflEpaInit', true);
   }catch(e){ _recordRelayInit('nflEpaInit', false, e?.message || 'error'); }
 }
@@ -21894,7 +21898,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-14b';
+  const SW_VERSION = '2026-08-14c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
