@@ -1,0 +1,38 @@
+name: NFL Standings Probe
+# Task 1 (Rule 90): verify the ▼ Standings dropdown works on a live NFL card.
+# Task 2 (Rule 68): dump ESPN NFL standings JSON shape for the playoff tracker.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: ESPN standings shape (pre-build probe)
+        run: node scripts/espn-nfl-standings-shape.mjs
+      - name: Cache Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+      - name: Standings dropdown render probe
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+        run: node nfl_standings_render_probe.js
+      - name: Commit artifacts
+        if: always()
+        run: |
+          git config user.email "bdb-probe@field"; git config user.name "BDB-Probe"
+          git add outbox/espn-nfl-standings-shape.txt outbox/nfl-standings-manifest-*.json outbox/nfl-standings-*.png || true
+          git diff --cached --quiet && echo nothing && exit 0
+          git commit -m "nfl standings probe + espn shape [skip ci]"
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
