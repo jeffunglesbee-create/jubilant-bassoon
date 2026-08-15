@@ -1056,6 +1056,16 @@ assert('A-NFLBDB-1 — NFL P3: BDB tracking top speed wired (fetch + accessor + 
   html.includes('NFL_BDB_SPEED') && html.includes("lbl: 'Top speed'"),
   'NFL BDB speed must be wired: bdb_speed.json fetch, getTeamTopSpeed, NFL_BDB_SPEED, Top speed scout row');
 
+assert('A-NFLSEP-1 — NFL P3: BDB separation wired (fetch + accessor + row)',
+  html.includes('/bdb_separation.json') && html.includes('getTeamTopSep') &&
+  html.includes('NFL_BDB_SEP') && html.includes("lbl: 'Top separation'"),
+  'NFL BDB separation must be wired: bdb_separation.json fetch, getTeamTopSep, NFL_BDB_SEP, Top separation scout row');
+
+assert('A-NFLRTE-1 — NFL P3: BDB route entropy wired (fetch + accessor + row)',
+  html.includes('/bdb_route_entropy.json') && html.includes('getTeamTopRoute') &&
+  html.includes('NFL_BDB_ROUTE') && html.includes("lbl: 'Route tree'"),
+  'NFL BDB route entropy must be wired: bdb_route_entropy.json fetch, getTeamTopRoute, NFL_BDB_ROUTE, Route tree scout row');
+
 assert('A-NFLPART-1 — NFL P3: participation (formation/pressure) wired (fetch + accessor + row)',
   html.includes('/team-participation.json') && html.includes('getTeamParticipation') &&
   html.includes('NFL_PART') && html.includes("lbl: 'Pass pro'"),

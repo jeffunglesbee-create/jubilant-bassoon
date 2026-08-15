@@ -4427,16 +4427,20 @@ const NFL_SNAP     = {};  // "TEAM|Full Name" -> offense snap share (0..1)
 const NFL_DEPTH    = {};  // abbr -> { pos_abb: player_name }
 const NFL_PART     = {};  // abbr -> {shotgunRate, avgBoxFaced, pressFacedRate, blitzFacedRate} (P3, pbp_participation)
 const NFL_BDB_SPEED = {};  // abbr -> [{name, mph}] desc (P3, BDB tracking max speed)
+const NFL_BDB_SEP   = {};  // abbr -> [{name, sep, pos}] desc (P3, BDB avg separation at pass_arrived)
+const NFL_BDB_ROUTE = {};  // abbr -> [{name, ent, routes}] desc (P3, BDB route entropy)
 let _nflTeamTablesLoaded = false;
 async function nflTeamTablesInit() {
   if (_nflTeamTablesLoaded) return;
   try {
-    const [epaR, snapR, depthR, partR, spdR] = await Promise.all([
+    const [epaR, snapR, depthR, partR, spdR, sepR, rteR] = await Promise.all([
       fetch(`${_NFL_NGS_RELAY}/team_epa.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/snap-counts.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/depth-charts.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/team-participation.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/bdb_speed.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/bdb_separation.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/bdb_route_entropy.json`, { signal: AbortSignal.timeout(8000) }),
     ]);
     let loaded = 0;
     if (epaR.ok) {
@@ -4473,6 +4477,26 @@ async function nflTeamTablesInit() {
       for (const t in NFL_BDB_SPEED) NFL_BDB_SPEED[t].sort((a, b) => b.mph - a.mph);
       loaded++;
     }
+    if (sepR.ok) {
+      const j = await sepR.json();
+      for (const [, p] of Object.entries(j.data || {})) {
+        const t = (p.team || '').toUpperCase();
+        if (!t || p.avgSepYds == null) continue;
+        (NFL_BDB_SEP[t] = NFL_BDB_SEP[t] || []).push({ name: p.name, sep: p.avgSepYds, pos: p.pos });
+      }
+      for (const t in NFL_BDB_SEP) NFL_BDB_SEP[t].sort((a, b) => b.sep - a.sep);
+      loaded++;
+    }
+    if (rteR.ok) {
+      const j = await rteR.json();
+      for (const [, p] of Object.entries(j.data || {})) {
+        const t = (p.team || '').toUpperCase();
+        if (!t || p.entropyBits == null) continue;
+        (NFL_BDB_ROUTE[t] = NFL_BDB_ROUTE[t] || []).push({ name: p.name, ent: p.entropyBits, routes: p.distinctRoutes });
+      }
+      for (const t in NFL_BDB_ROUTE) NFL_BDB_ROUTE[t].sort((a, b) => b.ent - a.ent);
+      loaded++;
+    }
     _nflTeamTablesLoaded = true;
     _recordRelayInit('nflTeamTablesInit', loaded > 0, loaded > 0 ? null : 'all team tables failed');
     if (FIELD_DEBUG) console.log(`[FIELD] NFL team tables: epa=${Object.keys(NFL_TEAM_EPA).length} snap=${Object.keys(NFL_SNAP).length} depth=${Object.keys(NFL_DEPTH).length}`);
@@ -4483,6 +4507,8 @@ function getSnapShare(teamAbbr, fullName) { return NFL_SNAP[`${(teamAbbr || '').
 function getDepthStarter(teamAbbr, posAbb) { return NFL_DEPTH[(teamAbbr || '').toUpperCase()]?.[posAbb] || null; }
 function getTeamParticipation(teamAbbr) { return NFL_PART[(teamAbbr || '').toUpperCase()] || null; }
 function getTeamTopSpeed(teamAbbr) { return NFL_BDB_SPEED[(teamAbbr || '').toUpperCase()]?.[0] || null; }
+function getTeamTopSep(teamAbbr) { return NFL_BDB_SEP[(teamAbbr || '').toUpperCase()]?.[0] || null; }
+function getTeamTopRoute(teamAbbr) { return NFL_BDB_ROUTE[(teamAbbr || '').toUpperCase()]?.[0] || null; }
 
 function getNGSTeamReceivers(teamAbbr) {
   if (!teamAbbr) return [];
@@ -16885,6 +16911,18 @@ function buildScoutingReport(game, sport) {
       const fmtSpd = (p, team) => p ? `${team} ${(p.name||'').replace(/^(\w)\w+\s+/, '$1.')} <em>${p.mph} mph</em>` : (team || '—');
       rows.push({ lbl: 'Top speed', val: `${fmtSpd(hSpd, teamNick(game.home||''))} | ${fmtSpd(aSpd, teamNick(game.away||''))}` });
     }
+    // Most-open targeted receiver (BDB avg separation at pass_arrived, yd — commodity/NGS 'separation').
+    const hSep = getTeamTopSep(ha), aSep = getTeamTopSep(aa);
+    if (hSep || aSep) {
+      const fmtSep = (p, team) => p ? `${team} ${(p.name||'').replace(/^(\w)\w+\s+/, '$1.')} <em>${p.sep} yd</em>` : (team || '—');
+      rows.push({ lbl: 'Top separation', val: `${fmtSep(hSep, teamNick(game.home||''))} | ${fmtSep(aSep, teamNick(game.away||''))}` });
+    }
+    // Most route-diverse receiver (BDB route entropy, bits — commodity route-mix diversity).
+    const hRte = getTeamTopRoute(ha), aRte = getTeamTopRoute(aa);
+    if (hRte || aRte) {
+      const fmtRte = (p, team) => p ? `${team} ${(p.name||'').replace(/^(\w)\w+\s+/, '$1.')} <em>${p.ent} bits</em>` : (team || '—');
+      rows.push({ lbl: 'Route tree', val: `${fmtRte(hRte, teamNick(game.home||''))} | ${fmtRte(aRte, teamNick(game.away||''))}` });
+    }
     // Injury designations (official Out/Doubtful/Questionable only — Rule 1).
     // ● marks a starter (offense snap share ≥ 50% — snap-counts table): a starter
     // ruled Out matters more than a backup.
@@ -22118,7 +22156,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-15c';
+  const SW_VERSION = '2026-08-15d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

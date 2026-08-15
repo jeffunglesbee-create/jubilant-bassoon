@@ -18,6 +18,7 @@ import os, io, csv, json, base64, urllib.parse, urllib.request, urllib.error
 from datetime import datetime, timezone
 
 OWNER, SLUG = "alexandermeau", "nfl-big-data-bowl-archived-data-2025"
+PFX = "big-data-bowl-data/"  # dataset internal path prefix (probe-confirmed 2026-08-15)
 MPH = 2.045454545  # yards/sec → mph
 CF_ACCOUNT = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
 CF_TOKEN   = os.environ.get("CLOUDFLARE_API_TOKEN", "")
@@ -92,6 +93,141 @@ def build_bdb_speed(max_weeks=9):
     print(f"  Players kept (>=5 yd/s): {len(data)}")
     return data, season
 
+def _truthy(v):
+    return (v or "").strip().lower() in ("1", "true", "t", "yes")
+
+def load_players():
+    """nflId -> {name, pos} from players.csv (small)."""
+    out = {}
+    try:
+        with kaggle_open(PFX + "players.csv", timeout=60) as r:
+            for row in csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")):
+                nid = row.get("nflId")
+                if nid and nid != "NA":
+                    out[nid] = {"name": row.get("displayName", ""), "pos": row.get("position", "")}
+    except Exception as e:
+        print(f"    players.csv load failed: {e}")
+    return out
+
+def build_bdb_route_entropy(players, min_routes=20):
+    """Per-player route-tree diversity: Shannon entropy (bits) over routeRan mix.
+    Commodity (route distribution is factual/NGS-publishable). player_play.csv only —
+    no tracking. wasRunningRoute==1 gates to actual route-runners."""
+    if not AUTH:
+        return {}
+    import math
+    counts = {}  # nflId -> {team, routes: Counter-ish dict}
+    try:
+        with kaggle_open(PFX + "player_play.csv") as r:
+            for row in csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")):
+                if not _truthy(row.get("wasRunningRoute")):
+                    continue
+                route = (row.get("routeRan") or "").strip()
+                if not route or route == "NA":
+                    continue
+                nid = row.get("nflId")
+                if not nid or nid == "NA":
+                    continue
+                e = counts.get(nid)
+                if e is None:
+                    e = counts[nid] = {"team": row.get("teamAbbr", ""), "routes": {}}
+                e["routes"][route] = e["routes"].get(route, 0) + 1
+    except Exception as e:
+        print(f"    route entropy read failed: {e}")
+        return {}
+    data = {}
+    for nid, e in counts.items():
+        total = sum(e["routes"].values())
+        if total < min_routes:
+            continue
+        H = -sum((c / total) * math.log2(c / total) for c in e["routes"].values() if c)
+        pl = players.get(nid, {})
+        data[nid] = {"name": pl.get("name", ""), "team": e["team"], "pos": pl.get("pos", ""),
+                     "routesRun": total, "distinctRoutes": len(e["routes"]),
+                     "entropyBits": round(H, 2)}
+    print(f"  route entropy players (>= {min_routes} routes): {len(data)}")
+    return data
+
+def build_bdb_separation(players, max_weeks=9, min_targets=8):
+    """Avg separation (yards) of the targeted receiver from the nearest defender at
+    the pass_arrived frame. Commodity (NGS publishes 'separation'). Needs tracking +
+    plays (defensiveTeam) + player_play (wasTargettedReceiver)."""
+    if not AUTH:
+        return {}
+    import math
+    # plays: (gameId,playId) -> defensiveTeam  (pass plays only implied by pass_arrived)
+    defteam = {}
+    try:
+        with kaggle_open(PFX + "plays.csv") as r:
+            for row in csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")):
+                defteam[(row.get("gameId"), row.get("playId"))] = row.get("defensiveTeam", "")
+    except Exception as e:
+        print(f"    plays.csv load failed: {e}"); return {}
+    # player_play: (gameId,playId) -> targeted receiver nflId
+    target = {}
+    try:
+        with kaggle_open(PFX + "player_play.csv") as r:
+            for row in csv.DictReader(io.TextIOWrapper(r, encoding="utf-8")):
+                if _truthy(row.get("wasTargettedReceiver")):
+                    target[(row.get("gameId"), row.get("playId"))] = (row.get("nflId"), row.get("teamAbbr", ""))
+    except Exception as e:
+        print(f"    player_play.csv load failed: {e}"); return {}
+    agg = {}  # nflId -> {team, sum, n}
+    for wk in range(1, max_weeks + 1):
+        fn = PFX + f"tracking_week_{wk}.csv"
+        # bucket pass_arrived frames per play: (gameId,playId) -> list of (nflId,x,y,club)
+        frames = {}
+        try:
+            with kaggle_open(fn) as resp:
+                for row in csv.DictReader(io.TextIOWrapper(resp, encoding="utf-8")):
+                    if (row.get("event") or "") != "pass_arrived":
+                        continue
+                    nid = row.get("nflId")
+                    if not nid or nid == "NA":
+                        continue
+                    try:
+                        x = float(row.get("x") or 0); y = float(row.get("y") or 0)
+                    except ValueError:
+                        continue
+                    frames.setdefault((row.get("gameId"), row.get("playId")), []).append(
+                        (nid, x, y, row.get("club", "")))
+        except urllib.error.HTTPError as e:
+            print(f"    sep week {wk}: HTTP {e.code} — stopping"); break
+        except Exception as e:
+            print(f"    sep week {wk} failed: {e}"); break
+        plays_done = 0
+        for key, rows in frames.items():
+            tgt = target.get(key); dteam = defteam.get(key)
+            if not tgt or not dteam:
+                continue
+            tgt_id, tgt_team = tgt
+            rec = next((r for r in rows if r[0] == tgt_id), None)
+            if rec is None:
+                continue
+            defs = [r for r in rows if r[3] == dteam]
+            if not defs:
+                continue
+            _, rx, ry, _ = rec
+            sep = min(math.hypot(rx - dx, ry - dy) for _, dx, dy, _ in defs)
+            if sep > 40:   # sanity: separation beyond 40yd = bad frame/mismatch, drop
+                continue
+            a = agg.get(tgt_id)
+            if a is None:
+                a = agg[tgt_id] = {"team": tgt_team, "sum": 0.0, "n": 0}
+            a["sum"] += sep; a["n"] += 1
+            plays_done += 1
+        print(f"    sep week {wk}: {len(frames)} pass_arrived plays, {plays_done} scored")
+    data = {}
+    for nid, a in agg.items():
+        if a["n"] < min_targets:
+            continue
+        pl = players.get(nid, {})
+        data[nid] = {"name": pl.get("name", ""), "team": a["team"],
+                     "pos": pl.get("pos", ""), "targets": a["n"],
+                     "avgSepYds": round(a["sum"] / a["n"], 2)}
+    print(f"  separation receivers (>= {min_targets} targets): {len(data)}")
+    return data
+
 def upload_to_r2(r2_key, payload):
     if not CF_ACCOUNT or not CF_TOKEN:
         print(f"    ℹ️  No CF creds — skipping R2 for {r2_key}")
@@ -127,6 +263,34 @@ def main():
     for p in top:
         print(f"    {p['maxSpeedMph']} mph  {p['name']} ({p['team']})")
     print(f"✅ bdb_speed: {len(data)} players")
+
+    # ── Route entropy (player_play.csv only) ──
+    players = load_players()
+    print(f"  players loaded: {len(players)}")
+    ent = build_bdb_route_entropy(players)
+    if ent:
+        ep = {"updated": now.isoformat(), "season": season, "targetYear": year,
+              "source": f"kaggle {OWNER}/{SLUG} (BDB player_play)", "metric": "route_entropy_bits", "data": ent}
+        upload_to_r2(f"nfl/{year}/bdb_route_entropy.json", ep)
+        write_outbox("bdb_route_entropy.json", ep)
+        for p in sorted(ent.values(), key=lambda p: -p["entropyBits"])[:5]:
+            print(f"    {p['entropyBits']} bits  {p['name']} ({p['team']}) {p['distinctRoutes']}/{p['routesRun']}")
+        print(f"✅ bdb_route_entropy: {len(ent)} players")
+    else:
+        print("⛔ bdb_route_entropy: 0 rows — not written")
+
+    # ── Separation (tracking + plays + player_play) ──
+    sep = build_bdb_separation(players)
+    if sep:
+        sp = {"updated": now.isoformat(), "season": season, "targetYear": year,
+              "source": f"kaggle {OWNER}/{SLUG} (BDB tracking)", "metric": "avg_separation_yds", "data": sep}
+        upload_to_r2(f"nfl/{year}/bdb_separation.json", sp)
+        write_outbox("bdb_separation.json", sp)
+        for p in sorted(sep.values(), key=lambda p: -p["avgSepYds"])[:5]:
+            print(f"    {p['avgSepYds']} yd  {p['name']} ({p['team']}) {p['targets']} tgt")
+        print(f"✅ bdb_separation: {len(sep)} players")
+    else:
+        print("⛔ bdb_separation: 0 rows — not written")
 
 if __name__ == "__main__":
     main()
