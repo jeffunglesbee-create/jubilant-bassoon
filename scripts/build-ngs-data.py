@@ -337,6 +337,150 @@ def data_season(data, fallback=None):
     return max(seasons) if seasons else fallback
 
 
+def _walkback_parquet(subdir, stem, year, max_lookback=3):
+    """Fetch {subdir}/{stem}_{year}.parquet, walking back to the most recent
+    published season (same pattern as build_injuries). Returns (table, season)."""
+    for cand in range(year, year - max_lookback - 1, -1):
+        try:
+            tbl = fetch_parquet(f"{NFLVERSE_BASE}/{subdir}/{stem}_{cand}.parquet")
+            if cand != year:
+                print(f"    ↩︎ {stem}_{year} unavailable — using {cand} (most recent published)")
+            return tbl, cand
+        except Exception as e:
+            print(f"    ⚠️  Could not fetch {stem}_{cand}: {e}")
+    return None, None
+
+# ── 5. Snap counts (playing-time share) ──────────────────────────────────────
+def build_snap_counts(year):
+    """Season-average snap share per player. snap_counts has pfr_player_id + name
+    (no gsis_id), so key by TEAM|name and store mean offense_pct/defense_pct, for a
+    consumer to flag starters (e.g. an injured player with offPct>=0.5). Shape
+    verified 2026-08-15 (snap_counts_2025.parquet): player/position/team/offense_pct/
+    defense_pct per game×player. Returns (data, season_used)."""
+    print("\n[NFL Snap Counts]")
+    tbl, season_used = _walkback_parquet("snap_counts", "snap_counts", year)
+    if tbl is None:
+        return {}, None
+    df = tbl.to_pydict(); n = len(df.get("season", []))
+    players = df.get("player") or [""] * n
+    teams   = df.get("team") or [""] * n
+    poss    = df.get("position") or [""] * n
+    offp    = df.get("offense_pct") or [0] * n
+    defp    = df.get("defense_pct") or [0] * n
+    agg = {}
+    for i in range(n):
+        nm = str(players[i] or ""); tm = str(teams[i] or "")
+        if not nm or not tm:
+            continue
+        key = f"{tm}|{nm}"
+        a = agg.get(key)
+        if not a:
+            a = agg[key] = {"name": nm, "team": tm, "position": str(poss[i] or ""),
+                            "off_sum": 0.0, "def_sum": 0.0, "games": 0}
+        a["off_sum"] += (safe_float(offp[i], 3) or 0.0)
+        a["def_sum"] += (safe_float(defp[i], 3) or 0.0)
+        a["games"] += 1
+    data = {}
+    for key, a in agg.items():
+        g = a["games"] or 1
+        data[key] = {"name": a["name"], "team": a["team"], "position": a["position"],
+                     "season": season_used, "games": a["games"],
+                     "offPct": round(a["off_sum"] / g, 3), "defPct": round(a["def_sum"] / g, 3)}
+    print(f"    Players: {len(data)}")
+    return data, season_used
+
+# ── 6. Depth charts (starters) ───────────────────────────────────────────────
+def build_depth_charts(year):
+    """Latest depth-chart snapshot: starters (pos_rank==1) per team, keyed
+    team -> { pos_abb: player_name }. The parquet holds many timestamped
+    snapshots (dt), so take the most recent dt per team. Shape verified
+    2026-08-15 (depth_charts_2025.parquet): dt/team/player_name/pos_abb/pos_rank.
+    Returns (data, season_used)."""
+    print("\n[NFL Depth Charts]")
+    tbl, season_used = _walkback_parquet("depth_charts", "depth_charts", year)
+    if tbl is None:
+        return {}, None
+    df = tbl.to_pydict(); n = len(df.get("team", []))
+    dts   = df.get("dt") or [""] * n
+    teams = df.get("team") or [""] * n
+    ranks = df.get("pos_rank") or [0] * n
+    posab = df.get("pos_abb") or [""] * n
+    names = df.get("player_name") or [""] * n
+    latest = {}
+    for i in range(n):
+        tm = str(teams[i] or "")
+        if not tm:
+            continue
+        d = str(dts[i] or "")
+        if tm not in latest or d > latest[tm]:
+            latest[tm] = d
+    data = {}
+    for i in range(n):
+        tm = str(teams[i] or "")
+        if not tm or str(dts[i] or "") != latest.get(tm):
+            continue
+        if safe_int(ranks[i], 9) != 1:
+            continue  # starters only
+        pa = str(posab[i] or ""); nm = str(names[i] or "")
+        if not pa or not nm:
+            continue
+        data.setdefault(tm, {})[pa] = nm
+    print(f"    Teams: {len(data)}")
+    return data, season_used
+
+# ── 7. Team EPA/play (nflfastR pbp aggregate) ────────────────────────────────
+def build_team_epa(year):
+    """Per-team offensive & defensive EPA/play + offensive success rate, from
+    nflfastR play-by-play. Commodity stat (ESPN/nflfastR publish team EPA). Only
+    pass/rush scrimmage plays with a real epa. Shape verified 2026-08-15
+    (play_by_play_2025.parquet, 372 cols): posteam/defteam/epa/play/pass/rush/
+    success. Returns (data, season_used)."""
+    print("\n[NFL Team EPA]")
+    tbl, season_used = _walkback_parquet("pbp", "play_by_play", year)
+    if tbl is None:
+        return {}, None
+    df = tbl.to_pydict(); n = len(df.get("epa", []))
+    posteam = df.get("posteam") or [None] * n
+    defteam = df.get("defteam") or [None] * n
+    epa     = df.get("epa") or [None] * n
+    play    = df.get("play") or [0] * n
+    success = df.get("success") or [0] * n
+    passv   = df.get("pass") or [0] * n
+    rushv   = df.get("rush") or [0] * n
+    agg = {}
+    def slot(tm):
+        if tm not in agg:
+            agg[tm] = {"off_epa": 0.0, "off_n": 0, "def_epa": 0.0, "def_n": 0, "succ": 0, "succ_n": 0}
+        return agg[tm]
+    for i in range(n):
+        if safe_int(play[i], 0) != 1:
+            continue
+        if safe_int(passv[i], 0) != 1 and safe_int(rushv[i], 0) != 1:
+            continue
+        ef = safe_float(epa[i], 4)
+        if ef is None:
+            continue
+        pt = posteam[i]; dt = defteam[i]
+        if pt:
+            s = slot(str(pt)); s["off_epa"] += ef; s["off_n"] += 1
+            s["succ"] += safe_int(success[i], 0); s["succ_n"] += 1
+        if dt:
+            s = slot(str(dt)); s["def_epa"] += ef; s["def_n"] += 1
+    data = {}
+    for tm, s in agg.items():
+        if s["off_n"] < 50:
+            continue
+        data[tm] = {
+            "team": tm, "season": season_used,
+            "offEpaPerPlay": round(s["off_epa"] / s["off_n"], 3),
+            "defEpaPerPlay": round(s["def_epa"] / s["def_n"], 3) if s["def_n"] else None,
+            "offSuccessRate": round(s["succ"] / s["succ_n"], 3) if s["succ_n"] else None,
+            "offPlays": s["off_n"],
+        }
+    print(f"    Teams: {len(data)}")
+    return data, season_used
+
+
 def emit(results, name, filename, data, season, source, year, updated):
     """Write one table, refusing to publish an empty one.
 
@@ -411,6 +555,33 @@ def main():
     except Exception as e:
         print(f"  ❌ Injuries failed: {e}")
         results["nfl-injuries"] = {"ok": False, "error": str(e)}
+
+    # Snap counts
+    try:
+        snaps, snap_season = build_snap_counts(year)
+        emit(results, "snap-counts", "snap-counts.json", snaps,
+             snap_season, "nflverse snap_counts parquet", year, updated)
+    except Exception as e:
+        print(f"  ❌ Snap counts failed: {e}")
+        results["snap-counts"] = {"ok": False, "error": str(e)}
+
+    # Depth charts (starters)
+    try:
+        depth, depth_season = build_depth_charts(year)
+        emit(results, "depth-charts", "depth-charts.json", depth,
+             depth_season, "nflverse depth_charts parquet", year, updated)
+    except Exception as e:
+        print(f"  ❌ Depth charts failed: {e}")
+        results["depth-charts"] = {"ok": False, "error": str(e)}
+
+    # Team EPA/play (pbp aggregate)
+    try:
+        tepa, tepa_season = build_team_epa(year)
+        emit(results, "team-epa", "team_epa.json", tepa,
+             tepa_season, "nflverse pbp aggregate", year, updated)
+    except Exception as e:
+        print(f"  ❌ Team EPA failed: {e}")
+        results["team-epa"] = {"ok": False, "error": str(e)}
 
     # Summary
     succeeded = sum(1 for r in results.values() if r.get("ok"))

@@ -28,9 +28,9 @@ jobs:
         run: |
           git config user.email "nfl-ngs@field"
           git config user.name "NFL-NGS-Bot"
-          git add outbox/nfl/ngs-passing.json outbox/nfl/ngs-receiving.json outbox/nfl/ngs-rushing.json outbox/nfl/nfl-injuries.json
+          git add outbox/nfl/ngs-passing.json outbox/nfl/ngs-receiving.json outbox/nfl/ngs-rushing.json outbox/nfl/nfl-injuries.json outbox/nfl/snap-counts.json outbox/nfl/depth-charts.json outbox/nfl/team_epa.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "NFL-B: NGS passing/receiving/rushing + injuries $(date -u +%Y-%m-%d) [skip ci]"
+          git commit -m "NFL-B: NGS + injuries + snaps + depth + team-EPA $(date -u +%Y-%m-%d) [skip ci]"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
             sleep $((i * 5))
