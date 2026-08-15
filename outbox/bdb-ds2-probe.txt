@@ -1,6 +1,25 @@
 
-[files-list page 1] HTTP 400
-    (no files parsed) raw head: {"code":400,"message":"Invalid field \u0027page\u0027"}
+[datasets] HTTP 200
+    kaggle_evaluation/__init__.py  (None bytes)
+    kaggle_evaluation/core/__init__.py  (82 bytes)
+    kaggle_evaluation/core/base_gateway.py  (23342 bytes)
+    kaggle_evaluation/core/generated/__init__.py  (82 bytes)
+    kaggle_evaluation/core/generated/kaggle_evaluation_pb2.py  (4074 bytes)
+    kaggle_evaluation/core/generated/kaggle_evaluation_pb2_grpc.py  (2662 bytes)
+    kaggle_evaluation/core/kaggle_evaluation.proto  (1789 bytes)
+    kaggle_evaluation/core/relay.py  (18116 bytes)
+    kaggle_evaluation/core/templates.py  (5103 bytes)
+    kaggle_evaluation/nfl_gateway.py  (4250 bytes)
+    kaggle_evaluation/nfl_inference_server.py  (298 bytes)
+    test.csv  (177525 bytes)
+    test_input.csv  (8509084 bytes)
+    train/input_2023_w01.csv  (48950314 bytes)
+    train/input_2023_w02.csv  (49485029 bytes)
+    train/input_2023_w03.csv  (51062128 bytes)
+    train/input_2023_w04.csv  (46685806 bytes)
+    train/input_2023_w05.csv  (43574971 bytes)
+    train/input_2023_w06.csv  (46320079 bytes)
+    train/input_2023_w07.csv  (39972688 bytes)
 
-[files-list page 2] HTTP 400
-    (no files parsed) raw head: {"code":400,"message":"Invalid field \u0027page\u0027"}
+[datasets] HTTP 200
+    (no files parsed) raw head: {"subtitleNullable":"","creatorNameNullable":"Kh0a","totalBytesNullable":864820234,"licenseNameNullable":"Apache 2.0","descriptionNullable":"dataset for NFL Big Data Bowl 2026 - Prediction\n\nhttps://
