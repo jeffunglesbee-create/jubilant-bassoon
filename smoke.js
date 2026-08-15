@@ -1022,6 +1022,12 @@ assert('A199 — UFL-EPA: card template EPA block present',
   html.includes('_buildUFLEpaHTML') && html.includes('ufl-epa-live'),
   'EPA block must be present in card template and CSS');
 
+assert('A-NFLEPA-1 — NFL-EPA: ESPN PBP EPA wired (functions + route + gate + startup)',
+  html.includes('_computeESPNPlayEPA') && html.includes('_pollNFLEpa') &&
+  html.includes('nflEpaInit') && html.includes('/espn-summary/sports/football/nfl/summary') &&
+  html.includes("['UFL','NFL'].includes(g._sport)") && html.includes('setTimeout(nflEpaInit'),
+  'NFL EPA must be wired: _computeESPNPlayEPA/_pollNFLEpa/nflEpaInit, espn-summary route, NFL card gate, startup call');
+
 // PLAYER_SPEED/getRegressionAlert dropped 2026-07-12 (Rule 63 dead-code
 // cleanup): confirmed via direct grep, zero real call sites anywhere in
 // index.html -- removed from index.html along with TEAM_ABS_RANKINGS/
