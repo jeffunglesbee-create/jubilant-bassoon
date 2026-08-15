@@ -1,60 +1,53 @@
 #!/usr/bin/env python3
-"""PRE-BUILD probe (Rule 68) for the BDB tracking pipeline. With KAGGLE creds now
-in CI, discover: (1) does auth work, (2) which Big Data Bowl competitions have
-their rules accepted (200) vs not (403), (3) the real file list/schema. NEVER
-prints the key — only competition refs, file names, sizes, HTTP statuses."""
-import os, urllib.request, urllib.error, base64, json
-U = os.environ.get("KAGGLE_USERNAME", "")
-K = os.environ.get("KAGGLE_KEY", "")
+"""Probe the two PUBLIC BDB datasets the user identified (datasets, not
+competitions -> no rules-acceptance gate). Tests no-auth vs auth, lists access,
+and stream-reads the header of a tracking CSV to get the real schema. Never
+prints the key — only lengths, statuses, and CSV column headers."""
+import os, urllib.parse, urllib.request, urllib.error, base64, re
+U = (os.environ.get("KAGGLE_USERNAME", "") or "").strip()
+K = (os.environ.get("KAGGLE_KEY", "") or "").strip()
 os.makedirs("outbox", exist_ok=True)
 out = []
 def log(s): print(s); out.append(s)
-if not U or not K:
-    log("NO KAGGLE CREDS in env — secrets not wired to this workflow")
-    open("outbox/kaggle-probe.txt", "w").write("\n".join(out)); raise SystemExit(1)
-import re
-Us, Ks = U.strip(), K.strip()
-log(f"[creds] USERNAME raw len {len(U)} stripped {len(Us)} | KEY raw len {len(K)} stripped {len(Ks)}")  # lengths only
-log(f"[creds] USERNAME had surrounding whitespace: {U != Us} | KEY had surrounding whitespace: {K != Ks}")
-log(f"[creds] KEY stripped is 32-hex (expected shape): {bool(re.fullmatch(r'[0-9a-fA-F]{32}', Ks))}")
-log(f"[creds] KEY stripped char classes: hex={bool(re.fullmatch(r'[0-9a-fA-F]+', Ks))} alnum={Ks.isalnum()}")
-# Use STRIPPED values — trailing newline in a pasted secret is the classic 401 cause.
-U, K = Us, Ks
-AUTH = "Basic " + base64.b64encode(f"{U}:{K}".encode()).decode()
-def get(url):
-    req = urllib.request.Request(url, headers={"Authorization": AUTH, "User-Agent": "FIELD/1.0"})
+log(f"[creds] USERNAME len {len(U)} | KEY len {len(K)} | KEY is 32-hex: {bool(re.fullmatch(r'[0-9a-fA-F]{32}', K))}")
+AUTH = "Basic " + base64.b64encode(f"{U}:{K}".encode()).decode() if (U and K) else None
+
+DATASETS = [
+    ("alexandermeau", "nfl-big-data-bowl-archived-data-2025"),
+    ("llkh0a", "nfl-big-data-bowl-2026-prediction-public"),
+]
+
+def req(url, auth=False, first_line_only=False):
+    h = {"User-Agent": "FIELD/1.0"}
+    if auth and AUTH: h["Authorization"] = AUTH
+    r = urllib.request.Request(url, headers=h)
     try:
-        with urllib.request.urlopen(req, timeout=45) as r:
-            return r.status, r.read()
+        with urllib.request.urlopen(r, timeout=60) as resp:
+            if first_line_only:
+                raw = resp.readline(8192)
+                return resp.status, raw
+            return resp.status, resp.read(4096)
     except urllib.error.HTTPError as e:
-        return e.code, e.read()
+        return e.code, (e.read() or b"")[:200]
     except Exception as e:
-        return -1, str(e).encode()
-# 1. auth check + discover BDB competitions
-st, body = get("https://www.kaggle.com/api/v1/competitions/list?search=big%20data%20bowl")
-log(f"\n[auth] competitions/list search='big data bowl' -> HTTP {st}")
-if st == 200:
-    try:
-        for c in json.loads(body)[:25]:
-            log(f"   comp: {c.get('ref')}  deadline={c.get('deadline','')}  title={c.get('title','')[:60]}")
-    except Exception as e:
-        log(f"   parse err {e}: {body[:200]!r}")
-else:
-    log(f"   body: {body[:300].decode(errors='replace')}")
-# 2. file lists per candidate competition (200=rules accepted, 403=not accepted)
-for comp in ["nfl-big-data-bowl-2025", "nfl-big-data-bowl-2024", "nfl-big-data-bowl-2023",
-             "nfl-big-data-bowl-2022", "nfl-big-data-bowl-2021"]:
-    st, body = get(f"https://www.kaggle.com/api/v1/competitions/data/list/{comp}")
-    log(f"\n[files] {comp} -> HTTP {st}")
-    if st == 200:
-        try:
-            data = json.loads(body)
-            files = data if isinstance(data, list) else data.get("files", data.get("datasetFiles", []))
-            for f in files:
-                log(f"   {f.get('name') or f.get('ref')}  bytes={f.get('totalBytes') or f.get('size')}")
-        except Exception as e:
-            log(f"   parse err {e}: {body[:200]!r}")
-    else:
-        log(f"   body: {body[:200].decode(errors='replace')}")
+        return -1, str(e).encode()[:200]
+
+for owner, slug in DATASETS:
+    log(f"\n===== dataset {owner}/{slug} =====")
+    view = f"https://www.kaggle.com/api/v1/datasets/view/{owner}/{slug}"
+    for auth in (False, True):
+        st, body = req(view, auth=auth)
+        log(f"  view [{'auth' if auth else 'noauth'}] -> HTTP {st}  {body[:120].decode(errors='replace')}")
+    # try a tracking file header via single-file download (both plain and folder-prefixed)
+    for fn in ("tracking_week_1.csv", "big-data-bowl-data/tracking_week_1.csv"):
+        url = f"https://www.kaggle.com/api/v1/datasets/download/{owner}/{slug}?file_name={urllib.parse.quote(fn)}"
+        st, body = req(url, auth=True, first_line_only=True)
+        hdr = body.decode(errors='replace').strip()
+        # a real CSV header contains commas + known tracking cols; a zip/binary won't
+        looks_csv = ("," in hdr and not hdr.startswith("PK"))
+        log(f"  dl file_name={fn} [auth] -> HTTP {st}  csv_header={looks_csv}")
+        if looks_csv:
+            log(f"    HEADER: {hdr[:400]}")
+
 open("outbox/kaggle-probe.txt", "w").write("\n".join(out))
 print("\n[wrote outbox/kaggle-probe.txt]")
