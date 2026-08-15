@@ -1,0 +1,123 @@
+{
+  "probe": "nfl-epa",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "ts": "2026-08-15T02-11-46",
+  "verdict": "PASS",
+  "nflSectionPresent": true,
+  "nflCardCount": 11,
+  "liveNFLCardCount": 3,
+  "epaChipsOnNFLCards": 4,
+  "totalEpaChips": 3,
+  "sampleChipText": "-1.37 EPA3rd & 10 @ OWN 44-2.62 drive · 3 pl",
+  "nflSectionInData": false,
+  "nflGamesInData": 0,
+  "gamesWithEpaLive": 0,
+  "sampleGameId": null,
+  "relayHits": [
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/baseball/mlb/summary?event=401816524"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/baseball/mlb/summary?event=401816519"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/baseball/mlb/summary?event=401816521"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/baseball/mlb/summary?event=401816522"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/baseball/mlb/summary?event=401816517"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/baseball/mlb/summary?event=401816520"
+    },
+    {
+      "status": 404,
+      "url": "/espn-summary/sports/soccer/fifa.world/summary?event=401857143"
+    },
+    {
+      "status": 200,
+      "url": "/v2/games?sport=nfl&date=2026-08-14"
+    },
+    {
+      "status": 200,
+      "url": "/v2/games?sport=nfl&date=2026-08-14"
+    },
+    {
+      "status": 200,
+      "url": "/v2/games?sport=nfl&date=2026-08-15"
+    },
+    {
+      "status": 200,
+      "url": "/v2/games?sport=nfl&date=2026-08-15"
+    },
+    {
+      "status": 200,
+      "url": "/v2/games?sport=nfl&date=2026-08-16"
+    },
+    {
+      "status": 200,
+      "url": "/v2/games?sport=nfl&date=2026-08-16"
+    },
+    {
+      "status": 200,
+      "url": "/nflverse/epa_table.json"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/football/nfl/summary?event=401873278"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/football/nfl/summary?event=401873278"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/football/nfl/summary?event=401873276"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/football/nfl/summary?event=401873276"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/football/nfl/summary?event=401873277"
+    },
+    {
+      "status": 200,
+      "url": "/espn-summary/sports/football/nfl/summary?event=401873277"
+    }
+  ],
+  "liveCardIds": [
+    {
+      "dataGameId": "espn:401873278",
+      "home": "Atlanta Falcons",
+      "away": "Denver Broncos"
+    },
+    {
+      "dataGameId": "espn:401873276",
+      "home": "New York Jets",
+      "away": "Tampa Bay Buccaneers"
+    },
+    {
+      "dataGameId": "espn:401873277",
+      "home": "Washington Commanders",
+      "away": "Miami Dolphins"
+    }
+  ],
+  "consoleErrorCount": 162,
+  "consoleErrorsSample": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ]
+}
