@@ -70,6 +70,8 @@ def build_bdb_speed(max_weeks=9):
                         s = float(row.get("s") or 0)
                     except ValueError:
                         continue
+                    if s > 11.73:   # >24 mph = tracking glitch (human max ~23 mph); drop frame
+                        continue
                     b = best.get(nid)
                     if b is None or s > b["maxS"]:
                         best[nid] = {"name": row.get("displayName", ""), "club": row.get("club", ""), "maxS": s}
