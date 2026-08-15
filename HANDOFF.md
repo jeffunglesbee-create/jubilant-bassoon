@@ -18,9 +18,16 @@ is undefined for NFL (V2 objects have `espnEventId:null`); (3) NFL `_gameId` is 
 `"espn:NNN"` — bare id needed for `/espn-summary` (strip the prefix). Shape verified
 14/14 vs a live game (Broncos@Falcons) before a line was written.
 
-**Open (STAGED, Rule 74):** live-card DOM render — needs a live NFL game + a browser
-against `*.workers.dev` (sandbox 403s it). Unblocks whenever an NFL game is live; verify
-via CI-as-proxy Playwright asserting `.ufl-epa-live` on an NFL card.
+**VERIFIED (was STAGED):** live-card DOM render confirmed via CI-as-proxy Playwright
+(`nfl-epa-probe.yml`). Manifest `outbox/nfl-epa-probe-manifest-2026-08-15T02-11-46.json`
+verdict **PASS**, `epaChipsOnNFLCards:4`, sample chip
+`"-1.37 EPA · 3rd & 10 @ OWN 44 · -2.62 drive · 3 pl"`. Getting there took 4 more fixes
+the probe caught (preseason gate 2026-08-06, `injectV2SportSection('nfl')`, `nflEpaInit`
+arm-on-season-flag, all in `61ffa1e`/`479dfd9`) PLUS a relay production bug:
+`/v2/games?sport=nfl` 500'd (CF 1101) on any live game — the WC soccer WP loop threw on
+football's numeric round. Fixed in field-relay-nba `f949456` (session doc:
+`field-relay-nba/outbox/cc-session-2026-08-15-v2games-live-500.md`). Client SW now
+2026-08-14c. Both repos on main, deploys green.
 
 ---
 
