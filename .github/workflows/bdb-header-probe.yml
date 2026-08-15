@@ -1,0 +1,25 @@
+name: BDB Header Probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run header probe
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: python3 scripts/bdb-header-probe.py
+      - name: Commit
+        if: always()
+        run: |
+          git config user.email "bdb-probe@field"
+          git config user.name "BDB-Probe"
+          git add outbox/bdb-header-probe.txt || true
+          git diff --cached --quiet && echo nothing && exit 0
+          git commit -m "bdb header probe [skip ci]"
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
