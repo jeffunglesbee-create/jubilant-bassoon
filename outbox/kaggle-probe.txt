@@ -1,4 +1,7 @@
-[creds] KAGGLE_USERNAME present (len 16), KAGGLE_KEY present (len 37)
+[creds] USERNAME raw len 16 stripped 16 | KEY raw len 37 stripped 37
+[creds] USERNAME had surrounding whitespace: False | KEY had surrounding whitespace: False
+[creds] KEY stripped is 32-hex (expected shape): False
+[creds] KEY stripped char classes: hex=False alnum=False
 
 [auth] competitions/list search='big data bowl' -> HTTP 401
    body: {"code":401,"message":"Unauthenticated"}
