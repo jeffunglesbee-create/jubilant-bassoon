@@ -1,5 +1,29 @@
 # FIELD HANDOFF
 
+## Session 2026-08-14 — NFL EPA live wiring (P1-1/P1-2) — the prior carry-forward, now DONE
+
+Session doc (Rule 67): `outbox/cc-session-2026-08-14-nfl-epa-wiring.md` — DONE, confidence 96
+Commit: `6e8b86c` (client wiring + SW bump 2026-08-12f → 2026-08-14a)
+Deploy: `deploy-gate.yml` run 31857007002 — SUCCESS. smoke 966/0 (adds `A-NFLEPA-1`).
+Relay probe scripts: `f1204a3`, `118045f` (CI-as-proxy shape + game-id verification).
+
+**Closes the prior session's "still open" item.** Live NFL games now get the same
+per-play EPA chip UFL had, reading the (now-real) `_epLookup` table. New inline
+`field.js` fns: `_computeESPNPlayEPA` / `_fetchNFLGameEpa` / `_pollNFLEpa` /
+`nflEpaInit`; card gate `UFL` → `[UFL,NFL]`; `setTimeout(nflEpaInit,4000)`.
+
+Three stale Drive-doc assumptions caught PRE-code by probing live data (Rule 72):
+(1) the live app uses inline `field.js`, not the `epa.js` module; (2) `findESPNScore(g).id`
+is undefined for NFL (V2 objects have `espnEventId:null`); (3) NFL `_gameId` is prefixed
+`"espn:NNN"` — bare id needed for `/espn-summary` (strip the prefix). Shape verified
+14/14 vs a live game (Broncos@Falcons) before a line was written.
+
+**Open (STAGED, Rule 74):** live-card DOM render — needs a live NFL game + a browser
+against `*.workers.dev` (sandbox 403s it). Unblocks whenever an NFL game is live; verify
+via CI-as-proxy Playwright asserting `.ufl-epa-live` on an NFL card.
+
+---
+
 ## Session 2026-08-15b — EPA table rebuild (had never shipped)
 
 Session doc (Rule 67): `outbox/cc-session-2026-08-15-epa-table-rebuild.md` — DONE, confidence 96
