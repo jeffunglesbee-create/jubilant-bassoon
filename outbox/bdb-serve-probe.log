@@ -1,4 +1,7 @@
+  PASS bdb_speed.json  HTTP 200  src=?  rows=1648  metric=max_speed_mph  sample.maxSpeedMph=14.67
   PASS bdb_separation.json  HTTP 200  src=?  rows=250  metric=avg_separation_yds  sample.avgSepYds=2.57
   PASS bdb_route_entropy.json  HTTP 200  src=?  rows=354  metric=route_entropy_bits  sample.entropyBits=2.64
+  PASS bdb_xblock_pass_rush.json  HTTP 200  src=?  rows=321  metric=pass_rush_pressure  sample.pressureRate=0.083
+  PASS bdb_tendency_fingerprint.json  HTTP 200  src=?  rows=32  metric=tendency_fingerprint  sample.playActionRate=0.103
 
-== RESULT: 2/2 serve non-empty ==
+== RESULT: 5/5 serve non-empty ==
