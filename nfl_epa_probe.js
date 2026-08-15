@@ -30,7 +30,7 @@ const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   await page.waitForFunction(() => {
     return [...document.querySelectorAll('[data-sport="NFL"]')]
       .some(c => c.querySelector('.ufl-epa-live'));
-  }, { timeout: 45000 }).catch(() => {});
+  }, { timeout: 75000 }).catch(() => {});
 
   // Give a poll cycle a moment to finish injecting across all live games.
   await page.waitForTimeout(2000);
