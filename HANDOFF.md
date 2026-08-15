@@ -1,5 +1,26 @@
 # FIELD HANDOFF
 
+## Session 2026-08-15 — P3 BDB separation + route entropy (E2E) ✅
+
+Session doc: `outbox/cc-session-2026-08-15-p3-bdb-sep-route.md`. Both repos on main.
+Client SW 2026-08-15d, smoke 974/0. Serve-probe artifact: `outbox/bdb-serve-probe.log`
+→ `bdb_separation.json 200 rows=250` + `bdb_route_entropy.json 200 rows=354`.
+
+Built the two remaining STAGED BDB metrics E2E (probe-first, Rule 68):
+- **Route entropy** — Shannon entropy of routeRan mix (player_play.csv only), 354
+  players. Top: Kupp/Deebo/Hill/Pitts ~3.3 bits. Client **Route tree** scout row.
+- **Separation** — targeted receiver vs nearest defender at pass_arrived frame, 250
+  players, RB-led (correct). Client **Top separation** scout row.
+Relay `bd395e9` (R2-first fix — first serve-probe 404'd; the two files were only in
+NFLVERSE_OUT_ALLOWED, not NFL_R2_FILES; bdb_speed was in both — Rule 77). Client
+`8d782a6` (getTeamTopSep/getTeamTopRoute, A-NFLSEP-1/A-NFLRTE-1).
+
+Dataset 2 (llkh0a) probed: live BDB 2026 competition dataset (2023 input-format
+tracking, no plays/player_play metadata) — NOT a drop-in source; dataset 1 stays.
+
+Still-STAGED (no builder, no user request): bdb_xblock_pass_rush, bdb_tendency_fingerprint.
+
+
 ## Session 2026-08-15 — P3 BDB real-tracking: player max speed (E2E)
 
 Session doc: `outbox/cc-session-2026-08-15-p3-bdb-tracking.md`. Both repos on main.
