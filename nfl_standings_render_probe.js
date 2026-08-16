@@ -10,7 +10,11 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 3600 } });
-  const m = { url: URL, ts: TS };
+  const m = { url: URL, ts: TS, consoleErrors: [], pageErrors: [], espnRequests: [] };
+  page.on('console', msg => { if (msg.type() === 'error' || msg.type() === 'warning') m.consoleErrors.push(msg.text().slice(0, 300)); });
+  page.on('pageerror', e => m.pageErrors.push(String(e).slice(0, 300)));
+  page.on('response', r => { const u = r.url(); if (u.includes('standings')) m.espnRequests.push(`${r.status()} ${u.slice(0, 150)}`); });
+  page.on('requestfailed', r => { const u = r.url(); if (u.includes('standings')) m.espnRequests.push(`FAILED ${r.failure()?.errorText || '?'} ${u.slice(0, 150)}`); });
   try {
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForSelector('.game-card', { timeout: 45000 }).catch(() => {});
@@ -40,13 +44,17 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
     });
     m.nflStandingsBtnFound = clicked;
     if (clicked) {
-      await page.waitForTimeout(6000); // ESPN standings fetch
+      await page.waitForTimeout(12000); // ESPN standings fetch (generous: real network)
       m.render = await page.evaluate(() => {
         const btn = [...document.querySelectorAll('.standings-btn')].find(b => (b.getAttribute('onclick') || '').includes("toggleStandings(this,'NFL'"));
         const card = btn?.closest('.game-card');
         const p = card?.querySelector('.standings-panel');
         const rows = p ? [...p.querySelectorAll('.standings-table tr')] : [];
         return { buttonLabel: (btn?.textContent || '').trim(),
+                 btnFound: !!btn, cardFound: !!card,
+                 panelsAnywhereInDoc: document.querySelectorAll('.standings-panel').length,
+                 cardClasses: card ? card.className : null,
+                 cardSportAttr: card ? (card.dataset.sport || null) : null,
                  panelPresent: !!p, panelVisible: p ? getComputedStyle(p).display !== 'none' : false,
                  rowCount: rows.length, sampleRows: rows.map(r => r.textContent.trim().replace(/\s+/g, ' ')).filter(t => t.length > 2).slice(0, 4) };
       });
