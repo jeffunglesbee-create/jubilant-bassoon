@@ -25,13 +25,29 @@
 #   Settings → Actions → General → Workflow permissions →
 #   "Read and write permissions" → Save
 #
-# ── SCHEDULE ────────────────────────────────────────────────────────────────
-# Every 30 minutes automatically. Manual trigger always available.
-# Common cron values:
-#   Every 15 min: '*/15 * * * *'
-#   Every 30 min: '*/30 * * * *'  ← current
-#   Every hour:   '0 * * * *'
-#   Every 6 hours: '0 */6 * * *'
+# ── DORMANT BY DESIGN (2026-08-16) ──────────────────────────────────────────
+# The `schedule:` trigger was REMOVED. Rationale, verified not assumed:
+#
+#   * DRIVE_FILE_ID has never been set. A live run log shows FILE_ID="" and the
+#     skip helper firing — every one of ~1,440 runs/month did nothing but burn
+#     Actions minutes.
+#   * The Drive→GitHub workflow this automates is obsolete. The Drive archive
+#     ("FIELD — Global Sports Intelligence") stops dead at 2026-05-15, which is
+#     when git took over as the source of truth. It automates a dead process.
+#   * It is a loaded gun. Drive's index.html is 555,765 bytes; the repo's is
+#     2,656,503. All four download-stage guards (size>100KB, <title>FIELD,
+#     buildTodaySchedule, renderAll) PASS on the stale May file, so setting the
+#     secret today would commit a 3-month-old app over current and deploy it.
+#   * The SW_VERSION staleness guard below does NOT catch this. It compares
+#     lexicographically, and the May-era format 'YYYYMMDD-N' sorts ABOVE
+#     today's 'YYYY-MM-DD[letter]' ('-' 0x2D < '0' 0x30) — so a May file reads
+#     as NEWER and commits. Format-change blind spot, hence the size guard added
+#     in the validate step.
+#
+# To re-enable: set DRIVE_FILE_ID, then fire manually via workflow_dispatch or
+# by pushing outbox/.trigger-autodeploy. Restoring `schedule:` also requires
+# running scripts/build-bundle.mjs before commit (see CLAUDE.md — the raw Drive
+# HTML bypasses the esbuild step that deploy-gate.yml performs).
 #
 # ── CHANGE LOG ───────────────────────────────────────────────────────────────
 # v4 (May 15 2026): Fixed merge conflict on concurrent pushes.
@@ -50,8 +66,7 @@
 name: FIELD Auto-Deploy
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes
+  # NO schedule: — see "DORMANT BY DESIGN" above. Opt-in only.
   workflow_dispatch:          # Manual trigger from Actions tab or GitHub mobile app
   push:
     paths:
@@ -130,6 +145,19 @@ jobs:
           if [ "$SIZE" -lt 500000 ]; then
             echo "❌ Drive file too small (${SIZE} bytes, need >500KB) — degraded export rejected"
             echo "   Upload a complete index.html to Drive before auto-deploy will accept it."
+            exit 1
+          fi
+
+          # ── Shrink guard — reject any file materially smaller than current ─
+          # The absolute >500KB floor above is a May-2026 number and the app has
+          # since grown past 2.6MB, so it no longer discriminates. This compares
+          # against the CURRENT repo file instead, and unlike the SW_VERSION
+          # check it cannot be defeated by a version-format change.
+          OLD_SIZE=$(wc -c < index.html)
+          MIN_SIZE=$(( OLD_SIZE * 9 / 10 ))
+          if [ "$SIZE" -lt "$MIN_SIZE" ]; then
+            echo "❌ Drive file is ${SIZE} bytes vs repo ${OLD_SIZE} — below the 90% floor (${MIN_SIZE})."
+            echo "   This would delete $(( OLD_SIZE - SIZE )) bytes of the live app. Commit blocked."
             exit 1
           fi
 
