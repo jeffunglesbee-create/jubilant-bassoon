@@ -61,6 +61,25 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
         m.timeline.push({ atMs: m.timeline.reduce((a, x) => a + 0, 0) || wait, ...snap });
       }
       m.panelEverAppeared = m.timeline.some(t => t.panels > 0);
+
+      // DECISIVE: replicate fetchESPNStandings' exact call IN THE PAGE. A 200 in
+      // the network log only proves the response reached the browser — it does not
+      // prove JS could read it (CORS) or that the parse yielded entries. This
+      // separates: blocked-by-CORS vs parse-threw vs parsed-but-zero-entries.
+      m.espnDirect = await page.evaluate(async () => {
+        const url = 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings';
+        try {
+          const r = await fetch(url);
+          let j = null, parseErr = null;
+          try { j = await r.json(); } catch (e) { parseErr = String(e); }
+          if (!j) return { ok: r.ok, status: r.status, parseErr };
+          const groups = j.children || [j];
+          let entries = 0;
+          groups.forEach(g => { entries += (g.standings?.entries || []).length; });
+          return { ok: r.ok, status: r.status, groups: groups.length, entries,
+                   topKeys: Object.keys(j).slice(0, 8) };
+        } catch (e) { return { fetchThrew: String(e) }; }
+      });
       m.render = await page.evaluate(() => {
         const btn = [...document.querySelectorAll('.standings-btn')].find(b => (b.getAttribute('onclick') || '').includes("toggleStandings(this,'NFL'"));
         const card = btn?.closest('.game-card');
