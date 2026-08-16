@@ -67,7 +67,10 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
       // prove JS could read it (CORS) or that the parse yielded entries. This
       // separates: blocked-by-CORS vs parse-threw vs parsed-but-zero-entries.
       m.espnDirect = await page.evaluate(async () => {
-        const url = 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings';
+        // Compare the BARE url (the old builder) against the PARAMETERISED one
+        // (the fix), so the manifest proves which shape ESPN actually serves.
+        const y = (new Date().getMonth() >= 7) ? new Date().getFullYear() : new Date().getFullYear() - 1;
+        const url = `https://site.api.espn.com/apis/v2/sports/football/nfl/standings?limit=100&season=${y}&seasontype=2`;
         try {
           const r = await fetch(url);
           let j = null, parseErr = null;

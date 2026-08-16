@@ -19014,7 +19014,20 @@ async function fetchESPNStandings(sportName){
   const cacheKey = map.sport+"/"+map.league;
   if(espnStandingsCache[cacheKey]) return espnStandingsCache[cacheKey];
   try{
-    const url = `${ESPN_STANDINGS_BASE}/${map.sport}/${map.league}/standings`;
+    // ESPN's v2 standings endpoint returns HTTP 200 with an ERROR BODY when
+    // called without query params — `{error, cached}` instead of `children[]`.
+    // Proven in-page against the live site 2026-08-16:
+    //   outbox/nfl-standings-manifest-2026-08-16T03-19-43-999Z.json
+    //   espnDirect: { ok:true, status:200, entries:0, topKeys:["error","cached"] }
+    // The parse below then yields zero entries, this returns null, and
+    // toggleStandings silently restores the button — which is why the standings
+    // dropdown opened nothing for EVERY v2 sport (MLB, NBA, NHL, NFL), not just
+    // NFL. The calls that do work in the same page all carry params, e.g.
+    // basketball/nba/standings?limit=100&season=2026&seasontype=2.
+    // seasontype=2 = regular season, which is the record context this panel wants
+    // (the map's own comment says the Playoffs entries want regular-season records).
+    const _stYear = (new Date().getMonth() >= 7) ? new Date().getFullYear() : new Date().getFullYear() - 1;
+    const url = `${ESPN_STANDINGS_BASE}/${map.sport}/${map.league}/standings?limit=100&season=${_stYear}&seasontype=2`;
     const r = await fetch(url);
     if(!r.ok) throw new Error("ESPN standings HTTP "+r.status);
     const json = await r.json();
@@ -27361,7 +27374,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-15i';
+  const SW_VERSION = '2026-08-15j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
