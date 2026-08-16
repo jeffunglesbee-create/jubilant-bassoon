@@ -1,148 +1,136 @@
-# CC Session — 2026-08-16 — NFL standings dropdown fix + data-gated playoff tracker
+# CC Session — 2026-08-16 — NFL standings dropdown + data-gated playoff tracker
 
 ## Scope
 (1) Verify the NFL ▼ Standings dropdown works. (2) Build a data-gated NFL playoff
-seeding tracker. Both driven by probe-first discipline; both adversarially reviewed
-before any code was written.
+seeding tracker. Probe-first throughout; both adversarially reviewed before coding.
 
 ## HEAD progression
-Start `03dd725` (smoke 977/0, SW 2026-08-15f) → end `f3e0115` (smoke 980/0, SW 2026-08-15h).
-Deploy-gate verified published: probe manifest records `swVersion: "2026-08-15h"`.
+`03dd725` (smoke 977/0, SW 2026-08-15f) → `9795c08` (smoke 981/0, SW 2026-08-15j).
 
-## THE HEADLINE FINDING — the standings dropdown was BROKEN for NFL
-A prior claim in this session ("standings already exist for NFL ✅") was WRONG. It was
-made by reading `ESPN_STANDINGS_MAP` and seeing a `'Football (NFL)'` key — i.e. reading
-the map, not the runtime path. Rule 48 Class-A violation (verify deployed behavior, not
-code). The Playwright probe caught it:
+## Headline: the dropdown was broken, and it was FOUR stacked defects
+An in-session claim that "NFL standings already work ✅" was WRONG — it read
+ESPN_STANDINGS_MAP instead of the runtime path (Rule 48 Class A). A Playwright
+probe disproved it, then each fix revealed the next defect underneath:
 
+| # | Defect | Symptom | Commit | Status |
+|---|--------|---------|--------|--------|
+| 1 | `'NFL'` key mismatch — gate reads `sec.sport` (`'NFL'`), map keyed `'Football (NFL)'` | zero standings buttons on NFL cards | `3fb4b31` | FIXED, proven |
+| 2 | `toggleStandings` never bridged to `window` | `ReferenceError` on click — **all 7 unbridged controls, app-wide** | `1fecea4` | FIXED, proven |
+| 3 | `entries.slice(0,12)` on AFC+NFC concatenated (32 rows) | NFC card opened a table with NEITHER team | `6b0264f` | FIXED offline |
+| 4 | ESPN v2 standings URL returns **HTTP 200 with an error body** | fetch "succeeds", 0 entries, silent restore, no panel | `f05da5d` | **NOT FIXED — see below** |
+
+Each of 1–3 is independently correct and verified. **The dropdown still does not
+open a panel.** Do not report this feature as working.
+
+### Defect 4 — current state, honestly
+In-page fetch of the bare URL (proven, `nfl-standings-manifest-2026-08-16T03-19-43-999Z.json`):
 ```
-outbox/nfl-standings-manifest-2026-08-15T23-48-36-793Z.json   (PRE-FIX)
-  standingsBtnSports: ["Baseball (MLB)", "MLS Soccer"]   <- 30 buttons, ZERO for NFL
-  cardSports:         [..., "NFL", ...]                  <- NFL games present
-  nflStandingsBtnFound: false
+espnDirect: { ok:true, status:200, entries:0, topKeys:["error","cached"] }
 ```
+So `fetchESPNStandings` parsed zero entries → returned null → `toggleStandings`
+took its silent-restore path. That also explains `mlbDropdownWorks:false` recorded
+by the window-bridge probe — this was never NFL-specific; MLB/NBA/NHL share the
+builder.
 
-ROOT CAUSE: the button gate (field.js ~8031) reads `sec.sport`.
-`injectV2SportSection('nfl','NFL')` pushes `sport:'NFL'`, but the map was keyed only
-`'Football (NFL)'` → lookup missed → NFL cards rendered no standings button at all.
+I inferred the cause was missing query params (every working standings call in the
+same page carries them) and shipped `?limit=100&season=<y>&seasontype=2` in
+`f05da5d`, SW 2026-08-15j. **That fix did NOT work.** The next manifest, on the
+deployed 2026-08-15j build, still shows `{error, cached}` with `entries:0`.
 
-## Commits (single-concern, all on main)
+Corrected reading of the evidence: the SAME url returns real standings from a CI
+node runner but an error body from the browser, so the discriminator is the request
+ORIGIN, not the params. Supporting signal: MLS standings DO work in this same page
+and use a different base path — `/apis/site/v2/` rather than `/apis/v2/`.
 
-1. `bb0460d` — fix: only claim '(leads)' for a group's top entry (journalism context).
-   PREREQUISITE, not scope creep: `fmt()` returned `(leads)` for ANY team with
-   gamesBehind 0 or NaN. NFL conference GB takes values {0, 0.5, 1} across 16 AFC teams
-   (verified 2026-08-16), so several teams sit at 0. Once the standings fix warmed
-   `espnStandingsCache['football/nfl']`, journalism prompts would have read
-   "Bills: 1-0 (leads) · Steelers: 1-0 (leads)". Rule 1. Now only the first row per
-   group (division||group key) may claim the position.
+NEXT DIAGNOSTIC (in flight): the probe now fetches five URL variants in-page
+(v2 bare, v2 params, site/v2 bare, site/v2 params, v2 level=1) and records
+`workingVariant`. If NO browser variant returns entries, the correct fix is to
+proxy standings through the relay — which is what the relay exists for (Rule 60),
+and is a client+relay change, not a URL tweak.
 
-2. `3fb4b31` — fix: add `'NFL'` alias to ESPN_STANDINGS_MAP (SW 2026-08-15g).
-   Same `football/nfl` cache key, no `isSoccer` flag (that property picks the
-   Table-vs-Standings label). Legacy `'Football (NFL)'` key retained.
-   Static artifact: built index.html asserts `NFL -> football/nfl`,
-   `isSoccer === undefined`, gate label `Standings`.
+## Playoff tracker — shipped, gated, correct (`288f2f7`)
+`nflPlayoffSeedsInit()` → `/football/nfl/standings?seasontype=2` into a synchronous
+store; `renderStatsSection` pushes nothing when ungated (no empty block, no orphan
+header). Seeds 1-7 per conference + records + seat + ESPN clinch markers.
 
-3. `6b0264f` — fix: group the ESPN standings panel by conference on multi-group payloads.
-   `fetchESPNStandings` concatenates all child groups into one flat array, so NFL arrives
-   as AFC(16)+NFC(16)=32 rows. The generic branch did `entries.slice(0,12)` renumbered
-   `${i+1}` — so an NFC card opened a table containing NEITHER of its teams, with fake
-   positions. Now each group renders under its own header (MLS colspan idiom).
-   Single-group payloads keep the old path, so single-group leagues are untouched.
-   VERIFIED OFFLINE against the committed real payload
-   (outbox/espn-nfl-standings-contract-2026-08-16T00-00-21-846Z.json, 2025 final):
-   32 entries / 2 groups → 35 `<tr>` (1 thead + 2 headers + 32 teams); both conference
-   headers present; NFC teams Rams/Eagles/Bears/Panthers now render (they did not before).
-   Also corrects the same latent truncation for MLB and NBA/NHL Playoffs (shared path).
+THE GATE, verified across every payload state:
 
-4. `befc143` — fix: the verification probe would have FALSE-NEGATIVED a working fix.
-   Two independent defects, both caught by adversarial review, neither by the audits:
-     (a) selected the button via `onclick.includes('Football (NFL)')`; post-fix the
-         onclick is `toggleStandings(this,'NFL','2025')` → never matches → identical
-         failure output whether the fix worked or not.
-     (b) `rowCount >= 16` was unreachable: panel renders 13 rows single-group, 35 grouped.
-   Now selects on `toggleStandings(this,'NFL'`, threshold 30, and captures `buttonLabel`.
+| payload | gp | result |
+|---|---|---|
+| `?seasontype=2` today | 0 | SILENT |
+| default endpoint today | 30 | RENDERS ← would publish **preseason** seeds as real |
+| 2025 regular season | 544 | RENDERS (2 confs, seeds 1-7 correct) |
 
-5. `288f2f7` — feat: data-gated NFL playoff seeding tracker (SW 2026-08-15h).
+The default endpoint returns playoffSeed derived from EXHIBITION games, so every
+data-presence gate fails OPEN on it. Pinned by smoke A-NFLSEED-2.
 
-6. `606155c` — fix: probe records `swVersion` (see VERIFICATION INTEGRITY below).
+CLINCH — read from the `clincher` stat's `displayValue`/`description`, never
+`.value` (0 for all 96 markers observed across 2024+2025 finals; a truthiness test
+would render nothing forever, silently). No `note` field exists on these entries.
+Pinned by A-NFLSEED-3. **Previously UNVERIFIED, now RESOLVED**: probing a COMPLETED
+season under regular-season scope (`?season=2025&seasontype=2`) — the one
+combination no earlier probe covered — returns clincher on all 32 entries with the
+same distribution as the control (z:6, y:6, e:18, *:2).
+Artifact: `outbox/clincher-seasontype2-probe.txt`.
 
-7. `f3e0115` — probe: capture console/page errors + ESPN network status (open issue).
+LABELS: seeds 1-4 say "division leader", never "winner" — leading is what standings
+show; winning is a clinch, and only ESPN's marker may assert it (Rule 1).
 
-## Playoff tracker — the gate is the whole design
+Note: the tracker's own fetch is confirmed working in production
+(`200 .../football/nfl/standings?seasontype=2` in the network log), so defect 4
+does not block it.
 
-`nflPlayoffSeedsInit()` → `${ESPN_STANDINGS_BASE}/football/nfl/standings?seasontype=2`,
-into the synchronous `NFL_PLAYOFF_SEEDS` store; `renderStatsSection` consumes it and
-pushes NOTHING when ungated (no empty NFL block, no orphan header).
+## Journalism fabrication guard (`bb0460d`) — prerequisite, not scope creep
+`fmt()` returned `(leads)` for ANY team at gamesBehind 0 or NaN. NFL conference GB
+takes values {0, 0.5, 1} across 16 AFC teams, so once defect 1 warmed
+`espnStandingsCache`, prompts would read "Bills: 1-0 (leads) · Steelers: 1-0
+(leads)". Now only a group's top row may claim the position. Rule 1.
 
-WHY seasontype=2 AND NOT the default endpoint — verified across every payload state in
-outbox/espn-nfl-standings-contract-*.json and espn-nfl-clincher-enum-*.log:
+## Self-inflicted incident — a comment broke every deploy
+`1fecea4`'s bridge comment QUOTED the module script tag it was describing.
+`sync-source.mjs` located the app block via `lastIndexOf` of that exact text, so the
+comment's copy became the last match; sync selected a 7.5 KB phantom block, tripped
+its own "expected 2MB+" guard, and **deploy-gate failed for every commit after it**
+— including the fix that comment documented. Fixed in `d6247c9`: reworded (no
+literal tag) and hardened sync-source to select the app block BY SIZE on both sides
+of the divergence guard.
 
-| payload                    | gp   | result  |
-|----------------------------|------|---------|
-| `?seasontype=2` TODAY      | 0    | SILENT  |
-| default endpoint TODAY     | 30   | RENDERS |  <- would publish PRESEASON seeds as real
-| 2025 regular season        | 544  | RENDERS |  (2 confs, seeds 1-7 correct)
+Second deploy gotcha, worth remembering: `[skip ci]` is evaluated on the HEAD COMMIT
+OF A PUSH. A `[skip ci]` probe commit pushed alongside two real fixes suppressed the
+deploy for all three.
 
-The default endpoint hands back playoffSeed values derived from EXHIBITION games
-(LAC seed 1 off a 1-0 preseason record), so every data-presence gate fails OPEN.
-`?seasontype=2` is the only query that discriminates. Pinned by smoke A-NFLSEED-2.
+## Verification integrity — three probe defects fixed
+The probe would have reported a working fix as broken, twice over:
+1. selected the button via `onclick.includes('Football (NFL)')` — post-fix the
+   onclick is `toggleStandings(this,'NFL',…)`, so it could never match.
+2. required `rowCount >= 16`; the panel renders 13 single-group / 35 grouped.
+3. always exited 0, so an automated run could never report the breakage it exists
+   to detect.
+Also added: `swVersion` capture (a manifest can now prove WHICH build it tested —
+without it, "not deployed" and "doesn't work" are indistinguishable), console/page
+error capture, ESPN network status, and a time-series panel sample.
 
-CLINCH: read from the `clincher` stat's `displayValue`/`description`, NEVER `.value` —
-value is 0 for all 96 markers observed across 2024+2025 finals, so a truthiness test on
-it renders nothing forever, silently. Pinned by smoke A-NFLSEED-3.
-There is NO `note` field on these entries (null in all seven payloads probed).
-Domain: `z`=Clinched Division, `y`=Clinched Wild Card, `*`=Clinched Division and Bye,
-`e`=Eliminated.
+The time series REFUTED my "panel opens then the 15-30s re-render destroys it"
+hypothesis — `panelEverAppeared:false` at every sample from 1.5s to 24s. Recording
+the refutation because it is what redirected the investigation to the fetch itself.
 
-LABELS: seeds 1-4 say "division leader", never "division winner". Leading a division is
-what standings show; WINNING it is a clinch, and only ESPN's marker may assert it (Rule 1).
-
-Rendered output verified against real 2025 regular-season data: seeds 1-7 both
-conferences, ties handled (GB 9-7-1), bye/host/wild-card seats, "in the hunt" for 8-10.
-
-UNVERIFIED (Rule 73): no probed payload was both regular-season-scoped AND far enough
-along for anyone to have clinched, so whether `?seasontype=2` carries `clincher` is not
-proven. Failure mode is benign: an absent marker renders the seat label alone, never a
-wrong claim. Re-probe once a team clinches (~week 13+) before asserting clinch works.
-
-## VERIFICATION INTEGRITY — two artifact defects fixed this session
-- The probe could not distinguish "fix not deployed" from "fix does not work" (both
-  render `standingsWorks:false`). It now records `swVersion`.
-- ROOT CAUSE of a confusing red herring: deploy-gate NEVER RAN for `3fb4b31`/`6b0264f`.
-  They were pushed together with `befc143`, which carried `[skip ci]`. GitHub evaluates
-  the skip directive on the HEAD COMMIT OF THE PUSH, so one `[skip ci]` suppressed the
-  deploy for two real fixes in the same push. They reached production only via the next
-  non-skipped commit. LESSON: never let a `[skip ci]` commit be the head of a push that
-  also contains deploy-triggering changes.
+## Automation
+`nfl-standings-probe.yml` now chains to `Deploy gate (fast smoke)` completion plus a
+daily cron, and exits 1 on a real regression (button present, panel absent) while
+staying green when no NFL game is on the slate. Verification is hands-off.
 
 ## Integration status
-- BUTTON FIX: **VERIFIED**. Artifact `outbox/nfl-standings-manifest-2026-08-16T00-30-11-714Z.json`
-  — `swVersion: 2026-08-15h`, `standingsBtnSports` now includes `"NFL"`, button count
-  30 → 37, `nflStandingsBtnFound: true`, `buttonLabel: "▼ Standings"` (not "Table").
-- PANEL OPEN: **OPEN DEFECT, NOT VERIFIED**. Same manifest: `panelPresent:false`,
-  `rowCount:0`, and the label stayed `▼` — meaning `toggleStandings` fell through to its
-  silent-restore path (fetch returned null/threw). This is a DIFFERENT defect from the
-  key mismatch. Diagnostics added in `f3e0115` (console errors, pageerror, ESPN response
-  status, `closest('.game-card')` resolution). DO NOT claim the dropdown fully works
-  until a manifest shows `standingsWorks:true`.
-- TRACKER: gate + mapper + render VERIFIED offline against real payloads; live render is
-  correctly SILENT today (preseason), so there is nothing to see until the season starts.
+- Defects 1-3: **VERIFIED** (`nfl-standings-manifest-2026-08-16T00-30-11-714Z.json`:
+  `standingsBtnSports` includes NFL, count 30→37, `buttonLabel:"▼ Standings"`;
+  later manifests show `pageErrors: []`).
+- Defect 4: **OPEN**. `standingsWorks:false` on SW 2026-08-15j.
+- Playoff tracker: **VERIFIED** offline against real payloads; correctly SILENT live
+  (preseason). Clinch RESOLVED.
+- Smoke 981/0, including A-WINBRIDGE-1 (negative-tested: removing a bridge fails it
+  by name, 980/1; restoring passes, 981/0).
 
-## Carry-forwards (each needs its own CC-CMD before being worked)
-1. NFL standings PANEL does not open after the click — root cause unknown pending the
-   f3e0115 diagnostic manifest. Highest priority; the button now exists but does nothing.
-2. `buildGameStandingsContext` for NFL: with the map alias in place, NFL games can now
-   feed a standings line into J3/J5 prompts once the cache warms. The `(leads)` hazard is
-   fixed, but the NFL line has never been reviewed for prompt quality.
-3. Clinch verification in-season (see UNVERIFIED above).
-
-## CC-CMD backlog audit (side task)
-Swept 361 client CC-CMDs + relay; 27 candidates → 12 adversarially verified → 7 genuinely
-unexecuted: 07-19-fix-mls-live-endpoint (small; a guaranteed-failing request fires on
-EVERY cold start, error swallowed behind FIELD_DEBUG — but its spec's "zero callers"
-premise is FALSE, `setTimeout(fetchMLSLive, 800)` is on the boot path, and it conflicts
-with an earlier probe doc, so it needs a re-probe not a patch), 07-16-amnesty-leaderboard-client
-(medium; has an internal contradiction re: per-game vs global render target),
-07-16-amnesty-bottom-sheet (medium), 07-16-amnesty-card-face (large),
-07-16-amnesty-arc-poster (large, cross-repo), 07-12-standards-index +
-07-12-standards-index-wiring (medium).
+## Carry-forwards
+1. **Defect 4** — read `workingVariant` from the next manifest. If null, proxy
+   standings through the relay (client+relay, Rule 60/70). Needs its own CC-CMD.
+2. `buildGameStandingsContext` NFL prompt line has never been reviewed for quality
+   now that the map alias makes it reachable.
