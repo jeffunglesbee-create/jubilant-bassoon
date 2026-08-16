@@ -1,0 +1,29 @@
+name: ESPN NFL Clincher Enum Probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run probe
+        run: node scripts/espn-nfl-clincher-enum-probe.mjs
+      - name: Push result
+        run: |
+          git config user.email "claude@field.dev"
+          git config user.name "FIELD CI"
+          git add outbox/espn-nfl-clincher-enum-*.log
+          git diff --cached --quiet && echo "Nothing to commit" && exit 0
+          git commit -m "probe: ESPN NFL clincher enumeration [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
