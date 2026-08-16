@@ -80,6 +80,11 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
           siteV2_bare:    `https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings`,
           siteV2_params:  `https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings?season=${year}&seasontype=2`,
           coreV2_groups:  `https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=1`,
+          // THE FIX PATH — relay proxy with server-side Origin injection. This is
+          // what fetchESPNStandings now calls; the direct variants above are the
+          // control group and are all expected to fail.
+          relayProxy:     `https://field-relay-nba.jeffunglesbee.workers.dev/espn-standings/football/nfl/standings`,
+          relayProxyST2:  `https://field-relay-nba.jeffunglesbee.workers.dev/espn-standings/football/nfl/standings?seasontype=2`,
         };
         const out = {};
         for (const [name, url] of Object.entries(V)) {
@@ -87,7 +92,7 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
             const r = await fetch(url);
             let j = null, perr = null;
             try { j = await r.json(); } catch (e) { perr = String(e).slice(0, 80); }
-            if (!j) { out[name] = { status: r.status, parseErr: perr }; continue; }
+            if (!j) { out[name] = { status: r.status, parseErr: perr, body: (await r.clone().text().catch(()=>'')).slice(0,120) }; continue; }
             const groups = j.children || [j];
             let entries = 0;
             groups.forEach(g => { entries += (g.standings?.entries || []).length; });
