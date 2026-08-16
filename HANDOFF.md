@@ -1,5 +1,57 @@
 # FIELD HANDOFF
 
+## Session 2026-08-16 — NFL standings dropdown was BROKEN (fixed) + playoff tracker
+
+Session doc: `outbox/cc-session-2026-08-16-nfl-standings-and-playoff-tracker.md`.
+Both repos on main. SW 2026-08-15h, smoke 980/0. HEAD `f3e0115`.
+
+**A prior claim in-session that "NFL standings already work ✅" was WRONG** — it read
+ESPN_STANDINGS_MAP instead of the runtime path (Rule 48 Class A). A Playwright probe
+proved NFL cards rendered **zero** standings buttons: the gate reads `sec.sport`
+(`'NFL'`, from `injectV2SportSection('nfl','NFL')`) but the map was keyed only
+`'Football (NFL)'`. Fixed with an `'NFL'` alias (`3fb4b31`).
+
+Three further defects found by adversarial review, all fixed:
+- **Journalism fabrication (Rule 1, `bb0460d`)** — `fmt()` labelled EVERY team at
+  gamesBehind 0 as `(leads)`; NFL conference GB has many at 0, so prompts would read
+  "Bills: 1-0 (leads) · Steelers: 1-0 (leads)". Now only a group's top row may claim it.
+- **Panel showed the wrong conference (`6b0264f`)** — AFC+NFC arrive concatenated (32
+  rows); the code sliced the first 12, so an **NFC card opened a table containing neither
+  team**. Now grouped by conference; verified offline against the real payload (35 `<tr>`,
+  both headers, NFC teams present). Also fixes MLB/NBA/NHL Playoffs (shared path).
+- **The probe would have FALSE-NEGATIVED a working fix (`befc143`)** — matched
+  `onclick.includes('Football (NFL)')` (never matches post-fix) and required
+  `rowCount>=16` (panel renders 13/35). Repaired; now also records `swVersion` (`606155c`).
+
+**Playoff tracker (`288f2f7`) — data-gated, renders nothing today (correct).**
+Queries `?seasontype=2`; verified across every payload state:
+`seasontype=2 today gp=0 SILENT` · `default today gp=30 RENDERS` ← **would have published
+PRESEASON seeds as a real playoff picture** · `2025 regular season gp=544 RENDERS`.
+Clinch read from the `clincher` stat's `displayValue`/`description`, never `.value`
+(value is 0 for all 96 markers observed). No `note` field exists. Seeds 1-4 labelled
+"division leader", never "winner". Pinned by smoke A-NFLSEED-1/2/3.
+
+**⚠ OPEN DEFECT — do not claim the dropdown fully works.** The button now renders
+(`nflStandingsBtnFound:true`, `buttonLabel:"▼ Standings"`, count 30→37, artifact
+`outbox/nfl-standings-manifest-2026-08-16T00-30-11-714Z.json`), but clicking it does NOT
+open the panel (`panelPresent:false`, `rowCount:0`; label stayed `▼` = toggleStandings
+hit its silent-restore path). Different defect from the key mismatch. Diagnostics
+(console/pageerror/ESPN response status/`closest('.game-card')`) added in `f3e0115`.
+Unblock: read the next manifest; require `standingsWorks:true`.
+
+**Gotcha worth remembering:** deploy-gate never ran for `3fb4b31`/`6b0264f` because they
+were pushed together with a `[skip ci]` commit that was the HEAD of the push — GitHub
+reads the skip directive from the push head. Never let a `[skip ci]` commit head a push
+containing deploy-triggering changes.
+
+**CC-CMD backlog:** 361 swept → 7 genuinely unexecuted. Highest value/effort:
+`CC-CMD-2026-07-19-fix-mls-live-endpoint` (a guaranteed-failing request on every cold
+start) — but its "zero callers" premise is FALSE (`setTimeout(fetchMLSLive, 800)` is on
+the boot path) and it conflicts with an earlier probe doc, so it needs a re-probe, not a
+patch. Others: amnesty leaderboard-client / bottom-sheet / card-face / arc-poster,
+standards-index (+wiring).
+
+
 ## Session 2026-08-15 — P3 BDB pass-rush + tendency + automation (E2E) ✅
 
 Session doc: `outbox/cc-session-2026-08-15-p3-bdb-rush-tendency.md`. Both repos on main.
