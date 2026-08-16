@@ -1,0 +1,250 @@
+
+=== CURRENT default (no params) ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings
+HTTP 200  bytes=151126
+season: {"year":2026,"displayName":"2026"}
+topLevelKeys: uid, id, name, abbreviation, shortName, children, isConference, season, links, seasons
+  group "American Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=0 max=16 distinct=16/16
+    totalGamesPlayed(sum W+L+T)=15  entriesWithNote=0
+      seed= 0  BAL  Baltimore Ravens         0-0-0 div=0-0 note=null
+      seed= 1  LAC  Los Angeles Chargers     1-0-0 div=0-0 note=null
+      seed= 2  BUF  Buffalo Bills            1-0-0 div=0-0 note=null
+      seed= 3  PIT  Pittsburgh Steelers      1-0-0 div=0-0 note=null
+      seed= 4  JAX  Jacksonville Jaguars     1-0-0 div=0-0 note=null
+      seed= 5  DEN  Denver Broncos           1-0-0 div=0-0 note=null
+      seed= 6  TEN  Tennessee Titans         1-0-0 div=0-0 note=null
+      seed= 7  CIN  Cincinnati Bengals       1-0-0 div=0-0 note=null
+      seed= 9  IND  Indianapolis Colts       0-0-1 div=0-0 note=null
+      seed=10  NE   New England Patriots     0-0-1 div=0-0 note=null
+      seed=11  HOU  Houston Texans           0-1-0 div=0-0 note=null
+      seed=12  NYJ  New York Jets            0-1-0 div=0-0 note=null
+      seed=13  KC   Kansas City Chiefs       0-1-0 div=0-0 note=null
+      seed=14  CLE  Cleveland Browns         0-1-0 div=0-0 note=null
+      seed=15  MIA  Miami Dolphins           0-1-0 div=0-0 note=null
+      seed=16  LV   Las Vegas Raiders        0-1-0 div=0-0 note=null
+  group "National Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=0 max=16 distinct=14/16
+    totalGamesPlayed(sum W+L+T)=15  entriesWithNote=0
+      seed= 0  DAL  Dallas Cowboys           0-0-0 div=0-0 note=null
+      seed= 0  PHI  Philadelphia Eagles      0-0-0 div=0-0 note=null
+      seed= 0  SEA  Seattle Seahawks         0-0-0 div=0-0 note=null
+      seed= 1  MIN  Minnesota Vikings        1-0-0 div=0-0 note=null
+      seed= 2  TB   Tampa Bay Buccaneers     1-0-0 div=0-0 note=null
+      seed= 3  WSH  Washington Commanders    1-0-0 div=0-0 note=null
+      seed= 4  LAR  Los Angeles Rams         1-0-0 div=0-0 note=null
+      seed= 5  CHI  Chicago Bears            1-0-0 div=0-0 note=null
+      seed= 9  CAR  Carolina Panthers        1-1-0 div=0-0 note=null
+      seed=10  ARI  Arizona Cardinals        1-1-0 div=0-0 note=null
+      seed=11  NYG  New York Giants          0-1-0 div=0-0 note=null
+      seed=12  NO   New Orleans Saints       0-1-0 div=0-0 note=null
+      seed=13  DET  Detroit Lions            0-1-0 div=0-0 note=null
+      seed=14  SF   San Francisco 49ers      0-1-0 div=0-0 note=null
+      seed=15  GB   Green Bay Packers        0-1-0 div=0-0 note=null
+      seed=16  ATL  Atlanta Falcons          0-1-0 div=0-0 note=null
+
+=== CURRENT seasontype=2 (regular) ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?seasontype=2
+HTTP 200  bytes=150777
+season: {"year":2026,"displayName":"2026"}
+topLevelKeys: uid, id, name, abbreviation, shortName, children, isConference, season, links, seasons
+  group "American Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=0 max=0 distinct=1/16
+    totalGamesPlayed(sum W+L+T)=0  entriesWithNote=0
+      seed= 0  BUF  Buffalo Bills            0-0-0 div=0-0 note=null
+      seed= 0  CIN  Cincinnati Bengals       0-0-0 div=0-0 note=null
+      seed= 0  CLE  Cleveland Browns         0-0-0 div=0-0 note=null
+      seed= 0  DEN  Denver Broncos           0-0-0 div=0-0 note=null
+      seed= 0  TEN  Tennessee Titans         0-0-0 div=0-0 note=null
+      seed= 0  IND  Indianapolis Colts       0-0-0 div=0-0 note=null
+      seed= 0  KC   Kansas City Chiefs       0-0-0 div=0-0 note=null
+      seed= 0  LV   Las Vegas Raiders        0-0-0 div=0-0 note=null
+      seed= 0  MIA  Miami Dolphins           0-0-0 div=0-0 note=null
+      seed= 0  NE   New England Patriots     0-0-0 div=0-0 note=null
+      seed= 0  NYJ  New York Jets            0-0-0 div=0-0 note=null
+      seed= 0  PIT  Pittsburgh Steelers      0-0-0 div=0-0 note=null
+      seed= 0  LAC  Los Angeles Chargers     0-0-0 div=0-0 note=null
+      seed= 0  JAX  Jacksonville Jaguars     0-0-0 div=0-0 note=null
+      seed= 0  BAL  Baltimore Ravens         0-0-0 div=0-0 note=null
+      seed= 0  HOU  Houston Texans           0-0-0 div=0-0 note=null
+  group "National Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=0 max=0 distinct=1/16
+    totalGamesPlayed(sum W+L+T)=0  entriesWithNote=0
+      seed= 0  ATL  Atlanta Falcons          0-0-0 div=0-0 note=null
+      seed= 0  CHI  Chicago Bears            0-0-0 div=0-0 note=null
+      seed= 0  DAL  Dallas Cowboys           0-0-0 div=0-0 note=null
+      seed= 0  DET  Detroit Lions            0-0-0 div=0-0 note=null
+      seed= 0  GB   Green Bay Packers        0-0-0 div=0-0 note=null
+      seed= 0  LAR  Los Angeles Rams         0-0-0 div=0-0 note=null
+      seed= 0  MIN  Minnesota Vikings        0-0-0 div=0-0 note=null
+      seed= 0  NO   New Orleans Saints       0-0-0 div=0-0 note=null
+      seed= 0  NYG  New York Giants          0-0-0 div=0-0 note=null
+      seed= 0  PHI  Philadelphia Eagles      0-0-0 div=0-0 note=null
+      seed= 0  ARI  Arizona Cardinals        0-0-0 div=0-0 note=null
+      seed= 0  SF   San Francisco 49ers      0-0-0 div=0-0 note=null
+      seed= 0  SEA  Seattle Seahawks         0-0-0 div=0-0 note=null
+      seed= 0  TB   Tampa Bay Buccaneers     0-0-0 div=0-0 note=null
+      seed= 0  WSH  Washington Commanders    0-0-0 div=0-0 note=null
+      seed= 0  CAR  Carolina Panthers        0-0-0 div=0-0 note=null
+
+=== 2025 season final (season=2025) ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025
+HTTP 200  bytes=157805
+season: {"year":2025,"displayName":"2025"}
+topLevelKeys: uid, id, name, abbreviation, shortName, children, isConference, season, links, seasons
+  group "American Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=1 max=16 distinct=16/16
+    totalGamesPlayed(sum W+L+T)=272  entriesWithNote=0
+      seed= 1  DEN  Denver Broncos           14-3-0 div=5-1 note=null
+      seed= 2  NE   New England Patriots     14-3-0 div=5-1 note=null
+      seed= 3  JAX  Jacksonville Jaguars     13-4-0 div=5-1 note=null
+      seed= 4  PIT  Pittsburgh Steelers      10-7-0 div=4-2 note=null
+      seed= 5  HOU  Houston Texans           12-5-0 div=5-1 note=null
+      seed= 6  BUF  Buffalo Bills            12-5-0 div=4-2 note=null
+      seed= 7  LAC  Los Angeles Chargers     11-6-0 div=5-1 note=null
+      seed= 8  IND  Indianapolis Colts       8-9-0 div=2-4 note=null
+      seed= 9  BAL  Baltimore Ravens         8-9-0 div=3-3 note=null
+      seed=10  MIA  Miami Dolphins           7-10-0 div=3-3 note=null
+      seed=11  CIN  Cincinnati Bengals       6-11-0 div=3-3 note=null
+      seed=12  KC   Kansas City Chiefs       6-11-0 div=1-5 note=null
+      seed=13  CLE  Cleveland Browns         5-12-0 div=2-4 note=null
+      seed=14  LV   Las Vegas Raiders        3-14-0 div=1-5 note=null
+      seed=15  NYJ  New York Jets            3-14-0 div=0-6 note=null
+      seed=16  TEN  Tennessee Titans         3-14-0 div=0-6 note=null
+  group "National Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=1 max=16 distinct=16/16
+    totalGamesPlayed(sum W+L+T)=272  entriesWithNote=0
+      seed= 1  SEA  Seattle Seahawks         14-3-0 div=4-2 note=null
+      seed= 2  CHI  Chicago Bears            11-6-0 div=2-4 note=null
+      seed= 3  PHI  Philadelphia Eagles      11-6-0 div=3-3 note=null
+      seed= 4  CAR  Carolina Panthers        8-9-0 div=3-3 note=null
+      seed= 5  LAR  Los Angeles Rams         12-5-0 div=4-2 note=null
+      seed= 6  SF   San Francisco 49ers      12-5-0 div=4-2 note=null
+      seed= 7  GB   Green Bay Packers        9-7-1 div=4-2 note=null
+      seed= 8  MIN  Minnesota Vikings        9-8-0 div=4-2 note=null
+      seed= 9  DET  Detroit Lions            9-8-0 div=2-4 note=null
+      seed=10  TB   Tampa Bay Buccaneers     8-9-0 div=3-3 note=null
+      seed=11  ATL  Atlanta Falcons          8-9-0 div=3-3 note=null
+      seed=12  DAL  Dallas Cowboys           7-9-1 div=4-2 note=null
+      seed=13  NO   New Orleans Saints       6-11-0 div=3-3 note=null
+      seed=14  WSH  Washington Commanders    5-12-0 div=3-3 note=null
+      seed=15  NYG  New York Giants          4-13-0 div=2-4 note=null
+      seed=16  ARI  Arizona Cardinals        3-14-0 div=0-6 note=null
+
+=== 2025 regular season (season=2025&seasontype=2) ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025&seasontype=2
+HTTP 200  bytes=157805
+season: {"year":2025,"displayName":"2025"}
+topLevelKeys: uid, id, name, abbreviation, shortName, children, isConference, season, links, seasons
+  group "American Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=1 max=16 distinct=16/16
+    totalGamesPlayed(sum W+L+T)=272  entriesWithNote=0
+      seed= 1  DEN  Denver Broncos           14-3-0 div=5-1 note=null
+      seed= 2  NE   New England Patriots     14-3-0 div=5-1 note=null
+      seed= 3  JAX  Jacksonville Jaguars     13-4-0 div=5-1 note=null
+      seed= 4  PIT  Pittsburgh Steelers      10-7-0 div=4-2 note=null
+      seed= 5  HOU  Houston Texans           12-5-0 div=5-1 note=null
+      seed= 6  BUF  Buffalo Bills            12-5-0 div=4-2 note=null
+      seed= 7  LAC  Los Angeles Chargers     11-6-0 div=5-1 note=null
+      seed= 8  IND  Indianapolis Colts       8-9-0 div=2-4 note=null
+      seed= 9  BAL  Baltimore Ravens         8-9-0 div=3-3 note=null
+      seed=10  MIA  Miami Dolphins           7-10-0 div=3-3 note=null
+      seed=11  CIN  Cincinnati Bengals       6-11-0 div=3-3 note=null
+      seed=12  KC   Kansas City Chiefs       6-11-0 div=1-5 note=null
+      seed=13  CLE  Cleveland Browns         5-12-0 div=2-4 note=null
+      seed=14  LV   Las Vegas Raiders        3-14-0 div=1-5 note=null
+      seed=15  NYJ  New York Jets            3-14-0 div=0-6 note=null
+      seed=16  TEN  Tennessee Titans         3-14-0 div=0-6 note=null
+  group "National Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=1 max=16 distinct=16/16
+    totalGamesPlayed(sum W+L+T)=272  entriesWithNote=0
+      seed= 1  SEA  Seattle Seahawks         14-3-0 div=4-2 note=null
+      seed= 2  CHI  Chicago Bears            11-6-0 div=2-4 note=null
+      seed= 3  PHI  Philadelphia Eagles      11-6-0 div=3-3 note=null
+      seed= 4  CAR  Carolina Panthers        8-9-0 div=3-3 note=null
+      seed= 5  LAR  Los Angeles Rams         12-5-0 div=4-2 note=null
+      seed= 6  SF   San Francisco 49ers      12-5-0 div=4-2 note=null
+      seed= 7  GB   Green Bay Packers        9-7-1 div=4-2 note=null
+      seed= 8  MIN  Minnesota Vikings        9-8-0 div=4-2 note=null
+      seed= 9  DET  Detroit Lions            9-8-0 div=2-4 note=null
+      seed=10  TB   Tampa Bay Buccaneers     8-9-0 div=3-3 note=null
+      seed=11  ATL  Atlanta Falcons          8-9-0 div=3-3 note=null
+      seed=12  DAL  Dallas Cowboys           7-9-1 div=4-2 note=null
+      seed=13  NO   New Orleans Saints       6-11-0 div=3-3 note=null
+      seed=14  WSH  Washington Commanders    5-12-0 div=3-3 note=null
+      seed=15  NYG  New York Giants          4-13-0 div=2-4 note=null
+      seed=16  ARI  Arizona Cardinals        3-14-0 div=0-6 note=null
+
+=== 2025 level=1 ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025&level=1
+HTTP 200  bytes=157257
+season: {"year":2025,"displayName":"2025"}
+topLevelKeys: uid, id, name, abbreviation, shortName, isConference, standings, children, season, links, seasons
+
+=== 2025 level=2 ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025&level=2
+HTTP 200  bytes=157805
+season: {"year":2025,"displayName":"2025"}
+topLevelKeys: uid, id, name, abbreviation, shortName, children, isConference, season, links, seasons
+  group "American Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=1 max=16 distinct=16/16
+    totalGamesPlayed(sum W+L+T)=272  entriesWithNote=0
+      seed= 1  DEN  Denver Broncos           14-3-0 div=5-1 note=null
+      seed= 2  NE   New England Patriots     14-3-0 div=5-1 note=null
+      seed= 3  JAX  Jacksonville Jaguars     13-4-0 div=5-1 note=null
+      seed= 4  PIT  Pittsburgh Steelers      10-7-0 div=4-2 note=null
+      seed= 5  HOU  Houston Texans           12-5-0 div=5-1 note=null
+      seed= 6  BUF  Buffalo Bills            12-5-0 div=4-2 note=null
+      seed= 7  LAC  Los Angeles Chargers     11-6-0 div=5-1 note=null
+      seed= 8  IND  Indianapolis Colts       8-9-0 div=2-4 note=null
+      seed= 9  BAL  Baltimore Ravens         8-9-0 div=3-3 note=null
+      seed=10  MIA  Miami Dolphins           7-10-0 div=3-3 note=null
+      seed=11  CIN  Cincinnati Bengals       6-11-0 div=3-3 note=null
+      seed=12  KC   Kansas City Chiefs       6-11-0 div=1-5 note=null
+      seed=13  CLE  Cleveland Browns         5-12-0 div=2-4 note=null
+      seed=14  LV   Las Vegas Raiders        3-14-0 div=1-5 note=null
+      seed=15  NYJ  New York Jets            3-14-0 div=0-6 note=null
+      seed=16  TEN  Tennessee Titans         3-14-0 div=0-6 note=null
+  group "National Football Conference" entries=16 childGroups=0 
+    playoffSeed: min=1 max=16 distinct=16/16
+    totalGamesPlayed(sum W+L+T)=272  entriesWithNote=0
+      seed= 1  SEA  Seattle Seahawks         14-3-0 div=4-2 note=null
+      seed= 2  CHI  Chicago Bears            11-6-0 div=2-4 note=null
+      seed= 3  PHI  Philadelphia Eagles      11-6-0 div=3-3 note=null
+      seed= 4  CAR  Carolina Panthers        8-9-0 div=3-3 note=null
+      seed= 5  LAR  Los Angeles Rams         12-5-0 div=4-2 note=null
+      seed= 6  SF   San Francisco 49ers      12-5-0 div=4-2 note=null
+      seed= 7  GB   Green Bay Packers        9-7-1 div=4-2 note=null
+      seed= 8  MIN  Minnesota Vikings        9-8-0 div=4-2 note=null
+      seed= 9  DET  Detroit Lions            9-8-0 div=2-4 note=null
+      seed=10  TB   Tampa Bay Buccaneers     8-9-0 div=3-3 note=null
+      seed=11  ATL  Atlanta Falcons          8-9-0 div=3-3 note=null
+      seed=12  DAL  Dallas Cowboys           7-9-1 div=4-2 note=null
+      seed=13  NO   New Orleans Saints       6-11-0 div=3-3 note=null
+      seed=14  WSH  Washington Commanders    5-12-0 div=3-3 note=null
+      seed=15  NYG  New York Giants          4-13-0 div=2-4 note=null
+      seed=16  ARI  Arizona Cardinals        3-14-0 div=0-6 note=null
+
+=== 2025 level=3 ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025&level=3
+HTTP 200  bytes=160551
+season: {"year":2025,"displayName":"2025"}
+topLevelKeys: uid, id, name, abbreviation, shortName, children, isConference, season, links, seasons
+  group "American Football Conference" entries=0 childGroups=4 [AFC East | AFC North | AFC South | AFC West]
+    playoffSeed: min=null max=null distinct=0/0
+    totalGamesPlayed(sum W+L+T)=0  entriesWithNote=0
+  group "National Football Conference" entries=0 childGroups=4 [NFC East | NFC North | NFC South | NFC West]
+    playoffSeed: min=null max=null distinct=0/0
+    totalGamesPlayed(sum W+L+T)=0  entriesWithNote=0
+
+=== CORE API groups tree (division membership source) ===
+https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2025/types/2/groups?limit=50
+HTTP 200 count=2 pageCount=1
+  group id=8 name="American Football Conference" abbr=AFC isConference=true parent=9
+  group id=7 name="National Football Conference" abbr=NFC isConference=true parent=9
+
+=== 2025 group=1 (AFC via group param) ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025&group=1
+HTTP 200  bytes=35015
+season: {"year":2025,"displayName":"2025"}
+topLevelKeys: uid, id, name, abbreviation, parent, isConference, standings, children, season, links, seasons
