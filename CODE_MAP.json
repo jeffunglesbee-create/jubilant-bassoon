@@ -1,7 +1,7 @@
 {
   "file": "index.html",
-  "lineCount": 46387,
-  "generatedAt": "2026-08-16T00:24:21.676Z",
+  "lineCount": 46406,
+  "generatedAt": "2026-08-16T00:58:22.939Z",
   "summary": {
     "functionCount": 1069,
     "sectionCount": 747,
@@ -4604,15 +4604,15 @@
       "lineCount": 117
     },
     {
-      "name": "Explicit window bridges for inline HTML event handlers",
+      "name": "Explicit window bridges for inline HTML event handlers ── MANDATORY",
       "startLine": 46252,
-      "endLine": 46275,
-      "lineCount": 24
+      "endLine": 46294,
+      "lineCount": 43
     },
     {
       "name": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)",
-      "startLine": 46276,
-      "endLine": 46387,
+      "startLine": 46295,
+      "endLine": 46406,
       "lineCount": 112
     }
   ],
@@ -12081,21 +12081,21 @@
     },
     {
       "name": "recordOpenHour",
-      "line": 46286,
+      "line": 46305,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "predictNextOpenHour",
-      "line": 46296,
+      "line": 46315,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "registerAnticipatoryPrefetch",
-      "line": 46311,
+      "line": 46330,
       "params": "",
       "async": true,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
@@ -14096,17 +14096,17 @@
     },
     {
       "call": "setTimeout",
-      "line": 46342,
+      "line": 46361,
       "context": "setTimeout(registerAnticipatoryPrefetch, 4000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 46355,
+      "line": 46374,
       "context": "// Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh)."
     },
     {
       "call": "fetchSchedule",
-      "line": 46357,
+      "line": 46376,
       "context": "restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });"
     }
   ]
