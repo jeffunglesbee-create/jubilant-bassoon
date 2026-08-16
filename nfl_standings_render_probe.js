@@ -69,5 +69,21 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
   fs.mkdirSync('outbox', { recursive: true });
   fs.writeFileSync(`outbox/nfl-standings-manifest-${TS}.json`, JSON.stringify(m, null, 2));
   console.log(JSON.stringify(m, null, 2));
+
+  // Exit code drives the automated schedule. A REGRESSION is: an NFL standings
+  // button is on the page but clicking it does not open a populated panel. That
+  // is a red run. No NFL game on the slate is NOT a failure (nothing to test).
+  // Previously this always exited 0, so an automated run could never report the
+  // very breakage it exists to detect.
+  const btn = m.nflStandingsBtnFound === true;
+  const regression = btn && m.standingsWorks !== true;
+  if (m.error || regression) {
+    console.error(`[FAIL] btn=${btn} standingsWorks=${m.standingsWorks} rows=${m.render?.rowCount} ` +
+                  `pageErrors=${JSON.stringify(m.pageErrors || [])} error=${m.error || ''}`);
+    process.exit(1);
+  }
+  console.log(btn
+    ? `[PASS] NFL standings panel opened with ${m.render?.rowCount} rows on ${m.swVersion}`
+    : `[SKIP] no NFL standings button on the slate this run (nothing to verify)`);
   process.exit(0);
 })();

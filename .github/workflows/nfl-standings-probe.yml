@@ -3,10 +3,22 @@ name: NFL Standings Probe
 # Task 2 (Rule 68): dump ESPN NFL standings JSON shape for the playoff tracker.
 on:
   workflow_dispatch:
+  # AUTOMATED FOLLOW-UP: run automatically after every successful deploy, so a
+  # deployed regression is caught without anyone remembering to trigger this.
+  # The probe waits for the deploy to be live because deploy-gate has already
+  # completed by the time this fires.
+  workflow_run:
+    workflows: ["Deploy gate (fast smoke)"]
+    types: [completed]
+  # Safety net in case a deploy-chained run is missed.
+  schedule:
+    - cron: '0 12 * * *'
 permissions:
   contents: write
 jobs:
   probe:
+    # Skip when the triggering deploy failed — nothing new was published.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
