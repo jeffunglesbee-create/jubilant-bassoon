@@ -1,0 +1,65 @@
+=== NFL 2025 level=3 : recursed division tree ===
+CONF "American Football Conference" ownEntries=0 children=4
+  DIV "AFC East" id=4 abbr=EAST entries=4
+     NE   New England Patriots     14-3-0  playoffSeed=2  note=null
+     BUF  Buffalo Bills            12-5-0  playoffSeed=6  note=null
+     MIA  Miami Dolphins           7-10-0  playoffSeed=10  note=null
+     NYJ  New York Jets            3-14-0  playoffSeed=15  note=null
+  DIV "AFC North" id=12 abbr=NORTH entries=4
+     PIT  Pittsburgh Steelers      10-7-0  playoffSeed=4  note=null
+     BAL  Baltimore Ravens         8-9-0  playoffSeed=9  note=null
+     CIN  Cincinnati Bengals       6-11-0  playoffSeed=11  note=null
+     CLE  Cleveland Browns         5-12-0  playoffSeed=13  note=null
+  DIV "AFC South" id=13 abbr=SOUTH entries=4
+     JAX  Jacksonville Jaguars     13-4-0  playoffSeed=3  note=null
+     HOU  Houston Texans           12-5-0  playoffSeed=5  note=null
+     IND  Indianapolis Colts       8-9-0  playoffSeed=8  note=null
+     TEN  Tennessee Titans         3-14-0  playoffSeed=16  note=null
+  DIV "AFC West" id=6 abbr=WEST entries=4
+     LAC  Los Angeles Chargers     11-6-0  playoffSeed=7  note=null
+     KC   Kansas City Chiefs       6-11-0  playoffSeed=12  note=null
+     LV   Las Vegas Raiders        3-14-0  playoffSeed=14  note=null
+     DEN  Denver Broncos           14-3-0  playoffSeed=1  note=null
+CONF "National Football Conference" ownEntries=0 children=4
+  DIV "NFC East" id=1 abbr=EAST entries=4
+     PHI  Philadelphia Eagles      11-6-0  playoffSeed=3  note=null
+     DAL  Dallas Cowboys           7-9-1  playoffSeed=12  note=null
+     WSH  Washington Commanders    5-12-0  playoffSeed=14  note=null
+     NYG  New York Giants          4-13-0  playoffSeed=15  note=null
+  DIV "NFC North" id=10 abbr=NORTH entries=4
+     CHI  Chicago Bears            11-6-0  playoffSeed=2  note=null
+     GB   Green Bay Packers        9-7-1  playoffSeed=7  note=null
+     MIN  Minnesota Vikings        9-8-0  playoffSeed=8  note=null
+     DET  Detroit Lions            9-8-0  playoffSeed=9  note=null
+  DIV "NFC South" id=11 abbr=SOUTH entries=4
+     CAR  Carolina Panthers        8-9-0  playoffSeed=4  note=null
+     TB   Tampa Bay Buccaneers     8-9-0  playoffSeed=10  note=null
+     ATL  Atlanta Falcons          8-9-0  playoffSeed=11  note=null
+     NO   New Orleans Saints       6-11-0  playoffSeed=13  note=null
+  DIV "NFC West" id=3 abbr=WEST entries=4
+     LAR  Los Angeles Rams         12-5-0  playoffSeed=5  note=null
+     SF   San Francisco 49ers      12-5-0  playoffSeed=6  note=null
+     ARI  Arizona Cardinals        3-14-0  playoffSeed=16  note=null
+     SEA  Seattle Seahawks         14-3-0  playoffSeed=1  note=null
+
+=== raw "note" key scan across payload variants ===
+NFL 2026 default (preseason)   HTTP 200 hasNoteKey=false noteObjects=0 sample=none
+NFL 2025 final                 HTTP 200 hasNoteKey=false noteObjects=0 sample=none
+NFL 2025 level=3               HTTP 200 hasNoteKey=false noteObjects=0 sample=none
+NFL 2024 final                 HTTP 200 hasNoteKey=false noteObjects=0 sample=none
+MLB 2026 (in-season now)       HTTP 200 hasNoteKey=false noteObjects=0 sample=none
+MLB 2025 final                 HTTP 200 hasNoteKey=false noteObjects=0 sample=none
+NBA 2025 final                 HTTP 200 hasNoteKey=false noteObjects=0 sample=none
+
+=== raw entry key enumeration (NFL 2025 final, first AFC entry) ===
+entry keys: team, stats
+team keys : id, uid, location, name, abbreviation, displayName, shortDisplayName, isActive, logos, links
+stat[0]   : {"name":"clincher","displayName":"Clincher","shortDisplayName":"CLINCH","description":"Clinched Division","abbreviation":"CLINCH","type":"clincher","value":0,"displayValue":"z"}
+playoffSeed stat object: {"name":"playoffSeed","displayName":"Position","shortDisplayName":"POS","description":"Playoff Seed","abbreviation":"SEED","type":"playoffseed","value":2,"displayValue":"2"}
+clinch/seed-like stats: ["clincher","playoffSeed"]
+
+=== alternate path: apis/site/v2 ... /standings (does it differ?) ===
+https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings?season=2025
+   HTTP 200 bytes=86 hasNoteKey=false hasClinch=false
+https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025&type=0
+   HTTP 200 bytes=157805 hasNoteKey=false hasClinch=true
