@@ -498,7 +498,7 @@ function buildFieldHealthPanel() {
   // for debugging. This section makes it visible without touching any of
   // the 9 functions' existing try/catch or fallback logic.
   {
-    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit','nflNGSInit','nflInjuriesInit','nflTeamTablesInit','mlbPythagInit'];
+    const _riFns = ['mlbProbablePitcherInit','mlbPitcherStatsInit','mlbStatsInit','nbaPlayerCluichInit','nhlSeriesInit','nbaCluichInit','nhlGSAXInit','soccerFBrefInit','uflEpaInit','nflNGSInit','nflInjuriesInit','nflTeamTablesInit','nflPlayoffSeedsInit','mlbPythagInit'];
     const _riStatus = window._relayInitStatus || {};
     const _riFailLines = [];
     let _riOkCount = 0, _riFailCount = 0;
@@ -4546,6 +4546,73 @@ function getTeamTopRoute(teamAbbr) { return NFL_BDB_ROUTE[(teamAbbr || '').toUpp
 function getTeamTopRusher(teamAbbr) { return NFL_BDB_RUSH[(teamAbbr || '').toUpperCase()]?.[0] || null; }
 function getTeamTendency(teamAbbr) { return NFL_BDB_TEND[(teamAbbr || '').toUpperCase()] || null; }
 function getTeamTimeToThrow(teamAbbr) { return NFL_BDB_TTT[(teamAbbr || '').toUpperCase()] || null; }
+
+// ── NFL playoff seeding tracker (data-gated) ────────────────────────────────
+// Conference seeds 1-7 + ESPN's own clinch markers. Consumed synchronously by
+// renderStatsSection, so the fetch runs at boot and the render reads the store.
+//
+// WHY ?seasontype=2 AND NOT the default endpoint (verified 2026-08-16 via
+// outbox/espn-nfl-clincher-enum-2026-08-16T00-03-13-737Z.log):
+//   default        -> sumGamesPlayed=30, seedMin=0 seedMax=16  (PRESEASON seeds!)
+//   ?seasontype=2  -> sumGamesPlayed=0,  seedsAllZero=true     (correctly empty)
+// The default endpoint hands back seeds derived from exhibition games, so every
+// data-presence gate fails OPEN and we would publish preseason "playoff seeds"
+// as if they were real. seasontype=2 is the only query that discriminates.
+//
+// WHY clincher.displayValue AND NOT .value: the clincher stat carries value:0 for
+// EVERY marker without exception (verified across 2024 + 2025 finals, 96 markers),
+// so a truthiness test on .value renders nothing forever, silently. The real data
+// is in displayValue (z/y/*/e) and description. There is no `note` field on these
+// entries — it is null in all seven payloads probed. (Rule 1: no derived clinches;
+// only what ESPN states.)
+//
+// UNVERIFIED (Rule 73): clincher was observed on the DEFAULT-seasontype 2024 and
+// 2025 payloads (96 markers). No probed payload was both regular-season-scoped
+// AND far enough along for anyone to have clinched, so whether ?seasontype=2
+// carries clincher is not proven. Failure mode is benign and silent-safe: an
+// absent marker renders the seat label alone ("wild card"), never a wrong claim.
+// Re-probe once a team clinches (roughly week 13+) before asserting clinch works.
+const NFL_PLAYOFF_SEEDS = { season: null, conferences: {}, gamesPlayed: 0 };
+async function nflPlayoffSeedsInit() {
+  try {
+    const r = await fetch(`${ESPN_STANDINGS_BASE}/football/nfl/standings?seasontype=2`,
+                          { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error('ESPN playoff seeds HTTP ' + r.status);
+    const j = await r.json();
+    const conferences = {};
+    let gamesPlayed = 0;
+    for (const g of (j.children || [])) {
+      const rows = [];
+      for (const e of (g.standings?.entries || [])) {
+        const stat = n => (e.stats || []).find(s => s.name === n);
+        const num = n => Number(stat(n)?.value) || 0;
+        const wins = num('wins'), losses = num('losses'), ties = num('ties');
+        gamesPlayed += wins + losses + ties;
+        const seed = Number(stat('playoffSeed')?.value) || 0;
+        if (!seed) continue;                       // seed 0 = not seeded; never invent one
+        rows.push({
+          team:   e.team?.displayName || e.team?.shortDisplayName || '',
+          abbrev: e.team?.abbreviation || '',
+          wins, losses, ties, seed,
+          clinch:     stat('clincher')?.displayValue || '',
+          clinchDesc: stat('clincher')?.description  || '',
+        });
+      }
+      if (rows.length) conferences[g.name || 'Conference'] = rows.sort((a, b) => a.seed - b.seed);
+    }
+    // THE GATE: no regular-season game played => nothing to seed. Publishing
+    // anything here would present exhibition results as a playoff picture.
+    if (gamesPlayed > 0 && Object.keys(conferences).length) {
+      NFL_PLAYOFF_SEEDS.season = j.season?.year ?? null;
+      NFL_PLAYOFF_SEEDS.conferences = conferences;
+      NFL_PLAYOFF_SEEDS.gamesPlayed = gamesPlayed;
+    }
+    _recordRelayInit('nflPlayoffSeedsInit', true, null);
+    if (FIELD_DEBUG) console.log(`[FIELD] NFL playoff seeds: gp=${gamesPlayed} confs=${Object.keys(conferences).length} gated=${gamesPlayed > 0}`);
+  } catch (e) {
+    _recordRelayInit('nflPlayoffSeedsInit', false, e?.message || 'error');
+  }
+}
 
 function getNGSTeamReceivers(teamAbbr) {
   if (!teamAbbr) return [];
@@ -21170,6 +21237,7 @@ async function fetchSchedule(){
   setTimeout(nflNGSInit, 5000);           // NFL NGS: QB CPOE + WR YAC Above Expected from R2
   setTimeout(nflInjuriesInit, 5500);      // NFL injuries: official Out/Doubtful/Questionable designations from R2
   setTimeout(nflTeamTablesInit, 6000);    // NFL team tables: team EPA/play + snap share + depth-chart starters from R2
+  setTimeout(nflPlayoffSeedsInit, 6500);  // NFL playoff seeds (ESPN, gated on regular season having started)
   setTimeout(mlsSubImpactInit, 5100);     // MLS defensive sub lead-loss metric (Stats tab, single-game)
   setTimeout(mlsNovelMetricsInit, 5200);  // MLS second-assist/shot-selection/counter-attack/cross-accuracy (Stats tab)
   setTimeout(nhlAnalyticsInit, 4500);     // NHL analytics: set _homeAbbr/_awayAbbr/_sport on NHL game objects
@@ -22238,7 +22306,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-15g';
+  const SW_VERSION = '2026-08-15h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31394,6 +31462,25 @@ function renderStatsSection() {
       return row(i+1, name, `${(d.airYardShare*100).toFixed(1)}% AYS`, '', `YAC+Exp: <span class="stats-row-val ${yasCls}">${yac >= 0 ? '+' : ''}${yac.toFixed(1)}</span> · ${d.targets} tgt · ${d.team}`);
     }).join('');
     nflRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">WR Air Yard Share + YAC Above Expected (30+ tgt)</div>${wrRows}</div>`);
+  }
+
+  // Playoff picture — conference seeds 1-7 with ESPN's own clinch markers.
+  // Renders ONLY once NFL_PLAYOFF_SEEDS is populated, which nflPlayoffSeedsInit
+  // does only after a regular-season game has been played (see the gate there).
+  // Preseason and off-season therefore push nothing at all — no empty shell.
+  // Seeds 1-4 are labelled "division leaders", never "division winners": leading
+  // a division is what the standings show; WINNING it is a clinch, and only the
+  // clincher marker may assert that (Rule 1).
+  for (const [conf, teams] of Object.entries(NFL_PLAYOFF_SEEDS.conferences)) {
+    const seedRows = teams.slice(0, 7).map(t => {
+      const rec = `${t.wins}-${t.losses}${t.ties ? '-' + t.ties : ''}`;
+      const seat = t.seed === 1 ? 'first-round bye' : t.seed <= 4 ? 'division leader · hosts' : 'wild card';
+      const sub  = t.clinchDesc ? `${esc(t.clinchDesc)} · ${seat}` : seat;
+      return row(t.seed, t.team, rec, t.clinch === 'e' ? 'neg' : 'pos', sub);
+    }).join('');
+    const inHunt = teams.filter(t => t.seed > 7 && t.clinch !== 'e').slice(0, 3).map(t =>
+      row(t.seed, t.team, `${t.wins}-${t.losses}${t.ties ? '-' + t.ties : ''}`, '', 'in the hunt')).join('');
+    nflRows.push(`<div class="stats-subsection"><div class="stats-subsection-label">Playoff Picture — ${esc(conf)}${NFL_PLAYOFF_SEEDS.season ? ` (${NFL_PLAYOFF_SEEDS.season})` : ''}</div>${seedRows}${inHunt}</div>`);
   }
 
   if (nflRows.length) {

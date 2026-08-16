@@ -1081,6 +1081,19 @@ assert('A-NFLTTT-1 — NFL P3: BDB time-to-throw wired (fetch + accessor + row)'
   html.includes('NFL_BDB_TTT') && html.includes("lbl: 'Time to throw'"),
   'NFL BDB time-to-throw must be wired: bdb_time_to_throw.json fetch, getTeamTimeToThrow, NFL_BDB_TTT, Time to throw scout row');
 
+assert('A-NFLSEED-1 — NFL playoff tracker wired (gated init + store + Stats-tab consumer)',
+  html.includes('nflPlayoffSeedsInit') && html.includes('NFL_PLAYOFF_SEEDS') &&
+  html.includes('Playoff Picture') && html.includes('setTimeout(nflPlayoffSeedsInit'),
+  'NFL playoff tracker must be wired: nflPlayoffSeedsInit defined + booted, NFL_PLAYOFF_SEEDS store, Playoff Picture subsection');
+
+assert('A-NFLSEED-2 — playoff tracker queries seasontype=2 and never the default endpoint',
+  html.includes('football/nfl/standings?seasontype=2'),
+  'Tracker MUST use ?seasontype=2: the default endpoint returns preseason-derived playoffSeed values (verified 2026-08-16, sumGamesPlayed=30 seedMax=16 in preseason), which would publish exhibition seeds as a real playoff picture');
+
+assert('A-NFLSEED-3 — clinch read from displayValue/description, never .value',
+  /clincher'\)\?\.displayValue/.test(html) && !/clincher'\)\?\.value/.test(html),
+  'clincher.value is 0 for every marker (verified across 2024+2025 finals), so reading .value silently renders no clinch forever; must read displayValue/description');
+
 assert('A-NFLPART-1 — NFL P3: participation (formation/pressure) wired (fetch + accessor + row)',
   html.includes('/team-participation.json') && html.includes('getTeamParticipation') &&
   html.includes('NFL_PART') && html.includes("lbl: 'Pass pro'"),
