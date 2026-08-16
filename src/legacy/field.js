@@ -12003,6 +12003,16 @@ const ESPN_STANDINGS_MAP = {
   'Basketball (NBA)':  { sport: 'basketball', league: 'nba' },
   'Hockey (NHL)':      { sport: 'hockey',     league: 'nhl' },
   'Football (NFL)':    { sport: 'football',   league: 'nfl' },
+  // Alias for the label the live NFL section actually carries. The standings
+  // button gate reads sec.sport, and injectV2SportSection('nfl','NFL') pushes
+  // sport:'NFL' — so the 'Football (NFL)' key above never matched and NFL cards
+  // rendered NO standings button at all. Proven by a live Playwright run:
+  // outbox/nfl-standings-manifest-2026-08-15T23-48-36-793Z.json shows
+  // cardSports contains "NFL" while standingsBtnSports is only MLB + MLS.
+  // Same cache key ('football/nfl') and same aliasing idiom as the
+  // 'NBA Playoffs'/'NHL Playoffs' entries below. No isSoccer flag — that
+  // property is what picks the Table-vs-Standings label at the gate.
+  'NFL':               { sport: 'football',   league: 'nfl' },
   // NBA/NHL Playoffs: use regular season standings for record context
   'NBA Playoffs':      { sport: 'basketball', league: 'nba' },
   'NHL Playoffs':      { sport: 'hockey',     league: 'nhl' },
@@ -22212,7 +22222,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-15f';
+  const SW_VERSION = '2026-08-15g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
