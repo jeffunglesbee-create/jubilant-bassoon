@@ -1,0 +1,43 @@
+name: Confidence Resolution Probe
+# Resolves the two sub-95 confidence items with DIFFERENT tests, not repetition:
+#  (1) window_bridge_probe.js  — discriminates "bridge block executes" vs "block
+#      never reached", using pre-existing bridges + MLB's dropdown as an
+#      independent control the NFL map-key change cannot affect.
+#  (2) clincher-seasontype2-probe.mjs — queries a COMPLETED season under
+#      seasontype=2, the one combination (in-season scope AND clinched) that no
+#      earlier probe covered.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Clincher under seasontype=2 (no browser needed)
+        run: node scripts/clincher-seasontype2-probe.mjs
+      - name: Cache Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+      - name: Window bridge + MLB control
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+        run: node window_bridge_probe.js
+      - name: Commit artifacts
+        if: always()
+        run: |
+          git config user.email "bdb-probe@field"; git config user.name "BDB-Probe"
+          git add outbox/ || true
+          git diff --cached --quiet && echo nothing && exit 0
+          git commit -m "confidence resolution probe [skip ci]"
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
