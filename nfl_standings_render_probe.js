@@ -28,7 +28,7 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
     // Click the NFL standings button
     const clicked = await page.evaluate(() => {
       const btns = [...document.querySelectorAll('.standings-btn')];
-      const nfl = btns.find(b => (b.getAttribute('onclick') || '').includes('Football (NFL)'));
+      const nfl = btns.find(b => (b.getAttribute('onclick') || '').includes("toggleStandings(this,'NFL'"));
       if (!nfl) return false;
       nfl.scrollIntoView(); nfl.click(); return true;
     });
@@ -36,17 +36,18 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
     if (clicked) {
       await page.waitForTimeout(6000); // ESPN standings fetch
       m.render = await page.evaluate(() => {
-        const btn = [...document.querySelectorAll('.standings-btn')].find(b => (b.getAttribute('onclick') || '').includes('Football (NFL)'));
+        const btn = [...document.querySelectorAll('.standings-btn')].find(b => (b.getAttribute('onclick') || '').includes("toggleStandings(this,'NFL'"));
         const card = btn?.closest('.game-card');
         const p = card?.querySelector('.standings-panel');
         const rows = p ? [...p.querySelectorAll('.standings-table tr')] : [];
-        return { panelPresent: !!p, panelVisible: p ? getComputedStyle(p).display !== 'none' : false,
+        return { buttonLabel: (btn?.textContent || '').trim(),
+                 panelPresent: !!p, panelVisible: p ? getComputedStyle(p).display !== 'none' : false,
                  rowCount: rows.length, sampleRows: rows.map(r => r.textContent.trim().replace(/\s+/g, ' ')).filter(t => t.length > 2).slice(0, 4) };
       });
-      m.standingsWorks = !!(m.render.panelPresent && m.render.panelVisible && m.render.rowCount >= 16);
+      m.standingsWorks = !!(m.render.panelPresent && m.render.panelVisible && m.render.rowCount >= 30);
     } else {
       m.standingsWorks = false;
-      m.note = 'no standings-btn with Football (NFL) sport on the slate this run';
+      m.note = "no standings-btn for sport 'NFL' on the slate this run";
     }
     await page.screenshot({ path: `outbox/nfl-standings-${TS}.png`, fullPage: false }); // ALWAYS
   } catch (e) { m.error = String(e && e.message ? e.message : e); }
