@@ -41201,9 +41201,16 @@ window.addEventListener('beforeunload', saveSnapshot);
 // implicit globals still resolved "under the current IIFE + classic-script setup"
 // and called these assignments a prerequisite for a *future* ES-module conversion.
 // That conversion has ALREADY HAPPENED: scripts/build-bundle.mjs emits
-// `format: 'esm'` and injects it as `<script type="module">`. Module top-level
+// `format: 'esm'` and injects it as a module-type script tag. Module top-level
 // declarations are NOT global, so an inline handler naming a function that is
 // missing from this list throws ReferenceError on click, in production, silently.
+//
+// (Do NOT write a literal opening script tag anywhere in this file, not even
+// inside a comment. sync-source.mjs locates the app block via lastIndexOf of that
+// exact tag text, so a copy inside a comment becomes the LAST match: sync then
+// selects a few-KB phantom block, trips its own "expected 2MB+" guard, and BLOCKS
+// EVERY DEPLOY. That is precisely how commit 1fecea4 broke deploy-gate — the
+// comment documenting the module bundling quoted the tag it was describing.)
 //
 // Proven live 2026-08-16: outbox/nfl-standings-manifest-2026-08-16T00-54-37-378Z.json
 // captured `pageErrors: ["ReferenceError: toggleStandings is not defined"]` from the

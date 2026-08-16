@@ -18,15 +18,23 @@ const html = readFileSync(htmlPath, 'utf8');
 
 const OPEN_TAG = '<script type="module">';
 const CLOSE_TAG = '</script>';
-const scriptStart = html.lastIndexOf(OPEN_TAG);
-if (scriptStart === -1) throw new Error('No <script> tag found in index.html');
-const contentStart = scriptStart + OPEN_TAG.length;
-const scriptEnd = html.indexOf(CLOSE_TAG, contentStart);
-if (scriptEnd === -1) throw new Error('No </script> closing tag found');
-
-const blockSize = scriptEnd - contentStart;
+// Select the app block by SIZE, not by position. lastIndexOf(OPEN_TAG) picks the
+// last textual occurrence of the tag — including one that appears inside the
+// bundled JS itself (a comment quoting the tag). That is not hypothetical: commit
+// 1fecea4 added a comment containing the literal tag, sync selected a 7.5 KB
+// phantom block, threw "expected 2MB+", and BLOCKED EVERY DEPLOY until it was
+// found. The real app block is the only module block over 1 MB, so choose it.
+let contentStart = -1, scriptEnd = -1, blockSize = 0;
+for (let i = html.indexOf(OPEN_TAG); i !== -1; i = html.indexOf(OPEN_TAG, i + 1)) {
+  const cs = i + OPEN_TAG.length;
+  const ce = html.indexOf(CLOSE_TAG, cs);
+  if (ce === -1) continue;
+  const size = ce - cs;
+  if (size > blockSize) { blockSize = size; contentStart = cs; scriptEnd = ce; }
+}
+if (contentStart === -1) throw new Error('No module script block found in index.html');
 if (blockSize < 1_000_000) {
-  throw new Error(`Script block is only ${blockSize} chars — expected 2MB+. Wrong block.`);
+  throw new Error(`Largest script block is only ${blockSize} chars — expected 2MB+. Wrong block.`);
 }
 
 const currentBlock = html.slice(contentStart, scriptEnd);
@@ -42,11 +50,15 @@ if (currentBlock !== fieldJs) {
       encoding: 'utf8',
       maxBuffer: 50 * 1024 * 1024,
     });
-    const cs = committedHtml.lastIndexOf(OPEN_TAG);
-    if (cs !== -1) {
-      const cc = cs + OPEN_TAG.length;
+    // Same size-based selection as above — comparing a correctly-selected current
+    // block against a lastIndexOf-selected committed block would report a false
+    // divergence whenever a phantom tag exists in the committed file.
+    let bs = 0;
+    for (let i = committedHtml.indexOf(OPEN_TAG); i !== -1; i = committedHtml.indexOf(OPEN_TAG, i + 1)) {
+      const cc = i + OPEN_TAG.length;
       const ce = committedHtml.indexOf(CLOSE_TAG, cc);
-      if (ce !== -1) committedBlock = committedHtml.slice(cc, ce);
+      if (ce === -1) continue;
+      if (ce - cc > bs) { bs = ce - cc; committedBlock = committedHtml.slice(cc, ce); }
     }
   } catch (_) {
     // No HEAD commit yet (initial repo) — skip the check
