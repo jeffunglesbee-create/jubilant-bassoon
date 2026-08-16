@@ -9636,7 +9636,7 @@ async function nflPlayoffSeedsInit() {
     // conferences. Preseason hides that (the gate renders nothing either way) —
     // in-season it would have silently rendered nothing at all. Caught by smoke
     // A-STANDPROXY-1 rather than by a user noticing an empty Stats tab in week 1.
-    const r = await fetch(`${_MLB_RELAY}/espn-standings/football/nfl/standings?seasontype=2`,
+    const r = await fetch(`${_MLB_RELAY}/espn-standings/football/nfl/standings?region=us&lang=en&contentorigin=espn&type=0&level=2&sort=playoffseed%3Aasc`,
                           { signal: AbortSignal.timeout(8000) });
     if (!r.ok) throw new Error('ESPN playoff seeds HTTP ' + r.status);
     const j = await r.json();
@@ -9661,9 +9661,18 @@ async function nflPlayoffSeedsInit() {
       }
       if (rows.length) conferences[g.name || 'Conference'] = rows.sort((a, b) => a.seed - b.seed);
     }
-    // THE GATE: no regular-season game played => nothing to seed. Publishing
-    // anything here would present exhibition results as a playoff picture.
-    if (gamesPlayed > 0 && Object.keys(conferences).length) {
+    // THE GATE — ESPN's OWN seasonType, not a games-played heuristic.
+    // seasonType: 1 = preseason, 2 = regular season, 3 = postseason. The previous
+    // gate assumed `?seasontype=2` would come back empty during preseason; that was
+    // true of site.api.espn.com but NOT of site.web.api, which serves live PRESEASON
+    // records (LAC 1-0, +20 point differential — verified 2026-08-16) with
+    // playoffSeed already populated. A games-played gate FAILS OPEN on that and
+    // would publish exhibition seeds as a real playoff picture (Rule 1).
+    // Reading the payload's declared seasonType is both stricter and honest: it is
+    // ESPN saying which season this is, not us inferring it.
+    const _seasonType = j.children?.[0]?.standings?.seasonType ?? j.standings?.seasonType ?? null;
+    NFL_PLAYOFF_SEEDS.seasonType = _seasonType;
+    if (_seasonType === 2 && gamesPlayed > 0 && Object.keys(conferences).length) {
       NFL_PLAYOFF_SEEDS.season = j.season?.year ?? null;
       NFL_PLAYOFF_SEEDS.conferences = conferences;
       NFL_PLAYOFF_SEEDS.gamesPlayed = gamesPlayed;
@@ -19037,7 +19046,11 @@ async function fetchESPNStandings(sportName){
     // it cannot be fixed client-side. Goes through the relay, which injects
     // Origin: https://www.espn.com server-side (same mechanism as /espn-summary).
     // Relay returns ESPN's shape verbatim, so the parse below is unchanged.
-    const url = `${_MLB_RELAY}/espn-standings/${map.sport}/${map.league}/standings`;
+    // level=2 returns children[] = conferences (AFC/NFC), which is what the parse
+    // below and the grouped panel both expect. The other params are required by
+    // site.web.api — without them it answers with a bare {fullViewLink} stub.
+    const _stQS = 'region=us&lang=en&contentorigin=espn&type=0&level=2&sort=playoffseed%3Aasc';
+    const url = `${_MLB_RELAY}/espn-standings/${map.sport}/${map.league}/standings?${_stQS}`;
     const r = await fetch(url);
     if(!r.ok) throw new Error("ESPN standings HTTP "+r.status);
     const json = await r.json();
@@ -27384,7 +27397,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-15k';
+  const SW_VERSION = '2026-08-16a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

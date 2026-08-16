@@ -1113,9 +1113,9 @@ assert('A-STANDPROXY-1 — standings dropdown fetches ESPN through the relay, ne
     `Unbridged inline-handler functions would throw ReferenceError on click in production: ${missing.join(', ')}. Add window.<fn> = <fn> to the bridge block in field.js.`);
 }
 
-assert('A-NFLSEED-2 — playoff tracker queries seasontype=2 and never the default endpoint',
-  html.includes('football/nfl/standings?seasontype=2'),
-  'Tracker MUST use ?seasontype=2: the default endpoint returns preseason-derived playoffSeed values (verified 2026-08-16, sumGamesPlayed=30 seedMax=16 in preseason), which would publish exhibition seeds as a real playoff picture');
+assert('A-NFLSEED-2 — playoff tracker gates on ESPN seasonType===2, not a games-played heuristic',
+  html.includes('_seasonType === 2') && html.includes('standings?.seasonType'),
+  'Tracker MUST gate on the payload seasonType (1=pre, 2=regular, 3=post). site.web.api serves LIVE PRESEASON records with playoffSeed populated (LAC 1-0, verified 2026-08-16), so a games-played gate FAILS OPEN and would publish exhibition seeds as a real playoff picture (Rule 1).');
 
 assert('A-NFLSEED-3 — clinch read from displayValue/description, never .value',
   /clincher'\)\?\.displayValue/.test(html) && !/clincher'\)\?\.value/.test(html),
