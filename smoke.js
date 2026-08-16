@@ -1086,6 +1086,28 @@ assert('A-NFLSEED-1 — NFL playoff tracker wired (gated init + store + Stats-ta
   html.includes('Playoff Picture') && html.includes('setTimeout(nflPlayoffSeedsInit'),
   'NFL playoff tracker must be wired: nflPlayoffSeedsInit defined + booted, NFL_PLAYOFF_SEEDS store, Playoff Picture subsection');
 
+// A-WINBRIDGE-1 — every function called from an inline on*= attribute MUST be
+// assigned to window. The bundle is ESM (build-bundle.mjs format:'esm', injected
+// as <script type="module">), so module-scope declarations are NOT global and an
+// unbridged handler throws ReferenceError on click, in production, silently.
+// Caught live 2026-08-16: toggleStandings was unbridged, so EVERY standings
+// dropdown in the app was inert while still rendering a button.
+{
+  const handlerSrc = [...html.matchAll(/on(?:click|change|input|keydown|submit)="([^"]*)"/g)].map(m => m[1]).join(';');
+  const called = new Set([...handlerSrc.matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g)].map(m => m[1]));
+  const NOISE = new Set(['event','if','return','this','function','catch','then','navigator','confirm','alert',
+    'parseInt','parseFloat','String','Number','JSON','Math','Array','Object','setTimeout','console','document',
+    'window','encodeURIComponent','decodeURIComponent','add','clearTimeout','closest','esc','getElementById',
+    'open','preventDefault','querySelector','remove','replace','scrollIntoView','share','stopPropagation',
+    'trim','writeText','openGameSheet']);
+  const declared = new Set([...html.matchAll(/(?:^|\n)(?:async\s+)?function\s+([A-Za-z_$][A-Za-z0-9_$]*)/g)].map(m => m[1]));
+  const bridged  = new Set([...html.matchAll(/window\.([A-Za-z_$][A-Za-z0-9_$]*)\s*=/g)].map(m => m[1]));
+  const missing = [...called].filter(fn => !NOISE.has(fn) && declared.has(fn) && !bridged.has(fn));
+  assert('A-WINBRIDGE-1 — every inline on*= handler function is bridged to window (ESM bundle has no implicit globals)',
+    missing.length === 0,
+    `Unbridged inline-handler functions would throw ReferenceError on click in production: ${missing.join(', ')}. Add window.<fn> = <fn> to the bridge block in field.js.`);
+}
+
 assert('A-NFLSEED-2 — playoff tracker queries seasontype=2 and never the default endpoint',
   html.includes('football/nfl/standings?seasontype=2'),
   'Tracker MUST use ?seasontype=2: the default endpoint returns preseason-derived playoffSeed values (verified 2026-08-16, sumGamesPlayed=30 seedMax=16 in preseason), which would publish exhibition seeds as a real playoff picture');

@@ -22306,7 +22306,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-15h';
+  const SW_VERSION = '2026-08-15i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -41194,13 +41194,32 @@ function markFreshnessLive(){
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSnapshot(); });
 window.addEventListener('beforeunload', saveSnapshot);
 
-// ── Explicit window bridges for inline HTML event handlers ──
+// ── Explicit window bridges for inline HTML event handlers ── MANDATORY ──
 // These functions are called by onclick/onchange/etc. attributes in index.html.
-// Under the current IIFE + classic-script setup they resolve automatically via
-// implicit globals. These assignments make them explicit window properties —
-// prerequisite for Scenario B (true ES module conversion) where implicit globals
-// would no longer exist. Additive only: existing behavior is unchanged.
+//
+// This list is LOAD-BEARING, not a nice-to-have. The previous comment here said
+// implicit globals still resolved "under the current IIFE + classic-script setup"
+// and called these assignments a prerequisite for a *future* ES-module conversion.
+// That conversion has ALREADY HAPPENED: scripts/build-bundle.mjs emits
+// `format: 'esm'` and injects it as `<script type="module">`. Module top-level
+// declarations are NOT global, so an inline handler naming a function that is
+// missing from this list throws ReferenceError on click, in production, silently.
+//
+// Proven live 2026-08-16: outbox/nfl-standings-manifest-2026-08-16T00-54-37-378Z.json
+// captured `pageErrors: ["ReferenceError: toggleStandings is not defined"]` from the
+// deployed worker — every standings dropdown in the app (MLB, MLS and NFL alike)
+// was inert because toggleStandings was never bridged.
+//
+// Smoke A-WINBRIDGE-1 enforces this: every function called from an on*= attribute
+// must appear here. Add the bridge in the SAME commit as any new inline handler.
 window._deskCardToggle       = _deskCardToggle;
+window.toggleStandings       = toggleStandings;
+window.jumpToGameCard        = jumpToGameCard;
+window.openWcGroup           = openWcGroup;
+window.renderJournalism      = renderJournalism;
+window.renderJournalismArchive = renderJournalismArchive;
+window.scrollToMediaSpecial  = scrollToMediaSpecial;
+window._wwFindCard           = _wwFindCard;
 window.closeBottomSheet      = closeBottomSheet;
 window.fetchMCPStatus        = fetchMCPStatus;
 window.goToDate              = goToDate;
