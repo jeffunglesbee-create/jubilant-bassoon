@@ -5,7 +5,17 @@
 Session doc: `outbox/cc-session-2026-08-16-nfl-standings-and-playoff-tracker.md`.
 Both repos on main. SW 2026-08-15j, smoke 981/0. HEAD `9795c08`.
 
-**⚠ THE STANDINGS DROPDOWN STILL DOES NOT OPEN A PANEL. Do not report it working.**
+**✅ RESOLVED 2026-08-16 — the standings dropdown now works, verified live.**
+browser_quick/browser_navigate against the deployed app (SW 2026-08-16a), ZERO
+GitHub Actions minutes: `panelPresent:true visible:true rows:33
+label:"▲ Standings" groupHeaders:["American League","National League"]
+sampleRows:["1 Tampa Bay Rays 74 48 .607"]`. The `▲` label proves the success
+branch ran (appendChild), not the silent-restore stub; the two group headers prove
+the conference-grouping fix. `typeof window.toggleStandings === "function"` proves
+the bridge. MLB is the test case because NFL preseason ended overnight — and MLB
+was itself broken before this (mlbDropdownWorks:false), so the repair is class-wide.
+
+FIVE stacked defects, all now fixed:
 
 An in-session claim that "NFL standings already work ✅" was WRONG (read the map,
 not the runtime path — Rule 48 Class A). A Playwright probe disproved it, and each
@@ -20,20 +30,47 @@ fix exposed the next defect underneath:
 3. `6b0264f` **FIXED** — `slice(0,12)` on AFC+NFC concatenated (32 rows) meant an
    NFC card opened a table containing NEITHER team. Now conference-grouped; also
    fixes MLB/NBA/NHL, which share the path.
-4. `f05da5d` **NOT FIXED** — ESPN's v2 standings URL returns **HTTP 200 with an
-   error body** (`topKeys:["error","cached"]`, entries 0), so the fetch "succeeds",
-   parses nothing, and toggleStandings silently restores the button. I inferred
-   missing query params and shipped them; **the deployed 2026-08-15j build still
-   returns the error body**, so that inference was wrong. Corrected reading: the
-   same URL works from a CI node runner but not from the browser → the
-   discriminator is ORIGIN, not params. MLS standings work in the same page via a
-   different base path (`/apis/site/v2/` vs `/apis/v2/`).
-   **NEXT:** probe (in flight) fetches 5 URL variants in-page and records
-   `workingVariant`. If null → proxy standings through the relay (Rule 60/70),
-   which needs its own CC-CMD.
+4. **FIXED** — ESPN blocks the browser: `site.api.espn.com/standings` answers a
+   browser-origin request with HTTP 200 and an ERROR BODY. All 5 url variants
+   failed (`workingVariant:null`), so it was never the url or the params — two of
+   my fixes (params in `f05da5d`) were wrong. Not fixable client-side.
+5. **FIXED** — the relay proxy then 403'd: ESPN's Akamai edge denies **Cloudflare
+   Worker IPs** on `site.api`. Switched to `site.web.api.espn.com` (relay
+   `086096f`), the host `/espn-summary` already used successfully; client
+   `003c134a` adds the params it requires (`level=2` → children[] = conferences).
 
-This was never NFL-specific: the window-bridge probe recorded
-`mlbDropdownWorks:false` on MLB's own button.
+**ONE ENDPOINT, THREE ANSWERS** — why four diagnoses were wrong in a row:
+| caller | site.api | site.web.api |
+|---|---|---|
+| GitHub runner | 200 + data | — |
+| Browser | 200 + `{error,cached}` | — |
+| CF Worker | **403 Akamai** | **200 + data** |
+Actions was the most MISLEADING vantage point: the only caller that got real data
+from the broken host, which is what sent me down the params path twice.
+
+**Tracker gate rewritten (`003c134a`):** site.web.api serves LIVE PRESEASON
+standings with playoffSeed populated (LAC 1-0, seasonType:1), so the games-played
+gate would have FAILED OPEN and published exhibition seeds. Now gates on ESPN's
+declared `seasonType === 2`. Smoke A-NFLSEED-2 rewritten to match.
+
+This was never NFL-specific: MLB's own dropdown was equally dead
+(`mlbDropdownWorks:false`) and is now confirmed working.
+
+**GITHUB ACTIONS ALTERNATIVE (adopted).** Actions budget was ~90% consumed, and
+this session's Playwright probes (~300MB Chromium per run, ~8 runs) were a large
+part of it. Everything above was closed out with ZERO Actions minutes using the
+MCP tools this project already has:
+- `html_probe` — fetch any URL FROM THE CLOUDFLARE WORKER IP. Found the Akamai
+  403 and the working host in 3 calls. Also the only way to see the Worker's
+  vantage point at all — Actions cannot show it.
+- `browser_quick` / `browser_navigate`+`interact`+`extract` — real headless
+  browser (Cloudflare Browser Rendering) for click-and-render verification.
+  Replaces the Playwright-in-Actions workflows entirely.
+- `probe_relay_route` — self-fetch an allow-listed relay route.
+NOTE: both repos are PUBLIC (`private:false`), and public repos get unlimited free
+Actions minutes — so the 90% is likely a private repo or Actions STORAGE
+(artifacts/logs, billed even for public). Confirm in Settings -> Billing before
+optimising further.
 
 **Playoff tracker (`288f2f7`) — shipped, gated, correct.** Renders nothing today
 (preseason) by design. `?seasontype=2` today gp=0 SILENT vs default gp=30 RENDERS
