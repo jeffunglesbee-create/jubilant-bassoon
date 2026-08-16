@@ -15,6 +15,12 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForSelector('.game-card', { timeout: 45000 }).catch(() => {});
     await page.waitForTimeout(8000);
+    // Which BUILD did we actually test? Without this a manifest cannot distinguish
+    // "the fix is not deployed yet" from "the fix does not work" — both render as
+    // standingsWorks:false. (Learned the hard way: a [skip ci] on the head commit
+    // of a multi-commit push suppressed deploy-gate for two real fixes in that
+    // same push, and the probe then tested the pre-fix build.)
+    m.swVersion = await page.evaluate(() => window.SW_VERSION || null);
     // Diagnostic: what sports render a standings button, and what card sports exist
     m.diag = await page.evaluate(() => {
       const btns = [...document.querySelectorAll('.standings-btn')];
