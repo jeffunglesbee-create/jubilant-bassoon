@@ -19105,7 +19105,7 @@ function renderESPNStandingsPanel(panel, entries, sportName){
     return;
   }
 
-  const rows = entries.slice(0,12).map((r,i)=>{
+  const rowHtml = (r,i)=>{
     const highlight = i<4 && isSoccer ? "highlight" : i===0 && !isSoccer ? "highlight" : "";
     const streak = r.streak ? `<td style="text-align:right;font-size:.65rem;color:var(--smoke)">${r.streak}</td>` : "";
     const l10    = r.last10 ? `<td style="text-align:right;font-size:.65rem">${r.last10}</td>` : "";
@@ -19118,7 +19118,23 @@ function renderESPNStandingsPanel(panel, entries, sportName){
       ${isSoccer?`<td style="text-align:right;color:var(--gold2);font-weight:700">${r.pts}</td>`:`<td style="text-align:right;font-size:.7rem">${r.pct}</td>`}
       ${gb}${streak}${l10}
     </tr>`;
-  }).join("");
+  };
+  // fetchESPNStandings concatenates every child group into ONE flat array, so a
+  // multi-conference league arrives as e.g. AFC(16)+NFC(16)=32 rows. Slicing the
+  // first 12 of that showed AFC-only, renumbered 1-12 — meaning an NFC game card
+  // opened a table containing NEITHER of its teams. When the payload spans more
+  // than one group, render each group under its own header (same colspan idiom
+  // as the MLS branch above) and number teams within their group.
+  const groupNames = [...new Set(entries.map(e => e.group || "").filter(Boolean))];
+  let rows;
+  if (groupNames.length > 1) {
+    rows = groupNames.map((g, gi) => {
+      const head = `<tr><td colspan="8" style="font-size:.58rem;font-weight:700;color:var(--gold2);padding:.3rem .3rem .1rem;letter-spacing:.04em;text-transform:uppercase;border-top:${gi>0?"1px solid rgba(255,255,255,.08)":"none"}">${g}</td></tr>`;
+      return head + entries.filter(e => (e.group||"") === g).slice(0,16).map(rowHtml).join("");
+    }).join("");
+  } else {
+    rows = entries.slice(0,12).map(rowHtml).join("");
+  }
   const extraCols = entries[0]?.streak ? "<th>STK</th>" : "";
   const l10Col    = entries[0]?.last10  ? "<th>L10</th>"  : "";
   const gbCol     = entries[0]?.gb      ? "<th>GB</th>"   : "";
