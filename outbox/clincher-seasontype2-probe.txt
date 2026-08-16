@@ -1,0 +1,7 @@
+CONTROL  season=2025 default seasontype HTTP 200 season=2025 entries=32 withPlayoffSeed=32 withClincher=32
+    markers: {"z=Clinched Division":6,"y=Clinched Wild Card":6,"e=Eliminated from Playoff Contention":18,"*=Clinched Division and Bye":2}
+SUBJECT  season=2025 seasontype=2       HTTP 200 season=2025 entries=32 withPlayoffSeed=32 withClincher=32
+    markers: {"z=Clinched Division":6,"y=Clinched Wild Card":6,"e=Eliminated from Playoff Contention":18,"*=Clinched Division and Bye":2}
+
+VERDICT: seasontype=2 carries clincher => true
+RESOLVED: the tracker will show real clinch markers in-season. Claim upgraded from UNVERIFIED.

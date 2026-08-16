@@ -1,0 +1,37 @@
+{
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt=1",
+  "ts": "2026-08-16T02-27-12-833Z",
+  "pageErrors": [
+    "ReferenceError: toggleStandings is not defined"
+  ],
+  "swVersion": "2026-08-15h",
+  "bridges": {
+    "preexisting": {
+      "closeBottomSheet": "function",
+      "goToDate": "function",
+      "makePick": "function",
+      "pinGame": "function",
+      "toggleThreadDrawer": "function",
+      "_threadSend": "function"
+    },
+    "newlyAdded": {
+      "toggleStandings": "undefined",
+      "jumpToGameCard": "undefined",
+      "openWcGroup": "undefined",
+      "renderJournalism": "undefined",
+      "renderJournalismArchive": "undefined",
+      "scrollToMediaSpecial": "undefined",
+      "_wwFindCard": "undefined"
+    }
+  },
+  "preexistingAllPresent": true,
+  "newlyAddedAllPresent": false,
+  "hypothesis": "A-partial — block executes but some new names missing: deploy lag or a typo",
+  "mlbButtonFound": true,
+  "mlb": {
+    "panelPresent": false,
+    "rowCount": 0,
+    "label": "▼ Standings"
+  },
+  "mlbDropdownWorks": false
+}
