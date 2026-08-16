@@ -28154,10 +28154,23 @@ function buildGameStandingsContext(game) {
       (s.abbrev || '').toLowerCase() === n
     );
   };
+  // "(leads)" asserts a standings position, so only claim it for the top entry of
+  // the team's own group. A bare gb===0 test labels EVERY team tied at zero games
+  // back as leading: verified 2026-08-16 against ESPN football/nfl, where
+  // gamesBehind across the 16 AFC teams takes values {0, 0.5, 1} — several teams
+  // sit at 0, which would emit "Bills: 1-0 (leads) · Steelers: 1-0 (leads)" into a
+  // journalism prompt. Rule 1: state the record, never an unearned position.
+  // Standings arrive rank-ordered, so the first row seen per group is its leader.
+  const _leaderOfGroup = {};
+  for (const s of standings) {
+    const g = s.division || s.group || '';
+    if (!(g in _leaderOfGroup)) _leaderOfGroup[g] = s;
+  }
+  const _leads = e => e && _leaderOfGroup[e.division || e.group || ''] === e;
   const fmt = (e, t) => {
     if (!e) return '';
     const gb = parseFloat(e.gb);
-    if (isNaN(gb) || gb === 0) return `${t}: ${e.wins}-${e.losses} (leads)`;
+    if (isNaN(gb) || gb === 0) return `${t}: ${e.wins}-${e.losses}${_leads(e) ? ' (leads)' : ''}`;
     return `${t}: ${e.wins}-${e.losses}, ${e.gb} GB`;
   };
   const parts = [fmt(findTeam(game.away), game.away), fmt(findTeam(game.home), game.home)].filter(Boolean);
