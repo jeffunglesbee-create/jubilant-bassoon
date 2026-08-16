@@ -44,7 +44,23 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
     });
     m.nflStandingsBtnFound = clicked;
     if (clicked) {
-      await page.waitForTimeout(12000); // ESPN standings fetch (generous: real network)
+      // TIME-SERIES measurement. A single late sample cannot distinguish "the panel
+      // never opened" from "the panel opened and a re-render destroyed it" — this
+      // app re-renders the card list every 15-30s on the ESPN poll cycle, and
+      // innerHTML replacement wipes appended nodes (the Rule 24 failure class).
+      m.timeline = [];
+      for (const wait of [1500, 2500, 4000, 6000, 10000]) {
+        await page.waitForTimeout(wait);
+        const snap = await page.evaluate(() => {
+          const b = [...document.querySelectorAll('.standings-btn')].find(x => (x.getAttribute('onclick') || '').includes("toggleStandings(this,'NFL'"));
+          const p = b?.closest('.game-card')?.querySelector('.standings-panel');
+          return { panels: document.querySelectorAll('.standings-panel').length,
+                   thisPanel: !!p, rows: p ? p.querySelectorAll('.standings-table tr').length : 0,
+                   label: (b?.textContent || '').trim() };
+        });
+        m.timeline.push({ atMs: m.timeline.reduce((a, x) => a + 0, 0) || wait, ...snap });
+      }
+      m.panelEverAppeared = m.timeline.some(t => t.panels > 0);
       m.render = await page.evaluate(() => {
         const btn = [...document.querySelectorAll('.standings-btn')].find(b => (b.getAttribute('onclick') || '').includes("toggleStandings(this,'NFL'"));
         const card = btn?.closest('.game-card');
