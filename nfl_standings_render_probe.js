@@ -66,23 +66,37 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
       // the network log only proves the response reached the browser — it does not
       // prove JS could read it (CORS) or that the parse yielded entries. This
       // separates: blocked-by-CORS vs parse-threw vs parsed-but-zero-entries.
-      m.espnDirect = await page.evaluate(async () => {
-        // Compare the BARE url (the old builder) against the PARAMETERISED one
-        // (the fix), so the manifest proves which shape ESPN actually serves.
-        const y = (new Date().getMonth() >= 7) ? new Date().getFullYear() : new Date().getFullYear() - 1;
-        const url = `https://site.api.espn.com/apis/v2/sports/football/nfl/standings?limit=100&season=${y}&seasontype=2`;
-        try {
-          const r = await fetch(url);
-          let j = null, parseErr = null;
-          try { j = await r.json(); } catch (e) { parseErr = String(e); }
-          if (!j) return { ok: r.ok, status: r.status, parseErr };
-          const groups = j.children || [j];
-          let entries = 0;
-          groups.forEach(g => { entries += (g.standings?.entries || []).length; });
-          return { ok: r.ok, status: r.status, groups: groups.length, entries,
-                   topKeys: Object.keys(j).slice(0, 8) };
-        } catch (e) { return { fetchThrew: String(e) }; }
-      });
+      // The parameterised URL is ALSO returning {error,cached} from the browser
+      // while the SAME url returns real standings from a CI node runner — so the
+      // discriminator is the request ORIGIN, not the query params. MLS standings
+      // work in this same page via a DIFFERENT base path (/apis/site/v2/ rather
+      // than /apis/v2/). Test the variants in-page and let the manifest say which
+      // one a browser can actually read.
+      const y = (new Date().getMonth() >= 7) ? new Date().getFullYear() : new Date().getFullYear() - 1;
+      m.espnVariants = await page.evaluate(async (year) => {
+        const V = {
+          v2_bare:        `https://site.api.espn.com/apis/v2/sports/football/nfl/standings`,
+          v2_params:      `https://site.api.espn.com/apis/v2/sports/football/nfl/standings?limit=100&season=${year}&seasontype=2`,
+          siteV2_bare:    `https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings`,
+          siteV2_params:  `https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings?season=${year}&seasontype=2`,
+          coreV2_groups:  `https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=1`,
+        };
+        const out = {};
+        for (const [name, url] of Object.entries(V)) {
+          try {
+            const r = await fetch(url);
+            let j = null, perr = null;
+            try { j = await r.json(); } catch (e) { perr = String(e).slice(0, 80); }
+            if (!j) { out[name] = { status: r.status, parseErr: perr }; continue; }
+            const groups = j.children || [j];
+            let entries = 0;
+            groups.forEach(g => { entries += (g.standings?.entries || []).length; });
+            out[name] = { status: r.status, entries, topKeys: Object.keys(j).slice(0, 5) };
+          } catch (e) { out[name] = { threw: String(e).slice(0, 110) }; }
+        }
+        return out;
+      }, y);
+      m.workingVariant = Object.entries(m.espnVariants).find(([, v]) => (v.entries || 0) > 0)?.[0] || null;
       m.render = await page.evaluate(() => {
         const btn = [...document.querySelectorAll('.standings-btn')].find(b => (b.getAttribute('onclick') || '').includes("toggleStandings(this,'NFL'"));
         const card = btn?.closest('.game-card');
