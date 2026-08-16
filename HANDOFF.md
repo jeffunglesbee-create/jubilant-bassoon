@@ -1,9 +1,10 @@
 # FIELD HANDOFF
 
-## Session 2026-08-16 — NFL standings: 4 stacked defects, 3 fixed, 1 OPEN + playoff tracker
+## Session 2026-08-16 — NFL standings: 5 stacked defects, ALL FIXED + playoff tracker
 
 Session doc: `outbox/cc-session-2026-08-16-nfl-standings-and-playoff-tracker.md`.
-Both repos on main. SW 2026-08-15j, smoke 981/0. HEAD `9795c08`.
+Both repos on main. SW 2026-08-16a, smoke 982/0.
+Client HEAD `003c134a` · relay HEAD `086096f`.
 
 **✅ RESOLVED 2026-08-16 — the standings dropdown now works, verified live.**
 browser_quick/browser_navigate against the deployed app (SW 2026-08-16a), ZERO
@@ -72,10 +73,11 @@ Actions minutes — so the 90% is likely a private repo or Actions STORAGE
 (artifacts/logs, billed even for public). Confirm in Settings -> Billing before
 optimising further.
 
-**Playoff tracker (`288f2f7`) — shipped, gated, correct.** Renders nothing today
-(preseason) by design. `?seasontype=2` today gp=0 SILENT vs default gp=30 RENDERS
-← the default endpoint would have published EXHIBITION-derived seeds as a real
-playoff picture. Clinch read from the `clincher` stat's `displayValue`/`description`
+**Playoff tracker (`288f2f7`, gate rewritten `003c134a`) — shipped, gated, correct.**
+Renders nothing today (preseason) by design. NOTE the gate changed: the original
+`?seasontype=2` games-played gate was correct against site.api but FAILS OPEN
+against site.web.api, which serves live preseason records with playoffSeed
+populated. Now gates on ESPN's declared `seasonType === 2`. Clinch read from the `clincher` stat's `displayValue`/`description`
 (never `.value` — 0 for all 96 markers observed). Seeds 1-4 labelled "division
 leader", never "winner". **Clinch UNVERIFIED → RESOLVED**: `?season=2025&seasontype=2`
 (a completed season under regular-season scope — the combination no earlier probe
