@@ -1086,6 +1086,11 @@ assert('A-NFLSEED-1 — NFL playoff tracker wired (gated init + store + Stats-ta
   html.includes('Playoff Picture') && html.includes('setTimeout(nflPlayoffSeedsInit'),
   'NFL playoff tracker must be wired: nflPlayoffSeedsInit defined + booted, NFL_PLAYOFF_SEEDS store, Playoff Picture subsection');
 
+assert('A-STANDPROXY-1 — standings dropdown fetches ESPN through the relay, never direct',
+  html.includes('/espn-standings/') &&
+  !/fetch\(`\$\{ESPN_STANDINGS_BASE\}/.test(html),
+  'The browser CANNOT read ESPN standings directly: site.api.espn.com answers a browser-origin request with HTTP 200 and an error body ({error,cached}, 0 entries) — verified across 5 url variants 2026-08-16. fetchESPNStandings must go through the relay /espn-standings proxy, which injects Origin server-side.');
+
 // A-WINBRIDGE-1 — every function called from an inline on*= attribute MUST be
 // assigned to window. The bundle is ESM (build-bundle.mjs format:'esm', injected
 // as <script type="module">), so module-scope declarations are NOT global and an
