@@ -1,0 +1,98 @@
+
+=== 2026 default (preseason NOW) ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings
+ American Football Conference
+ National Football Conference
+ SUMMARY: clincherStatPresentOnAnyEntry=false sumGamesPlayed=30 seedMin=0 seedMax=16 seedsAllZero=false
+ GATE gamesPlayed>0 => true   GATE anySeed>0 => true
+
+=== 2026 seasontype=2 (regular, not started) ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?seasontype=2
+ American Football Conference
+ National Football Conference
+ SUMMARY: clincherStatPresentOnAnyEntry=false sumGamesPlayed=0 seedMin=0 seedMax=0 seedsAllZero=true
+ GATE gamesPlayed>0 => false   GATE anySeed>0 => false
+
+=== 2025 final ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2025
+ American Football Conference
+   NE   seed= 2 14-3-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   JAX  seed= 3 13-4-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   PIT  seed= 4 10-7-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   HOU  seed= 5 12-5-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   BUF  seed= 6 12-5-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   LAC  seed= 7 11-6-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   IND  seed= 8 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   BAL  seed= 9 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   MIA  seed=10 7-10-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   CIN  seed=11 6-11-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   KC   seed=12 6-11-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   CLE  seed=13 5-12-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   LV   seed=14 3-14-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   NYJ  seed=15 3-14-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   TEN  seed=16 3-14-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   DEN  seed= 1 14-3-0 clincher{value:0, displayValue:"*", description:"Clinched Division and Bye"}
+ National Football Conference
+   CHI  seed= 2 11-6-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   PHI  seed= 3 11-6-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   CAR  seed= 4 8-9-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   LAR  seed= 5 12-5-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   SF   seed= 6 12-5-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   GB   seed= 7 9-7-1 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   MIN  seed= 8 9-8-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   DET  seed= 9 9-8-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   TB   seed=10 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   ATL  seed=11 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   DAL  seed=12 7-9-1 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   NO   seed=13 6-11-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   WSH  seed=14 5-12-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   NYG  seed=15 4-13-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   ARI  seed=16 3-14-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   SEA  seed= 1 14-3-0 clincher{value:0, displayValue:"*", description:"Clinched Division and Bye"}
+ SUMMARY: clincherStatPresentOnAnyEntry=true sumGamesPlayed=544 seedMin=1 seedMax=16 seedsAllZero=false
+ GATE gamesPlayed>0 => true   GATE anySeed>0 => true
+
+=== 2024 final ===
+https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=2024
+ American Football Conference
+   BUF  seed= 2 13-4-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   BAL  seed= 3 12-5-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   HOU  seed= 4 10-7-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   LAC  seed= 5 11-6-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   PIT  seed= 6 10-7-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   DEN  seed= 7 10-7-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   CIN  seed= 8 9-8-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   IND  seed= 9 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   MIA  seed=10 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   NYJ  seed=11 5-12-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   JAX  seed=12 4-13-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   NE   seed=13 4-13-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   LV   seed=14 4-13-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   CLE  seed=15 3-14-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   TEN  seed=16 3-14-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   KC   seed= 1 15-2-0 clincher{value:0, displayValue:"*", description:"Clinched Division and Bye"}
+ National Football Conference
+   PHI  seed= 2 14-3-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   TB   seed= 3 10-7-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   LAR  seed= 4 10-7-0 clincher{value:0, displayValue:"z", description:"Clinched Division"}
+   MIN  seed= 5 14-3-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   WSH  seed= 6 12-5-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   GB   seed= 7 11-6-0 clincher{value:0, displayValue:"y", description:"Clinched Wild Card"}
+   SEA  seed= 8 10-7-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   ATL  seed= 9 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   ARI  seed=10 8-9-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   DAL  seed=11 7-10-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   SF   seed=12 6-11-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   CHI  seed=13 5-12-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   CAR  seed=14 5-12-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   NO   seed=15 5-12-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   NYG  seed=16 3-14-0 clincher{value:0, displayValue:"e", description:"Eliminated from Playoff Contention"}
+   DET  seed= 1 15-2-0 clincher{value:0, displayValue:"*", description:"Clinched Division and Bye"}
+ SUMMARY: clincherStatPresentOnAnyEntry=true sumGamesPlayed=544 seedMin=1 seedMax=16 seedsAllZero=false
+ GATE gamesPlayed>0 => true   GATE anySeed>0 => true
+
+=== distinct clincher (displayValue, description, value) pairs ===
+  * | Clinched Division and Bye | value=0   (count=6)
+  e | Eliminated from Playoff Contention | value=0   (count=54)
+  y | Clinched Wild Card | value=0   (count=18)
+  z | Clinched Division | value=0   (count=18)
