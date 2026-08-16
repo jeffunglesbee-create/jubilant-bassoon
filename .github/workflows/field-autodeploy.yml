@@ -4,7 +4,7 @@
 #
 # HOW IT WORKS:
 # 1. Claude saves index.html to a specific Google Drive file (public share link)
-# 2. This Action polls that Drive link every 30 minutes
+# 2. This Action reads that Drive link when manually fired (no schedule — see below)
 # 3. If the file has changed, it commits to main
 # 4. Cloudflare Workers CI deploys automatically (~19s)
 #
@@ -176,7 +176,11 @@ jobs:
           fi
 
           # ── Version guard — skip if Drive file is older than current repo ─
-          # SW_VERSION format: 'YYYYMMDD-N'. Lexicographic compare is safe.
+          # NOT SAFE ALONE: this was written when SW_VERSION was 'YYYYMMDD-N'.
+          # The format is now 'YYYY-MM-DD[letter]', and lexicographically the
+          # OLD format sorts HIGHER ('-' 0x2D < '0' 0x30) — so a May-era file
+          # reads as newer and passes. The shrink guard above is what actually
+          # catches a stale Drive file; treat this as advisory only.
           DRIVE_VER=$(grep -oP "const SW_VERSION = '\K[^']+" index_new.html 2>/dev/null || echo "00000000-0")
           REPO_VER=$(grep -oP "const SW_VERSION\s+=\s+'\K[^']+" index.html 2>/dev/null || echo "00000000-0")
           if [[ "$DRIVE_VER" < "$REPO_VER" ]]; then
