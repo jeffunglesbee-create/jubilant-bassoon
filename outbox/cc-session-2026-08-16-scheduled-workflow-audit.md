@@ -136,3 +136,33 @@ which is billed separately and is the usual culprit when minutes look free.
 An early `git ls-remote` reported 0 stray branches. That was run from a reset
 shell cwd (`/home/user`, not a git repo) and was wrong — both repos have one.
 Re-verified from inside each repo before any finding above was written.
+
+---
+
+## Addendum 2026-08-20 — action 7 (spend source): partially answered
+
+A third repo exists on the account: **`jeffunglesbee-create/field-laboratory`**,
+and it is the only **private** one of the three (`field-relay-nba` and
+`jubilant-bassoon` are both public). Private repos bill standard-runner minutes;
+public ones do not. So field-laboratory is the only candidate among these three
+for the Actions spend.
+
+**Measured, not assumed — and it does not obviously account for a 90 % burn:**
+
+- 11 workflows, repo created 2026-08-09 (11 days old).
+- `drift-sentinel.yml`, its main scheduled workflow: **32 runs total**, ~2/day,
+  mean ~50 s. That is roughly 60 billed min/month — not a budget-consuming
+  figure.
+
+So the visibility question is answered (only this repo bills) but the magnitude
+question is not. Before further cost work, read the actual billing page: minutes
+vs **storage** (artifacts + logs are billed separately and are the usual culprit
+when per-run minutes look small), and check whether other private repos exist
+outside this session's scope.
+
+**Not a defect:** `drift-sentinel` shows 16 consecutive `failure` conclusions
+since 2026-08-13. That is its designed alarm state — it fails deliberately when
+it observes a sport the laboratory has not modelled (EFL Trophy today), files an
+issue naming the sport, and closes the issue itself once modelled. Red here means
+"investigate", not "broken" — the opposite of the relay's auto-merge sweep, which
+reports `success` while permanently failing.
