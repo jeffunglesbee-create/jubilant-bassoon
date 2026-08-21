@@ -1,31 +1,35 @@
 # FIELD HANDOFF
 
-## Session 2026-08-21 — field-laboratory CC-CMD queue (updated: EPL live; +2 new asks)
+## Session 2026-08-21 — field-laboratory CC-CMD queue (updated: EPL live; 3 asks corrected against HEAD)
 
 Filed from the **field-laboratory** session (docs in
 `jeffunglesbee-create/field-laboratory/docs/`). Each doc opens with a probe block —
-run it FIRST, verify every premise from HEAD (several premises this arc were
-falsified by measurement — see the rev-2→rev-5 corrections in the brief doc), and
-do not commit below confidence 95.
+run it FIRST, verify every premise from HEAD, and do not commit below confidence 95.
+
+**The pattern this arc, stated plainly:** the relay session probed HEAD and found
+that **three of five relay-directed asks described work already done** — the
+closing-odds hook was already firing, EPL was already seeded, and the future-date
+"gap" was game-day seeding working as designed. These docs were filed from what
+`/context/date` and the desk *render* — a correct place to notice a symptom, an
+unreliable place to infer a cause. Fix on the laboratory side: `grep` for the
+function the ask says to write and check whether the table already has the row,
+BEFORE filing.
 
 **DONE this arc (context):** brief-data-quality asks 1, 2, 3, 4a, 4b, 6a shipped +
-four deploy guards (client smoke 985/0); EPL seeded into `/context/date`, labelled,
-and now MODELLED laboratory-side (Arsenal v Coventry renders, `UNMODELLED` banner
+four deploy guards (client smoke 985/0); EPL seeded into `/context/date` (already in
+the seed table `src/index.js:7587`, predating this session), labelled, and now
+MODELLED laboratory-side (Arsenal v Coventry 3-0 renders, `UNMODELLED` banner
 cleared, scoreline verdict green); the odds one-snapshot line now states its capture
 time. Line-movement rendering (`OddsStory.Moved`, card + Stats tab, implied-prob
-shift) is built and shipped in the laboratory.
+shift) is built and shipped in the laboratory. **The closing-odds pre→live hook is
+also DONE and firing** — `_captureClosingOdds` (`src/ambient-do.js:718`), 18 real
+captures 2026-07-04 → 2026-08-21; the real defect behind the dormant `Moved` render
+was a backfill dual-write, now FIXED (relay `887c843`, date-gated + guarded by
+`check-closing-odds-not-prefilled.mjs`).
 
 **OPEN — relay-directed, priority order:**
 
-1. **NEW — line movement is one relay change away.**
-   `CC-CMD-2026-08-21-closing-odds-capture.md`. The laboratory's `OddsStory.Moved` is
-   built and DORMANT: `closing_odds` is a same-instant backfill (measured 2026-08-21:
-   close captured at/before open, byte-identical values), so every card renders
-   `NOT SEQUENCED`. Land the Game State Transition Hook (Drive spec 2026-06-21) so
-   closing is captured on `pre→live` and the pair is a real sequence — then the card
-   narrates the move with ZERO laboratory change. Same root cause as drift **issue #2**.
-
-2. **NEW — FPL event grounding for EPL.**
+1. **FPL event grounding for EPL — the one genuinely unstarted ask.**
    `CC-CMD-2026-08-21-fpl-event-grounding-epl.md`. EPL is on the desk but its briefs
    are season-stat templates ("0 goals through 0 games"). The relay already proxies
    `/fpl/event/{gw}/live/` (goals, assists, cards, bonus) — "not wired yet". Wire it
@@ -33,6 +37,18 @@ shift) is built and shipped in the laboratory.
    brief-data-quality ask 5 (complementary — FPL adds bonus/saves); `CONTRACTS.md`
    must state which feed owns the shared fields so two sources can't disagree in one
    brief. Coventry's 3-0 loss is the same-day test case.
+
+2. **Capture `opening_odds` for EPL / La Liga — the real closing-odds follow-up.**
+   `CC-CMD-2026-08-21-closing-odds-capture.md` (ORIGINAL ASK WITHDRAWN — hook already
+   firing). Measured 2026-08-21: EPL and La Liga carry the **closing** line and **no
+   opening** one — the mirror of the original assumption. So `Moved` is blocked two
+   independent ways: MLB/WNBA is now UNBLOCKED by `887c843` (real open→close sequence,
+   verify on the next pre→live transition — `closing_odds.captured_at >
+   opening_odds.captured_at`, card reads `ML X -> Y (home ±N.N implied)` not
+   `NOT SEQUENCED`); EPL/La Liga stay blocked on a missing **opening** capture. Probe
+   why `odds_api` opening writes cover MLB/WNBA/Ligue 1 but not those two — do not
+   patch blind. Carry-forward #1 (`_ODDS_SOURCES`) is already done; #2 (team aliasing)
+   and #3 (non-AmbientDO sports) survive.
 
 3. **brief-data-quality, remaining asks:** ask 5 (event-grounding off
    `keyEvents`/`incidents` — the per-sport container is in `CONTRACTS.md`: `keyEvents`
@@ -42,10 +58,15 @@ shift) is built and shipped in the laboratory.
    §5 residual D1 mutations (601 sport values mapped by class A–E, 539 `gNN` ids inert,
    41 reclassify-to-`game_live`) which need Jeff's authorization.
 
-4. **Generalise the seed gap:** `CC-CMD-2026-08-21-archive-seed-coverage.md` — make the
-   seed set a declared manifest + a check so the NEXT competition (Serie A /
-   Bundesliga) is caught, not discovered by a human comparing FIELD to ESPN. EPL was
-   the live instance and is now seeded.
+4. **Generalise the seed gap (ask 3 WITHDRAWN):**
+   `CC-CMD-2026-08-21-archive-seed-coverage.md`. EPL was ALREADY seeded — ask 3 asked
+   to add a row that exists; the future-date "gap" was game-day seeding (MLB is 3/3
+   past days, 0/2 future days, exactly like EPL; only MLS pre-seeds ahead). Asks 1–2
+   survive and are the valuable part: a declared seed manifest + a check so the NEXT
+   competition (Serie A / Bundesliga) is caught, not discovered by a human comparing
+   FIELD to ESPN. **But ask 2's artifact as written ("on 2026-08-22 the check flags
+   EPL") encodes the false positive permanently** — rewrite it against the game-day
+   model (evaluate on a date past its seeding tick, not a future one).
 
 5. **UEFA live-landing verification:** `CC-CMD-2026-08-20-uefa-club-competitions.md` —
    the `/d1/execute` count on `regular_season_games WHERE sport LIKE 'UEFA%'`.
