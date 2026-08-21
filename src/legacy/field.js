@@ -22342,7 +22342,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-16a';
+  const SW_VERSION = '2026-08-21a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -30696,7 +30696,19 @@ async function renderEPLMatchBriefCard(gameCard) {
     textEl.classList.remove('pending');
     textEl.classList.add('loaded');
     sessionStorage.setItem(cacheKey, aiText);
-    try { archiveBrief('epl_match', 'EPL', game&&(game._id||game.id)||null, aiText, null); } catch(_){}
+    // CC-CMD-2026-08-20-brief-data-quality ask 3: the sport was hardcoded 'EPL'.
+    // This card (.epl-brief-text) is an EPL-named component reused for ALL
+    // soccer, so every MLS game briefed through it was archived as sport:'EPL'.
+    // Measured 2026-08-21: 10 such rows, including ones written that same day --
+    // "New England Revolution travel to face D.C. United tonight in an MLS
+    // matchup" stored under sport 'EPL'. Live bug, not historical.
+    //
+    // game.league carries the competition's real declared label (the relay sets
+    // it from its LEAGUES table; the deploy's "Soccer league label contract
+    // check" asserts /v2/games returns exactly that string). Send null rather
+    // than a fallback when it is genuinely absent -- a wrong label is worse than
+    // no label, because a wrong one is silently believed.
+    try { archiveBrief('epl_match', (game && game.league) || null, game&&(game._id||game.id)||null, aiText, null); } catch(_){}
   } else if(textEl) {
     textEl.textContent = staticText;
     textEl.classList.remove('pending');

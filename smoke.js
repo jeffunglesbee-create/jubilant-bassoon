@@ -7255,5 +7255,16 @@ assert('A-DISPOSAL-2 — injectNBARegression correctly left as-is: a real, self-
   html.includes('const regress = getNBARegression(game._id);'),
   'injectNBARegression must remain exactly as-is: its own section comment ("Manual injection: update after each Finals game") is a legitimate disclosed reason, and its real reader getNBARegression is genuinely called from _buildFinalsDeskPrompt -- correcting the original classification, which missed the section-header comment');
 
+// CC-CMD-2026-08-20-brief-data-quality ask 3. The sport passed to archiveBrief
+// from the EPL match card was hardcoded 'EPL'. That card (.epl-brief-text) is an
+// EPL-named component reused for ALL soccer, so MLS games were archived as
+// sport:'EPL' -- measured 2026-08-21, 10 rows including same-day writes. A brief
+// whose sport matches no declared label is unreachable by every sport-filtered
+// read, including /archive/query?sport=.
+assert('A-BRIEFSPORT-1 — archiveBrief from the EPL match card sends the game\'s real competition, never a hardcoded EPL literal',
+  /archiveBrief\('epl_match',\s*\(game && game\.league\) \|\| null/.test(html) &&
+  !/archiveBrief\('epl_match',\s*'EPL'/.test(html),
+  "archiveBrief('epl_match', ...) must pass (game && game.league) || null as sport; the hardcoded 'EPL' literal mislabels every non-EPL soccer game briefed through this shared card");
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
