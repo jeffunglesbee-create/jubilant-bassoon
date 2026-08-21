@@ -1,5 +1,57 @@
 # FIELD HANDOFF
 
+## Session 2026-08-21 — PICK UP three field-laboratory CC-CMDs (EPL opens TOMORROW)
+
+Filed from the **field-laboratory** session (the private third repo — read the docs
+there: `jeffunglesbee-create/field-laboratory/docs/`). Three relay-directed CC-CMDs
+are open. **The EPL items are time-critical: the 2026-27 Premier League opens
+2026-08-22.** Each doc opens with a probe block — run it FIRST and verify every
+premise from HEAD (two of this session's own assertions were falsified by
+measurement — see the rev-2→rev-3 corrections in the brief doc), and do not commit
+below confidence 95.
+
+**Order, by dependency:**
+
+1. **COMPLIANCE — land first, independent.**
+   `field-laboratory/docs/CC-CMD-2026-08-20-brief-data-quality.md` **ask 1**: a
+   `52/100 drama rating` is rendered into user-facing `brief_text`
+   (`game_recap_la liga_401882925`) — ADR-002 **PROHIBITED #3**. Strip the composite
+   number at the generation step. Rule E still permits storing/serving the value;
+   only the reader-facing number is the violation.
+
+2. **BEFORE THE EPL MATCHDAY — label first, then seed (paired, Rule 70):**
+   - **2a.** brief-data-quality **ask 3** — declare the EPL `sport` label and extend
+     the label contract to `briefs.sport`. Real EPL must land under a *declared*
+     label or it orphans like the 21 `sport:'football'` rows (0% join). ESPN names it
+     "English Premier League" (slug `eng.1`); the one existing `epl_match` brief is
+     mislabelled MLS, so the label is unproven — declare it explicitly.
+   - **2b.** `field-laboratory/docs/CC-CMD-2026-08-21-archive-seed-coverage.md` — EPL
+     and the UEFA comps are fetch-configured but never SEEDED into the archive that
+     `/context/date` serves. Measured: `/context/date/2026-08-22` is 15 games, ALL
+     MLS; `/archive/query?date=2026-08-22` is `count:0`; ESPN `eng.1` has the full
+     opening matchday (Arsenal v Coventry `401879301` @ Emirates; Man Utd @ Hull City
+     `401879322`). Ask 3 seeds EPL for 2026-08-22 under the label declared in 2a;
+     asks 1–2 make the seed set a declared manifest + a check, so the NEXT gap is
+     caught, not discovered by a human comparing FIELD to ESPN. Home/away from ESPN's
+     `homeAway` field (Arsenal home), NOT the URL slug order.
+
+3. **Then, as capacity allows —** the rest of brief-data-quality (ask 2 frozen-recap
+   gate on `created_at < start_time`; ask 4 `gNN`/label ids, `source:'client'` from
+   jubilant-bassoon; ask 5 event-grounding off `keyEvents`/`incidents`; ask 6
+   `quality_score` recalibration + `scoring_version`) and the
+   `CC-CMD-2026-08-20-uefa-club-competitions.md` live-landing verification (the
+   `/d1/execute` count on `regular_season_games WHERE sport LIKE 'UEFA%'`).
+
+**Laboratory side is sequenced AFTER:** once EPL lands under a declared label, the
+laboratory models it on first observation (`Sport` registry has `EFL Cup` + `La
+Liga`, not EPL — renders `UNMODELLED`, home-first, until then). Contract + seed
+first, model second.
+
+Positioning that motivates the brief work (ESPN/AP side-by-side, the trust wedge):
+`field-laboratory/outbox/cc-differentiating-on-trust-2026-08-20.md`.
+
+---
+
 ## Session 2026-08-16 — NFL standings: 5 stacked defects, ALL FIXED + playoff tracker
 
 Session doc: `outbox/cc-session-2026-08-16-nfl-standings-and-playoff-tracker.md`.
