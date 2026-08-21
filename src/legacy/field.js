@@ -40784,7 +40784,20 @@ async function renderNightOwlRecap(){
     const _stillCurrent = _nightOwlGameId === topGame.id;
     if(claudeText){
       sessionStorage.setItem(cacheKey,claudeText);
-      try{archiveBrief('night_owl',(topGame&&topGame._sport)||null,topGame&&(topGame.sourceId||topGame._id||topGame.id)||null,claudeText,null);}catch(_){}
+      // CC-CMD-2026-08-20-brief-data-quality ask 3: was topGame._sport, which is
+      // inferSport()'s output -- a DISPLAY formatter. It emits "Baseball (MLB)",
+      // "Australian Football (AFL)", "UEFA Conference League". Those are captions,
+      // not keys, and writing them into the archive sport column made the rows
+      // unreachable by every sport-filtered read including /archive/query?sport=.
+      // Measured 2026-08-21: "Baseball (MLB)" 303 rows, still written daily.
+      // "UEFA Conference League" is the same string that had to be UPDATEd out of
+      // regular_season_games on 2026-08-20 -- that row was the symptom, this is
+      // the generator.
+      // topGame.league carries the competition's real declared label. null rather
+      // than a fallback when absent: a wrong label is silently believed.
+      // inferSport itself is deliberately NOT changed -- it is a display function
+      // feeding section headings, and rewriting it would alter the UI (Rule 69).
+      try{archiveBrief('night_owl',(topGame&&topGame.league)||null,topGame&&(topGame.sourceId||topGame._id||topGame.id)||null,claudeText,null);}catch(_){}
       if(_stillCurrent){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}}
     }
     else if(_stillCurrent){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}

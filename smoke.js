@@ -7266,5 +7266,14 @@ assert('A-BRIEFSPORT-1 — archiveBrief from the EPL match card sends the game\'
   !/archiveBrief\('epl_match',\s*'EPL'/.test(html),
   "archiveBrief('epl_match', ...) must pass (game && game.league) || null as sport; the hardcoded 'EPL' literal mislabels every non-EPL soccer game briefed through this shared card");
 
+// ask 3, second writer. inferSport() is a DISPLAY formatter ("Baseball (MLB)",
+// "Australian Football (AFL)", "UEFA Conference League"); its output must never
+// reach the archive sport column, where it is a key. 303 night_owl rows carried
+// "Baseball (MLB)" as of 2026-08-21.
+assert('A-BRIEFSPORT-2 — night_owl archiveBrief sends topGame.league, never inferSport display output via _sport',
+  /archiveBrief\('night_owl',\(topGame&&topGame\.league\)\|\|null/.test(html) &&
+  !/archiveBrief\('night_owl',\(topGame&&topGame\._sport\)/.test(html),
+  "archiveBrief('night_owl', ...) must pass topGame.league; topGame._sport is inferSport() display output and is unreachable by sport-filtered reads");
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
