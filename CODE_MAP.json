@@ -1,7 +1,7 @@
 {
   "file": "index.html",
-  "lineCount": 46461,
-  "generatedAt": "2026-08-21T04:23:29.946Z",
+  "lineCount": 46474,
+  "generatedAt": "2026-08-21T04:35:34.565Z",
   "summary": {
     "functionCount": 1069,
     "sectionCount": 747,
@@ -11,8 +11,8 @@
       {
         "name": "RIVALRIES",
         "line": 42747,
-        "endLine": 46198,
-        "approximateBytes": 193010
+        "endLine": 46211,
+        "approximateBytes": 194009
       },
       {
         "name": "mvSlots",
@@ -4576,43 +4576,43 @@
     {
       "name": "J5 isBlowout gate (Combo B-1+)",
       "startLine": 45786,
-      "endLine": 46086,
-      "lineCount": 301
+      "endLine": 46099,
+      "lineCount": 314
     },
     {
       "name": "═",
-      "startLine": 46087,
-      "endLine": 46091,
+      "startLine": 46100,
+      "endLine": 46104,
       "lineCount": 5
     },
     {
       "name": "═",
-      "startLine": 46092,
-      "endLine": 46175,
+      "startLine": 46105,
+      "endLine": 46188,
       "lineCount": 84
     },
     {
       "name": "Bootstrap: kick off the initial schedule load ─",
-      "startLine": 46176,
-      "endLine": 46182,
+      "startLine": 46189,
+      "endLine": 46195,
       "lineCount": 7
     },
     {
       "name": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)",
-      "startLine": 46183,
-      "endLine": 46299,
+      "startLine": 46196,
+      "endLine": 46312,
       "lineCount": 117
     },
     {
       "name": "Explicit window bridges for inline HTML event handlers ── MANDATORY",
-      "startLine": 46300,
-      "endLine": 46349,
+      "startLine": 46313,
+      "endLine": 46362,
       "lineCount": 50
     },
     {
       "name": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)",
-      "startLine": 46350,
-      "endLine": 46461,
+      "startLine": 46363,
+      "endLine": 46474,
       "lineCount": 112
     }
   ],
@@ -11990,112 +11990,112 @@
     },
     {
       "name": "renderLastNight",
-      "line": 45939,
+      "line": 45952,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "checkForNewFinals",
-      "line": 45977,
+      "line": 45990,
       "params": "",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "toLS",
-      "line": 46033,
+      "line": 46046,
       "params": "periods",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "topPlayers",
-      "line": 46037,
+      "line": 46050,
       "params": "players, teamLabel",
       "async": false,
       "section": "J5 isBlowout gate (Combo B-1+)"
     },
     {
       "name": "renderHalftimeSwitch",
-      "line": 46096,
+      "line": 46109,
       "params": "",
       "async": false,
       "section": "═"
     },
     {
       "name": "currentBucket",
-      "line": 46199,
+      "line": 46212,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "_snapshotOpen",
-      "line": 46206,
+      "line": 46219,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbGet",
-      "line": 46221,
+      "line": 46234,
       "params": "store, key",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "idbSet",
-      "line": 46232,
+      "line": 46245,
       "params": "store, key, value",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "saveSnapshot",
-      "line": 46243,
+      "line": 46256,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "restoreSnapshot",
-      "line": 46260,
+      "line": 46273,
       "params": "",
       "async": true,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "showFreshnessStrip",
-      "line": 46278,
+      "line": 46291,
       "params": "ageMin",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "markFreshnessLive",
-      "line": 46288,
+      "line": 46301,
       "params": "",
       "async": false,
       "section": "P1 — Last-Known-State Hydration (startup polish bundle, June 3 2026)"
     },
     {
       "name": "recordOpenHour",
-      "line": 46360,
+      "line": 46373,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "predictNextOpenHour",
-      "line": 46370,
+      "line": 46383,
       "params": "",
       "async": false,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
     },
     {
       "name": "registerAnticipatoryPrefetch",
-      "line": 46385,
+      "line": 46398,
       "params": "",
       "async": true,
       "section": "P5 — Anticipatory Pre-fetch (startup polish bundle, June 3 2026)"
@@ -13035,8 +13035,8 @@
     {
       "name": "RIVALRIES",
       "line": 42747,
-      "endLine": 46198,
-      "approximateBytes": 193010
+      "endLine": 46211,
+      "approximateBytes": 194009
     },
     {
       "name": "PACKAGE_INCLUDES",
@@ -13058,8 +13058,8 @@
     },
     {
       "name": "_finalizedAt",
-      "line": 45976,
-      "endLine": 46083,
+      "line": 45989,
+      "endLine": 46096,
       "approximateBytes": 5789
     }
   ],
@@ -14081,32 +14081,32 @@
     },
     {
       "call": "setTimeout",
-      "line": 46171,
+      "line": 46184,
       "context": "setTimeout(()=>{ _htShownGames.add(htKey+'_done'); panel.style.display='none'; }, 90000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 46177,
+      "line": 46190,
       "context": "// fetchSchedule() populates allData from buildTodaySchedule() then calls renderAll()"
     },
     {
       "call": "setTimeout",
-      "line": 46294,
+      "line": 46307,
       "context": "setTimeout(() => { strip.classList.remove('is-visible'); strip.classList.remove('freshness-live'); }, 2000);"
     },
     {
       "call": "setTimeout",
-      "line": 46416,
+      "line": 46429,
       "context": "setTimeout(registerAnticipatoryPrefetch, 4000);"
     },
     {
       "call": "fetchSchedule",
-      "line": 46429,
+      "line": 46442,
       "context": "// Kick: restore first (paints cached DOM if any), then fetchSchedule (which renderAll-replaces with fresh)."
     },
     {
       "call": "fetchSchedule",
-      "line": 46431,
+      "line": 46444,
       "context": "restoreSnapshot().finally(() => { fetchSchedule().then(markFreshnessLive); });"
     }
   ]
