@@ -15680,6 +15680,38 @@ function renderFieldDesk(){
 // call sites; the .catch(()=>{}) below is mandatory. Archive backend
 // failures are silent by design — if D1 / relay are down we lose the
 // archive entry, not the user-visible brief.
+// CC-CMD-2026-08-20-brief-data-quality ask 4b: the archive game_id for a brief.
+//
+// THE BUG: every archiveBrief call site passed `game._id || game.id`, and
+// `game._id` is `"g" + (++_gid)` — a RENDER-ORDER ORDINAL assigned in
+// buildDateSchedule purely as a DOM/card key. It is not an external id and never
+// was. Written into the archive it produced 535 rows keyed g1, g2, g16... which
+// cannot join to a game row, a box score, or an event feed.
+//
+// A gNN is WORSE than null, which is why this returns null rather than falling
+// back to it: null is visibly absent, while gNN looks like a real id and is
+// silently unjoinable. Same principle as the sport-label fixes above — a wrong
+// value is believed, a missing one is not.
+//
+// RULE 76 DISCLOSURE, deliberately not hidden: the lookup below is a 4-way
+// probe because client game objects genuinely have no single canonical id field
+// — sourceId (MLB gamePk), espnId, eventId, and espn_event_id all appear
+// depending on which builder produced the object. Rule 76 caps fallback chains
+// at 2 and says 3+ means the CONTRACT is broken. It is: the relay owns the game
+// shape (Rule 60) and does not guarantee one id field. The remedy is one
+// canonical id on every game object, which is a relay+client contract change,
+// not something to paper over. This helper concentrates the breakage at ONE
+// documented boundary instead of scattering the same chain across 12 call sites,
+// and makes the contract fix a single-place change when it happens.
+function _briefGameId(game) {
+  if (!game) return null;
+  const real = game.espnId || game.sourceId || game.eventId || game.espn_event_id;
+  if (real) return String(real);
+  // game.id is a real id on some builders; the gNN ordinal lives on _id only.
+  if (game.id && !/^g\d+$/.test(String(game.id))) return String(game.id);
+  return null;
+}
+
 function archiveBrief(type, sport, gameId, text, hash) {
   if (!text || text.length < 50) return;
   const date = new Date().toISOString().slice(0, 10);
@@ -31745,7 +31777,7 @@ async function renderSeriesPreviewCard(gameCard){
     const cached=sessionStorage.getItem(cacheKey);
     if(cached){textEl.textContent=trimToCompleteSentence(cached);textEl.classList.add('loaded');return;}
     const text=await fetchSeriesPreviewFromClaude(game);
-    if(text){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(_gameSport(game)))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(_gameSport(game)))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
+    if(text){textEl.textContent=trimToCompleteSentence(text);textEl.classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(_gameSport(game)))||null,_briefGameId(game),text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(_gameSport(game)))||null,gameId:_briefGameId(game),briefText:text,qualityScore:null});}
     else if(staticText){textEl.textContent=staticText;textEl.classList.add('loaded');}
     return;
   }
@@ -31761,7 +31793,7 @@ async function renderSeriesPreviewCard(gameCard){
   const cached=sessionStorage.getItem(cacheKey);
   if(cached){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(cached);placeholder.querySelector('.series-preview-text').classList.add('loaded');return;}
   const text=await fetchSeriesPreviewFromClaude(game);
-  if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(_gameSport(game)))||null,game&&(game._id||game.id)||null,text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(_gameSport(game)))||null,gameId:game&&(game._id||game.id)||null,briefText:text,qualityScore:null});}
+  if(text){placeholder.querySelector('.series-preview-text').textContent=trimToCompleteSentence(text);placeholder.querySelector('.series-preview-text').classList.add('loaded');sessionStorage.setItem(cacheKey,text);try{archiveBrief('series_preview',(game&&(_gameSport(game)))||null,_briefGameId(game),text,null);}catch(_){}_archiveBrief({briefType:'series_preview',sport:(game&&(_gameSport(game)))||null,gameId:_briefGameId(game),briefText:text,qualityScore:null});}
   else if(staticText){placeholder.querySelector('.series-preview-text').textContent=staticText;placeholder.querySelector('.series-preview-text').classList.add('loaded');}
 }
 
@@ -35006,7 +35038,7 @@ async function renderMLBGameBriefCard(gameCard) {
     const textEl = inner.querySelector('.sgb-text');
     if (textEl) { textEl.textContent = trimToCompleteSentence(kvBrief); textEl.classList.replace('pending','loaded'); }
     sessionStorage.setItem(cacheKey, kvBrief);
-    try { archiveBrief('mlb_game', 'MLB', game&&(game._id||game.id)||null, kvBrief, null); } catch(_){}
+    try { archiveBrief('mlb_game', 'MLB', _briefGameId(game), kvBrief, null); } catch(_){}
     return;
   }
 
@@ -35016,7 +35048,7 @@ async function renderMLBGameBriefCard(gameCard) {
     textEl.textContent = trimToCompleteSentence(stripMarkdown(text));
     textEl.classList.replace('pending','loaded');
     sessionStorage.setItem(cacheKey, stripMarkdown(text));
-    try { archiveBrief('mlb_game', 'MLB', game&&(game._id||game.id)||null, stripMarkdown(text), null); } catch(_){}
+    try { archiveBrief('mlb_game', 'MLB', _briefGameId(game), stripMarkdown(text), null); } catch(_){}
   } else {
     // Always remove card on failure — never leave "Loading brief…" stuck
     try { card.remove(); } catch(_) {}
@@ -35106,7 +35138,7 @@ async function renderWNBAGameBriefCard(gameCard) {
     const textEl = inner.querySelector('.sgb-text');
     if (textEl) { textEl.textContent = trimToCompleteSentence(kvBrief); textEl.classList.replace('pending','loaded'); }
     sessionStorage.setItem(cacheKey, kvBrief);
-    try { archiveBrief('wnba_game', 'WNBA', game&&(game._id||game.id)||null, kvBrief, null); } catch(_){}
+    try { archiveBrief('wnba_game', 'WNBA', _briefGameId(game), kvBrief, null); } catch(_){}
     return;
   }
 
@@ -35116,7 +35148,7 @@ async function renderWNBAGameBriefCard(gameCard) {
     textEl.textContent = trimToCompleteSentence(stripMarkdown(text));
     textEl.classList.replace('pending','loaded');
     sessionStorage.setItem(cacheKey, stripMarkdown(text));
-    try { archiveBrief('wnba_game', 'WNBA', game&&(game._id||game.id)||null, stripMarkdown(text), null); } catch(_){}
+    try { archiveBrief('wnba_game', 'WNBA', _briefGameId(game), stripMarkdown(text), null); } catch(_){}
   } else {
     try { card.remove(); } catch(_) {}
   }
@@ -35264,7 +35296,7 @@ async function renderStakesBriefCard(gameCard) {
     const textEl = inner.querySelector('.stakes-text'); // fix: was .sgb-text (wrong)
     if (textEl) { textEl.textContent = trimToCompleteSentence(stripMarkdown(kvBriefS)); textEl.classList.replace('pending','loaded'); }
     sessionStorage.setItem(cacheKey, stripMarkdown(kvBriefS));
-    try { archiveBrief('stakes', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, stripMarkdown(kvBriefS), null); } catch(_){}
+    try { archiveBrief('stakes', (game&&(_gameSport(game)))||null, _briefGameId(game), stripMarkdown(kvBriefS), null); } catch(_){}
     return;
   }
 
@@ -35275,8 +35307,8 @@ async function renderStakesBriefCard(gameCard) {
     textEl.textContent = trimToCompleteSentence(_stakesClean);
     textEl.classList.replace('pending','loaded');
     sessionStorage.setItem(cacheKey, _stakesClean);
-    try { archiveBrief('stakes', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, _stakesClean, null); } catch(_){}
-    _archiveBrief({briefType:'stakes_brief', sport:(game&&(_gameSport(game)))||null, gameId:game&&(game._id||game.id)||null, briefText:_stakesClean});
+    try { archiveBrief('stakes', (game&&(_gameSport(game)))||null, _briefGameId(game), _stakesClean, null); } catch(_){}
+    _archiveBrief({briefType:'stakes_brief', sport:(game&&(_gameSport(game)))||null, gameId:_briefGameId(game), briefText:_stakesClean});
   } else {
     try { card.remove(); } catch(_) {}
   }
@@ -35763,7 +35795,7 @@ async function renderEPLMatchBriefCard(gameCard) {
     // check" asserts /v2/games returns exactly that string). Send null rather
     // than a fallback when it is genuinely absent -- a wrong label is worse than
     // no label, because a wrong one is silently believed.
-    try { archiveBrief('epl_match', (game && game.league) || null, game&&(game._id||game.id)||null, aiText, null); } catch(_){}
+    try { archiveBrief('epl_match', (game && game.league) || null, _briefGameId(game), aiText, null); } catch(_){}
   } else if(textEl) {
     textEl.textContent = staticText;
     textEl.classList.remove('pending');
@@ -38604,7 +38636,7 @@ async function fetchFinalsDesk(game, sport) {
         const result = await pr.json();
         if (result.status === 'done' && result.text && result.text.length > 80) {
           try { sessionStorage.setItem(cacheKey, result.text); } catch(e_) {}
-          try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, result.text, null); } catch(_){}
+          try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, _briefGameId(game), result.text, null); } catch(_){}
           try { sessionStorage.removeItem(jobIdKey); } catch(e_) {}
           return result.text;
         }
@@ -38628,7 +38660,7 @@ async function fetchFinalsDesk(game, sport) {
       text = await retryWithoutCliches(prompt, text, CLAUDE_PROXY_URL, 'Finals Desk');
       text = await checkStatVerification(prompt, text, CLAUDE_PROXY_URL, 'Finals Desk');
       try { sessionStorage.setItem(cacheKey, text); } catch(e_) {}
-      try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, game&&(game._id||game.id)||null, text, null); } catch(_){}
+      try { archiveBrief('game_ondemand', (game&&(_gameSport(game)))||null, _briefGameId(game), text, null); } catch(_){}
       return text;
     }
   } catch(e_) { captureFieldError('journalism:finals-desk-fallback', e_, true); }
@@ -45852,7 +45884,7 @@ async function renderNightOwlRecap(){
       // than a fallback when absent: a wrong label is silently believed.
       // inferSport itself is deliberately NOT changed -- it is a display function
       // feeding section headings, and rewriting it would alter the UI (Rule 69).
-      try{archiveBrief('night_owl',(topGame&&topGame.league)||null,topGame&&(topGame.sourceId||topGame._id||topGame.id)||null,claudeText,null);}catch(_){}
+      try{archiveBrief('night_owl',(topGame&&topGame.league)||null,_briefGameId(topGame),claudeText,null);}catch(_){}
       if(_stillCurrent){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.textContent=trimToCompleteSentence(claudeText);textEl.classList.remove('pending');textEl.classList.add('loaded');}}
     }
     else if(_stillCurrent){const textEl=el.querySelector('.night-owl-text');if(textEl){textEl.classList.remove('pending');textEl.classList.add('loaded');}}

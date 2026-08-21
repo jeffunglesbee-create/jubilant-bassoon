@@ -7275,5 +7275,15 @@ assert('A-BRIEFSPORT-2 — night_owl archiveBrief sends topGame.league, never in
   !/archiveBrief\('night_owl',\(topGame&&topGame\._sport\)/.test(html),
   "archiveBrief('night_owl', ...) must pass topGame.league; topGame._sport is inferSport() display output and is unreachable by sport-filtered reads");
 
+// ask 4b. game._id is "g"+(++_gid), a render-order ordinal assigned as a DOM key
+// in buildDateSchedule. Passing it as the archive game_id produced 535 rows keyed
+// g1/g2/g16 that cannot join to a game row, box score, or event feed. A gNN is
+// worse than null: null is visibly absent, gNN looks real and is silently
+// unjoinable.
+assert('A-BRIEFID-1 — archiveBrief call sites use _briefGameId, never the gNN render ordinal',
+  html.includes('function _briefGameId(game)') &&
+  !/archiveBrief\([^)]*game\._id\s*\|\|\s*game\.id/.test(html),
+  'every archiveBrief call must pass _briefGameId(game); game._id is a DOM ordinal, not an external id');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
