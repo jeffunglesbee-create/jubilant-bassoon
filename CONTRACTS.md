@@ -4,7 +4,7 @@
 > If you update one, update the other. Both CC sessions read their own
 > repo's copy. A mismatch causes silent failures at system boundaries.
 
-Last synced: 2026-06-30 (round-label shipped end to end — relay + client)
+Last synced: 2026-08-21 (ESPN per-sport event source — relay + client copies)
 
 ---
 
@@ -540,3 +540,253 @@ game.round: string   // human-readable, vocabulary varies by source:
 Deliberately not normalized across sources — rendered as-is. A unified
 taxonomy would be a future data-layer decision, not assumed needed.
 
+## BSD endgame-capture R2 key format (FIELD_DATA bucket)
+
+Producer: `runBSDEndgameCapture` (WC26) and `runBSDClubLeagueEndgameCapture`
+(all other BSD-covered leagues), both `src/index.js`, relay commit TBD —
+CC-CMD-2026-07-14-bsd-endgame-capture-generalize. Fired from `scheduled()`
+on every cron tick; captures momentum/stats/incidents/average-positions for
+any live game crossing the 80-120 minute window.
+
+```
+R2 key: bsd/{slug}/{bsdEventId}/{momentum,stats,incidents,average-positions}.json
+  slug = 'wc26' for World Cup games (unchanged, pre-existing format)
+       = one of epl, mls, ucl, europa, eflchamp, laliga, seriea, bundesliga,
+         ligue1 for club leagues (new, this CC-CMD) — derived from BSD's own
+         league_id via BSD_LEAGUE_ID_TO_SLUG, itself derived from V2_LEAGUES
+         so the two tables can't drift apart. europa/conference share BSD
+         league_id 8 (BSD doesn't distinguish the two competitions) — both
+         write under 'europa'; this is a disclosed, accepted ambiguity.
+```
+
+**RESOLVED (2026-08-13) — the open question below is now answered.** The
+2026-07-15 note could not distinguish "the route does not exist" from "it is
+a live-only feed that stops serving after full time", because every test to
+that point used a finished event. Measured across 6 events via
+`scripts/bsd-avgpos-diagnose.mjs`
+(`outbox/bsd-avgpos-diagnose-2026-08-13T*.log`):
+
+| event | status | `/average-positions/` | `/stats/`.average_positions |
+|---|---|---|---|
+| 207955 | **2nd_half (LIVE)** | 404 | `{}` (empty) |
+| 223324 | finished | 404 | `{away, home}` |
+| 207987 | finished | 404 | `{away, home}` |
+| 207962 | finished | 404 | `{away, home}` |
+| 207956 | finished | 404 | `{away, home}` |
+| 587659 | finished | 404 | `{}` (empty) |
+
+All six returned the byte-identical body
+`{"error": true, "status": 404, "detail": "Not found"}`. **A live match 404s
+exactly like a finished one, so the live-only theory is falsified** — the
+dedicated endpoint never serves. ("Not found" rather than a subscription
+error also argues against a plan gate, but that is inference, not proof.)
+
+The same run confirms the other half: `/stats/`'s embedded
+`average_positions` is populated **post-final only** — the live event's was
+`{}`. So during play the data does not exist in *either* source, which the
+prior note correctly suspected but could not show.
+
+Consequences:
+- `GET /bsd/events/{id}/average-positions` (relay) now serves
+  `parsed.average_positions` from `/stats/`, same shape as the R2 object.
+  Returns `{}` during play, `{away, home}` after final, 404 only when the
+  key is absent entirely.
+- `_bsdCaptureStatsWithAvgPositions`'s dead level-1 call was **removed**
+  (commit `1e6b449`), so `/stats/` is the only source rather than a
+  fallback, and `customMetadata.source` is now `stats-embedded` (was
+  `stats-fallback` — that name described a fallback that no longer exists).
+  Covers both `runBSDEndgameCapture` (WC26) and
+  `runBSDClubLeagueEndgameCapture`, which share the helper.
+- The capture now refuses to write an EMPTY `average_positions` (commit
+  `1f08656`). `{}` is truthy and is what a match in progress returns, and
+  this cron fires across an 80-120 minute window — mostly pre-final — so the
+  unguarded write would overwrite populated positions with nothing. Same
+  failure class as `src/mlb-savant-r2.js` `7588b24` the same day.
+  **Not yet observed firing:** verify on the next club match crossing the
+  window via `GET /bsd/r2/read?key=bsd/{slug}/{id}/average-positions.json`
+  — pass is a populated `{away, home}` with source `stats-embedded`.
+
+**BSD source-endpoint note, revised (2026-07-15) — superseded by the above,
+retained for provenance:** `/api/v2/events/{id}/average-positions/`
+404s when tested against a finished event — but that's consistent with two
+different explanations that weren't distinguished by testing against a
+weeks-old finished game: either the route doesn't exist, or it's a
+live-only real-time feed that stops serving once the match ends. Two
+independent historical codex entries (`bsd-endgame-cron-validation-june26`,
+`cf/2026-07-02/soccer-crosscheck-first-run-bugs`) both hit the identical
+404 against non-live events, and the first explicitly labels its own
+confirmation that `/stats/`'s embedded `average_positions` field is
+populated as "post-final" — not confirmed present during live play, which
+is when this cron's 80-120 min window actually fires. Neither source is
+safely known-good for the live window alone. `runBSDClubLeagueEndgameCapture`
+tries the dedicated endpoint first, falls back to the `/stats/`-embedded
+field only if that fails (2-level fallback, Rule 76) — genuine live-endpoint
+behavior remains unverified since no club match was live during this
+investigation. `runBSDEndgameCapture` (WC26) is unchanged — out of that
+dispatch's scope; see `docs/CC-CMD-2026-07-15-bsd-wc26-avgpos-fix.md`
+(updated to recommend the same fallback, not a straight swap).
+
+Consumer: **none yet.** jubilant-bassoon's post-game pitch replay ("site 3",
+`index.html` ~L42601) still reads the pre-existing hardcoded
+`bsd/wc26/${_bsBsdEventId}/stats.json` key only — confirmed untouched as of
+its own CC-CMD-2026-07-14-bsd-pitch-generalize (`docs/outbox/cc-bsd-pitch-
+generalize-2026-07-14.md`, scored 100/100), which explicitly scoped site 3
+out. This entry documents the convention a future client-side fix to site 3
+must match — `bsd/{slug}/{bsdEventId}/stats.json` — so that fix doesn't have
+to independently reverse-engineer or guess the relay's real key shape.
+
+## FieldGame home/away curatedRank (NFL/CFB, ESPN adapter)
+
+Producer: `adaptESPNFootball(ev, sport)`, `src/index.js` ~L1249 —
+CC-CMD-2026-07-15-cfb-curatedrank-relay. `home`/`away` objects now carry
+`curatedRank: number | null`, sourced from ESPN's raw competitor field
+`curatedRank.current` (flattened, matching the existing `score` convention).
+
+```
+FieldGame.home.curatedRank / FieldGame.away.curatedRank: number | null
+  1-25 for ranked teams, 99 for unranked (ESPN's own convention) — confirmed
+  live 2026-07-15 against a real ESPN CFB scoreboard fetch (Ohio State
+  Buckeyes curatedRank.current: 1, UCLA Bruins: 99). null only if ESPN omits
+  the field entirely (not observed within FBS scope — groups=80 always
+  returns at least {current: 99} for unranked FBS teams; the null fallback
+  is a defensive guard, not a case seen in real data).
+  NFL/CFB (+ future CBB, unconfirmed) only — not added to adaptESPNMLB or
+  other sport adapters, since ESPN's curatedRank convention is specific to
+  American football / basketball ranking polls.
+```
+
+Consumer: jubilant-bassoon's `isFeaturedTierGame` (rank ≤25 signal), which
+reads `g.homeCuratedRank`/`g.awayCuratedRank` on the client's schedule
+objects — a *different* field name/location than `FieldGame.home.curatedRank`
+above. This relay change alone does not thread the value all the way to the
+client grid: a separate client-side pipeline (CFB section-injection,
+`docs/CC-CMD-2026-07-15-cfb-section-injection.md`, jubilant-bassoon) still
+needs to map `fg.home.curatedRank` → `g.homeCuratedRank` on schedule
+objects. Until that lands, the client's existing `?? 99` defensive read
+means the rank signal safely never fires (no crash, no invented data) —
+consistent with how this repo's other "producer ships, consumer pending"
+entries above are handled.
+
+---
+
+## GET /journalism/game/{eventId} — per-game brief lookup
+
+Producer: `src/index.js` ~L12906 route handler; backing KV key written by
+the `JOURNALISM_QUEUE` consumer's `game-brief` branch (`src/index.js`,
+`async queue()`) and by `enqueueNHLBriefs`/`enqueueNBABriefs`'s own
+pre-enqueue dedup checks (`src/index.js` ~L3758/~L3879).
+Consumer: jubilant-bassoon `scripts/night-owl-email.js`'s `fetchRelayBrief()`
+— confirmed via direct source read (`mcp__FIELD_Handoff__read_source`,
+2026-07-15), not assumed.
+
+```
+GET /journalism/game/{eventId} → { brief: string | null }
+  eventId MUST be the bare, unprefixed ESPN numeric event id (e.g. "760424",
+  not "espn:760424" / "nhl:760424" / "nba:760424"). Confirmed live 2026-07-15
+  against the real client call site:
+    fetch(`https://field-relay-nba.jeffunglesbee.workers.dev/journalism/game/${espnEventId}`)
+  where espnEventId is a raw ESPN scoreboard event id, never sport-prefixed.
+  Route strips non [a-zA-Z0-9_:-] characters from the path segment and does
+  a direct KV get on `brief:game:{eventId}` — no normalization, no fallback
+  lookup across shapes. {brief: null} on any miss (never an error status).
+```
+
+**Write-side id shape — CC-CMD-2026-07-15-brief-game-kv-id-convention (fixed
+2026-07-15):** every real writer of the backing `brief:game:{id}` KV key
+strips its own internal sport-tag prefix (`espn:`/`nhl:`/`nba:`) before
+building the key, via `stripKVIdPrefix()` (`src/index.js`, defined next to
+`canonicalizeWC26Sport`) — applied only at the KV-key-construction point;
+`job.eventId` / `g.id` / the `briefs.game_id` D1 column keep their original
+prefixed values everywhere else. Before this fix, WC26/NHL/NBA game briefs
+were silently unreachable via this route (real briefs existed in KV, but
+under a prefixed key the client's bare-id request never matched) — MLB/WNBA/
+other sports flowing through `handleJournalismCycle`'s generic per-league
+loop already used bare ids and were unaffected.
+
+**Known gap, deliberately not fixed in this pass:** Golf's KV key
+(`golf_{eventId}_R{roundNum}`, `src/index.js` ~L6927) is not a
+`{prefix}:{id}` shape `stripKVIdPrefix()` recognizes, and its round suffix
+is functionally load-bearing (distinguishes R1–R4 recaps for the same
+event) — collapsing it to match the client's round-agnostic bare-id request
+needs its own dedicated look, not a rushed change under this dispatch.
+`/journalism/game-complete`'s GameDO-sourced `gameId` (`src/game-do.js`,
+set from a client-supplied WebSocket query param) was also left unverified
+— not confirmed against real client code in this session.
+
+
+---
+
+## ESPN per-sport event source (summary endpoint)
+
+Producer: ESPN `site.web.api.espn.com/apis/site/v2/sports/{path}/summary?event={id}`
+Consumer: relay recap/brief generation (ask 5, CC-CMD-2026-08-20-brief-data-quality)
+
+**There is no single container. Each sport puts scoring events somewhere
+different, and the three probed independently disagreed.** Verified 2026-08-21
+against real finalized events (Rule 73 context: one completed event per sport;
+NBA/NHL ids came from the ESPN scoreboard for 2026-01-15 because both are out of
+season in D1 in August).
+
+| sport | ESPN path | container | filter | prose field |
+|-------|-----------|-----------|--------|-------------|
+| soccer | `soccer/{league-slug}` | `keyEvents` | `scoringPlay === true` | `text` |
+| MLB | `baseball/mlb` | `plays` | `scoringPlay === true` | `text` |
+| NBA | `basketball/nba` | `plays` | `scoringPlay === true` | `text` |
+| NHL | `hockey/nhl` | `plays` | `scoringPlay === true` | `text` |
+| NFL | `football/nfl` | `scoringPlays` | *(all items are scoring)* | `text` |
+
+`keyEvents` is ABSENT for MLB, NBA, NHL and NFL. `plays` is ABSENT for soccer and
+NFL. `commentary` exists for soccer only. **Do not read a container without
+checking the sport** — every one of these absences was measured, not assumed.
+
+Verbatim samples, one per sport:
+
+```
+soccer  "Goal! Shamrock Rovers 1, KuPS 0. Enda Stevens (Shamrock Rovers) right
+         footed shot from the centre of the box to the centre of the goal."
+MLB     "Walker homered to center (407 feet), Wetherholt scored and Herrera scored."
+NBA     "Paolo Banchero makes driving layup (Anthony Black assists)"
+NHL     "Cole Caufield Goal (22) Wrist Shot, assists: Noah Dobson (21)"
+NFL     "Woody Marks 20 Yd Run (Ka'imi Fairbairn Kick)"
+```
+
+### Read `text`, not the structured participant fields
+
+Soccer `participants[]` entries are `{athlete:{id,displayName}}` with **no role
+field**; role is positional (`[0]` scorer, `[1]` assister). Measured across 18
+goals: the assister is structurally present on only 8 of 14 assisted goals, while
+`text` carried it 14/14. NBA and NHL `text` likewise names assists inline.
+Structured names also disagree with the prose ("Dali" vs "Dalisson De Almeida").
+
+Use `participants[0].athlete.id` for stable joins. Not as a prose source.
+
+### Scoring-item volume differs by an order of magnitude
+
+Per completed event: NFL 8, NHL 8, soccer 2–4, MLB 11, **NBA 119** (every made
+basket is a scoring play). A generator that concatenates scoring items will
+produce a usable paragraph for four sports and an unusable wall for basketball —
+NBA needs selection, not enumeration.
+
+### Cost
+
+One summary fetch per game **at finalization**, not per cron tick: ~28 calls/day
+against a 14-day mean of 28 games/day. Per-tick would be 2,688 calls / 790 MB.
+Payload sizes measured: MLB 1,082 KB, soccer 301 KB. Rule 78 applies — replicate
+the existing `cacheEverything` + TTL pattern.
+
+### Soccer near-miss enrichment — ADOPTED
+
+`commentary` carries `Shot Off Target`, `Shot Hit Woodwork` and `Foul` events
+that `keyEvents` does not contain at all. Availability measured over 20 fixtures:
+**12 rich-tier (98–129 commentary items, 5–16 near-misses), 8 sparse-tier (18–29
+items, 0 near-misses)** — a clean bimodal split with nothing in between, so
+`commentary.length >= 60` identifies a rich fixture before parsing.
+
+Enrichment therefore fires on ~60% of soccer fixtures. Recaps use near-miss items
+where present and degrade to goals-only where not. The same tier governs whether
+`participants[1]` is populated (sparse: 0/6 assists structured; rich: 8/8).
+
+`keyEvents` and `commentary` **overlap; neither is a superset** — verified by
+per-item id join across 6 fixtures. `keyEvents` uniquely holds substitutions and
+period markers; `commentary` uniquely holds near-misses. All goal items appear in
+both (0 missing across 6 fixtures), so the goal read path is unaffected.
