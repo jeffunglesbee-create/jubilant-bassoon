@@ -49,6 +49,7 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
       // app re-renders the card list every 15-30s on the ESPN poll cycle, and
       // innerHTML replacement wipes appended nodes (the Rule 24 failure class).
       m.timeline = [];
+      let elapsed = 0;
       for (const wait of [1500, 2500, 4000, 6000, 10000]) {
         await page.waitForTimeout(wait);
         const snap = await page.evaluate(() => {
@@ -58,7 +59,13 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
                    thisPanel: !!p, rows: p ? p.querySelectorAll('.standings-table tr').length : 0,
                    label: (b?.textContent || '').trim() };
         });
-        m.timeline.push({ atMs: m.timeline.reduce((a, x) => a + 0, 0) || wait, ...snap });
+        // atMs was `reduce((a,x) => a+0, 0) || wait`, which sums zeros and so
+        // always yields the per-sample wait, not elapsed time since the click.
+        // It reported 1500/2500/4000/6000/10000 when the samples actually land
+        // at 1.5/4/8/14/24s. That matters now that the verdict is read off this
+        // series: a mislabelled clock cannot be reasoned about.
+        elapsed += wait;
+        m.timeline.push({ atMs: elapsed, ...snap });
       }
       m.panelEverAppeared = m.timeline.some(t => t.panels > 0);
 
@@ -115,7 +122,33 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
                  panelPresent: !!p, panelVisible: p ? getComputedStyle(p).display !== 'none' : false,
                  rowCount: rows.length, sampleRows: rows.map(r => r.textContent.trim().replace(/\s+/g, ' ')).filter(t => t.length > 2).slice(0, 4) };
       });
-      m.standingsWorks = !!(m.render.panelPresent && m.render.panelVisible && m.render.rowCount >= 30);
+      // VERDICT COMES FROM THE TIME-SERIES, not from m.render.
+      //
+      // This probe failed on 2026-08-22 while the feature was working. The
+      // timeline recorded a populated panel — 35 rows, label "▲ Standings" — at
+      // every one of its five samples. m.render then read panelsAnywhereInDoc:0,
+      // label "▼ Standings", and the run went red.
+      //
+      // The gap between the two reads is the espnVariants block: seven
+      // sequential in-page fetches, five of them straight to ESPN. The final
+      // read therefore lands many seconds after the last sample, past the card
+      // list's 15-30s poll re-render, which wipes the appended panel. The probe
+      // built a time-series precisely to distinguish "never opened" from
+      // "opened then destroyed" -- its own comment says so -- and then threw
+      // that series away and judged on one late snapshot anyway.
+      //
+      // The stated regression is "a button is present but clicking it does not
+      // open a populated panel". That is a question about the click, so it is
+      // answered by the samples taken after the click.
+      const best = (m.timeline || []).reduce((a, t) => (t.rows > (a?.rows ?? -1) ? t : a), null);
+      m.peakRows = best?.rows ?? 0;
+      m.peakAtMs = best?.atMs ?? null;
+      m.standingsWorks = !!(best && best.thisPanel && best.rows >= 30);
+      // Reported, never failed on: whether the panel was still there at the end.
+      // False is the normal consequence of a poll re-render, not a regression in
+      // the dropdown. If it is ever to become a failure, that is a separate
+      // assertion about panel persistence and needs its own rationale.
+      m.panelSurvivedToFinalRead = !!(m.render.panelPresent && m.render.rowCount >= 30);
     } else {
       m.standingsWorks = false;
       m.note = "no standings-btn for sport 'NFL' on the slate this run";
@@ -135,7 +168,8 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
   const btn = m.nflStandingsBtnFound === true;
   const regression = btn && m.standingsWorks !== true;
   if (m.error || regression) {
-    console.error(`[FAIL] btn=${btn} standingsWorks=${m.standingsWorks} rows=${m.render?.rowCount} ` +
+    console.error(`[FAIL] btn=${btn} standingsWorks=${m.standingsWorks} peakRows=${m.peakRows}@${m.peakAtMs}ms ` +
+                  `finalRows=${m.render?.rowCount} survivedToFinalRead=${m.panelSurvivedToFinalRead} ` +
                   `pageErrors=${JSON.stringify(m.pageErrors || [])} error=${m.error || ''}`);
     process.exit(1);
   }
