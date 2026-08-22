@@ -24551,6 +24551,20 @@ function _bundesligaSeasonFromDate(year, month){
   // Jul-Dec -> season starts this year; Jan-Jun -> season started last year.
   return month >= 7 ? `${year}-${year+1}` : `${year-1}-${year}`;
 }
+// Broadcaster display name -> SR key. Built from the table itself so it cannot
+// drift the way a hand-written mapping would. First-wins on a duplicate label
+// rather than Map's last-wins: SR currently has exactly one duplicate
+// (cleguardians.tv, an MLB local entry) and a silent overwrite is the failure
+// mode worth designing out, not the collision itself.
+const _SR_BY_NAME = (() => {
+  const m = new Map();
+  for(const [k, v] of Object.entries(SR)){
+    const label = String((v && v[0]) || '').trim().toLowerCase();
+    if(label && !m.has(label)) m.set(label, k);
+  }
+  return m;
+})();
+
 async function _fetchBundesligaRealBroadcastStreams(dateStr8){
   try{
     const y = parseInt(dateStr8.slice(0,4),10), mo = parseInt(dateStr8.slice(4,6),10);
@@ -24576,7 +24590,27 @@ async function _fetchBundesligaRealBroadcastStreams(dateStr8){
       .map(b => b?.name || b?.broadcaster || b?.channel || b?.title || null)
       .filter(Boolean);
     if(!names.length) return null;
-    return names.map(n => ({ name:n, label:n, auth:'tv' }));
+    // Resolve the API's broadcaster names back through SR instead of
+    // replacing it. expandStreams then yields the same 7-field objects every
+    // other stream in the app carries (key/label/name/url/col/auth/authNote).
+    //
+    // The previous line returned { name, label, auth:'tv' }, which had two
+    // real consequences. It dropped `url`, so a chip built from this path had
+    // nowhere to link; and it hardcoded auth:'tv' across the whole bundle,
+    // which is correct for `usa` and wrong for the other six -- notably
+    // `fandango`, whose SR row is auth:"free" with an authNote stating no
+    // subscription is required. Labelling a free match as needing a TV
+    // provider is the expensive direction to be wrong in: the reader skips a
+    // game they could have watched.
+    const keys = names
+      .map(n => _SR_BY_NAME.get(String(n).trim().toLowerCase()))
+      .filter(Boolean);
+    // A partial resolve means the API named a broadcaster this table does not
+    // carry. Returning null is the existing "unavailable" signal, and the
+    // caller responds by keeping the curated BUNDESLIGA bundle -- better than
+    // a silently shortened list that looks authoritative.
+    if(keys.length !== names.length) return null;
+    return expandStreams(keys);
   }catch(e){ return null; }
 }
 
