@@ -49,12 +49,12 @@ both copies.
 **1. Nested quotes.** `docs/journalism-root-cause-2026-05-29.md:24` carries
 
 ```
-copy (`relayAuth === RELAY_SHARED_SECRET || 'field-relay-cron-2026'` skipped)
+copy (`relayAuth === RELAY_SHARED_SECRET || '<the-shared-secret>'` skipped)
 ```
 
 Two failures at once. The quote-pair regex matched the OUTER backtick span
 first and consumed the inner literal, so the single-quoted secret never got its
-own match. The token pass then produced ``'field-relay-cron-2026'` `` and the
+own match. The token pass then produced ``'<the-shared-secret>'` `` and the
 strip regex removed one leading and one trailing quote character — leaving a
 trailing apostrophe, so the hash missed. **The file scanned clean while
 carrying the secret**, and a secret inside a code span is exactly how one
@@ -63,6 +63,14 @@ appears in prose.
 Fixed by treating quote characters as DELIMITERS rather than decoration to
 trim: no credential contains a quote, so nothing is lost and nesting stops
 mattering.
+
+**The two illustrations above originally quoted the literal value**, because
+showing the defect meant showing the string that triggered it. The new gate
+went red on its first run against this very file — 11 found against a declared
+9 — and the two extra occurrences were both in this document. Redacted to
+`<the-shared-secret>`; the shape is what mattered, not the value. The guard
+caught its author writing the credential into a write-up about not writing the
+credential.
 
 **2. Whole-file scanning.** The counter pre-checked the whole file before
 counting lines. Quote pairing is not anchored, so an unbalanced quote on an
