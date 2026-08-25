@@ -449,12 +449,12 @@ Same change at line 8125 for `fetchSportOddsHistorical`.
 
 ### F3 — Starter key fallback
 
-The bundle already has `ODDS_API_KEY_FALLBACK = "de44fdf870b3a4b5ee9d46993b2e1038"` at line 5557, **but it is used as the default when env.ODDS_API_KEY is missing**, not as a failover on 401/429. The spec wants the Starter key (`8452c3ac6e226ca6eff8b087391d3c76`) added as a fresh failover key.
+The bundle already has `ODDS_API_KEY_FALLBACK = "<redacted 2026-08-25 — see docs/exposed-secrets.sha256>"` at line 5557, **but it is used as the default when env.ODDS_API_KEY is missing**, not as a failover on 401/429. The spec wants the Starter key (`8452c3ac6e226ca6eff8b087391d3c76`) added as a fresh failover key.
 
 Rename the existing hardcoded fallback to `ODDS_API_KEY_DEFAULT` (its actual semantic role — a default when env is missing during dev). Add a new env-bound `ODDS_API_KEY_FALLBACK` for failover:
 
 ```js
-const ODDS_API_KEY_DEFAULT  = "de44fdf870b3a4b5ee9d46993b2e1038"; // dev fallback when env missing
+const ODDS_API_KEY_DEFAULT  = "<redacted 2026-08-25 — see docs/exposed-secrets.sha256>"; // dev fallback when env missing
 // env.ODDS_API_KEY_FALLBACK = "8452c3ac6e226ca6eff8b087391d3c76" — Starter plan failover
 
 async function guardedOddsFetchWithFallback(env, urlBuilder, init) {

@@ -156,7 +156,7 @@ cat docs/source-registry.json
     "quotaFloor": 50
   },
   "lastTermsCheckedAt": "2026-06-29",
-  "notes": "CORS available — client can call directly. Relay proxies for key hiding. Fallback key de44fdf870b3a4b5ee9d46993b2e1038 is starter tier (500/mo)."
+  "notes": "CORS available — client can call directly. Relay proxies for key hiding. Fallback key <redacted 2026-08-25 — see docs/exposed-secrets.sha256> is starter tier (500/mo)."
 }
 ```
 

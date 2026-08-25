@@ -46,6 +46,19 @@ jobs:
       - name: Run unit tests
         run: node field_unit.js
 
+      # Runs on EVERY push, which is the point. This gate exists because the
+      # relay's equivalent was written on 2026-08-25, measured its own tree, and
+      # the result was reported as "the exposure" -- then a cross-repo scan found
+      # this repository carrying both credentials, including an Odds API key that
+      # had just been declared removed and ratcheted to zero. "Removed" meant
+      # removed from one repo.
+      #
+      # A ratchet, not a ban: the Odds key is 0 and may never return; the shared
+      # secret is 9 and load-bearing until it is rotated (field-relay-nba
+      # docs/CC-CMD-2026-08-25-rotate-relay-secret.md).
+      - name: No known-exposed credential appears more often than declared
+        run: node scripts/check-exposed-secrets.mjs --self-test && node scripts/check-exposed-secrets.mjs
+
       - name: Summary
         if: always()
         run: |
