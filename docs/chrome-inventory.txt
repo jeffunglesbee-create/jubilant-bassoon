@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-197  decorative-emoji
+210  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
-140  decorative-emoji-labelled
-57  decorative-emoji-alone
+148  decorative-emoji-labelled
+62  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -41,6 +41,20 @@
 #
 # THE LABELLED LINE WENT UP ON 2026-08-26 AND THAT IS NOT GROWTH. The detector
 # changed, and the arithmetic is the proof:
+#
+# EVERY NUMBER ABOVE ROSE AGAIN ON 2026-08-26, AND AGAIN IT IS NOT GROWTH.
+# `bodyOf` now decodes `\u{1F3C0}` and `\uXXXX` escapes before anything counts.
+# SPORT_META held eight sport emoji written as escapes rather than characters,
+# and every counter in this file walked straight past them. Decoding revealed
+# TWENTY-FOUR glyphs that had never been counted:
+#
+#   decorative  197 -> 210   (+8 labelled, +5 alone)
+#   status       98 -> 109
+#
+# A number that can be grown by choosing a different SPELLING of the same
+# character is not a ratchet. That was true of every line here until this fix,
+# and it was found only because deleting SPORT_META's dead emoji fields moved no
+# count at all — the silence was the evidence.
 #
 #   before          248 = 109 labelled + 139 alone
 #   detector fixed  248 = 166 labelled +  82 alone     <- 57 reclassified
@@ -131,7 +145,7 @@
 # Defensible as DATA rather than decoration, and listed separately so it is never
 # conflated with the line above. The checklist would still prefer SVG.
 
-98  status-glyph
+109  status-glyph
 # ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
 # carry meaning, and they are still typography doing an icon's job.
 
@@ -301,7 +315,7 @@
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
 
-57  emoji-announced
+62  emoji-announced
 # WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
 #
 # Every other line here asks some form of "does this look like decoration", and

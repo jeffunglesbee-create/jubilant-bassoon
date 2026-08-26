@@ -57,9 +57,21 @@ export function styleBlockOf(html) {
 }
 
 /// The body, for anything about rendered content rather than rules.
+///
+/// UNICODE ESCAPES ARE DECODED FIRST, and that is not cosmetic. `SPORT_META`
+/// held eight sport emoji written as `\u{1F3C0}` rather than as characters, and
+/// every count in this file walked straight past them — sixteen glyphs the
+/// ratchet could not see. A number that can be grown by choosing a different
+/// spelling of the same character is not a ratchet.
+///
+/// Both forms are decoded. Anything outside the emoji ranges is unaffected,
+/// because the counters filter on codepoint afterwards regardless.
 export function bodyOf(html) {
   const i = html.indexOf('<body')
-  return i < 0 ? '' : html.slice(i)
+  if (i < 0) return ''
+  return html.slice(i).replace(/\\u\{([0-9a-fA-F]{1,6})\}|\\u([0-9a-fA-F]{4})/g,
+    (m, a, b) => { const cp = parseInt(a || b, 16)
+                   return cp > 0x10FFFF ? m : String.fromCodePoint(cp) })
 }
 
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu
@@ -312,6 +324,20 @@ if (SELF_TEST) {
   check('styleBlockOf reads only the stylesheet',
     styleBlockOf('<style>.a{color:red}</style><body>linear-gradient</body>') === '.a{color:red}',
     'body content would be counted as CSS')
+  // ── escapes are the same character ────────────────────────────────────────
+  check('a braced unicode escape decodes before counting',
+    bodyOf('<body>\\u{1F3C0}</body>') === '<body>\u{1F3C0}</body>',
+    'SPORT_META spelled eight sport emoji this way and no counter saw them')
+  check('a four-digit escape decodes too',
+    bodyOf('<body>\\u26BE</body>') === '<body>\u26BE</body>')
+  check('plain text is untouched',
+    bodyOf('<body>plain text</body>') === '<body>plain text</body>')
+  check('an out-of-range escape is left as written, not thrown on',
+    bodyOf('<body>\\u{110000}</body>') === '<body>\\u{110000}</body>')
+  check('and the census then COUNTS the decoded glyph',
+    emojiCensus(bodyOf('<body>\\u{1F3C0}</body>')).decorative === 1,
+    'decoding without counting would be a no-op')
+
   check('a file with no stylesheet yields empty, not the whole document',
     styleBlockOf('<body>x</body>') === '')
   check('a commented-out rule is not counted as a live one',
