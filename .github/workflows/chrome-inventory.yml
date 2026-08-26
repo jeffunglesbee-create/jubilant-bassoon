@@ -1,0 +1,63 @@
+name: chrome inventory
+
+# THE RATCHET'S TRIGGER DID NOT COVER THE RATCHET'S INPUTS.
+#
+# `scripts/check-chrome-inventory.mjs` runs in exactly one place: deploy-gate.yml,
+# whose `paths` are `index.html`, `sw.js`, `field_utils.js` and `wrangler.jsonc`.
+# Its two inputs are `docs/chrome-inventory.txt` and the script itself, and
+# NEITHER is in that list.
+#
+# So the declared maxima — 275 decorative emoji, 31 gradients, 12 backdrop-filters
+# — could be raised in a commit that touches only `docs/`, and nothing would read
+# them. A ratchet whose numbers can be edited unobserved is a note.
+#
+# `field-relay-nba` has the case study. It shipped
+# check-no-literal-secret-writes.mjs with the real (exhausted) Odds API key
+# pasted twice into its own self-test fixture — in the script whose only purpose
+# is to stop credentials being written from literals. The commit touched
+# `scripts/` and `.github/workflows/` only, deploy.yml's `paths` covered neither,
+# and the exposed-secrets ratchet that would have failed it never fired. Found by
+# running the checks by hand two commits later. That repo's `guards.yml` and
+# field-laboratory's are the same fix at a larger scale; this repo needs exactly
+# one step, so this workflow is exactly one step.
+#
+# `paths` is disjoint from deploy-gate's, so the two never both fire for the same
+# reason. A push touching index.html runs the copy in deploy-gate; a push
+# touching only the inventory or the script runs this one. Node only, no build,
+# no browser, no network — a few seconds.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/chrome-inventory.txt'
+      - 'scripts/check-chrome-inventory.mjs'
+  workflow_dispatch: {}
+
+concurrency:
+  group: chrome-inventory-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # --self-test FIRST, and it is not ceremony. The counter shipped measuring
+      # MENTIONS rather than declarations: deleting three `linear-gradient`
+      # underlines on 2026-08-26 dropped the count by two, because the comment
+      # written where they had been says the word while explaining the removal.
+      # The self-test that would have caught it is now in the file, and running
+      # the live check without it would let a broken counter report a green
+      # ratchet.
+      - name: The unslop-ui checklist, counted and ratcheted
+        run: node scripts/check-chrome-inventory.mjs --self-test && node scripts/check-chrome-inventory.mjs
