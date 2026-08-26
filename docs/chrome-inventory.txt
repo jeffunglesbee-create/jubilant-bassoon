@@ -300,3 +300,44 @@
 # `.date-nav-btn` — a bordered chevron control with no fill at all. The
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
+
+82  emoji-announced
+# WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
+#
+# Every other line here asks some form of "does this look like decoration", and
+# each one had to be argued into a measurement. The accessibility tree asks a
+# different question with a built-in answer: what does this element ANNOUNCE?
+#
+# A captioned emoji announces nothing extra — the label speaks. An uncaptioned
+# one with no `aria-hidden` IS its own accessible name. Measured 2026-08-26:
+# 82 of 82 uncaptioned glyphs, so the page says "fire" where a sighted reader
+# sees a tier marker and "blue circle" where the source data said
+# `tier === 'elite'`.
+#
+# Two remedies, no taste involved: give it a real text alternative (which makes
+# it captioned, and then usually deletable), or hide it from the tree. Target 0.
+#
+# The lookback is bounded and crude on purpose — the nearest opening tag within
+# 200 characters. A wider window would start crediting an `aria-hidden` on an
+# unrelated ancestor, which is the direction that produces a false green.
+
+7  glyph-ambiguity
+# ONE GLYPH, MANY MEANINGS — the mirror of the test that ended SPORT_ICONS.
+#
+# That map died because one glyph covered many KEYS: four English competitions
+# shared a flag, so it could not discriminate between the chips it labelled.
+# This is the same test pointed the other way, and it is the largest number on
+# this page that nobody had looked at:
+#
+#   fire          7 contexts   step, icon, textContent, bare, tierLabel,
+#                              peakIcon, _peakIcon
+#   high voltage  5 contexts   bare, icon, textContent, tierLabel, _peakIcon
+#   check / cross 3 each       qIcon, icon, conclusion
+#
+# A glyph used in seven unrelated contexts means seven things, which is none.
+#
+# Counted only over UNCAPTIONED glyphs: a captioned one takes its meaning from
+# the words beside it, so reuse there is not ambiguity. The declared number is
+# the WORST glyph, not a total, so it falls only when the most overloaded glyph
+# is fixed — which is the one worth fixing.
+

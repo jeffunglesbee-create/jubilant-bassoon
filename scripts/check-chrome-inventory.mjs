@@ -150,6 +150,69 @@ export function emojiCensus(body) {
   return out
 }
 
+/// WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
+///
+/// Every check above asks some form of "does this look like decoration", and
+/// each one had to be argued into a measurement. The accessibility tree asks a
+/// different question with a built-in answer: what does this element ANNOUNCE?
+///
+/// A captioned emoji announces nothing extra — the label speaks. An uncaptioned
+/// one with no `aria-hidden` IS its own accessible name, so the page says "fire"
+/// where a sighted reader sees a tier marker, and "blue circle" where the source
+/// data said `tier === 'elite'`.
+///
+/// Two remedies, no taste involved: give it a real text alternative (which makes
+/// it captioned, and then usually deletable), or hide it from the tree.
+///
+/// The lookback is bounded and deliberately crude — the nearest opening tag
+/// within 200 characters. A wider window would start crediting an `aria-hidden`
+/// on an unrelated ancestor, which is the direction that produces a false green.
+export function announcedEmoji(body) {
+  const out = []
+  for (const m of body.matchAll(EMOJI)) {
+    const c = m[0]
+    if (FLAG(c) || STATUS.has(c)) continue
+    if (/[A-Za-z]{3,}/.test(spanAround(body, m.index)) || labelledBySibling(body, m.index)) continue
+    const back = body.slice(Math.max(0, m.index - 200), m.index)
+    const tag = back.lastIndexOf('<')
+    const attrs = tag < 0 ? '' : back.slice(tag)
+    if (/aria-hidden\s*=\s*["']?true/.test(attrs) || /role\s*=\s*["']?presentation/.test(attrs)) continue
+    out.push(c)
+  }
+  return out
+}
+
+/// The nearest identifier a glyph is assigned to, which is the closest thing to
+/// "what this one means" available without running the page.
+const CONTEXT_OF = (body, i) => {
+  const back = body.slice(Math.max(0, i - 300), i)
+  const m = [...back.matchAll(/([A-Za-z_]\w{2,})\s*[:=]/g)].pop()
+  return m ? m[1] : '(bare)'
+}
+
+/// ONE GLYPH, MANY MEANINGS — the mirror of the test that ended SPORT_ICONS.
+///
+/// That map died because one glyph covered many KEYS: four English competitions
+/// shared a flag, so it could not discriminate between the chips it labelled.
+/// This is the same test pointed the other way. A glyph used in seven unrelated
+/// contexts means seven things, which is none of them.
+///
+/// Counted only over UNCAPTIONED glyphs. A captioned one takes its meaning from
+/// the words beside it, so reuse there is not ambiguity.
+export function glyphContexts(body) {
+  const by = new Map()
+  for (const m of body.matchAll(EMOJI)) {
+    const c = m[0]
+    if (FLAG(c) || STATUS.has(c)) continue
+    if (/[A-Za-z]{3,}/.test(spanAround(body, m.index)) || labelledBySibling(body, m.index)) continue
+    if (!by.has(c)) by.set(c, new Set())
+    by.get(c).add(CONTEXT_OF(body, m.index))
+  }
+  return by
+}
+export const worstGlyphAmbiguity = body =>
+  [...glyphContexts(body).values()].reduce((n, s) => Math.max(n, s.size), 0)
+
 /// A shadow is "coloured" when its colour is a hex or an rgb(a) whose channels
 /// are not all near-zero. A black shadow at low alpha is elevation; a violet one
 /// is decoration, and the checklist names exactly that difference.
@@ -219,6 +282,8 @@ export function countsFor(html) {
     'coloured-shadow': colouredShadows(css),
     'keyframes': n(/@keyframes/g, css),
     'icon-in-a-box': iconBoxes(css).length,
+    'emoji-announced': announcedEmoji(body).length,
+    'glyph-ambiguity': worstGlyphAmbiguity(body),
   }
 }
 
@@ -313,6 +378,35 @@ if (SELF_TEST) {
     B('.x{width:30px;height:30px;border-radius:6px;background:#111;display:block}').length === 0)
   check('the detector reports which selector, not just a count',
     B('.s-icon{width:32px;height:32px;border-radius:8px;background:#111;justify-content:center}')[0] === '.s-icon')
+
+  // ── what a screen reader announces ───────────────────────────────────────
+  const A = b => announcedEmoji(b)
+  check('an uncaptioned, unhidden emoji is announced',
+    A('<body><span>🔥</span></body>').length === 1)
+  check('a captioned one is not — the label speaks',
+    A('<body><span>🔥 Hot</span></body>').length === 0)
+  check('a sibling-captioned one is not either',
+    A('<body><span>🔥</span><span>Hot</span></body>').length === 0)
+  check('aria-hidden on the enclosing tag clears it',
+    A('<body><span aria-hidden="true">🔥</span></body>').length === 0)
+  check('role=presentation clears it too',
+    A("<body><span role='presentation'>🔥</span></body>").length === 0)
+  check('aria-hidden="false" does NOT clear it',
+    A('<body><span aria-hidden="false">🔥</span></body>').length === 1,
+    'any aria-hidden attribute at all was being read as a pass')
+  check('a flag is data, not an announcement defect',
+    A('<body><span>🇪🇸</span></body>').length === 0)
+
+  // ── one glyph, many meanings ─────────────────────────────────────────────
+  check('one glyph in two contexts scores 2',
+    worstGlyphAmbiguity('<body>tier = "🔥" peak = "🔥"</body>') === 2)
+  check('one glyph in one context scores 1',
+    worstGlyphAmbiguity('<body>tier = "🔥"</body>') === 1)
+  check('a page with no uncaptioned glyph scores 0',
+    worstGlyphAmbiguity('<body><span>🔥 Hot</span></body>') === 0,
+    'a captioned glyph takes its meaning from its words; reuse there is not ambiguity')
+  check('two different glyphs do not pool their contexts',
+    worstGlyphAmbiguity('<body>a = "🔥" b = "📊"</body>') === 1)
 
   check('a black shadow is elevation, not decoration',
     colouredShadows('a{box-shadow:0 4px 24px rgba(0,0,0,.4)}') === 0)
