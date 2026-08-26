@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-214  decorative-emoji
+197  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
 140  decorative-emoji-labelled
-74  decorative-emoji-alone
+57  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -131,7 +131,7 @@
 # Defensible as DATA rather than decoration, and listed separately so it is never
 # conflated with the line above. The checklist would still prefer SVG.
 
-105  status-glyph
+98  status-glyph
 # ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
 # carry meaning, and they are still typography doing an icon's job.
 
@@ -301,7 +301,7 @@
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
 
-74  emoji-announced
+57  emoji-announced
 # WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
 #
 # Every other line here asks some form of "does this look like decoration", and
@@ -328,6 +328,23 @@
 # "Fire game" and "Heating up" are NOT invented here. They already existed in
 # this file, at the one drama-band site that was captioned — which is why that
 # site never appeared in the uncaptioned count. Its glyphs went too.
+#
+# A THIRD FORM OF "CAPTIONED", found at 74 and gone by 57. The caption can live
+# in the same literal, in the next DOM node — and in a SIBLING FIELD of the same
+# object:
+#
+#   {importance:'series_deciding', boost:30, label:'Game 7 - winner takes all', icon:'\u{1F3C6}'}
+#
+# Twenty-four of those, rendering as `${_importanceIcon} ${narrative.label}` in
+# one element, so the glyph sits immediately beside the words its own object
+# already carries. No detector was written for this form: after the deletion the
+# population is zero, and a detector for nothing is decoration.
+#
+# THE FIRST ATTEMPT REMOVED 32 RATHER THAN 24 and smoke caught it. The pattern
+# `icon: '<glyph>'` also matches `getPulseChip`'s `{icon, text}` returns, which
+# are a different system with a different sibling key, asserted by A663. The
+# corrected rule requires `label:` in the same object literal on the same line.
+# Reverted and redone rather than patched forward.
 #
 # The drama-peak sites were checked against ADR-002 before being touched, not
 # after. All three are inside `case 'final'` or `_bsIsFinal`, which Step 4 of

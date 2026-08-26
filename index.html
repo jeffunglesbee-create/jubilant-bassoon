@@ -7283,7 +7283,6 @@ function buildEnrichedGame(rawGame, sources) {
     seriesRecord:   rawGame.seriesRecord    || '',
     narrative:      rawGame.narrative       || null,
     _gameImportance: rawGame._gameImportance || '',
-    _importanceIcon: rawGame._importanceIcon || '',
     wp:             rawGame.wp              ?? null,
     // Analytics
     _insights:      rawGame._insights       || null,
@@ -12979,7 +12978,7 @@ function renderAll(skipUnchanged){
           ${(()=>{ if(typeof isScoutsPick==='function'&&isScoutsPick(g))return ''; /* stat already folds into the Scout's Pick badge text -- see its own "Option B" comment */ const _sdb=(typeof getStatOfDay==='function'&&typeof buildStatOfDayBadge==='function')?buildStatOfDayBadge(g,sec?.sport||g._sport||''):''; return _sdb?`<div class="badge-row stat-day-badge-row">${_sdb}</div>`:''; })()}
           ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
           ${/* BUG-09 fix (CC-CMD-2026-07-15-card-badges): isPlayoffGame(g), not raw g._gameImportance -- absent on Conference Finals entries; class/icon lookups below fall through to the 'playoff-impl' default when it's unset, a reasonable degrade. */''}
-          ${isPlayoffGame(g)?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g._importanceIcon||''} ${g.narrative?.label||''}</div>`:""}
+          ${isPlayoffGame(g)?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'"'+(v.onclick?' role="button" tabindex="0" style="cursor:pointer" onclick="'+v.onclick+'"':'')+'>'+v.label+'</span>').join('')+'</div>':'';})()}
           ${(()=>{ const _wcB=typeof buildWCBars==='function'?buildWCBars(g):''; return _wcB?`<div class="wc-bars-wrap">${_wcB}</div>`:''; })()}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!isPlayoffGame(g)?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
@@ -13938,48 +13937,48 @@ function buildTodaySchedule(){
     const s = (g.league||'').toLowerCase();
     // Game 7 / deciding game
     if (/game 7|g7|tied 3-3|series tied 3-3/.test(s))
-      return {importance:'series_deciding', boost:30, label:'Game 7 — winner takes all', icon:'🏆'};
+      return {importance:'series_deciding', boost:30, label:'Game 7 — winner takes all'};
     // Must-win elimination (team trails 3-1 or 3-0)
     if (/leads 3-0|up 3-0/.test(s))
-      return {importance:'elimination', boost:22, label:'Facing sweep — must win to survive', icon:'⚠️'};
+      return {importance:'elimination', boost:22, label:'Facing sweep — must win to survive'};
     if (/leads 3-1|up 3-1/.test(s))
-      return {importance:'elimination', boost:18, label:'Elimination game', icon:'⚠️'};
+      return {importance:'elimination', boost:18, label:'Elimination game'};
     if (/leads 3-2|up 3-2/.test(s))
-      return {importance:'elimination', boost:22, label:'Elimination game', icon:'⚠️'};
+      return {importance:'elimination', boost:22, label:'Elimination game'};
     // Clinch game (team can win series)
     if (/leads 3-0/.test(s) && /game 4/i.test(g.league||''))
-      return {importance:'clinch', boost:15, label:'Can sweep the series', icon:'✓'};
+      return {importance:'clinch', boost:15, label:'Can sweep the series'};
     if (/leads 3-1/.test(s))
-      return {importance:'clinch', boost:15, label:'One win from advancing', icon:'✓'};
+      return {importance:'clinch', boost:15, label:'One win from advancing'};
     if (/leads 3-2/.test(s))
-      return {importance:'clinch', boost:18, label:'One win from the series', icon:'✓'};
+      return {importance:'clinch', boost:18, label:'One win from the series'};
     // High-stakes: tied series
     if (/tied 2-2|series tied 2-2/.test(s))
-      return {importance:'playoff_impl', boost:12, label:'Series tied — pivotal game', icon:'📊'};
+      return {importance:'playoff_impl', boost:12, label:'Series tied — pivotal game'};
     if (/tied 1-1|series tied 1-1/.test(s))
-      return {importance:'playoff_impl', boost:8, label:'Series tied after split', icon:'📊'};
+      return {importance:'playoff_impl', boost:8, label:'Series tied after split'};
     // Second leg knockout (EFL/Cup)
     if (/2nd leg|second leg/.test(s))
-      return {importance:'playoff_impl', boost:12, label:'Knockout second leg', icon:'⚽'};
+      return {importance:'playoff_impl', boost:12, label:'Knockout second leg'};
     // General playoff context
     if (/leads 2-1|up 2-1/.test(s))
-      return {importance:'playoff_impl', boost:8, label:'One team holds the edge', icon:'📊'};
+      return {importance:'playoff_impl', boost:8, label:'One team holds the edge'};
     if (/leads 1-0|up 1-0/.test(s))
-      return {importance:'playoff_impl', boost:5, label:'Series advantage', icon:'📊'};
+      return {importance:'playoff_impl', boost:5, label:'Series advantage'};
     // Playoff/cup final: single decisive match → series_deciding importance
     if (/final/i.test(s) && /playoff|cup|champions|europa|conference/i.test(s))
-      return {importance:'series_deciding', boost:28, label:'Playoff Final', icon:'🏆'};
+      return {importance:'series_deciding', boost:28, label:'Playoff Final'};
 
     // ── MLS drama (no promotion/relegation) ──────────────────────────
     if (/mls/i.test(s)) {
-      if (/mls.?cup.?final/i.test(s)) return {importance:"series_deciding",boost:28,label:"MLS Cup Final",icon:"🏆"};
-      if (/conference.?final|eastern.?final|western.?final/i.test(s)) return {importance:"series_deciding",boost:22,label:"Conference Final",icon:"🏆"};
-      if (/supporters.{0,15}shield|shield.{0,10}race/i.test(g.matchupNote||"")) return {importance:"series_deciding",boost:20,label:"Supporters’ Shield race",icon:"🛡️"};
-      if (/playoff.{0,20}spot|conference.{0,20}race|clinch/i.test(g.matchupNote||"")) return {importance:"playoff_impl",boost:14,label:"Playoff position race",icon:"📊"};
-      if (/el.?tráfico|el.?trafico/i.test(g.league||g.matchupNote||"")) return {importance:"series_deciding",boost:20,label:"El Tráfico — LA’s biggest derby",icon:"🔥"};
-      if (/hudson.?river.?derby/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:15,label:"Hudson River Derby",icon:"🔥"};
-      if (/cascadia/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:12,label:"Cascadia Derby",icon:"🔥"};
-      if (/hell.?is.?real|ohio.?cup/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:12,label:"Regional MLS rivalry",icon:"🔥"};
+      if (/mls.?cup.?final/i.test(s)) return {importance:"series_deciding",boost:28,label:"MLS Cup Final"};
+      if (/conference.?final|eastern.?final|western.?final/i.test(s)) return {importance:"series_deciding",boost:22,label:"Conference Final"};
+      if (/supporters.{0,15}shield|shield.{0,10}race/i.test(g.matchupNote||"")) return {importance:"series_deciding",boost:20,label:"Supporters’ Shield race"};
+      if (/playoff.{0,20}spot|conference.{0,20}race|clinch/i.test(g.matchupNote||"")) return {importance:"playoff_impl",boost:14,label:"Playoff position race"};
+      if (/el.?tráfico|el.?trafico/i.test(g.league||g.matchupNote||"")) return {importance:"series_deciding",boost:20,label:"El Tráfico — LA’s biggest derby"};
+      if (/hudson.?river.?derby/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:15,label:"Hudson River Derby"};
+      if (/cascadia/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:12,label:"Cascadia Derby"};
+      if (/hell.?is.?real|ohio.?cup/i.test(g.league||g.matchupNote||"")) return {importance:"playoff_impl",boost:12,label:"Regional MLS rivalry"};
     }
 
     // ── Soccer league relegation/European stakes ─────────────────────────
@@ -13990,14 +13989,14 @@ function buildTodaySchedule(){
     if (isFinalDay) {
       // All final-day games have elevated stakes — title, Europe, or relegation all live
       // Specific games get manual _gameImportance via overlay; this is the floor boost
-      return {importance:'playoff_impl', boost:12, label:'Final day — season destiny', icon:'🏟️'};
+      return {importance:'playoff_impl', boost:12, label:'Final day — season destiny'};
     }
     // Relegation battle detected via matchupNote or league label
     if (/relegat/i.test(g.matchupNote||'') || /relegat/i.test(g.localNote||''))
-      return {importance:'elimination', boost:22, label:'Relegation battle', icon:'⚠️'};
+      return {importance:'elimination', boost:22, label:'Relegation battle'};
     // European spot race
     if (/champions league|europa league|conference league/i.test(g.matchupNote||''))
-      return {importance:'playoff_impl', boost:12, label:'European spot on the line', icon:'🌍'};
+      return {importance:'playoff_impl', boost:12, label:'European spot on the line'};
 
     return null;
   }
@@ -14009,7 +14008,6 @@ function buildTodaySchedule(){
         const ctx = g.seriesRecord ? parseSeriesRecord(g) : elimination_boost(g);
         if (ctx) {
           g._gameImportance = ctx.importance;
-          g._importanceIcon = ctx.icon;
           g.narrative = {boost: ctx.boost, label: ctx.label, source:'auto'};
           g._series = ctx;
         }
@@ -27259,7 +27257,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26f';
+  const SW_VERSION = '2026-08-26g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
