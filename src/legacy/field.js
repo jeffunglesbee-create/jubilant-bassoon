@@ -1903,17 +1903,24 @@ let allData = null;
 let _fieldDataCache = null;   // parsed field-data-today.json (schema 2.0)
 let _mlbnDataCache  = null;   // parsed mlbn-schedule.json byDate lookup
 
-// ── Canonical sport metadata — single source of truth for emoji, labels, plural forms ──
-// Mirrors scripts/sport-meta.json. Keep in sync. Do NOT hardcode sport emoji elsewhere.
+// ── Canonical sport metadata — labels and plural forms ──
+// Mirrors scripts/sport-meta.json. Keep in sync.
+//
+// THE `emoji` AND `entity` FIELDS WERE DELETED 2026-08-26. Nothing read either
+// one, here or in scripts/daily-brief.js, which is the other consumer of the
+// JSON. The header used to say "single source of truth for emoji ... do NOT
+// hardcode sport emoji elsewhere", and the thing that actually hardcoded sport
+// emoji elsewhere was SPORT_ICONS, deleted the same day. Three copies of a
+// claim, zero readers.
 const SPORT_META = {
-  NBA:    {emoji:'\u{1F3C0}', entity:'&#127936;', label:'NBA',    singular:'game',  plural:'games'},
-  NHL:    {emoji:'\u{1F3D2}', entity:'&#127954;', label:'NHL',    singular:'game',  plural:'games'},
-  MLB:    {emoji:'\u26BE',    entity:'&#9918;',   label:'MLB',    singular:'game',  plural:'games'},
-  WNBA:   {emoji:'\u{1F3C0}', entity:'&#127936;', label:'WNBA',   singular:'game',  plural:'games'},
-  AFL:    {emoji:'\u{1F3C9}', entity:'&#127945;', label:'AFL',    singular:'game',  plural:'games'},
-  Soccer: {emoji:'\u26BD',    entity:'&#9917;',   label:'Soccer', singular:'match', plural:'matches'},
-  Tennis: {emoji:'\u{1F3BE}', entity:'&#127934;', label:'Tennis', singular:'match', plural:'matches'},
-  NFL:    {emoji:'\u{1F3C8}', entity:'&#127944;', label:'NFL',    singular:'game',  plural:'games'},
+  NBA:    {label:'NBA',    singular:'game',  plural:'games'},
+  NHL:    {label:'NHL',    singular:'game',  plural:'games'},
+  MLB:    {label:'MLB',    singular:'game',  plural:'games'},
+  WNBA:   {label:'WNBA',   singular:'game',  plural:'games'},
+  AFL:    {label:'AFL',    singular:'game',  plural:'games'},
+  Soccer: {label:'Soccer', singular:'match', plural:'matches'},
+  Tennis: {label:'Tennis', singular:'match', plural:'matches'},
+  NFL:    {label:'NFL',    singular:'game',  plural:'games'},
 };
 
 // sportCountLabel — wires SPORT_META (singular/plural) to section game-count badges.
@@ -22365,7 +22372,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26g';
+  const SW_VERSION = '2026-08-26h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
