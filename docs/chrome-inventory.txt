@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-275  decorative-emoji
+248  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
 109  decorative-emoji-labelled
-166  decorative-emoji-alone
+139  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -37,7 +37,7 @@
 # alone in its literal might be load-bearing.
 #
 #   labelled  109   the word is already there; removable without a decision
-#   alone     166   59 distinct glyphs; needs eyes
+#   alone     139   needs eyes
 #
 # SOURCE ADJACENCY, NOT RENDERED. A `SPORT_ICONS` value (`{ nba: '🏀' }`) is
 # alone in its literal and may still render beside a label. The bias is
@@ -56,11 +56,49 @@
 # ESSENTIALS` — the neighbouring `tz-pill` and `wf-toggle` never had a
 # pictograph, so the row is consistent for the first time.
 #
-# `SPORT_ICONS` (index.html ~6347, 27 competitions, four call sites) is NOT
-# touched and is most of what remains in the `alone` column. That one is still a
-# product decision, and now it is the only one.
+# `SPORT_ICONS` WAS the rest of the `alone` column and was called "still a
+# product decision". DELETED 2026-08-26, and the decision was settled by a
+# measurement rather than by taste:
+#
+#   29 competitions -> 19 distinct glyphs
+#   16 of the 29 shared their glyph with another entry
+#
+#     England flag  x4   Premier League, EFL Championship/League One/League Two
+#     basketball    x3   NBA Playoffs, WNBA, Women's Basketball
+#     rugby ball    x3   Rugby, AFL, Australian Football (AFL)
+#     hockey stick  x2   NHL Playoffs, PWHL
+#     football      x2   FIFA World Cup 2026, NWSL
+#     cricket bat   x2   Cricket, IPL
+#
+# An icon identical across the siblings it sits beside cannot help anyone pick
+# between them, and picking between them is the entire job of a filter chip.
+# Four chips reading the same flag beside four different English competitions is
+# the case at its clearest.
+#
+# The rendered-adjacency question the source-based split could not answer is
+# answered here too: all three call sites put the glyph IMMEDIATELY before the
+# competition's own name -- `${icon} ${sec.sport}` in the picker,
+# `${chipLabel} (${cnt})` in the filter bar, and `.s-name` beside the section
+# header box. Nothing rendered a sport icon alone.
+#
+# `.s-icon` went with it, and would have had to: a 32px `border-radius:8px`
+# tinted box with a 1px border, on every sport section header. Checklist item 2
+# names that shape exactly -- "NEVER wrap icons in a colored rounded-square /
+# circle container unless it is an avatar or app icon". Deleting the glyph
+# without the box would have left 29 empty tinted squares.
+#
+# WHAT STILL CARRIES SPORT IDENTITY, unchanged: the 3px `border-left` on
+# `.section-head` in the sport's own colour, the per-sport `.section-head::after`
+# accent bar, and the competition's name in words. Three channels for one fact
+# were four.
+#
+# `.field-desk-icon` and `.streaming-icon` went in the same commit, found by
+# probing for the SHAPE rather than for more emoji — see the `icon-in-a-box`
+# line at the end of this file. They held a newspaper beside "FIELD Desk" and a
+# phone beside "Streaming Discovery", which is why the `alone` column fell by
+# two more than the sport icons account for.
 
-102  flag-emoji
+92  flag-emoji
 # Regional-indicator sequences carrying country identity in a global sports app.
 # Defensible as DATA rather than decoration, and listed separately so it is never
 # conflated with the line above. The checklist would still prefer SVG.
@@ -143,7 +181,7 @@
 # The ones below ~0.8 are doing visible work and the original defence holds for
 # them. The split is measurable, so it is recorded here rather than argued.
 
-11  coloured-shadow
+10  coloured-shadow
 # Of 23 box-shadows. A black shadow at low alpha is elevation and is not counted;
 # a shadow whose colour has a channel above 40 is decoration, which is the
 # distinction item 6 draws.
@@ -209,3 +247,28 @@
 # Zero is now the declared maximum, so the next unreachable class fails the
 # build rather than joining a pile.
 
+1  icon-in-a-box
+# Checklist item 2, made mechanical: "NEVER wrap icons in a colored
+# rounded-square/circle container unless it is an avatar or app icon."
+#
+# The shape is specific enough to detect — a small square box (both dimensions
+# set, within 4px of each other, at most 56px), a corner radius, a real fill,
+# and flex centring. Four instances existed in this page, each holding a
+# pictograph immediately beside its own text label:
+#
+#   .media-icon        deleted earlier on 2026-08-26
+#   .s-icon            32px, on every sport section header
+#   .field-desk-icon   30px, holding a newspaper beside "FIELD Desk"
+#   .streaming-icon    30px, holding a phone beside "Streaming Discovery"
+#
+# THE ONE THAT REMAINS IS THE CHECKLIST'S OWN CARVE-OUT, and it is COUNTED
+# rather than exempted by name. `.team-logo-txt` is a 22px circle showing a
+# team's initials when its logo image fails to load — an avatar, which item 2
+# permits. It is left in the number so that a fifth box cannot join it quietly.
+# An allowlist keyed on a class name would have hidden exactly that.
+#
+# A FILL OF `none` IS NOT A COLOURED BOX. The first version of the detector
+# tested `/background/`, which matches `background:none`, and flagged
+# `.date-nav-btn` — a bordered chevron control with no fill at all. The
+# checklist says "colored"; an unfilled control is not the pattern. Seven
+# self-test cases now pin each condition separately.

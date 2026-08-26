@@ -533,29 +533,6 @@ body.wf-mode .np-inner{max-width:100%}
 .sport-section[data-sport="Ligue 1"] .section-head::after{background:#2563eb}
 .sport-section[data-sport="MLS Soccer"] .section-head::after{background:#16a34a}
 .sport-section:hover .section-head::after{width:100px}
-.s-icon{
-  width:32px;height:32px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;flex-shrink:0;
-  border:1px solid var(--edge2);background:var(--card2);transition:.2s;
-  box-shadow:0 0 0 3px rgba(201,168,76,.04);
-}
-.sport-section[data-sport="NBA Playoffs"] .s-icon{background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.3)}
-.sport-section[data-sport="NHL Playoffs"] .s-icon{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.3)}
-.sport-section[data-sport="Baseball (MLB)"] .s-icon{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)}
-.sport-section[data-sport="UEFA Champions League"] .s-icon{background:rgba(163,230,53,.12);border-color:rgba(163,230,53,.3)}
-.sport-section[data-sport="Tennis"] .s-icon{background:rgba(250,204,21,.12);border-color:rgba(250,204,21,.3)}
-.sport-section[data-sport="IPL"] .s-icon{background:rgba(251,146,60,.12);border-color:rgba(251,146,60,.3)}
-.sport-section[data-sport="Australian Football (AFL)"] .s-icon{background:rgba(232,121,249,.12);border-color:rgba(232,121,249,.3)}
-.sport-section[data-sport="Rugby"] .s-icon{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3)}
-.sport-section[data-sport="EFL League One Playoffs"] .s-icon{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.3)}
-.sport-section[data-sport="EFL League Two Playoffs"] .s-icon{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3)}
-.sport-section[data-sport="Premier League"] .s-icon{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.3)}
-.sport-section[data-sport="La Liga"] .s-icon{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.3)}
-.sport-section[data-sport="Serie A"] .s-icon{background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.3)}
-.sport-section[data-sport="Bundesliga"] .s-icon{background:rgba(202,138,4,.12);border-color:rgba(202,138,4,.3)}
-.sport-section[data-sport="Ligue 1"] .s-icon{background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.3)}
-.sport-section[data-sport="MLS Soccer"] .s-icon{background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.3)}
 .s-name{
   font-family:var(--ff-display);font-size:1.5rem;font-weight:700;
   letter-spacing:-.01em;color:var(--white);
@@ -2185,11 +2162,7 @@ body:not(:has(#main .game-card)) :is(
   border-bottom:1px solid var(--edge);position:relative;
 }
 .streaming-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white)}
-.streaming-icon{
-  width:30px;height:30px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;font-size:15px;background:rgba(129,140,248,.12);
-  border:1px solid rgba(129,140,248,.25);
-}
+
 .streaming-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
 
 /* CC-CMD-2026-06-15-client-features Commit 2: Broadcast Archaeology */
@@ -2421,11 +2394,7 @@ body:not(:has(#main .game-card)) :is(
   margin-bottom:1.2rem;padding-bottom:.65rem;
   border-bottom:1px solid var(--edge);position:relative;
 }
-.field-desk-icon{
-  width:30px;height:30px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;font-size:15px;background:rgba(201,168,76,.1);
-  border:1px solid rgba(201,168,76,.2);
-}
+
 .field-desk-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white)}
 .field-desk-sub{font-size:.62rem;color:var(--smoke);letter-spacing:.04em;margin-left:.1rem;align-self:flex-end;padding-bottom:.2rem}
 #field-desk-grid{display:grid;grid-template-columns:1fr;gap:.85rem}
@@ -3526,7 +3495,6 @@ body.stats-mode .main{margin-right:0 !important}
 
   /* Section header */
   .s-name{font-size:1.2rem}
-  .s-icon{width:26px;height:26px;font-size:14px}
 
   /* Chips */
   .stream-chip{font-size:.62rem;padding:.12rem .4rem}
@@ -4709,7 +4677,6 @@ var _DOM = null;
 <div class="page-divider"><div class="divider-line"></div><div class="divider-label">FIELD Desk</div><div class="divider-line"></div></div>
 <section class="field-desk-section" id="field-desk-section">
   <div class="field-desk-head">
-    <div class="field-desk-icon">📰</div>
     <span class="field-desk-title">FIELD Desk</span>
     <span class="field-desk-sub">Tonight's editorial</span>
   </div>
@@ -4851,7 +4818,6 @@ var _DOM = null;
 
 <section class="streaming-section" id="streaming-section">
   <div class="streaming-head">
-    <div class="streaming-icon">📱</div>
     <span class="streaming-title">Streaming Discovery</span>
   </div>
   <div class="streaming-grid" id="streaming-grid">
@@ -6219,15 +6185,13 @@ const SPORT_COLORS = {
   "Golf":                      "#00437a",
   "PGA Tour":                  "#00437a",
 };
-const SPORT_ICONS = {
-  "NBA Playoffs":"🏀","NHL Playoffs":"🏒","Baseball (MLB)":"⚾",
-  "UEFA Champions League":"🏆","UEFA Europa League":"🟠","UEFA Conference League":"🟢",
-  "EFL Championship Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League One Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League Two Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "Premier League":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","La Liga":"🇪🇸","Serie A":"🇮🇹","Bundesliga":"🇩🇪","Ligue 1":"🇫🇷",
-  "MLS Soccer":"🇺🇸","FIFA World Cup 2026":"⚽","Tennis":"🎾",
-  "Golf":"⛳","Cricket":"🏏","IPL":"🏏","Rugby":"🏉","AFL":"🏉","Australian Football (AFL)":"🏉",
-  "Scottish Premiership":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","WNBA":"🏀","NWSL":"⚽","PWHL":"🏒","Women's Basketball":"🏀","default":"🏅"
-};
+// SPORT_ICONS deleted 2026-08-26. Twenty-nine competitions mapped to nineteen
+// glyphs, and sixteen of the twenty-nine shared theirs with another entry --
+// one England flag across Premier League and all three EFL playoffs, one
+// basketball across NBA/WNBA/Women's Basketball, one rugby ball across three.
+// An icon identical across the siblings it sits beside cannot help anyone pick
+// between them, which is the only job it had in a filter bar. All three call
+// sites rendered it immediately before the competition's own name.
 
 // Short labels for filter chips — keeps the bar scannable on mobile
 const SPORT_CHIP_LABELS = {
@@ -10792,9 +10756,8 @@ function renderPicker(){
   allData.sports.forEach(sec=>{
     const games = (sec.games||[]).filter(g=>g.home); // skip empty entries
     if(!games.length) return;
-    const icon = SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
     html += `<div class="picker-sport-group">
-      <div class="picker-sport-label">${icon} ${sec.sport}</div>`;
+      <div class="picker-sport-label">${sec.sport}</div>`;
     games.forEach(g=>{
       if(!g._id) g._id="g"+(++_gid);
       const st = getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
@@ -12922,7 +12885,6 @@ function renderAll(skipUnchanged){
       }
       return 0;
     });
-    const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
     // Featured tier + compact overflow (CC-CMD-2026-07-15-featured-tier-
     // overflow): inert (renders exactly as before, every game a full
@@ -13051,7 +13013,6 @@ function renderAll(skipUnchanged){
     }).join("");
     return `<div class="sport-section" data-sport="${sec.sport}" data-sport-circadian="${_circadianBySport[sec.sport] || 'PREVIEW'}" style="--i:${si}">
       <div class="section-head" style="border-left:3px solid ${sportColor};padding-left:.75rem">
-        <div class="s-icon" style="background:${sportColor}1a;border-color:${sportColor}40">${icon}</div>
         <span class="s-name">${sec.sport}</span>
         <span class="s-count">${sportCountLabel(sec.sport, games.length)}</span>
       </div>
@@ -13359,7 +13320,7 @@ function buildFilters(sports){
     btn.className="filter-btn"+(activeFilter===s.sport?" active":"");
     btn.dataset.filter=s.sport;
     const chipLabel = SPORT_CHIP_LABELS[s.sport] || s.sport;
-    btn.textContent=`${SPORT_ICONS[s.sport]||"🏅"} ${chipLabel} (${cnt})`;
+    btn.textContent=`${chipLabel} (${cnt})`;
     btn.addEventListener("click",()=>{
       activeFilter=s.sport;
       document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
@@ -27304,7 +27265,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26c';
+  const SW_VERSION = '2026-08-26d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

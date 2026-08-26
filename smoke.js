@@ -4648,8 +4648,17 @@ assert('A563 — WC section injection: _wcSectionInjected guard prevents duplica
   html.includes('_wcSectionInjected') && html.includes("sport: 'FIFA World Cup 2026'"));
 assert('A564 — WC section injection: FIFA section inserted into allData.sports from V2 polling',
   html.includes("fifaSection") && html.includes("allData.sports.splice") && html.includes("scheduleRenderAll"));
-assert('A565 — WC filter pill: SPORT_ICONS and SPORT_CHIP_LABELS include FIFA World Cup',
-  html.includes('"FIFA World Cup 2026":"⚽"') && html.includes('"FIFA World Cup 2026":'));
+// SPORT_ICONS was deleted 2026-08-26 (16 of 29 competitions shared a glyph with
+// another, so it could not discriminate between the chips it labelled). This
+// assertion's second clause was also vacuous: `"FIFA World Cup 2026":` was
+// satisfied by the SPORT_ICONS entry the first clause already checked, so the
+// SPORT_CHIP_LABELS half — the part the pill actually needs — was never tested.
+assert('A565 — WC filter pill: SPORT_CHIP_LABELS gives FIFA World Cup a short chip label',
+  html.includes('"FIFA World Cup 2026":       "WC"') && !html.includes('const SPORT_ICONS'));
+// `const SPORT_ICONS`, not `SPORT_ICONS`. The bare name is mentioned by the
+// comment left where the map used to be, so the looser match failed on the very
+// commit that removed it — the same mistake the gradient counter made, caught
+// here by its own run rather than by review.
 assert('A566 — WC Tournament Brief card: _wcTournBrief marker + async fetch',
   html.includes('_wcTournBrief: true') && html.includes('_fetchWCTournBriefForSchedule'));
 assert('A567 — WC Tournament Brief: fetches /wc/brief/tournament + /wc/bracket for USA path',

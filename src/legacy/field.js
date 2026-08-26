@@ -1289,15 +1289,13 @@ const SPORT_COLORS = {
   "Golf":                      "#00437a",
   "PGA Tour":                  "#00437a",
 };
-const SPORT_ICONS = {
-  "NBA Playoffs":"🏀","NHL Playoffs":"🏒","Baseball (MLB)":"⚾",
-  "UEFA Champions League":"🏆","UEFA Europa League":"🟠","UEFA Conference League":"🟢",
-  "EFL Championship Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League One Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","EFL League Two Playoffs":"🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "Premier League":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","La Liga":"🇪🇸","Serie A":"🇮🇹","Bundesliga":"🇩🇪","Ligue 1":"🇫🇷",
-  "MLS Soccer":"🇺🇸","FIFA World Cup 2026":"⚽","Tennis":"🎾",
-  "Golf":"⛳","Cricket":"🏏","IPL":"🏏","Rugby":"🏉","AFL":"🏉","Australian Football (AFL)":"🏉",
-  "Scottish Premiership":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","WNBA":"🏀","NWSL":"⚽","PWHL":"🏒","Women's Basketball":"🏀","default":"🏅"
-};
+// SPORT_ICONS deleted 2026-08-26. Twenty-nine competitions mapped to nineteen
+// glyphs, and sixteen of the twenty-nine shared theirs with another entry --
+// one England flag across Premier League and all three EFL playoffs, one
+// basketball across NBA/WNBA/Women's Basketball, one rugby ball across three.
+// An icon identical across the siblings it sits beside cannot help anyone pick
+// between them, which is the only job it had in a filter bar. All three call
+// sites rendered it immediately before the competition's own name.
 
 // Short labels for filter chips — keeps the bar scannable on mobile
 const SPORT_CHIP_LABELS = {
@@ -5862,9 +5860,8 @@ function renderPicker(){
   allData.sports.forEach(sec=>{
     const games = (sec.games||[]).filter(g=>g.home); // skip empty entries
     if(!games.length) return;
-    const icon = SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
     html += `<div class="picker-sport-group">
-      <div class="picker-sport-label">${icon} ${sec.sport}</div>`;
+      <div class="picker-sport-label">${sec.sport}</div>`;
     games.forEach(g=>{
       if(!g._id) g._id="g"+(++_gid);
       const st = getStatus(g.start_time, g._aflComplete!==undefined?{aflComplete:g._aflComplete}:undefined);
@@ -7992,7 +7989,6 @@ function renderAll(skipUnchanged){
       }
       return 0;
     });
-    const icon=SPORT_ICONS[sec.sport]||SPORT_ICONS.default;
     const sportColor=SPORT_COLORS[sec.sport]||"#c9a84c";
     // Featured tier + compact overflow (CC-CMD-2026-07-15-featured-tier-
     // overflow): inert (renders exactly as before, every game a full
@@ -8121,7 +8117,6 @@ function renderAll(skipUnchanged){
     }).join("");
     return `<div class="sport-section" data-sport="${sec.sport}" data-sport-circadian="${_circadianBySport[sec.sport] || 'PREVIEW'}" style="--i:${si}">
       <div class="section-head" style="border-left:3px solid ${sportColor};padding-left:.75rem">
-        <div class="s-icon" style="background:${sportColor}1a;border-color:${sportColor}40">${icon}</div>
         <span class="s-name">${sec.sport}</span>
         <span class="s-count">${sportCountLabel(sec.sport, games.length)}</span>
       </div>
@@ -8429,7 +8424,7 @@ function buildFilters(sports){
     btn.className="filter-btn"+(activeFilter===s.sport?" active":"");
     btn.dataset.filter=s.sport;
     const chipLabel = SPORT_CHIP_LABELS[s.sport] || s.sport;
-    btn.textContent=`${SPORT_ICONS[s.sport]||"🏅"} ${chipLabel} (${cnt})`;
+    btn.textContent=`${chipLabel} (${cnt})`;
     btn.addEventListener("click",()=>{
       activeFilter=s.sport;
       document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
@@ -22374,7 +22369,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26c';
+  const SW_VERSION = '2026-08-26d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

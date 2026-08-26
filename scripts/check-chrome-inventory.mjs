@@ -128,6 +128,42 @@ export function colouredShadows(css) {
   return n
 }
 
+/// CHECKLIST ITEM 2, MADE MECHANICAL. "NEVER wrap icons in a colored
+/// rounded-square/circle container unless it is an avatar or app icon."
+///
+/// The shape is specific enough to detect: a small square box (both dimensions
+/// set, within 4px of each other, at most 56px), a corner radius, a real fill,
+/// and flex centring. `.media-icon`, `.s-icon`, `.field-desk-icon` and
+/// `.streaming-icon` all matched — four instances of one pattern, each holding a
+/// pictograph immediately beside its own text label.
+///
+/// A FILL THAT IS `none` IS NOT A COLOURED BOX, and the first version of this
+/// missed that: `/background/` matches `background:none`, so `.date-nav-btn` —
+/// a bordered `<` control with no fill at all — read as a violation. The
+/// checklist says "colored", and an unfilled control is not the pattern.
+///
+/// The avatar carve-out is the checklist's own and is NOT applied by name here.
+/// `.team-logo-txt` is a 22px circle holding a team's initials when its logo
+/// image fails to load, which is exactly an avatar — so it is COUNTED, and the
+/// declared maximum in the inventory says so in words. An allowlist keyed on a
+/// class name would hide the next one that quietly joined it.
+export function iconBoxes(css) {
+  const out = []
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sel = m[1].replace(/\s+/g, ' ').trim(), b = m[2]
+    const w = /(?:^|;)\s*width:\s*(\d+)px/.exec(b), h = /(?:^|;)\s*height:\s*(\d+)px/.exec(b)
+    if (!w || !h) continue
+    const W = +w[1], H = +h[1]
+    if (W > 56 || H > 56 || Math.abs(W - H) > 4) continue
+    if (!/border-radius/.test(b)) continue
+    const fill = /(?:^|;)\s*background(?:-color|-image)?:\s*([^;]+)/.exec(b)
+    if (!fill || /^\s*(none|transparent|inherit|initial)\s*$/.test(fill[1])) continue
+    if (!/align-items:\s*center/.test(b) && !/justify-content:\s*center/.test(b)) continue
+    out.push(sel)
+  }
+  return out
+}
+
 export function countsFor(html) {
   const css = styleBlockOf(html)
   const body = bodyOf(html)
@@ -144,6 +180,7 @@ export function countsFor(html) {
     'backdrop-filter': n(/backdrop-filter/g, css),
     'coloured-shadow': colouredShadows(css),
     'keyframes': n(/@keyframes/g, css),
+    'icon-in-a-box': iconBoxes(css).length,
   }
 }
 
@@ -212,6 +249,24 @@ if (SELF_TEST) {
     (() => { const c = emojiCensus('<body><a>📰 Desk</a><span>🔥</span>🇪🇸✓</body>')
              return c.labelled + c.alone === c.decorative && c.decorative === 2 })(),
     'a decorative emoji fell out of both buckets')
+
+  // ── icon-in-a-box, checklist item 2 ──────────────────────────────────────
+  const B = css => iconBoxes(css)
+  check('a small filled rounded flex-centred box IS the pattern',
+    B('.x{width:30px;height:30px;border-radius:6px;background:rgba(1,2,3,.1);display:flex;align-items:center}').length === 1)
+  check('an UNFILLED bordered control is not',
+    B('.x{width:24px;height:24px;border-radius:4px;background:none;display:flex;align-items:center}').length === 0,
+    'background:none matched /background/ and flagged .date-nav-btn')
+  check('a box with no radius is not',
+    B('.x{width:30px;height:30px;background:#111;display:flex;align-items:center}').length === 0)
+  check('a wide box is not a square icon holder',
+    B('.x{width:200px;height:30px;border-radius:6px;background:#111;display:flex;align-items:center}').length === 0)
+  check('a large square is not either — 56px is the bar',
+    B('.x{width:120px;height:120px;border-radius:6px;background:#111;display:flex;align-items:center}').length === 0)
+  check('a filled rounded box that does NOT centre its content is not',
+    B('.x{width:30px;height:30px;border-radius:6px;background:#111;display:block}').length === 0)
+  check('the detector reports which selector, not just a count',
+    B('.s-icon{width:32px;height:32px;border-radius:8px;background:#111;justify-content:center}')[0] === '.s-icon')
 
   check('a black shadow is elevation, not decoration',
     colouredShadows('a{box-shadow:0 4px 24px rgba(0,0,0,.4)}') === 0)
