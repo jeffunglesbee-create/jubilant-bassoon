@@ -19,12 +19,39 @@
 
 288  decorative-emoji
 # 79 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
-# went with the tinted box it sat in. This is an icon SYSTEM, not stray decoration: `SPORT_ICONS`
-# (index.html ~6347) maps 27 competitions to emoji, four call sites consume it,
-# and the primary nav is `📰 Desk / 📖 Journal / ⚽ Groups / 🎯 Picks / 📊 Stats`.
-# Checklist item 3 says never use emoji as visual elements in UI components. It
-# is not counted at zero because replacing an icon system is a product decision
-# with a real cost, not a defect to be swept.
+# went with the tinted box it sat in.
+
+122  decorative-emoji-labelled
+166  decorative-emoji-alone
+# THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
+#
+# The line above sat at 288 with a note saying replacing an icon system is "a
+# product decision with a real cost, not a defect to be swept." That was true
+# and it was also a place for the number to sit forever, because nothing in the
+# note said which of the 288 were the expensive ones.
+#
+# The checklist states its own test: "Remove all decorative icons. Does the UI
+# lose any information?" That is a string operation, not a judgement call. An
+# emoji whose own literal also contains a word cannot carry information that
+# word does not — `📰 Desk` loses nothing when the pictograph goes. An emoji
+# alone in its literal might be load-bearing.
+#
+#   labelled  122   the word is already there; removable without a decision
+#   alone     166   59 distinct glyphs; needs eyes
+#
+# SOURCE ADJACENCY, NOT RENDERED. A `SPORT_ICONS` value (`{ nba: '🏀' }`) is
+# alone in its literal and may still render beside a label. The bias is
+# deliberate: `labelled` is the number used to justify deletions, so it
+# under-claims. An earlier, looser span rule that let `${...}` interpolations
+# join their neighbours read 147; that number over-claimed and is not the one
+# recorded here.
+#
+# NOTHING IS DELETED IN THIS COMMIT. The split is the finding; acting on it is
+# the next one, so that reverting the deletions does not leave this file
+# declaring a count the page no longer has.
+#
+# `SPORT_ICONS` (index.html ~6347, 27 competitions, four call sites) is most of
+# the `alone` column and stays a product decision either way.
 
 102  flag-emoji
 # Regional-indicator sequences carrying country identity in a global sports app.

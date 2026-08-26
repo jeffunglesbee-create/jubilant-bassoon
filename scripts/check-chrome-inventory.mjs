@@ -66,16 +66,48 @@ const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu
 const FLAG = c => { const p = c.codePointAt(0); return p >= 0x1F1E6 && p <= 0x1F1FF }
 const STATUS = new Set(['✓', '✕', '✔', '✖', '⚠', '★', '☆'])
 
+/// The delimiters that bound a literal. `<` and `>` end an HTML text node; the
+/// three quote characters end a JS string; `{` and `}` end a template segment,
+/// which is the conservative call — `${x}` might interpolate a label or might
+/// interpolate a score, so it is not counted as a label either way.
+const DELIM = /[<>`'"\n{}]/
+
+/// The literal an emoji sits inside, which is the unit the redundancy test needs.
+export function spanAround(s, i) {
+  let a = i; while (a > 0 && !DELIM.test(s[a - 1])) a--
+  let b = i; while (b < s.length && !DELIM.test(s[b])) b++
+  return s.slice(a, b)
+}
+
 /// Split, because these are three different findings wearing one character class.
 /// A country flag beside a fixture is data; `📺` in a tinted box is decoration;
 /// `✓` standing in for a checkmark icon is somewhere between.
+///
+/// AND THE DECORATIVE CLASS SPLITS AGAIN, which is the point of this function.
+/// The unslop-ui checklist states its own test for an icon: "Remove all
+/// decorative icons. Does the UI lose any information?" That was read as a
+/// judgement call for weeks and so nothing happened to a count of 288. It is a
+/// string operation. An emoji whose own literal also contains a word cannot be
+/// carrying information that word does not already carry — `📰 Desk` loses
+/// nothing when the pictograph goes, and the check can say so without an
+/// opinion. An emoji standing alone in its literal might be load-bearing, so it
+/// is counted separately and left to a human.
+///
+/// WHAT THIS MEASURES IS SOURCE ADJACENCY, NOT RENDERED ADJACENCY. A sport-icon
+/// map value (`{ nba: '🏀' }`) is alone in its literal and may still be rendered
+/// beside a label. That direction is deliberate: the labelled count is the one
+/// used to justify deletions, so it under-claims rather than over-claims.
 export function emojiCensus(body) {
-  const out = { flags: 0, status: 0, decorative: 0, distinct: new Set() }
+  const out = { flags: 0, status: 0, decorative: 0, labelled: 0, alone: 0, distinct: new Set() }
   for (const m of body.matchAll(EMOJI)) {
     const c = m[0]
     if (FLAG(c)) out.flags++
     else if (STATUS.has(c)) out.status++
-    else { out.decorative++; out.distinct.add(c) }
+    else {
+      out.decorative++; out.distinct.add(c)
+      if (/[A-Za-z]{3,}/.test(spanAround(body, m.index))) out.labelled++
+      else out.alone++
+    }
   }
   return out
 }
@@ -103,6 +135,8 @@ export function countsFor(html) {
   const n = (re, s) => (s.match(re) || []).length
   return {
     'decorative-emoji': e.decorative,
+    'decorative-emoji-labelled': e.labelled,
+    'decorative-emoji-alone': e.alone,
     'flag-emoji': e.flags,
     'status-glyph': e.status,
     'gradient': n(/linear-gradient|radial-gradient/g, css),
@@ -153,6 +187,31 @@ if (SELF_TEST) {
     JSON.stringify({ flags: e.flags, decorative: e.decorative }))
   check('a status glyph is its own category', e.status === 3, String(e.status))
   check('plain prose counts nothing', emojiCensus('Rockies @ Diamondbacks 4-1').decorative === 0)
+
+  // The labelled/alone split. Each of these fails if the span rule is wrong,
+  // which is the only reason to write them — a classifier that cannot be made
+  // to answer "alone" proves nothing when it answers "labelled".
+  const lab = emojiCensus(`<body><a>📰 Desk</a></body>`)
+  check('an emoji beside a word in its own literal is labelled',
+    lab.labelled === 1 && lab.alone === 0, JSON.stringify({ l: lab.labelled, a: lab.alone }))
+  const al = emojiCensus('<body><span>📰</span></body>')
+  check('...and the same emoji alone in its literal is not',
+    al.labelled === 0 && al.alone === 1, JSON.stringify({ l: al.labelled, a: al.alone }))
+  check('a word in a NEIGHBOURING element does not label it',
+    emojiCensus('<body><span>📰</span><span>Desk</span></body>').alone === 1,
+    'the span rule leaked across a tag boundary')
+  check('a two-letter word is not a label',
+    emojiCensus('<body><span>📰 at</span></body>').alone === 1,
+    "a unit or an initial would read as a label")
+  check('an interpolation is not counted as a label',
+    emojiCensus('<body>`${team} 🔥`</body>').alone === 1,
+    '${x} may be a score; treating it as a label would over-claim')
+  check('a JS string literal labels the same way an element does',
+    emojiCensus(`<body>wcBtn.textContent = '⚽ Groups'</body>`).labelled === 1)
+  check('the two halves always sum to the whole',
+    (() => { const c = emojiCensus('<body><a>📰 Desk</a><span>🔥</span>🇪🇸✓</body>')
+             return c.labelled + c.alone === c.decorative && c.decorative === 2 })(),
+    'a decorative emoji fell out of both buckets')
 
   check('a black shadow is elevation, not decoration',
     colouredShadows('a{box-shadow:0 4px 24px rgba(0,0,0,.4)}') === 0)
