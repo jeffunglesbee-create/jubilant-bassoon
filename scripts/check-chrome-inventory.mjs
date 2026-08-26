@@ -79,6 +79,44 @@ export function spanAround(s, i) {
   return s.slice(a, b)
 }
 
+/// THE SIBLING-ELEMENT CASE, which the literal rule alone could not see.
+///
+/// `<span class="desk-card-label-icon">📋</span>FIELD Brief` puts the pictograph
+/// in its own element and the label in the next one. By the literal rule the
+/// glyph is ALONE — nothing in `📋` is a word — and the note on
+/// docs/chrome-inventory.txt said so out loud: "SOURCE ADJACENCY, NOT RENDERED".
+/// That under-claim was deliberate and it was also wrong about fifteen real
+/// cases across three named icon slots.
+///
+/// This closes it WITHOUT reaching into JavaScript, where a forward scan would
+/// hit identifiers and call almost everything labelled. It fires only when the
+/// emoji's literal is a genuine HTML text node — bounded by `>` and `<` — and
+/// then walks forward past at most three tags and whitespace-only nodes looking
+/// for the first real text. That is the DOM's own definition of "the next thing
+/// a reader sees", not a proximity guess.
+export function labelledBySibling(body, i) {
+  // The emoji's own text node must be delimited by tags on both sides.
+  let a = i; while (a > 0 && body[a-1] !== '>' && body[a-1] !== '<') a--
+  if (a === 0 || body[a-1] !== '>') return false
+  let b = i; while (b < body.length && body[b] !== '<' && body[b] !== '>') b++
+  if (b >= body.length || body[b] !== '<') return false
+  let k = b, tags = 0
+  while (k < body.length && tags <= 3) {
+    if (body[k] === '<') {                       // skip a tag
+      const close = body.indexOf('>', k)
+      if (close < 0) return false
+      k = close + 1; tags++
+      continue
+    }
+    const next = body.indexOf('<', k)
+    const text = body.slice(k, next < 0 ? body.length : next)
+    if (text.trim()) return /[A-Za-z]{3,}/.test(text)   // first real text decides
+    if (next < 0) return false
+    k = next
+  }
+  return false
+}
+
 /// Split, because these are three different findings wearing one character class.
 /// A country flag beside a fixture is data; `📺` in a tinted box is decoration;
 /// `✓` standing in for a checkmark icon is somewhere between.
@@ -105,7 +143,7 @@ export function emojiCensus(body) {
     else if (STATUS.has(c)) out.status++
     else {
       out.decorative++; out.distinct.add(c)
-      if (/[A-Za-z]{3,}/.test(spanAround(body, m.index))) out.labelled++
+      if (/[A-Za-z]{3,}/.test(spanAround(body, m.index)) || labelledBySibling(body, m.index)) out.labelled++
       else out.alone++
     }
   }
@@ -234,9 +272,17 @@ if (SELF_TEST) {
   const al = emojiCensus('<body><span>📰</span></body>')
   check('...and the same emoji alone in its literal is not',
     al.labelled === 0 && al.alone === 1, JSON.stringify({ l: al.labelled, a: al.alone }))
-  check('a word in a NEIGHBOURING element does not label it',
-    emojiCensus('<body><span>📰</span><span>Desk</span></body>').alone === 1,
-    'the span rule leaked across a tag boundary')
+  // THIS CASE USED TO ASSERT THE OPPOSITE and failed the moment the sibling
+  // rule shipped — correctly, because it was encoding the deliberate
+  // under-claim rather than a property worth keeping. It conflated two facts.
+  // They are tested separately now, and both still hold.
+  check('the LITERAL rule still does not leak across a tag boundary',
+    (() => { const h = '<body><span>📰</span><span>Desk</span></body>'
+             return /[A-Za-z]{3,}/.test(spanAround(h, h.search(EMOJI))) === false })(),
+    'spanAround read past the closing tag')
+  check('...but the SIBLING rule labels it, which is what a reader actually sees',
+    emojiCensus('<body><span>📰</span><span>Desk</span></body>').labelled === 1,
+    'a captioned pictograph counted as standing alone')
   check('a two-letter word is not a label',
     emojiCensus('<body><span>📰 at</span></body>').alone === 1,
     "a unit or an initial would read as a label")

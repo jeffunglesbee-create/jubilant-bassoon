@@ -10416,7 +10416,7 @@ function renderFieldDesk(){
     if(fbText && fbText.length > 30){
       const _df1 = fbText.replace(/"/g,'&quot;');
       cards.push(`<div class="desk-card type-brief tappable" data-full="${_df1}" data-trunc-len="300" onclick="_deskCardToggle(this)">
-        <div class="desk-card-label"><span class="desk-card-label-icon">📋</span>FIELD Brief</div>
+        <div class="desk-card-label">FIELD Brief</div>
         <div class="desk-card-body">${fbText.slice(0,300).trim()}${fbText.length>300?'\u2026':''}</div>
       </div>`);
     }
@@ -10435,7 +10435,7 @@ function renderFieldDesk(){
           if(text && text.length > 20){
             const _dfs = text.replace(/"/g,'&quot;');
             seriesCards.push(`<div class="desk-card type-series tappable" data-full="${_dfs}" data-trunc-len="250" onclick="_deskCardToggle(this)">
-              <div class="desk-card-label"><span class="desk-card-label-icon">🏆</span>Series Brief · ${g.seriesRecord||''}</div>
+              <div class="desk-card-label">Series Brief · ${g.seriesRecord||''}</div>
               <div class="desk-card-title">${g.away||''} ${g.neutral?'vs':'@'} ${g.home||''}</div>
               <div class="desk-card-body">${text.slice(0,250).trim()}${text.length>250?'\u2026':''}</div>
             </div>`);
@@ -10460,7 +10460,7 @@ function renderFieldDesk(){
         }catch(e__){}
         const _dfg = text.replace(/"/g,'&quot;');
         cards.push(`<div class="desk-card type-brief tappable" data-full="${_dfg}" data-trunc-len="250" onclick="_deskCardToggle(this)">
-          <div class="desk-card-label"><span class="desk-card-label-icon">📰</span>FIELD Game Brief</div>
+          <div class="desk-card-label">FIELD Game Brief</div>
           <div class="desk-card-title">${title}</div>
           <div class="desk-card-body">${text.slice(0,250).trim()}${text.length>250?'\u2026':''}</div>
         </div>`);
@@ -10493,7 +10493,7 @@ function renderFieldDesk(){
       const totalPicks = allGames.filter(g=>{try{return isScoutsPick(g);}catch(e_){return false;}}).length;
       const footnote = totalPicks > 1 ? `<div style="font-size:.58rem;color:var(--smoke);margin-top:.4rem;opacity:.6">+${totalPicks-1} more qualifying tonight</div>` : '';
       cards.push(`<div class="desk-card type-scout" style="cursor:pointer" onclick="(()=>{const c=document.querySelector('[data-gameid=\"${topPick._id||''}\"]');if(c)c.scrollIntoView({behavior:'smooth',block:'center'});})()" title="Click to scroll to this game">
-        <div class="desk-card-label"><span class="desk-card-label-icon">🔍</span>Scout's Pick · Tonight</div>
+        <div class="desk-card-label">Scout's Pick · Tonight</div>
         <div class="desk-card-title" style="font-size:.8rem;font-weight:700;margin-top:.2rem">${topPick.away||''} @ ${topPick.home||''}${networkLine}</div>
         ${seriesLine}${statLine}${msLine}${wcLine}${footnote}
       </div>`);
@@ -10537,7 +10537,7 @@ function renderFieldDesk(){
         ].filter(Boolean).join(' · ');
         cards.push(`<div class="desk-card type-analytics">
           <div class="desk-card-label">
-            <span class="desk-card-label-icon">📊</span>Analytics Edge
+            Analytics Edge
             <span style="font-size:.55rem;color:var(--smoke);font-weight:400;text-transform:none;letter-spacing:0;margin-left:auto">${sourceLabel}</span>
           </div>
           ${gameSections.join('')}
@@ -10558,7 +10558,7 @@ function renderFieldDesk(){
         return `<div style="margin-bottom:.3rem"><strong style="font-size:.74rem">${away} @ ${home}</strong> <span style="font-size:.64rem;color:rgba(245,158,11,.9)">${label}</span></div>`;
       }).join('');
       cards.push(`<div class="desk-card type-antihype">
-        <div class="desk-card-label"><span class="desk-card-label-icon">⚠️</span>Anti-Hype Report · ${hypeFlags.length} flag${hypeFlags.length===1?'':'s'}</div>
+        <div class="desk-card-label">Anti-Hype Report · ${hypeFlags.length} flag${hypeFlags.length===1?'':'s'}</div>
         <div class="desk-card-body">${flagLines}<div style="font-size:.64rem;color:var(--smoke);margin-top:.3rem">FIELD sees lower drama potential than the broadcast is suggesting.</div></div>
       </div>`);
     }
@@ -10581,7 +10581,7 @@ function renderFieldDesk(){
       const _rawEpl = textEl.textContent;
       const _dfe = _rawEpl.replace(/"/g,'&quot;');
       cards.push(`<div class="desk-card ${isEuropa?'type-europa':'type-series'} tappable" data-full="${_dfe}" data-trunc-len="250" onclick="_deskCardToggle(this)">
-        <div class="desk-card-label"><span class="desk-card-label-icon">⚽</span>Match Brief</div>
+        <div class="desk-card-label">Match Brief</div>
         ${title?`<div class="desk-card-title">${title}</div>`:''}
         <div class="desk-card-body">${_rawEpl.slice(0,250).trim()}${_rawEpl.length>250?'\u2026':''}</div>
       </div>`);
@@ -10595,7 +10595,7 @@ function renderFieldDesk(){
       const staticText = staticBriefEl?.textContent?.trim();
       if(staticText && staticText.length > 30 && !/Loading|Fetching|unavailable/i.test(staticText)){
         cards.push(`<div class="desk-card type-brief tappable" data-full="${staticText.replace(/"/g,'&quot;')}" data-trunc-len="300" onclick="_deskCardToggle(this)">
-          <div class="desk-card-label"><span class="desk-card-label-icon">📋</span>FIELD Brief <span style="font-size:.45rem;opacity:.5;margin-left:.3rem">GENERATING</span></div>
+          <div class="desk-card-label">FIELD Brief <span style="font-size:.45rem;opacity:.5;margin-left:.3rem">GENERATING</span></div>
           <div class="desk-card-body">${staticText.slice(0,300).trim()}${staticText.length>300?'\u2026':''}</div>
         </div>`);
       }
@@ -22369,7 +22369,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26d';
+  const SW_VERSION = '2026-08-26e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -33633,7 +33633,7 @@ async function renderFinalsDesk() {
   const placeholder = document.createElement('div');
   placeholder.className = 'desk-card type-finals';
   placeholder.style.cssText = 'border-left:3px solid var(--c-nba,#f97316);opacity:.6;';
-  placeholder.innerHTML = `<div class="desk-card-label"><span class="desk-card-label-icon">📊</span>FINALS DESK${gameChar ? ' · '+gameChar.label : ''}</div><div class="desk-card-title">${finalsGame.away||''} @ ${finalsGame.home||''} · ${series}</div><div class="desk-card-body" style="font-style:italic;font-size:.7rem;">Loading analytics brief…</div>`;
+  placeholder.innerHTML = `<div class="desk-card-label">FINALS DESK${gameChar ? ' · '+gameChar.label : ''}</div><div class="desk-card-title">${finalsGame.away||''} @ ${finalsGame.home||''} · ${series}</div><div class="desk-card-body" style="font-style:italic;font-size:.7rem;">Loading analytics brief…</div>`;
   grid.insertBefore(placeholder, grid.firstChild);
 
   const text = await fetchFinalsDesk(finalsGame, sport).catch(() => null);
@@ -33647,7 +33647,7 @@ async function renderFinalsDesk() {
   placeholder.setAttribute('data-trunc-len', '320');
   placeholder.setAttribute('onclick', '_deskCardToggle(this)');
   placeholder.classList.add('tappable');
-  placeholder.innerHTML = `<div class="desk-card-label"><span class="desk-card-label-icon">📊</span>FINALS DESK${gameChar ? ' · <span style="opacity:.8">'+gameChar.label+'</span>' : ''}</div><div class="desk-card-title">${finalsGame.away||''} @ ${finalsGame.home||''} · ${series}</div><div class="desk-card-body">${preview}</div>`;
+  placeholder.innerHTML = `<div class="desk-card-label">FINALS DESK${gameChar ? ' · <span style="opacity:.8">'+gameChar.label+'</span>' : ''}</div><div class="desk-card-title">${finalsGame.away||''} @ ${finalsGame.home||''} · ${series}</div><div class="desk-card-body">${preview}</div>`;
 }
 
 
@@ -34064,7 +34064,6 @@ function renderArbitrageBar(){
     rows.push(`<div class="arb-row arb-free arb-tap"
       onclick="document.querySelector('.free-badge')?.closest('.game-card')?.scrollIntoView({behavior:'smooth',block:'center'})"
       title="Tap to scroll to first free game">
-      <span class="arb-icon">🎯</span>
       <span class="arb-text">
         <strong>${freeCount} ${freeCount===1?'game':'games'} FREE tonight</strong> — no subscription needed
         <div class="arb-svcs">${svcsHTML}</div>
@@ -34076,12 +34075,10 @@ function renderArbitrageBar(){
   if(MY_SERVICES.size>0){
     if(missCount===0){
       rows.push(`<div class="arb-row arb-have">
-        <span class="arb-icon">📺</span>
         <span class="arb-text"><strong>You're covered</strong> — your subscriptions cover all ${totalGames} games tonight</span>
       </div>`);
     } else {
       rows.push(`<div class="arb-row arb-have">
-        <span class="arb-icon">📺</span>
         <span class="arb-text">
           <strong>${haveCount+freeCount} of ${totalGames} games</strong> covered by your subscriptions
           ${missCount>0?`· <strong>${missCount}</strong> need a service you don't have`:''}
@@ -34094,7 +34091,6 @@ function renderArbitrageBar(){
   if(bestAdd&&missCount>0){
     rows.push(`<div class="arb-row arb-add arb-tap"
       ${bestAdd.url?`onclick="window.open('${bestAdd.url}','_blank')" title="Open ${bestAdd.name}"`:''}>
-      <span class="arb-icon">💡</span>
       <span class="arb-text">
         <strong>Add ${bestAdd.name}</strong> · ${bestAdd.cost}/mo → +${bestAdd.gameCount} more ${bestAdd.gameCount===1?'game':'games'} tonight
       </span>
@@ -37335,7 +37331,6 @@ document.addEventListener('click', e => {
   const banner = document.getElementById('pwa-banner');
   if(!banner) return;
   banner.innerHTML = `
-    <span class="pwa-banner-icon">📲</span>
     <div class="pwa-banner-copy">
       <div class="pwa-banner-title">INSTALL FIELD ON YOUR iPhone</div>
       <div class="pwa-banner-sub">Tap <strong>Share ↑</strong> then "Add to Home Screen"</div>

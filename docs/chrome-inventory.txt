@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-248  decorative-emoji
+233  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
-109  decorative-emoji-labelled
-139  decorative-emoji-alone
+151  decorative-emoji-labelled
+82  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -36,15 +36,35 @@
 # word does not — `📰 Desk` loses nothing when the pictograph goes. An emoji
 # alone in its literal might be load-bearing.
 #
-#   labelled  109   the word is already there; removable without a decision
-#   alone     139   needs eyes
+#   labelled  151   the word is already there; removable without a decision
+#   alone      82   needs eyes
 #
-# SOURCE ADJACENCY, NOT RENDERED. A `SPORT_ICONS` value (`{ nba: '🏀' }`) is
-# alone in its literal and may still render beside a label. The bias is
-# deliberate: `labelled` is the number used to justify deletions, so it
-# under-claims. An earlier, looser span rule that let `${...}` interpolations
-# join their neighbours read 147; that number over-claimed and is not the one
-# recorded here.
+# THE LABELLED LINE WENT UP ON 2026-08-26 AND THAT IS NOT GROWTH. The detector
+# changed, and the arithmetic is the proof:
+#
+#   before          248 = 109 labelled + 139 alone
+#   detector fixed  248 = 166 labelled +  82 alone     <- 57 reclassified
+#   15 deleted      233 = 151 labelled +  82 alone
+#
+# The total is what moves when the PAGE changes, and it fell by exactly the
+# fifteen removed. A ratchet line rising needs this kind of statement beside it
+# or it is indistinguishable from the thing the ratchet exists to stop.
+#
+# SOURCE ADJACENCY, NOT RENDERED — and this note used to end there, which was
+# an under-claim of 57. `<span class="desk-card-label-icon">📋</span>FIELD Brief`
+# puts the pictograph in one element and its label in the next, so by the
+# literal rule the glyph is alone while a reader sees it captioned.
+#
+# The sibling case is now read, and only for GENUINE HTML TEXT NODES — an emoji
+# whose literal is bounded by `>` and `<` — walking forward past at most three
+# tags and whitespace-only nodes to the first real text. That is the DOM's own
+# "next thing a reader sees", not a proximity guess, and it deliberately does
+# not fire inside JavaScript, where a forward scan would hit identifiers and
+# call almost everything labelled.
+#
+# The earlier, looser span rule that let `${...}` interpolations join their
+# neighbours read 147 and over-claimed; that is a different mistake in the other
+# direction and is still not what is recorded here.
 #
 # LOWERED IN THE SAME COMMIT THAT MEASURED IT: 288 -> 275 total, 122 -> 109
 # labelled, on 2026-08-26. Thirteen
@@ -92,6 +112,14 @@
 # accent bar, and the competition's name in words. Three channels for one fact
 # were four.
 #
+# THREE MORE NAMED ICON SLOTS went on the same day, found by the corrected
+# split rather than by eye: `.desk-card-label-icon` (nine, each a pictograph
+# immediately before its own words — "FIELD Brief", "Scout's Pick · Tonight",
+# "Anti-Hype Report"), `.arb-icon` (four, before a bolded sentence), and
+# `.pwa-banner-icon` (two, beside "INSTALL FIELD"). Every label survives; only
+# the glyph left. One of the nine was `⚠️`, which is why `status-glyph` also
+# falls by one.
+#
 # `.field-desk-icon` and `.streaming-icon` went in the same commit, found by
 # probing for the SHAPE rather than for more emoji — see the `icon-in-a-box`
 # line at the end of this file. They held a newspaper beside "FIELD Desk" and a
@@ -103,7 +131,7 @@
 # Defensible as DATA rather than decoration, and listed separately so it is never
 # conflated with the line above. The checklist would still prefer SVG.
 
-107  status-glyph
+106  status-glyph
 # ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
 # carry meaning, and they are still typography doing an icon's job.
 
