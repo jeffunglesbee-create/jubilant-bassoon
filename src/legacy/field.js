@@ -403,8 +403,7 @@ function buildFieldHealthPanel() {
       const best = Math.max(..._jqScores.map(s=>s.score));
       const worst = Math.min(..._jqScores.map(s=>s.score));
       const avgStat = Math.round((_jqScores.reduce((a,s)=>a+(s.stat||0),0)/_jqScores.length)*10)/10;
-      const qIcon = avg >= 60 ? '✅' : avg >= 45 ? '⚠️' : '❌';
-      rows.push(ok('Prose Quality', `${qIcon} avg ${avg}/300 · best ${best} · worst ${worst} · stat ${avgStat}/s · ${_jqScores.length} briefs`));
+      rows.push(ok('Prose Quality', `avg ${avg}/300 · best ${best} · worst ${worst} · stat ${avgStat}/s · ${_jqScores.length} briefs`));
     } else {
       rows.push(ok('Prose Quality', 'No briefs scored yet'));
     }
@@ -929,7 +928,7 @@ async function fetchMCPStatus() {
 
   const row = (icon, label, val, col='#aaa') =>
     `<div style="display:flex;gap:.4rem;margin-bottom:.2rem">
-       <span>${icon}</span>
+       ${icon ? `<span>${icon}</span>` : ''}
        <span style="color:#777;min-width:80px">${label}</span>
        <span style="color:${col};font-weight:600">${val}</span>
      </div>`;
@@ -955,10 +954,9 @@ async function fetchMCPStatus() {
     const ciRows = (runs.workflow_runs || []).slice(0, 3).map(r => {
       const conclusion = r.conclusion || r.status || '?';
       const sha = (r.head_sha || '').slice(0, 7);
-      const icon = conclusion === 'success' ? '✅' : conclusion === 'failure' ? '❌' : '🔄';
       const col  = conclusion === 'success' ? '#4caf82' : conclusion === 'failure' ? '#e05c5c' : '#c9a84c';
       const shortName = (r.name||'').replace('Smoke Test + Live Verify','Smoke').replace('FIELD Data','Data').replace('Cloudflare API Probe','CF Probe').replace('Deploy gate (fast smoke)','Deploy gate');
-      return row(icon, shortName.slice(0,16), `${sha||'?'} · ${conclusion||'?'}`, col);
+      return row('', shortName.slice(0,16), `${sha||'?'} · ${conclusion||'?'}`, col);
     }).join('');
 
     const smokeCol = parseInt(smokeNum) >= 300 ? '#4caf82' : '#c9a84c';
@@ -17002,13 +17000,13 @@ function buildScoutingReport(game, sport) {
     const aG = game._awayGoalie ? getNHLGoalieProfile?.(game._awayGoalie) : null;
     const hGname = game._homeGoalie, aGname = game._awayGoalie;
     if (hG && aG) {
-      const hTier = hG.tier === 'elite' ? ' 🔵' : hG.tier === 'below' ? ' 🔴' : '';
-      const aTier = aG.tier === 'elite' ? ' 🔵' : aG.tier === 'below' ? ' 🔴' : '';
+      const hTier = hG.tier === 'elite' ? ' (elite)' : hG.tier === 'below' ? ' (below)' : '';
+      const aTier = aG.tier === 'elite' ? ' (elite)' : aG.tier === 'below' ? ' (below)' : '';
       rows.push({ lbl: 'Goalies',
         val: `${hGname} <em>.${Math.round(hG.sv*1000)}</em>${hTier}  ·  ${aGname} <em>.${Math.round(aG.sv*1000)}</em>${aTier}` });
     } else if (hG || aG) {
       const g = hG||aG, n = hGname||aGname;
-      const tier = g.tier === 'elite' ? ' 🔵' : g.tier === 'below' ? ' 🔴' : '';
+      const tier = g.tier === 'elite' ? ' (elite)' : g.tier === 'below' ? ' (below)' : '';
       rows.push({ lbl: 'Goalie', val: `${n} <em>.${Math.round(g.sv*1000)} sv%</em> · ${g.gaa.toFixed(2)} GAA${tier}` });
     }
   }
@@ -22369,7 +22367,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26e';
+  const SW_VERSION = '2026-08-26f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -39613,7 +39611,7 @@ function buildLifeStageContent(game, eData, stage) {
         // ADR-002 violation in substance). Tier emoji conveys the same signal
         // without the number.
         const peak = getDramaPeak(game._id||'', game);
-        const peakStr = peak >= 65 ? ` ${peak >= 85 ? '🔥' : '⚡'}` : '';
+        const peakStr = peak >= 85 ? ' · Fire game' : peak >= 65 ? ' · Heating up' : '';
         const parts = [`${fLeader} ${fLS}–${fTS} ${fTrailer} F${peakStr}`];
         if (_briefLine) parts.push(_briefLine);
         return `<div class="card-stage-content card-stage-live-basic">${parts.join(' · ')}</div>`;
@@ -39623,8 +39621,7 @@ function buildLifeStageContent(game, eData, stage) {
       if (peak < 50 && !_briefLine) return '';
       const parts = [];
       if (peak >= 50) {
-        const peakIcon = peak >= 85 ? '🔥' : peak >= 65 ? '⚡' : '·';
-        parts.push(`<span class="stage-final-score">${peakIcon} ${Math.round(peak)}</span>`);
+        parts.push(`<span class="stage-final-score">Peak ${Math.round(peak)}</span>`);
       }
       if (_briefLine) parts.push(_briefLine);
       return `<div class="card-stage-content">${parts.join(' · ')}</div>`;
@@ -40197,7 +40194,7 @@ function openBottomSheet(gameId) {
   const drama = getSmoothedDrama(gameId);
   // Display tier label not raw number — number is redundant alongside the sparkline
   const dramaLabel_bs = drama != null
-    ? (drama >= 85 ? '🔥 Fire game' : drama >= 65 ? '⚡ Heating up' : drama >= 45 ? '● In play' : '')
+    ? (drama >= 85 ? 'Fire game' : drama >= 65 ? 'Heating up' : drama >= 45 ? 'In play' : '')
     : '';
   // Postgame: build richer drama context from history + score log
   const _bsIsFinal = eData?.state === 'post';
@@ -40205,11 +40202,10 @@ function openBottomSheet(gameId) {
   if (_bsIsFinal) {
     try {
       const _peakVal = getDramaPeak(gameId, game);
-      const _peakIcon = _peakVal >= 85 ? '🔥' : _peakVal >= 65 ? '⚡' : '';
       const _sustained = getDramaSustained(gameId, 65, 60*60*1000);
       const _trend = getDramaTrend(gameId, 6);
       const parts = [];
-      if (_peakVal >= 50) parts.push(`${_peakIcon} Peak ${Math.round(_peakVal)}`);
+      if (_peakVal >= 50) parts.push(`Peak ${Math.round(_peakVal)}`);
       if (_sustained >= 5) parts.push(`${Math.round(_sustained)} min high drama`);
       if (Math.abs(_trend) >= 8) parts.push(_trend > 0 ? 'surged late ↑' : 'faded late ↓');
       if (parts.length) _bsPostgameDrama = parts.join(' · ');
