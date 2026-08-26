@@ -69,7 +69,7 @@
 # ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
 # carry meaning, and they are still typography doing an icon's job.
 
-31  gradient
+30  gradient
 # linear- and radial-gradient in the stylesheet. Checklist item 6 allows at most
 # one, serving a specific purpose.
 #
@@ -158,7 +158,7 @@
 # file rather than a second one because this repo has one ratchet format and a
 # second file would drift from it.
 
-61  unreferenced-css
+0  unreferenced-css
 # Classes the stylesheet defines that nothing can emit. 1,154 classes in
 # index.html; 1,071 appear literally somewhere in the bundle, 22 more are built
 # from a template or concatenation prefix, and 61 are reachable by nothing.
@@ -181,8 +181,31 @@
 # it contains a hyphen or is four characters or more. All six newly-flagged
 # names were then checked by hand and appear ONLY between <style> and </style>.
 #
-# NOT DELETED HERE. 61 rules is a real change and wants its own commit with
-# evidence per group — the nine surviving `ap-*` are pre-Solid ambient panel,
-# the six `wct-*` are World Cup bracket, the six `ts-*` are a tonight-summary
-# card. Recording the number stops the 62nd, which is what a ratchet is for.
+# DELETED 2026-08-26, 61 -> 0. Seventy whole rules removed and five multi-selector
+# rules had one dead selector spliced out. 1,154 classes -> 1,093; the stylesheet
+# lost 6,914 bytes. Largest groups: nine `ap-*` (pre-Solid ambient panel), six
+# `wct-*` (World Cup bracket), six `ts-*` (a tonight-summary card), three each of
+# `pw-*`, `sac-*`, `sq-*`, `wc-*`.
+#
+# TWO PARSING BUGS WERE CAUGHT BEFORE ANYTHING WAS DELETED, both in the tool
+# that decided what to delete:
+#
+#   1. The selector reader took only the LAST LINE of a multi-line selector
+#      list, so a rule whose final line happened to be dead would have had the
+#      whole rule removed — every live selector above it with it. Four
+#      `body.*-mode` hide lists were in that shape.
+#   2. Regenerating a surviving selector list reformatted it, putting
+#      `body.journalism-mode .main,` at column 0. Smoke A630 asserts that
+#      selector does NOT start a line, because that is exactly how a rule
+#      promoted out of its `@media(max-width:1199px)` wrapper looks. A cosmetic
+#      rewrite read as a layout regression to the one check watching for it, and
+#      it failed the build. Partial edits now splice the RAW text, so every
+#      surviving selector keeps its original indentation byte for byte.
+#
+# Smoke 985/0. Brace balance 0, no empty rules introduced (the two that exist —
+# `@media(max-width:600px){}` and `.game-card.card-tier-standard{}` — predate
+# this and were left alone).
+#
+# Zero is now the declared maximum, so the next unreachable class fails the
+# build rather than joining a pile.
 

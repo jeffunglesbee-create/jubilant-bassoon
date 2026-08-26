@@ -171,11 +171,6 @@ body::before{
   text-transform:uppercase;color:var(--smoke);font-weight:500;
 }
 .masthead-right{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
-.date-chip{
-  font-family:var(--ff-mono);font-size:.72rem;color:var(--platinum);
-  background:var(--card);border:1px solid var(--edge2);
-  padding:.35rem .8rem;border-radius:4px;letter-spacing:.03em;
-}
 .refresh-btn{
   font-family:var(--ff-cond);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;
   color:var(--gold);border:1px solid var(--gold);background:transparent;
@@ -213,10 +208,6 @@ body::before{
   background:rgba(74,222,128,.5);mix-blend-mode:screen;
   transition:width .4s ease}
 .wc-bar-val{color:var(--smoke);text-align:right;font-size:.62rem;font-family:var(--ff-mono)}
-.wc-scenario{margin-top:.35rem;background:rgba(74,222,128,.04);
-  border:1px solid rgba(74,222,128,.15);border-radius:4px;
-  padding:.28rem .45rem;font-size:.62rem;color:var(--green);
-  font-family:var(--ff-mono);line-height:1.5}
 .wc-group-pill{display:inline-block;background:rgba(74,222,128,.1);
   border:1px solid rgba(74,222,128,.3);color:var(--green);
   font-family:var(--ff-mono);font-size:.6rem;padding:.08rem .3rem;
@@ -237,21 +228,18 @@ body::before{
 .watch-btn:active{transform:scale(0.97);opacity:.85}
 
 /* 3. Bottom sheet scroll bleed — stops page scrolling through sheet content */
-.bottom-sheet,.mv-panel,.my-services-panel,.field-desk-section{overscroll-behavior:contain}
+.bottom-sheet,.mv-panel,.field-desk-section{overscroll-behavior:contain}
 
 /* 4. Night Owl → amber to disambiguate from Finals Desk (both were violet) */
 /* Finals Desk = violet (series intelligence) · Night Owl = amber (post-game) · Brief = teal (editorial) */
-.no-label{color:var(--caution)}
 #night-owl{border-left-color:rgba(251,191,36,.3)}
 
 /* 5. GPU promotion on frequently animated elements only */
 .live-dot{will-change:opacity}
 .ws-pulse::before{will-change:opacity}
-.gcard.crunch-card{will-change:box-shadow}
 .ga.crunch{will-change:opacity}
 
 /* 6. gline prose context — raise from muted (#6b7280, 4.1:1) to label (#9ca3af, 5.9:1) */
-.gline{color:var(--platinum)}
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 
@@ -268,10 +256,6 @@ body::before{
 /* Mobile: make filter bar scrollable not wrapping */
 @media(max-width:600px){
   /* Controls layout now handled by 2-row grid in the main mobile block below */
-}
-.ctrl-label{
-  font-family:var(--ff-cond);font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--smoke);margin-right:.2rem;white-space:nowrap;
 }
 .tz-pill{
   font-family:var(--ff-mono);font-size:.62rem;color:var(--smoke);
@@ -837,7 +821,6 @@ body.wf-mode .np-inner{max-width:100%}
   animation:fadeIn .2s ease;
 }
 
-
 /* ── Last Night's Results (Wow #22) ─────────────────────────────── */
 .last-night-bar{
   max-width:1400px;margin:0 auto .75rem;padding:0 2rem;
@@ -997,7 +980,6 @@ body.wf-mode .np-inner{max-width:100%}
   font-size:1.1rem;padding:.2rem;flex-shrink:0;line-height:1}
 .pwa-dismiss:hover{color:var(--white)}
 
-
 /* ── Baseball Situation Chip ─────────────────────────────────── */
 .baseball-sit{
   display:flex;align-items:center;gap:.5rem;
@@ -1022,7 +1004,6 @@ body.wf-mode .np-inner{max-width:100%}
   border-radius:5px;font-size:.62rem;font-weight:600;
   color:var(--platinum);
 }
-
 
 /* ── Perfect Halftime Switch (Wow #30) ──────────────────────────── */
 #halftime-switch{
@@ -1171,9 +1152,6 @@ body.wf-mode .np-inner{max-width:100%}
 .pin-widget .pw-tier{font-size:.62rem;font-weight:700;letter-spacing:.04em;margin-top:.1rem}
 .pin-widget .pw-close{position:absolute;top:4px;right:6px;font-size:.6rem;opacity:.5;cursor:pointer;background:none;border:none;color:inherit;padding:0;line-height:1}
 .pin-widget.expanded{min-width:180px;padding:.6rem .85rem}
-.pw-sparkline-wrap{margin:.3rem 0 .15rem}
-.pw-comeback{font-size:.6rem;color:var(--muted);margin:.1rem 0}
-.pw-story-latest{font-size:.6rem;opacity:.75;border-top:1px solid rgba(255,255,255,.08);margin-top:.3rem;padding-top:.3rem;line-height:1.4}
 
 /* Story Tape */
 .story-tape{padding:.25rem 0 .1rem;max-height:52px;overflow:hidden}
@@ -1328,14 +1306,8 @@ body.wf-mode .np-inner{max-width:100%}
 .standings-table td{padding:.18rem .3rem;color:var(--platinum)}
 .standings-table tr:hover td{color:var(--white)}
 .standings-table .highlight td{color:var(--gold2);font-weight:700}
-.sdb-badge{
-  font-family:var(--ff-cond);font-size:.62rem;letter-spacing:.05em;
-  color:var(--teal);border:1px solid rgba(0,212,170,.3);
-  background:rgba(0,212,170,.06);padding:.04rem .3rem;border-radius:3px;
-}
 
 .info-row{display:flex;align-items:center;gap:.35rem;flex-wrap:nowrap;margin-top:2px;min-width:0;overflow:hidden}
-.venue-badge{color:var(--gold2)!important;font-weight:600;background:transparent!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .venue-line{font-size:.62rem;color:var(--smoke);opacity:.8;margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em;padding-bottom:.05rem;}
 .badge-row{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin-top:3px;min-width:0}
 .gotd-badge{
@@ -1400,7 +1372,6 @@ body.wf-mode .np-inner{max-width:100%}
 .su-no{background:rgba(106,106,138,.12);color:var(--smoke);border:1px solid rgba(106,106,138,.3);}
 .su-reason{color:var(--muted);font-size:.7rem;}
 /* ── Working Class: Beat the Book ──────────────────────────── */
-.beat-the-book{font-size:.62rem;color:var(--muted);margin-top:.15rem;display:flex;align-items:baseline;gap:.3rem;}
 .ufl-epa-live{display:flex;align-items:center;gap:.45rem;font-size:.64rem;margin-top:.25rem;padding-top:.2rem;border-top:1px solid var(--edge);flex-wrap:wrap;line-height:1.4}
 .epa-chip{font-weight:600;font-size:.7rem;letter-spacing:.01em}
 .epa-sit{color:var(--smoke);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1416,14 +1387,10 @@ body.wf-mode .np-inner{max-width:100%}
 @media(orientation:landscape)and(max-height:430px){.card-drama-line{font-size:.63rem;}}
 @media(min-width:820px)and(orientation:landscape){.card-drama-line{font-size:.64rem;white-space:normal;max-height:2.8em;}}
 /* Working Class: tablet+ text wrapping */
-@media(min-width:820px){.cs-text{white-space:normal;}.cheap-seats{overflow:visible;}.beat-the-book{font-size:.62rem;}}
+@media(min-width:820px){.cs-text{white-space:normal;}.cheap-seats{overflow:visible;}}
 .narrative-line{font-size:.68rem;color:var(--muted);font-style:italic;padding:.05rem .85rem .15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
 .brief-scout-note{font-size:.62rem;color:#2dd4bf;margin-top:.45rem;padding-top:.35rem;border-top:1px solid rgba(45,212,191,.15);line-height:1.4}
 .sp-analytics-footer{margin-top:.4rem;padding-top:.3rem;border-top:1px solid rgba(45,212,191,.08);display:flex;flex-wrap:wrap;gap:.2rem}
-.sp-analytics-chip{font-size:.57rem;border-radius:3px;padding:.07rem .25rem;white-space:nowrap;border:1px solid}
-.sp-analytics-chip.sac-teal{background:rgba(45,212,191,.08);border-color:rgba(45,212,191,.18);color:rgba(45,212,191,.85)}
-.sp-analytics-chip.sac-amber{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.2);color:rgba(251,191,36,.8)}
-.sp-analytics-chip.sac-muted{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:var(--smoke)}
 .desk-card.type-analytics{border-left:3px solid rgba(96,165,250,.55)}
 .desk-analytics-game{margin-bottom:.5rem;padding-bottom:.4rem;border-bottom:1px solid rgba(255,255,255,.06)}
 .desk-analytics-game:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
@@ -1595,7 +1562,6 @@ body.wf-mode .np-inner{max-width:100%}
 .night-owl-text{font-size:.73rem;color:var(--white);line-height:1.6}
 .night-owl-text.pending{color:var(--muted);font-style:italic}
 .field-note{font-size:.65rem;color:#c9a84c;font-style:italic;margin-top:.45rem;padding-top:.4rem;border-top:1px solid rgba(201,168,76,.2);line-height:1.45;opacity:.9}
-.live-sit-string{font-size:.63rem;color:var(--muted,#8888aa);font-style:italic;padding:.08rem 0 0;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 .cdw-note{font-size:.6rem;color:var(--muted,#8888aa);font-style:italic;padding:.06rem .85rem .1rem;line-height:1.3;opacity:.85;border-left:2px solid rgba(96,165,250,.25);margin:.05rem 0 .05rem .6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;grid-column:2 / span 2}
 .scout-pick-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.62rem;font-weight:700;color:#2dd4bf;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3);border-radius:4px;padding:.15rem .45rem;margin-top:.2rem}
 .stat-day-badge{display:inline-flex;align-items:center;gap:.2rem;font-size:.62rem;font-weight:700;color:#f5e0a0;background:rgba(245,224,160,.08);border:1px solid rgba(245,224,160,.2);border-radius:4px;padding:.12rem .4rem;margin-top:.15rem;margin-left:.25rem}
@@ -1649,8 +1615,6 @@ body.wf-mode .np-inner{max-width:100%}
 .viewer-intel-mode-row{display:flex;gap:.5rem;flex-wrap:wrap}
 .vim-btn{font-size:.65rem;padding:.3rem .65rem;border-radius:6px;border:1px solid var(--edge);background:transparent;color:var(--muted);cursor:pointer;font-weight:600;letter-spacing:.04em;transition:all .15s}
 .vim-btn.active{border-color:var(--gold2);color:var(--gold2);background:rgba(201,168,76,.1)}
-.game-card.rival-card{border-color:rgba(249,115,22,.25)!important}
-.game-card.rival-card .card-accent{background:#f97316!important}
 .filter-btn.rivals-btn{color:#f97316;border-color:rgba(249,115,22,.4)}
 .filter-btn.rivals-btn.active{background:rgba(249,115,22,.15)}
 .narrative-line.narrative-hi{color:var(--accent);font-style:normal;font-weight:600;opacity:1}
@@ -1741,17 +1705,8 @@ body.wf-mode .np-inner{max-width:100%}
 .importance-badge.playoff-impl{background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)}
 .free-badge{display:inline-block;background:#16a34a;color:#fff;font-size:.62rem;font-weight:800;letter-spacing:.06em;padding:.1rem .3rem;border-radius:3px;margin-left:.3rem;vertical-align:middle;white-space:nowrap}
 .free-badge.free-cable{background:#0d6e3f}
-.game-card.free-tonight-card{border-color:rgba(22,163,74,.35)!important}
-.free-tonight-card .card-accent{background:#16a34a!important}
 /* ── Tonight Summary Card (Wow #23) ─────────────────────────────────── */
-.tonight-summary{background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(99,102,241,.05));border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:1rem 1.1rem .9rem;margin-bottom:1.1rem}
-.ts-header{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin-bottom:.7rem;flex-wrap:wrap}
 .ts-title{font-size:.75rem;font-weight:800;letter-spacing:.06em;color:var(--accent);text-transform:uppercase}
-.ts-count{font-size:.65rem;color:var(--muted);opacity:.85}
-.ts-games{display:flex;flex-direction:column;gap:.55rem}
-.ts-game{padding:.45rem .6rem;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
-.ts-game.ts-top{border-color:rgba(124,58,237,.3);background:rgba(124,58,237,.07)}
-.ts-matchup{font-size:.78rem;font-weight:700;color:var(--white);margin-bottom:.2rem}
 .ts-meta{font-size:.62rem;color:var(--muted);margin-top:.15rem}
 /* ─────────────────────────────────────────────────────────────────────── */
 .wx-badge{cursor:default;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
@@ -1791,7 +1746,6 @@ body.wf-mode .np-inner{max-width:100%}
 .nhl-badge{display:inline-block;font-size:.62rem;font-weight:700;letter-spacing:.04em;border-radius:.25rem;padding:.1rem .4rem;margin-right:.3rem}
 .nhl-badge.nhl-st{background:rgba(45,212,191,.12);color:#2dd4bf;border:1px solid rgba(45,212,191,.25)}
 .nhl-badge.nhl-pos{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.25)}
-.gotd-streams{display:flex;gap:3px;flex-wrap:wrap}
 /* ── Individual sport (golf, F1) card styles ─────────────────────────────── */
 .event-name{
   font-family:var(--ff-display);font-size:1rem;font-weight:700;
@@ -1939,7 +1893,6 @@ body.wf-mode .np-inner{max-width:100%}
 .base-second{top:0;left:50%;transform:translateX(-50%) rotate(45deg);-webkit-transform:translateX(-50%) rotate(45deg)}
 .base-third{bottom:1px;left:0;transform:rotate(45deg)}
 .base-first{bottom:1px;right:0;transform:rotate(45deg)}
-.sit-label{color:var(--smoke);font-size:.62rem;letter-spacing:.06em;margin-left:1px}
 .score-leader{color:var(--gold2)!important}
 .game-card.espn-live .card-accent{background:var(--live)}
 .game-card.espn-final .card-accent{background:#3a3a4a}
@@ -2159,12 +2112,6 @@ body.wf-mode .np-inner{max-width:100%}
 .freshness-strip.freshness-live .freshness-update::before{font-size:.68rem}
 
 /* ── ERROR BANNER ── */
-.err-banner{
-  max-width:1400px;margin:.5rem auto 0;
-  background:rgba(255,68,68,.06);border:1px solid rgba(255,68,68,.2);
-  border-radius:var(--radius);padding:.5rem 1rem;
-  font-family:var(--ff-cond);font-size:.72rem;letter-spacing:.06em;color:#ff9999;
-}
 
 /* ── STREAMING DISCOVERY ── */
 .streaming-section{
@@ -2262,14 +2209,12 @@ body:not(:has(#main .game-card)) :is(
 .bcast-stripe.sport-epl{background:#a855f7}
 .bcast-name{font-size:.72rem;color:var(--platinum);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bcast-count{font-family:var(--ff-mono);font-size:.65rem;color:var(--smoke);letter-spacing:.04em}
-.bcast-empty{font-size:.65rem;color:var(--muted);font-style:italic;padding:.5rem 0}
 
 /* CC-CMD-2026-06-15-client-features Commit 3: Schedule Conflict Map */
 .conflict-chip-wrap{display:flex;align-items:center;gap:.35rem;position:relative}
 .conflict-chip{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--ff-cond,'DM Sans');font-size:.62rem;font-weight:600;letter-spacing:.04em;padding:.22rem .55rem;border-radius:4px;background:rgba(245,158,11,.1);color:var(--caution,#f59e0b);border:1px solid rgba(245,158,11,.35);cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
 .conflict-chip:hover{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.55)}
 .conflict-chip-icon{font-size:.7rem;line-height:1}
-.conflict-chip-count{font-family:var(--ff-mono);font-size:.6rem;color:var(--caution,#f59e0b)}
 /* CC-CMD-2026-06-16 Bug 4: panel is now position:fixed (attached to body
    instead of .conflict-chip-wrap) so it escapes the .controls sticky
    stacking context (z=50). With z=9000 it floats above every page
@@ -2347,7 +2292,6 @@ body:not(:has(#main .game-card)) :is(
 }
 .leg-item{display:flex;align-items:center;gap:.4rem;font-family:var(--ff-cond);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke)}
 .leg-bar{width:10px;height:3px;border-radius:1px}
-
 
 /* ══════════════════════════════════════════════════════════════
    SPORTS MEDIA & BETTING SECTIONS
@@ -2583,7 +2527,6 @@ body:not(:has(#main .game-card)) :is(
 .jrn-upset-meta{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.04em}
 .jrn-upset-meta .jrn-upset-tag{display:inline-block;padding:.08rem .35rem;border-radius:3px;background:rgba(201,168,76,.08);color:var(--gold2);border:1px solid rgba(201,168,76,.25);margin-right:.35rem}
 .jrn-upset-card.major .jrn-upset-tag{background:rgba(0,212,170,.08);color:var(--teal,#00d4aa);border-color:rgba(0,212,170,.25)}
-.jrn-upset-empty{font-size:.65rem;color:var(--muted);font-style:italic;padding:.4rem 0}
 
 /* CC-CMD-2026-06-15-client-features-2 Commit 2: Market Consensus Tracker */
 .jrn-market-consensus{margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--edge)}
@@ -2637,7 +2580,6 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
   body.journalism-mode #wc-section,
   body.journalism-mode #pickem-section,
   body.journalism-mode .page-divider,
-  body.journalism-mode .legend-section,
   body.journalism-mode #upper-slots,
   body.journalism-mode #field-right-now,
   body.journalism-mode #ambient-panel{display:none !important}
@@ -2759,7 +2701,6 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .wc-r32-vs{font-size:.58rem;color:var(--smoke);margin:.2rem 0;text-align:center}
 .wc-r32-meta{font-size:.56rem;color:var(--smoke);margin-top:.3rem}
 .wc-r32-group-tag{display:inline-block;font-size:.52rem;color:var(--gold2);background:rgba(201,168,76,.08);border-radius:3px;padding:.05rem .28rem;margin-left:.3rem;vertical-align:middle}
-.wc-r32-3rd-note{font-size:.52rem;color:rgba(255,255,255,.35);margin-top:.15rem}
 .wc-bracket-section-head{font-size:.6rem;font-weight:700;letter-spacing:.08em;color:var(--smoke);text-transform:uppercase;margin:.85rem 0 .4rem}
 
 /* Group table */
@@ -2770,7 +2711,6 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .wc-th-pos,.wc-td-pos{color:var(--smoke);width:14px}
 .wc-th-pts,.wc-td-pts{font-weight:700;color:var(--white)}
 .wc-table td{padding:.25rem .15rem;text-align:center;color:var(--platinum)}
-.wc-td-gd{font-variant-numeric:tabular-nums}
 
 /* Row state */
 .wc-row--advance td:first-child{border-left:2px solid rgba(74,222,128,.6)}
@@ -2871,7 +2811,6 @@ body.wc-mode #media-section,
 body.wc-mode #field-journalism-section,
 body.wc-mode #pickem-section,
 body.wc-mode .page-divider,
-body.wc-mode .legend-section,
 body.wc-mode #field-right-now{display:none !important}
 /* #upper-slots wraps header.masthead + nav.controls alongside the loading-
    slot region (PM-26-M-1) -- hiding the whole wrapper hid nav.controls too,
@@ -2914,7 +2853,6 @@ body.pickem-mode #media-section,
 body.pickem-mode #field-journalism-section,
 body.pickem-mode #wc-section,
 body.pickem-mode .page-divider,
-body.pickem-mode .legend-section,
 body.pickem-mode #field-right-now{display:none !important}
 /* #upper-slots wraps header.masthead + nav.controls alongside the loading-slot
    region (PM-26-M-1) -- hiding the whole wrapper (the wc-mode/journalism-mode
@@ -2965,7 +2903,6 @@ body.stats-mode #media-section,
 body.stats-mode #field-journalism-section,
 body.stats-mode #wc-section,
 body.stats-mode .page-divider,
-body.stats-mode .legend-section,
 body.stats-mode #field-right-now{display:none !important}
 body.stats-mode #upper-slots>*:not(header.masthead):not(nav.controls){display:none !important}
 body.stats-mode #stats-section{display:block}
@@ -3102,13 +3039,6 @@ body.stats-mode .main{margin-right:0 !important}
 }
 
 /* Bracket grid: left rounds | champion | right rounds */
-.wct-grid{
-  display:grid;
-  grid-template-columns: repeat(4,1fr) auto repeat(4,1fr);
-  gap:0;
-  min-width:900px;
-  align-items:center;
-}
 
 /* Column labels */
 .wct-col-head{
@@ -3146,8 +3076,6 @@ body.stats-mode .main{margin-right:0 !important}
   line-height:1.2;
 }
 .wct-team:first-child{border-bottom:1px solid var(--edge)}
-.wct-team.wct-winner{color:var(--white);background:rgba(255,255,255,.04)}
-.wct-team.wct-champion-team{color:var(--gold2)}
 
 .wct-flag{font-size:.7rem;flex-shrink:0}
 .wct-name{overflow:hidden;text-overflow:ellipsis;flex:1}
@@ -3157,20 +3085,8 @@ body.stats-mode .main{margin-right:0 !important}
 }
 
 /* Connector lines between rounds */
-.wct-connector{
-  display:flex;align-items:center;justify-content:center;
-  padding:0 1px;
-  height:100%;
-}
-.wct-connector-line{
-  width:8px;height:2px;background:var(--edge);
-}
 
 /* Champion center column */
-.wct-center{
-  display:flex;flex-direction:column;align-items:center;
-  gap:.5rem;padding:0 .5rem;
-}
 .wct-champion-label{
   font-size:.52rem;font-weight:700;letter-spacing:.1em;
   color:var(--gold);text-transform:uppercase;text-align:center;
@@ -3271,23 +3187,6 @@ body.stats-mode .main{margin-right:0 !important}
 .bs-scout-val{color:var(--white);flex:1}
 .bs-scout-val em{font-style:normal;color:var(--teal,#2dd4bf);font-weight:600}
 .bs-scout-val .scout-warn{color:#f59e0b;font-weight:600}
-.bs-scout-divider{height:1px;background:rgba(255,255,255,.06);margin:.4rem 0}
-.first-run-callout{
-  background:rgba(201,168,76,.08);border-bottom:1px solid rgba(201,168,76,.2);
-  padding:.5rem 2rem;display:flex;align-items:center;justify-content:space-between;
-  font-family:var(--ff-body);font-size:.75rem;color:var(--platinum);gap:1rem;
-}
-.frc-btn{
-  font-family:var(--ff-cond);font-size:.7rem;font-weight:700;letter-spacing:.05em;
-  color:var(--gold);background:transparent;border:1px solid rgba(201,168,76,.4);
-  border-radius:3px;padding:.15rem .5rem;cursor:pointer;margin-left:.5rem;
-}
-.frc-close{
-  background:transparent;border:none;color:var(--smoke);cursor:pointer;
-  font-size:.8rem;flex-shrink:0;padding:.2rem;
-}
-.sq-tip{display:flex;align-items:center;gap:.3rem;padding:.2rem .75rem .25rem;font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.03em}
-.sq-pct{color:var(--gold);font-weight:600}.sq-sep{opacity:.4}
 .inj-row{display:flex;flex-wrap:wrap;gap:.25rem;padding:.3rem .75rem .2rem;margin-top:-.1rem}
 .inj-chip{display:inline-flex;align-items:center;gap:.25rem;font-family:var(--ff-mono);font-size:.6rem;padding:.15rem .4rem;border-radius:.2rem;letter-spacing:.02em;white-space:nowrap}
 .situation-badge{font-family:var(--ff-mono);font-size:.6rem;padding:.2rem .75rem .15rem;color:#60a5fa;letter-spacing:.03em;opacity:.9}
@@ -3296,7 +3195,6 @@ body.stats-mode .main{margin-right:0 !important}
 .inj-d{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);color:#fb923c}
 .inj-player{font-weight:600;color:inherit}
 .inj-status{opacity:.8}
-.odds-source-ai{font-family:var(--ff-mono);font-size:.6rem;color:var(--smoke);letter-spacing:.03em}
 
     /* ── SETUP / ENTITLEMENT MODAL ── */
 .setup-overlay{
@@ -3513,8 +3411,7 @@ body.stats-mode .main{margin-right:0 !important}
   .brand-name{font-size:1.9rem}
   .brand-sub{font-size:.6rem;letter-spacing:.15em}
   .brand-rule{display:none}
-  .masthead-right{gap:.5rem}
-  .date-chip{display:none} /* replaced by date-nav in controls */
+  .masthead-right{gap:.5rem} /* replaced by date-nav in controls */
   .refresh-btn{padding:.3rem .65rem;font-size:.65rem}
   .settings-btn{font-size:.62rem;padding:.25rem .45rem;letter-spacing:.04em}
   .settings-btn .btn-label{display:none}
@@ -3555,7 +3452,6 @@ body.stats-mode .main{margin-right:0 !important}
     padding:.22rem .65rem;white-space:nowrap;flex-shrink:0;
   }
   .tz-pill{display:none !important}
-  .ctrl-label{display:none}
   .tz-select{font-size:.7rem;padding:.25rem .4rem;max-width:90px}
   .tz-pill{white-space:nowrap;min-width:32px;max-width:none;font-size:.62rem}
   .date-label{min-width:76px;font-size:.62rem}
@@ -3824,11 +3720,6 @@ body.stats-mode .main{margin-right:0 !important}
   color:var(--teal,#2dd4bf);letter-spacing:.06em;text-transform:uppercase}
 .ap-otw-header{font-size:.80rem;font-weight:700;letter-spacing:0;
   text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.2rem}
-.ap-no-fire{display:flex;flex-direction:column;gap:.2rem;opacity:.38;
-  padding:.5rem 0}
-.ap-quiet-label{font-size:.62rem;font-weight:800;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--violet,#8b5cf6)}
-.ap-quiet-msg{font-size:.76rem;color:var(--smoke)}
 .ap-section-label{font-size:.62rem;font-weight:800;letter-spacing:.08em;
   text-transform:uppercase;color:var(--gold2,#c9a84c);margin-bottom:.4rem}
 .ap-scores{display:flex;flex-direction:column;gap:.35rem}
@@ -3847,9 +3738,6 @@ body.stats-mode .main{margin-right:0 !important}
   background:rgba(201,168,76,.14);color:var(--gold2,#c9a84c);
   padding:.22rem .65rem;border-radius:5px;text-transform:uppercase;
   display:inline-block}
-.ap-brief{display:flex;flex-direction:column;gap:.4rem}
-.ap-editorial{display:flex;flex-direction:column;gap:.35rem}
-.ap-editorial-game{font-size:.78rem;font-weight:700;color:var(--white)}
 /* Ambient panel — editorial card treatments */
 .ap-card{
   border-radius:8px;padding:.6rem .75rem .55rem;
@@ -3907,12 +3795,7 @@ body.stats-mode .main{margin-right:0 !important}
 .ap-card-game{font-size:.75rem;font-weight:700;color:var(--white);margin-bottom:.2rem;line-height:1.25}
 .ap-card-text{font-size:.69rem;color:var(--white);line-height:1.6;margin:0}
 .ap-card-arb-rows{display:flex;flex-direction:column;gap:.25rem;margin-top:.2rem}
-.ap-brief-text{font-size:.72rem;color:var(--white);line-height:1.65;margin:0;
-  white-space:pre-wrap}
 /* Arbitrage summary in ambient panel (compact — #field-arb hidden on iPad) */
-.ap-arb-summary{display:flex;flex-direction:column;gap:.35rem}
-.ap-arb-line{font-size:.72rem;color:var(--white);line-height:1.4}
-.ap-arb-line strong{color:var(--white)}
 /* Upcoming game in SOON state */
 .ap-soon{display:flex;flex-direction:column;gap:.35rem;
   padding:.9rem 1.05rem 1rem;border-radius:10px;
@@ -3961,7 +3844,6 @@ body.stats-mode .main{margin-right:0 !important}
 /* ── 360px Galaxy A36 / iPhone SE small fixes ───────────────────────── */
 @media(max-width:375px){
   .otw-why{max-width:45vw} /* was 200px — clips at 360px */
-  .live-sit-string{max-width:40vw}
   .otw-matchup{font-size:.72rem}
   .otw-drama{font-size:.62rem;padding:.15rem .35rem}
 }
@@ -4070,12 +3952,6 @@ body.stats-mode .main{margin-right:0 !important}
    ═══════════════════════════════════════════════════════════════ */
 
 /* Filter bar: momentum scroll, no visible scrollbar, snap to items */
-.filter-bar{
-  -webkit-overflow-scrolling:touch;
-  scroll-snap-type:x proximity;
-  scrollbar-width:none;
-}
-.filter-bar::-webkit-scrollbar{display:none}
 .filter-btn{ scroll-snap-align:start; }
 
 /* Cards at portrait mobile: tighter padding, no wasted space */
@@ -4087,7 +3963,6 @@ body.stats-mode .main{margin-right:0 !important}
   .section-head{ margin-bottom:.6rem; }
   .sport-section{ margin-bottom:1.8rem; }
   /* Venue badge: hide on very small to reduce clutter */
-  .venue-badge{ display:none; }
   /* Watch/multiview btn: compact */
   .watch-btn{ font-size:.62rem; padding:.15rem .35rem; }
   /* Share btn: ensure tap target */
@@ -4103,7 +3978,6 @@ body.stats-mode .main{margin-right:0 !important}
 [data-phone-tier="phone-compact"] .filter-chip{ font-size:.62rem; padding:.2rem .4rem; }
 
 /* phone-large: show venue, more padding, larger drama line for Pro Max/Ultra */
-[data-phone-tier="phone-large"] .venue-badge{ display:inline-flex !important; font-size:.62rem; }
 [data-phone-tier="phone-large"] .game-card{ padding:.85rem .95rem .8rem; }
 [data-phone-tier="phone-large"] .card-drama-line{ font-size:.66rem; }
 
@@ -4111,7 +3985,6 @@ body.stats-mode .main{margin-right:0 !important}
 [data-phone-tier="phone-landscape-wide"] .sport-section-games{
   display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
 }
-[data-phone-tier="phone-landscape-wide"] .venue-badge{ display:inline-flex !important; }
 [data-phone-tier="phone-landscape-wide"] .card-drama-line{ font-size:.66rem; }
 [data-phone-tier="phone-landscape-wide"] .game-card{ padding:.75rem .85rem .7rem; }
 
@@ -4121,7 +3994,6 @@ body.stats-mode .main{margin-right:0 !important}
 [data-phone-tier="phone-compact"] .cheap-seats{ font-size:.62rem; }
 [data-phone-tier="phone-compact"] .cs-badge{ font-size:.62rem; padding:.08rem .22rem; }
 [data-phone-tier="phone-compact"] .stay-up-strip{ font-size:.68rem; padding:.35rem .75rem; }
-[data-phone-tier="phone-compact"] .beat-the-book{ font-size:.62rem; }
 /* P3 large: more breathing room */
 [data-phone-tier="phone-large"] .skim-strip{ font-size:.95rem; }
 [data-phone-tier="phone-large"] .cheap-seats{ font-size:.62rem; }
@@ -4176,7 +4048,6 @@ body.stats-mode .main{margin-right:0 !important}
     padding-bottom:max(.85rem, env(safe-area-inset-bottom));
   }
 }
-
 
 /* ── Sport Game Brief Cards (MLB, WNBA) — appears above game card ─────────── */
 .sport-game-brief-card{border-radius:6px 6px 0 0;overflow:hidden;margin-bottom:0;border:1px solid rgba(255,255,255,.08);border-bottom:none}
@@ -27433,7 +27304,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26b';
+  const SW_VERSION = '2026-08-26c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
