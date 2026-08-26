@@ -111,9 +111,8 @@ Ratchet lowered in the same commit, which is the file's own rule:
 
 ## Found and NOT changed
 
-- **`.media-head::after`** is a 60px violet gradient underline —
-  `linear-gradient(90deg,#a78bfa,transparent)`. Same component, checklist item 6.
-  Out of what was proposed, so it is reported rather than removed.
+- ~~**`.media-head::after`**, a 60px violet gradient underline.~~ **Done, and it
+  was three rules rather than one — see the section below.**
 - **`SPORT_ICONS`** (27 competitions → emoji) and the **nav emoji**. These are
   brand voice, not defects, and replacing an icon system is a product decision
   with a real cost. The count is now visible; the decision is the human's.
@@ -134,3 +133,87 @@ on deploy. 984 of 985 pass, unchanged by these edits.
   `node scripts/check-chrome-inventory.mjs` — the `gradient` line drops from 34.
 - **Open, a product decision:** `SPORT_ICONS` and the nav emoji, 288 between
   them and everything else. The ratchet stops it growing while that is decided.
+
+
+---
+
+# Follow-up: "the gradient underline" was three of them
+
+**Same night.** `.streaming-head::after`, `.media-head::after` and
+`.field-desk-head::after` removed; the counter fixed in the same commit.
+
+## One idea in three copies
+
+Asked to take "the gradient underline", I looked before editing. There were
+three, byte-identical apart from the hex:
+
+```css
+.streaming-head::after  { ... background:linear-gradient(90deg,#818cf8,transparent) }
+.media-head::after      { ... background:linear-gradient(90deg,#a78bfa,transparent) }
+.field-desk-head::after { ... background:linear-gradient(90deg,#c9a84c,transparent) }
+```
+
+Same `content:''`, same `position:absolute;bottom:-1px;left:0`, same
+`width:60px;height:1px`. Each laid over a `border-bottom:1px solid var(--edge)`
+that was already there, so the heading had a rule under it either way.
+
+Removing one and leaving two would have been worse than either — three headings
+styled the same way, one of them silently different.
+
+**The accents were not a coding system anyone maintained.** `#818cf8` appears
+**twice** in the whole stylesheet: this rule, and one other. And `#c9a84c` is
+`--gold` written as a raw hex, so one of the three did not even use the token
+that exists for its own colour.
+
+`.masthead::after` is not this pattern and stays: full width, fading through
+`--gold` / `--gold2` at both ends, the page's one brand rule — the single
+purposeful gradient checklist item 6 allows. Verified still rendering.
+
+## The counter was measuring mentions
+
+Deleting three gradients dropped the ratchet by **two**.
+
+The comment written where they had been says the word `linear-gradient` while
+explaining the removal, and `countsFor` was matching that string anywhere in the
+`<style>` block. **Documenting a deletion partly undid it** — and a
+commented-out rule would have counted as a live one.
+
+`styleBlockOf` now strips CSS comments, the way the laboratory's own parser
+already did and for the same stated reason. Two self-test cases added: a
+commented-out rule is not counted, and prose about a deletion does not resurrect
+the count.
+
+**Checked that the fix does not flatter the removal.** Run against HEAD — before
+the three deletions — the corrected counter also says **34**, so the seeded
+figure was accurate and `34 → 31` is exactly the three rules and nothing else.
+
+## Verified rendered
+
+```
+.streaming-head    ::after none    border-bottom 1px
+.media-head        ::after none    border-bottom 1px
+.field-desk-head   ::after none    border-bottom 1px
+.masthead          ::after linear-gradient(90deg, rgba(0,0,0,0), r…   ← kept
+```
+
+Zero page errors, 21 visible sections unchanged. Smoke **985 passed, 0 failed** —
+the A515 SW_VERSION failure reported earlier as pre-existing has since been
+healed by the deploy gate's own sync step (`7873144`).
+
+## Left in place, and why
+
+`position:relative` stays on all three hosts. It anchored these pseudo-elements
+and is now a no-op, but removing it could strand any absolutely-positioned child
+the JS inserts, and a no-op costs nothing.
+
+The three host rules are themselves identical — `display:flex; align-items:center;
+gap:.75rem; margin-bottom:1.2rem; padding-bottom:.65rem; border-bottom; position:relative`.
+Three classes, one rule. That is a dedup, not slop removal, and it gets its own
+commit.
+
+## Unblock criteria (Rule 74)
+
+- **Closed:** the section-heading gradient underlines, and a counter that could
+  be moved by prose.
+- **Open, a dedup:** the three identical `*-head` rules. Verify any merge with
+  `node scripts/check-chrome-inventory.mjs` — the counts must not move.

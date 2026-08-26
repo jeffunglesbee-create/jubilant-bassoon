@@ -35,9 +35,29 @@
 # ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
 # carry meaning, and they are still typography doing an icon's job.
 
-34  gradient
+31  gradient
 # linear- and radial-gradient in the stylesheet. Checklist item 6 allows at most
 # one, serving a specific purpose.
+#
+# LOWERED FROM 34 on 2026-08-26. Three section-heading underlines removed —
+# `.streaming-head::after`, `.media-head::after`, `.field-desk-head::after` —
+# byte-identical apart from the hex, each a 60px
+# `linear-gradient(90deg,<accent>,transparent)` laid over a `border-bottom` that
+# was already there. One idea in three copies. The accents were not a coding
+# system anyone maintained: #818cf8 appeared twice in the whole stylesheet, and
+# #c9a84c is just `--gold` written as a raw hex.
+#
+# AND THE COUNTER WAS FIXED IN THE SAME COMMIT, because deleting three of them
+# dropped this number by TWO. The comment written where they had been says the
+# word `linear-gradient` while explaining the removal, and the counter was
+# measuring MENTIONS — so documenting a deletion partly undid it, and a
+# commented-out rule would have counted as a live one. `styleBlockOf` now strips
+# CSS comments. Verified against HEAD with the corrected counter: 34 there too,
+# so the old figure was accurate and 34 -> 31 is exactly the three removals.
+#
+# `.masthead::after` is NOT this pattern and stays — full width, fading through
+# --gold/--gold2 at both ends, the page's one brand rule and the single
+# purposeful gradient item 6 allows.
 
 6  gradient-text
 # `background-clip: text`. Item 6 names gradient-on-text as a default styling

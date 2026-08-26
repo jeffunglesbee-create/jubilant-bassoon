@@ -45,7 +45,15 @@ const INVENTORY = 'docs/chrome-inventory.txt'
 export function styleBlockOf(html) {
   const i = html.indexOf('<style>')
   const j = html.indexOf('</style>', i)
-  return i < 0 || j < 0 ? '' : html.slice(i + 7, j)
+  if (i < 0 || j < 0) return ''
+  // COMMENTS STRIPPED, and the reason is a real miscount. Deleting three
+  // `linear-gradient` underlines on 2026-08-26 dropped the count by two,
+  // because the comment written where they had been says the word
+  // `linear-gradient` while explaining their removal. The counter was measuring
+  // MENTIONS, so documenting a deletion partly undid it, and a commented-out
+  // rule would have counted as a live one. The laboratory's own CSS parser
+  // strips comments for the same reason, in the same words.
+  return html.slice(i + 7, j).replace(/\/\*[\s\S]*?\*\//g, '')
 }
 
 /// The body, for anything about rendered content rather than rules.
@@ -132,6 +140,13 @@ if (SELF_TEST) {
     'body content would be counted as CSS')
   check('a file with no stylesheet yields empty, not the whole document',
     styleBlockOf('<body>x</body>') === '')
+  check('a commented-out rule is not counted as a live one',
+    styleBlockOf('<style>/* a{background:linear-gradient(red,blue)} */ b{color:red}</style>')
+      .includes('linear-gradient') === false,
+    'prose about a gradient would count as a gradient')
+  check('...and prose ABOUT a deletion does not resurrect the count',
+    countsFor('<style>/* linear-gradient underlines deleted */ a{color:red}</style><body></body>')
+      .gradient === 0)
 
   const e = emojiCensus('<body>📺 ⚽ 🇪🇸 ✓ ✓ ⚠</body>')
   check('a flag is counted as a flag, not decoration', e.flags === 2 && e.decorative === 2,

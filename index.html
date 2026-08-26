@@ -2237,10 +2237,6 @@ body:not(:has(#main .game-card)) :is(
   margin-bottom:1.2rem;padding-bottom:.65rem;
   border-bottom:1px solid var(--edge);position:relative;
 }
-.streaming-head::after{
-  content:'';position:absolute;bottom:-1px;left:0;width:60px;height:1px;
-  background:linear-gradient(90deg,#818cf8,transparent);
-}
 .streaming-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white)}
 .streaming-icon{
   width:30px;height:30px;border-radius:6px;display:flex;align-items:center;
@@ -2408,10 +2404,23 @@ body:not(:has(#main .game-card)) :is(
   margin-bottom:1.2rem;padding-bottom:.65rem;
   border-bottom:1px solid var(--edge);position:relative;
 }
-.media-head::after{
-  content:'';position:absolute;bottom:-1px;left:0;width:60px;height:1px;
-  background:linear-gradient(90deg,#a78bfa,transparent);
-}
+/* THE THREE SECTION-HEADING GRADIENT UNDERLINES WERE DELETED 2026-08-26.
+   `.streaming-head::after`, `.media-head::after` and `.field-desk-head::after`
+   were byte-identical apart from the hex — a 60px `linear-gradient(90deg,
+   <accent>, transparent)` hairline laid over a `border-bottom` that was already
+   there. One idea in three copies, with nothing tying them together.
+
+   The accents were not a coding system anyone maintained: #818cf8 appeared
+   twice in the whole stylesheet. Each heading keeps its real
+   `border-bottom:1px solid var(--edge)`.
+
+   `.masthead::after` is NOT this pattern and stays: it spans the full width,
+   fades in and out through --gold/--gold2, and is the page's one brand rule —
+   the single purposeful gradient checklist item 6 allows.
+
+   `position:relative` is left on the three hosts. It anchored these
+   pseudo-elements and is now a no-op, but removing it could strand any
+   absolutely-positioned child JS inserts, and a no-op costs nothing. */
 .media-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white)}
 /* `.media-icon` lived here and was DELETED 2026-08-26: a 30x30 rounded square,
    violet-tinted at 12% with a violet border at 25%, containing a television
@@ -2467,10 +2476,6 @@ body:not(:has(#main .game-card)) :is(
   display:flex;align-items:center;gap:.75rem;
   margin-bottom:1.2rem;padding-bottom:.65rem;
   border-bottom:1px solid var(--edge);position:relative;
-}
-.field-desk-head::after{
-  content:'';position:absolute;bottom:-1px;left:0;width:60px;height:1px;
-  background:linear-gradient(90deg,#c9a84c,transparent);
 }
 .field-desk-icon{
   width:30px;height:30px;border-radius:6px;display:flex;align-items:center;
