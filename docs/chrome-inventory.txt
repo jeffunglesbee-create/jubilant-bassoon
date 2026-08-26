@@ -1,0 +1,84 @@
+# The unslop-ui checklist, counted in index.html on 2026-08-26.
+#
+# FORMAT:  <max-occurrences>  <pattern>  # note
+#
+# `max` is a RATCHET, not a target. A count that grows fails the deploy gate; a
+# count that shrinks is a fix, and the number is lowered in the same commit that
+# shrinks it. Same shape and same reasoning as docs/exposed-secrets.sha256.
+#
+# WHY NOT ZERO. field-laboratory ran the same checklist against its own page the
+# same night and reached zero on every line here. This page is 46,529 lines and
+# a live PWA, and a check demanding zero would be red from the moment it shipped
+# — which is a check that gets deleted, not a check that gets satisfied.
+#
+# WHY THESE NUMBERS AND NOT THE ONES REPORTED FIRST. An initial grep counted
+# LINES and reported backdrop-filter 14, gradient-text 4, coloured-shadow 10.
+# The script counts OCCURRENCES, and a single line frequently carries both
+# `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
+# figures; the grep numbers were low.
+
+289  decorative-emoji
+# 79 distinct. This is an icon SYSTEM, not stray decoration: `SPORT_ICONS`
+# (index.html ~6347) maps 27 competitions to emoji, four call sites consume it,
+# and the primary nav is `📰 Desk / 📖 Journal / ⚽ Groups / 🎯 Picks / 📊 Stats`.
+# Checklist item 3 says never use emoji as visual elements in UI components. It
+# is not counted at zero because replacing an icon system is a product decision
+# with a real cost, not a defect to be swept.
+
+102  flag-emoji
+# Regional-indicator sequences carrying country identity in a global sports app.
+# Defensible as DATA rather than decoration, and listed separately so it is never
+# conflated with the line above. The checklist would still prefer SVG.
+
+107  status-glyph
+# ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
+# carry meaning, and they are still typography doing an icon's job.
+
+34  gradient
+# linear- and radial-gradient in the stylesheet. Checklist item 6 allows at most
+# one, serving a specific purpose.
+
+6  gradient-text
+# `background-clip: text`. Item 6 names gradient-on-text as a default styling
+# choice to avoid.
+
+19  backdrop-filter
+# I FIRST WROTE THAT THIS WAS "THE MOST DEFENSIBLE LINE HERE" — all of them on
+# overlay surfaces, a blur saying "content is passing underneath", a platform
+# idiom rather than the frosted-card pattern item 5 is about.
+#
+# Asked why overlay surfaces were an exception, and the honest answer was that I
+# had asserted it rather than measured it. The checklist grants no such carve-out.
+#
+# `backdrop-filter` blurs what is BEHIND the element; the element's own
+# background then composites over that result. So the fraction of the blur a
+# reader can actually see is exactly `1 - alpha` of the surface. Measured:
+#
+#   .bottom-sheet          blur 12px   alpha .98   shows through   2%
+#   .mv-panel              blur 24px   alpha .97   shows through   3%
+#   .pin-widget            blur  8px   alpha .95   shows through   5%
+#   .controls              blur 20px   alpha .92   shows through   8%
+#   #field-attention-bar   blur 10px   alpha .92   shows through   8%
+#   .legend                blur 16px   alpha .90   shows through  10%
+#   ---------------------------------------------------------------
+#   .picker-overlay        blur  6px   alpha .70   shows through  30%
+#   .pin-btn / .star-btn   blur  4px   alpha .60   shows through  40%
+#   four *-back-pills      blur  8px   alpha .78   shows through  22%
+#   .setup-overlay         blur  8px   alpha .85   shows through  15%
+#
+# SIX of them are at 90% opacity or above. A 24px blur behind a surface that
+# shows 3% through is a GPU compositing pass contributing about 3% of a blur —
+# present, expensive, and not doing the job it is named for. Same class as a
+# 1.08:1 hairline: the property is set and its effect is not.
+#
+# The ones below ~0.8 are doing visible work and the original defence holds for
+# them. The split is measurable, so it is recorded here rather than argued.
+
+11  coloured-shadow
+# Of 23 box-shadows. A black shadow at low alpha is elevation and is not counted;
+# a shadow whose colour has a channel above 40 is decoration, which is the
+# distinction item 6 draws.
+
+25  keyframes
+# Item 8: purposeful or none. Not audited individually — 25 is the count, and
+# which of them are entrance animations on content is the open question.

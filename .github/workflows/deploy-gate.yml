@@ -122,6 +122,24 @@ jobs:
           node smoke.js index.html
           echo "✅ Smoke passed against source — building bundle"
 
+      # The unslop-ui checklist, counted and ratcheted rather than banned.
+      # Audited 2026-08-26: 289 decorative emoji across 79 distinct characters
+      # (SPORT_ICONS maps 27 competitions to them and the primary nav is
+      # `📰 Desk / 📖 Journal / ⚽ Groups`), 34 gradients, 6 gradient-text, 19
+      # backdrop-filter, 11 coloured shadows, 25 keyframes.
+      #
+      # Zero would be red from the moment it shipped, and a red check nobody can
+      # make green gets deleted — the reasoning docs/exposed-secrets.sha256
+      # already states for the credential it cannot yet remove. So the counts are
+      # recorded in docs/chrome-inventory.txt and only GROWTH fails. Several
+      # lines are defensible and say so in that file; what is not defensible is
+      # growth nobody noticed.
+      #
+      # Runs before the bundle: it reads source, needs no install, and a failure
+      # here is cheaper to read than a build log.
+      - name: Chrome inventory (unslop-ui checklist, ratcheted)
+        run: node scripts/check-chrome-inventory.mjs --self-test && node scripts/check-chrome-inventory.mjs
+
       - name: Build esbuild bundle
         run: |
           npm ci --prefer-offline 2>/dev/null || npm install --ignore-scripts
