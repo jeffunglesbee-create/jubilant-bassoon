@@ -2595,7 +2595,7 @@ body:not(:has(#main .game-card)) :is(
 .jrn-mc-stats{flex:1;font-family:var(--ff-mono);font-size:.65rem;color:var(--smoke);letter-spacing:.03em}
 .jrn-mc-stats b{color:var(--platinum);font-weight:600}
 
-/* Journalism nav link — same visual as desk-jump-link, distinct icon */
+/* Journalism nav link — same visual as desk-jump-link, distinct colour */
 .jrn-nav-link{color:var(--platinum)}
 .jrn-nav-link.active{color:var(--gold2);background:rgba(201,168,76,.08)}
 
@@ -4658,7 +4658,7 @@ var _DOM = null;
   <button class="pwa-dismiss" id="pwa-dismiss" aria-label="Dismiss">✕</button>
 </div>
 <!-- ── Offline Banner ────────────────────────────────────────── -->
-<div id="offline-banner" role="alert">📡 You're offline — showing cached schedule</div>
+<div id="offline-banner" role="alert">You're offline — showing cached schedule</div>
 <!-- ── Privacy + Consent Banner (C2) ──────────────────────────── -->
 <div id="privacy-banner" role="dialog" aria-live="polite" aria-label="Privacy settings" style="display:none">
   <div class="privacy-banner-body">
@@ -4748,7 +4748,7 @@ var _DOM = null;
     <div class="masthead-right">
       <span id="streak-badge" style="display:none;align-items:center;gap:.2rem;font-size:.7rem;font-weight:700;color:var(--muted);opacity:.85;margin-right:.5rem"></span>
       <button id="drama-dial-chip" title="Drama sensitivity — controls which games surface as One To Watch. Tap to adjust in My Services." onclick="(function(){document.getElementById('settings-btn')?.click();setTimeout(function(){var d=document.getElementById('drama-dial');if(d){d.scrollIntoView({behavior:'smooth',block:'center'});d.focus();}},200);})()" style="display:none;font-family:var(--ff-mono);font-size:.6rem;padding:.2rem .5rem;border-radius:20px;border:1px solid var(--gold);background:rgba(201,168,76,.1);color:var(--gold);cursor:pointer;margin-right:.35rem;white-space:nowrap"></button>
-      <button class="settings-btn" id="settings-btn" title="My Services &amp; Drama Sensitivity — personalise stream access and set your watch threshold"><span class="btn-label">⚙ My Services</span></button>
+      <button class="settings-btn" id="settings-btn" title="My Services &amp; Drama Sensitivity — personalise stream access and set your watch threshold"><span class="btn-label">My Services</span></button>
       <button class="refresh-btn" id="refresh-btn" title="Refresh to today" style="display:none">↺</button>
       <div class="usage-badge usage-ok" id="usage-badge" title="API calls today" style="display:none"><span class="usage-dot"></span><span id="usage-text">—</span></div>
     </div>
@@ -4768,11 +4768,11 @@ var _DOM = null;
     <!-- CC-CMD-2026-06-15-client-features Commit 3: Schedule Conflict Map -->
     <div id="conflict-chip-wrap" class="conflict-chip-wrap" hidden></div>
     <button class="tz-pill" id="tz-pill" title="Change timezone"></button>
-    <a class="desk-jump-link" id="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews">📰 Desk</a>
-    <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading">📖 Journal</a>
-    <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" style="display:none">⚽ Groups</a>
-    <a class="desk-jump-link pickem-nav-link" id="pickem-nav-link" href="#pickem-section" title="Pick 'em — your cross-sport predictions">🎯 Picks</a>
-    <a class="desk-jump-link stats-nav-link" id="stats-nav-link" href="#stats-section" title="Stats — cross-sport analytics">📊 Stats</a>
+    <a class="desk-jump-link" id="desk-jump-link" href="#field-desk-section" title="FIELD Desk — editorial briefings and series previews">Desk</a>
+    <a class="desk-jump-link jrn-nav-link" id="jrn-nav-link" href="#field-journalism-section" title="Journalism — Tonight's editorial reading">Journal</a>
+    <a class="desk-jump-link wc-nav-link" id="wc-nav-link" href="#wc-section" title="World Cup — Group standings and bracket" style="display:none">Groups</a>
+    <a class="desk-jump-link pickem-nav-link" id="pickem-nav-link" href="#pickem-section" title="Pick 'em — your cross-sport predictions">Picks</a>
+    <a class="desk-jump-link stats-nav-link" id="stats-nav-link" href="#stats-section" title="Stats — cross-sport analytics">Stats</a>
     <button id="wf-toggle" title="Toggle between ESSENTIALS (schedule only) and WHOLE FIELD (schedule + ambient panel)">ESSENTIALS</button>
   </div>
 </nav>
@@ -4781,12 +4781,12 @@ var _DOM = null;
 <div class="mv-panel mv-collapsed" id="mv-panel">
   <div class="mv-head">
     <div class="mv-title-row">
-      <span class="mv-label">⬛ Multiview</span>
+      <span class="mv-label">Multiview</span>
       <span class="mv-desc">Pin up to 4 events — click a broadcaster to open stream</span>
       <button class="mv-clear" id="mv-clear">Clear all</button>
     </div>
     <div class="mv-hint-bar" onclick="document.getElementById('mv-panel')?.classList.remove('mv-collapsed')">
-      ⬛ Multiview — Pin up to 4 games to track &nbsp;›
+      Multiview — Pin up to 4 games to track &nbsp;›
     </div>
     <div class="mv-grid" id="mv-grid">
       <div class="mv-slot empty" id="ms0"><div class="mv-empty-lbl"><span class="mv-empty-plus">+</span><span>Add event</span></div></div>
@@ -4908,7 +4908,7 @@ var _DOM = null;
   <!-- Sub-tabs: Groups | Projections -->
   <div class="wc-sub-tabs">
     <button class="wc-sub-tab active" id="wc-tab-groups-btn" onclick="switchWCTab('groups')">Groups</button>
-    <button class="wc-sub-tab" id="wc-tab-bracket-btn" onclick="switchWCTab('bracket')">📊 Projections</button>
+    <button class="wc-sub-tab" id="wc-tab-bracket-btn" onclick="switchWCTab('bracket')">Projections</button>
   </div>
   <!-- Phase 1: Groups -->
   <div class="wc-groups" id="wc-groups">
@@ -5013,7 +5013,7 @@ var _DOM = null;
       <div class="viewer-intel-mode-wrap">
         <div class="viewer-intel-mode-label">What matters most to you?</div>
         <div class="viewer-intel-mode-row">
-          <button class="vim-btn" data-mode="stakes"  onclick="setViewerIntelMode('stakes')">⚡ Stakes</button>
+          <button class="vim-btn" data-mode="stakes"  onclick="setViewerIntelMode('stakes')">Stakes</button>
           <button class="vim-btn" data-mode="stories" onclick="setViewerIntelMode('stories')">📖 Stories</button>
           <button class="vim-btn" data-mode="myteams" onclick="setViewerIntelMode('myteams')">★ My Teams</button>
         </div>
@@ -13510,7 +13510,7 @@ function buildFilters(sports){
     const wcBtn = document.createElement('button');
     wcBtn.className = 'filter-btn wc-filter-btn' + (document.body.classList.contains('wc-mode') ? ' active' : '');
     wcBtn.id = 'wc-filter-pill';
-    wcBtn.textContent = '⚽ Groups';
+    wcBtn.textContent = 'Groups';
     wcBtn.title = 'World Cup 2026 — Group standings';
     wcBtn.addEventListener('click', () => {
       if (typeof toggleWCView === 'function') toggleWCView();
@@ -27433,7 +27433,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26a';
+  const SW_VERSION = '2026-08-26b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -37318,7 +37318,7 @@ async function renderWCSection() {
     switchWCTab('bracket');
   } else {
     if (title) title.textContent = 'Group Stage';
-    if (navLink) navLink.textContent = '⚽ Groups';
+    if (navLink) navLink.textContent = 'Groups';
     // Show groups tab by default unless user previously selected bracket
     const _wcBktBtn2 = document.getElementById('wc-tab-bracket-btn');
     const activeBkt = _wcBktBtn2 && _wcBktBtn2.classList.contains('active');

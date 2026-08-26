@@ -17,11 +17,11 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-288  decorative-emoji
-# 79 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
+275  decorative-emoji
+# 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
-122  decorative-emoji-labelled
+109  decorative-emoji-labelled
 166  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
@@ -36,7 +36,7 @@
 # word does not — `📰 Desk` loses nothing when the pictograph goes. An emoji
 # alone in its literal might be load-bearing.
 #
-#   labelled  122   the word is already there; removable without a decision
+#   labelled  109   the word is already there; removable without a decision
 #   alone     166   59 distinct glyphs; needs eyes
 #
 # SOURCE ADJACENCY, NOT RENDERED. A `SPORT_ICONS` value (`{ nba: '🏀' }`) is
@@ -46,12 +46,19 @@
 # join their neighbours read 147; that number over-claimed and is not the one
 # recorded here.
 #
-# NOTHING IS DELETED IN THIS COMMIT. The split is the finding; acting on it is
-# the next one, so that reverting the deletions does not leave this file
-# declaring a count the page no longer has.
+# LOWERED IN THE SAME COMMIT THAT MEASURED IT: 288 -> 275 total, 122 -> 109
+# labelled, on 2026-08-26. Thirteen
+# from the primary chrome: the five `desk-jump-link` nav anchors, `⚙ My
+# Services`, the offline banner's `📡`, both `⬛ Multiview` labels, the WC
+# sub-tab, the Stakes mode button, and the `wcBtn`/`navLink` textContent assignments
+# in field.js. Every one of them sat next to its own name. The rows they live in
+# now read `Today · filters · Desk · Journal · Groups · Picks · Stats ·
+# ESSENTIALS` — the neighbouring `tz-pill` and `wf-toggle` never had a
+# pictograph, so the row is consistent for the first time.
 #
-# `SPORT_ICONS` (index.html ~6347, 27 competitions, four call sites) is most of
-# the `alone` column and stays a product decision either way.
+# `SPORT_ICONS` (index.html ~6347, 27 competitions, four call sites) is NOT
+# touched and is most of what remains in the `alone` column. That one is still a
+# product decision, and now it is the only one.
 
 102  flag-emoji
 # Regional-indicator sequences carrying country identity in a global sports app.

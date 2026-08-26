@@ -2657,10 +2657,10 @@ assert('A385 — PM-19 Journalism Tab: toggleJournalismView + body.journalism-mo
   html.includes('body.journalism-mode #media-section,') &&
   // Nav anchor
   html.includes('jrn-nav-link') &&
-  html.includes('📖 Journal') &&
+  html.includes('>Journal</a>') &&
   // Section element
   html.includes('id="field-journalism-section"'),
-  'PM-19 C1+C2: Journalism Tab toggle must create body.journalism-mode class, persist to localStorage, hide irrelevant sections at mobile/tablet, and surface 📖 Journal anchor parallel to 📰 Desk');
+  'PM-19 C1+C2: Journalism Tab toggle must create body.journalism-mode class, persist to localStorage, hide irrelevant sections at mobile/tablet, and surface the Journal anchor parallel to Desk');
 
 assert('A386 — PM-19 Journalism Tab: laptop + desktop centered reading layout with companion rail',
   // Laptop media query
@@ -4447,7 +4447,7 @@ assert('A515 — SW_VERSION date matches today (ET)',
 // ── WC Groups filter pill (A516) ─────────────────────────────────────────────
 assert('A516 — WC/filter-pill: Groups pill in buildFilters for all viewports',
   html.includes('wc-filter-btn') &&
-  html.includes("wcBtn.textContent = '⚽ Groups'") &&
+  html.includes("wcBtn.textContent = 'Groups'") &&
   html.includes('wc-filter-pill') &&
   html.includes('_wcActiveNow'),
   'buildFilters must append a wc-filter-btn pill when wcActive (inline date check); no viewport-specific hide rules');

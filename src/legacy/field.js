@@ -8451,7 +8451,7 @@ function buildFilters(sports){
     const wcBtn = document.createElement('button');
     wcBtn.className = 'filter-btn wc-filter-btn' + (document.body.classList.contains('wc-mode') ? ' active' : '');
     wcBtn.id = 'wc-filter-pill';
-    wcBtn.textContent = '⚽ Groups';
+    wcBtn.textContent = 'Groups';
     wcBtn.title = 'World Cup 2026 — Group standings';
     wcBtn.addEventListener('click', () => {
       if (typeof toggleWCView === 'function') toggleWCView();
@@ -22374,7 +22374,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26a';
+  const SW_VERSION = '2026-08-26b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32259,7 +32259,7 @@ async function renderWCSection() {
     switchWCTab('bracket');
   } else {
     if (title) title.textContent = 'Group Stage';
-    if (navLink) navLink.textContent = '⚽ Groups';
+    if (navLink) navLink.textContent = 'Groups';
     // Show groups tab by default unless user previously selected bracket
     const _wcBktBtn2 = document.getElementById('wc-tab-bracket-btn');
     const activeBkt = _wcBktBtn2 && _wcBktBtn2.classList.contains('active');
