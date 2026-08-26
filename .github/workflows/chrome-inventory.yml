@@ -32,6 +32,16 @@ on:
     paths:
       - 'docs/chrome-inventory.txt'
       - 'scripts/check-chrome-inventory.mjs'
+      - 'scripts/unreferenced-css-check.mjs'
+      # index.html and src/** are INPUTS to the unreferenced-css check, not just
+      # to the deploy. index.html is in deploy-gate's paths but the CSS check is
+      # not in deploy-gate; src/solid/ and src/debrief/ are in NEITHER, and they
+      # emit the classes that decide whether a rule is dead. Deleting an emitter
+      # there is exactly what turns a live class into an unreferenced one, so
+      # leaving them out would repeat the mistake this whole workflow was written
+      # for, one file over.
+      - 'index.html'
+      - 'src/**'
   workflow_dispatch: {}
 
 concurrency:
@@ -61,3 +71,11 @@ jobs:
       # ratchet.
       - name: The unslop-ui checklist, counted and ratcheted
         run: node scripts/check-chrome-inventory.mjs --self-test && node scripts/check-chrome-inventory.mjs
+
+      # Reads the whole bundle, not just index.html — src/solid/ and src/debrief/
+      # emit classes that never appear in the page source, and scanning index.html
+      # alone reported 44 of them as dead. It is NOT in deploy-gate for the same
+      # reason as the line above is: this workflow is where the inventory's
+      # inputs are covered.
+      - name: Classes the stylesheet defines that nothing emits
+        run: node scripts/unreferenced-css-check.mjs --self-test && node scripts/unreferenced-css-check.mjs

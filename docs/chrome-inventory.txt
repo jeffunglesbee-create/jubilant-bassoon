@@ -151,3 +151,38 @@
 25  keyframes
 # Item 8: purposeful or none. Not audited individually — 25 is the count, and
 # which of them are entrance animations on content is the open question.
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NOT AN unslop-ui LINE. Read by scripts/unreferenced-css-check.mjs, in this
+# file rather than a second one because this repo has one ratchet format and a
+# second file would drift from it.
+
+61  unreferenced-css
+# Classes the stylesheet defines that nothing can emit. 1,154 classes in
+# index.html; 1,071 appear literally somewhere in the bundle, 22 more are built
+# from a template or concatenation prefix, and 61 are reachable by nothing.
+#
+# STANDARDS Rule 63 requires every committed function to have a caller and every
+# endpoint a consumer. It says nothing about CSS, and the stylesheet is where
+# the rule went unenforced.
+#
+# THE FIRST MEASUREMENT WAS WRONG AND IS RECORDED HERE BECAUSE THE ERROR IS THE
+# INTERESTING PART. Scanning index.html alone reported 105, of which 40 were
+# `ap-*` and 12 `debrief-*`. Every one of those is emitted — by
+# src/solid/ambient-island.jsx and src/debrief/index.ts, both bundled into the
+# deploy by esbuild and neither present in index.html. The check was named for
+# what a class can reach and measured what one file happens to contain. Same
+# shape as the gradient counter that measured mentions. 105 -> 61 once the
+# corpus was the files that actually ship.
+#
+# The prefix rule needs a bar: without one, `g${n}` vouched for `gcard`, `gline`
+# and `gotd-streams`, and `n${x}` for `no-label`. A prefix now only vouches if
+# it contains a hyphen or is four characters or more. All six newly-flagged
+# names were then checked by hand and appear ONLY between <style> and </style>.
+#
+# NOT DELETED HERE. 61 rules is a real change and wants its own commit with
+# evidence per group — the nine surviving `ap-*` are pre-Solid ambient panel,
+# the six `wct-*` are World Cup bracket, the six `ts-*` are a tonight-summary
+# card. Recording the number stops the 62nd, which is what a ratchet is for.
+
