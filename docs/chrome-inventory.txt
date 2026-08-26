@@ -17,8 +17,9 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-289  decorative-emoji
-# 79 distinct. This is an icon SYSTEM, not stray decoration: `SPORT_ICONS`
+288  decorative-emoji
+# 79 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
+# went with the tinted box it sat in. This is an icon SYSTEM, not stray decoration: `SPORT_ICONS`
 # (index.html ~6347) maps 27 competitions to emoji, four call sites consume it,
 # and the primary nav is `📰 Desk / 📖 Journal / ⚽ Groups / 🎯 Picks / 📊 Stats`.
 # Checklist item 3 says never use emoji as visual elements in UI components. It
@@ -42,7 +43,21 @@
 # `background-clip: text`. Item 6 names gradient-on-text as a default styling
 # choice to avoid.
 
-19  backdrop-filter
+12  backdrop-filter
+# LOWERED FROM 19 on 2026-08-26. Seven declarations removed from the six
+# surfaces measured below at alpha .90 or above — `.controls`, `.mv-panel`,
+# `.pin-widget`, `.bottom-sheet`, `.legend`, `#field-attention-bar` (one carried
+# a `-webkit-` twin). Screenshot before and after: 3.236% of pixels changed at a
+# MAX CHANNEL DELTA OF 2 OF 255. Six GPU compositing passes for a difference
+# under 1%. The alpha argument is the robust one — whatever sits behind a
+# surface, only `1 - alpha` of it reaches the eye — and the pixel diff
+# corroborates it, with the caveat that this page renders near-empty without
+# relay data, so there was little behind the bars to blur.
+#
+# The twelve that remain are the ones doing visible work: `.pin-btn`/`.star-btn`
+# at 40% show-through, `.picker-overlay` at 30%, the four back-pills at 22%,
+# `.setup-overlay` at 15%.
+#
 # I FIRST WROTE THAT THIS WAS "THE MOST DEFENSIBLE LINE HERE" — all of them on
 # overlay surfaces, a blur saying "content is passing underneath", a platform
 # idiom rather than the frosted-card pattern item 5 is about.

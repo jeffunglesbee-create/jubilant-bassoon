@@ -258,8 +258,7 @@ body::before{
 /* ── CONTROLS BAR ── */
 .controls{
   position:sticky;top:0;z-index:50;
-  background:rgba(8,8,14,.92);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--edge);
+  background:rgba(8,8,14,.92);border-bottom:1px solid var(--edge);
   padding:.55rem 2rem;
 }
 .controls-inner{
@@ -350,8 +349,7 @@ body::before{
 /* ── MULTIVIEW PANEL ── */
 .mv-panel{
   position:sticky;top:54px;z-index:40;
-  background:rgba(13,13,24,.97);backdrop-filter:blur(24px);
-  border-bottom:1px solid var(--edge);
+  background:rgba(13,13,24,.97);border-bottom:1px solid var(--edge);
   padding:.75rem 2rem;
   transition:all .3s ease;
 }
@@ -1167,7 +1165,7 @@ body.wf-mode .np-inner{max-width:100%}
 #score-ticker-wrap::before{content:'';position:absolute;top:0;left:0;width:40px;height:100%;background:linear-gradient(to left,transparent,#070710);pointer-events:none;z-index:2;opacity:var(--m5-left-opacity,0);transition:opacity .2s}
 
 /* Pin to Floating Widget */
-.pin-widget{position:fixed;bottom:72px;right:12px;z-index:48;background:color-mix(in srgb,var(--card) 95%,transparent);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:.5rem .75rem;min-width:110px;max-width:180px;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.4);transition:width .2s,height .2s;backdrop-filter:blur(8px)}
+.pin-widget{position:fixed;bottom:72px;right:12px;z-index:48;background:color-mix(in srgb,var(--card) 95%,transparent);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:.5rem .75rem;min-width:110px;max-width:180px;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.4);transition:width .2s,height .2s;}
 .pin-widget .pw-score{font-size:.75rem;font-weight:700;line-height:1.3}
 .pin-widget .pw-context{font-size:.62rem;color:var(--muted);margin-top:.1rem}
 .pin-widget .pw-tier{font-size:.62rem;font-weight:700;letter-spacing:.04em;margin-top:.1rem}
@@ -1186,7 +1184,7 @@ body.wf-mode .np-inner{max-width:100%}
 /* Bottom-sheet */
 .bottom-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
 .bottom-sheet-overlay.open{opacity:1;pointer-events:all}
-.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:61;background:color-mix(in srgb,var(--card) 98%,transparent);border-top:2px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);padding:0 1.1rem 2rem;backdrop-filter:blur(12px)}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:61;background:color-mix(in srgb,var(--card) 98%,transparent);border-top:2px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);padding:0 1.1rem 2rem;}
 .bs-handle-row{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:center;padding:.65rem 0 .55rem;touch-action:none;cursor:grab;background:color-mix(in srgb,var(--card) 98%,transparent);border-radius:18px 18px 0 0;margin-bottom:.25rem}
 .bs-handle{width:38px;height:4px;background:rgba(255,255,255,.22);border-radius:2px;transition:background .15s}
 .bs-handle-row:active .bs-handle{background:rgba(255,255,255,.45)}
@@ -2348,8 +2346,7 @@ body:not(:has(#main .game-card)) :is(
 /* ── LEGEND ── */
 .legend{
   position:fixed;bottom:1rem;right:1.5rem;z-index:60;
-  background:rgba(13,13,24,.9);backdrop-filter:blur(16px);
-  border:1px solid var(--edge2);border-radius:8px;padding:.5rem .85rem;
+  background:rgba(13,13,24,.9);border:1px solid var(--edge2);border-radius:8px;padding:.5rem .85rem;
   display:flex;gap:.9rem;
 }
 .leg-item{display:flex;align-items:center;gap:.4rem;font-family:var(--ff-cond);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke)}
@@ -2416,11 +2413,14 @@ body:not(:has(#main .game-card)) :is(
   background:linear-gradient(90deg,#a78bfa,transparent);
 }
 .media-title{font-family:var(--ff-display);font-size:1.5rem;font-weight:700;color:var(--white)}
-.media-icon{
-  width:30px;height:30px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;font-size:15px;background:rgba(167,139,250,.12);
-  border:1px solid rgba(167,139,250,.25);
-}
+/* `.media-icon` lived here and was DELETED 2026-08-26: a 30x30 rounded square,
+   violet-tinted at 12% with a violet border at 25%, containing a television
+   emoji, next to a heading reading "Sports Media Today". That is the
+   icon-in-a-coloured-rounded-square pattern the unslop-ui checklist names as
+   its second item, implemented literally, and the checklist's own test settles
+   it: remove the icon and ask whether the UI lost information. A television
+   beside "Sports Media Today" carried none. The heading is now the whole of
+   `.media-head`, which the flex row handles without change. */
 .media-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;
 }
@@ -2820,7 +2820,7 @@ body:not(.journalism-mode) #field-journalism-section{display:none}
 .live-wp-proj-tag{font-size:.55rem;color:#94a3b8;font-weight:600;margin-left:6px;letter-spacing:.06em;text-transform:uppercase;opacity:.85;vertical-align:1px}
 
 /* ── Attention bar — fixed bottom viewport (Step 7) ──────────────────── */
-#field-attention-bar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(15,15,25,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(201,168,76,.2);padding:6px 12px;display:none;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#field-attention-bar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(15,15,25,.92);border-top:1px solid rgba(201,168,76,.2);padding:6px 12px;display:none;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #field-attention-bar::-webkit-scrollbar{display:none}
 #field-attention-bar.active{display:flex;gap:8px;align-items:center}
 .attn-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;min-height:44px;min-width:140px;max-width:220px;flex-shrink:0;font-size:.68rem;cursor:pointer;transition:background .2s;scroll-snap-align:start}
@@ -4954,7 +4954,6 @@ var _DOM = null;
 <div class="page-divider"><div class="divider-line"></div><div class="divider-label">Also streaming today</div><div class="divider-line"></div></div>
 <section class="media-section" id="media-section">
   <div class="media-head">
-    <div class="media-icon">📺</div>
     <span class="media-title">Sports Media Today</span>
   </div>
   <div id="smt-note-bar" style="display:none;font-size:.7rem;color:var(--platinum);line-height:1.5;padding:.3rem 0 .6rem;border-bottom:1px solid var(--edge);margin-bottom:.5rem;opacity:.85"></div>
