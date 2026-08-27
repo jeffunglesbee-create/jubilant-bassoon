@@ -547,10 +547,19 @@
 # glyph — so three survived a pass that reported success. Same bug as the
 # counter's, in the tool written after the counter was fixed for it.
 #
-# `src/solid/ambient-island.jsx` was swept too. It is bundled into the deploy by
-# esbuild and NOT covered by any line in this file, because every count here
-# reads index.html. That is a real gap and it is stated rather than closed: four
-# captioned glyphs were removed there by hand-running the same tool.
+# `src/solid/ambient-island.jsx` was swept too, by hand-running the same tool,
+# because it is bundled into the deploy by esbuild and was covered by no line
+# here — every count read index.html alone.
+#
+# THAT GAP IS CLOSED as of 2026-08-27. The counters read index.html PLUS every
+# .jsx/.ts/.tsx under src/, minus src/legacy/ — which sync-source copies into the
+# script block verbatim, so counting it again would double every glyph in the
+# largest file in the repo. Four files join the corpus.
+#
+# No number moved, because the hand sweep had already cleared the only file that
+# carried any. A green run therefore proves nothing about the widening, so five
+# self-tests do instead: an extra body contributes its glyphs, is comment-
+# stripped like the page, does NOT feed the CSS counters, and legacy/ is skipped.
 #
 # THE FOUR THAT REMAIN ARE NOT CAPTIONED AND NOT DEFECTS. Two are icon-only
 # buttons — pin and calendar — each carrying a real `aria-label`, which is the

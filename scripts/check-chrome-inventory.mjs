@@ -31,7 +31,8 @@
 //
 // Usage:  node scripts/check-chrome-inventory.mjs [--self-test]
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const IS_MAIN = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
@@ -326,9 +327,38 @@ export function iconBoxes(css) {
   return out
 }
 
-export function countsFor(html) {
+/// THE FILES esbuild BUNDLES THAT index.html DOES NOT CONTAIN.
+///
+/// Every count in this file read index.html alone until 2026-08-27, which meant
+/// `src/solid/ambient-island.jsx` and `src/debrief/index.ts` were invisible to
+/// all of them — bundled into the deploy, emitting chrome onto the page, and
+/// covered by no line here. `unreferenced-css-check.mjs` had already learned
+/// this the hard way: scanning index.html alone reported 105 dead classes, 52
+/// of which those two files emit.
+///
+/// The gap was stated in docs/chrome-inventory.txt rather than closed, and four
+/// captioned glyphs in the JSX were swept by hand-running the tool. Stating a
+/// gap is not closing it, so this closes it.
+///
+/// Read as EXTRA BODY, not as extra markup: these files carry no <style> block,
+/// so the CSS counters are unaffected and only the glyph counts move.
+export function bundledSources(root = 'src') {
+  const out = []
+  const walk = d => { for (const e of readdirSync(d, { withFileTypes: true })) {
+    const p = join(d, e.name)
+    if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== 'legacy') walk(p); continue }
+    if (/\.(jsx|tsx|ts)$/.test(e.name)) out.push(p)
+  } }
+  try { walk(root) } catch { /* no src/ — the counters still work on the page alone */ }
+  return out
+}
+
+export function countsFor(html, extraBodies = []) {
   const css = styleBlockOf(html)
-  const body = bodyOf(html)
+  // `src/legacy/field.js` is deliberately NOT in the extra list: sync-source
+  // writes it into index.html's script block verbatim, so counting it again
+  // would double every glyph in the largest file in the repo.
+  const body = bodyOf(html) + extraBodies.map(t => '\n' + stripComments(t)).join('')
   const e = emojiCensus(body)
   const n = (re, s) => (s.match(re) || []).length
   return {
@@ -525,6 +555,21 @@ if (SELF_TEST) {
     colouredShadows('a{box-shadow:0 0 1px #fff}b{box-shadow:0 0 1px #f00}') === 2)
 
   const inv = parseInventory('# note\n\n  12  gradient   # why\n3 keyframes\n')
+  // ── the corpus reaches past index.html ────────────────────────────────────
+  check('an extra body contributes its glyphs',
+    countsFor('<body></body>', ['<span>📰</span>'])['decorative-emoji'] === 1)
+  check('with no extra bodies the count is the page alone',
+    countsFor('<body><span>📰</span></body>')['decorative-emoji'] === 1)
+  check('an extra body is comment-stripped like the page is',
+    countsFor('<body></body>', ['// the 📰 icon went here'])['decorative-emoji'] === 0)
+  check('an extra body does NOT feed the CSS counters',
+    countsFor('<style>a{color:red}</style><body></body>',
+              ['const g = "linear-gradient(red,blue)"']).gradient === 0,
+    'a JS string mentioning a gradient would count as a stylesheet rule')
+  check('bundledSources skips legacy/, which sync-source already copies in',
+    bundledSources('src').every(f => !f.includes('legacy')),
+    'field.js would be counted twice — once in the script block, once here')
+
   check('the inventory parser ignores comments and blanks',
     inv.get('gradient') === 12 && inv.get('keyframes') === 3 && inv.size === 2)
 
@@ -540,11 +585,13 @@ if (SELF_TEST) {
 // ── live ────────────────────────────────────────────────────────────────────
 
 if (IS_MAIN) {
-  const counts = countsFor(readFileSync('index.html', 'utf8'))
+  const bundled = bundledSources()
+  const counts = countsFor(readFileSync('index.html', 'utf8'),
+                           bundled.map(f => readFileSync(f, 'utf8')))
   const declared = parseInventory(readFileSync(INVENTORY, 'utf8'))
 
   let failed = 0
-  console.log(`\n  unslop-ui checklist, counted in index.html\n`)
+  console.log(`\n  unslop-ui checklist, counted in index.html + ${bundled.length} bundled source file(s)\n`)
   for (const [name, n] of Object.entries(counts)) {
     const max = declared.get(name)
     if (max === undefined) {
