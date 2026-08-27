@@ -66,10 +66,27 @@ export function styleBlockOf(html) {
 ///
 /// Both forms are decoded. Anything outside the emoji ranges is unaffected,
 /// because the counters filter on codepoint afterwards regardless.
+/// COMMENTS ARE STRIPPED HERE FOR THE REASON THEY ARE STRIPPED FROM THE
+/// STYLESHEET: a counter that reads prose ABOUT the page is measuring mentions.
+/// `styleBlockOf` learned this when deleting three gradient underlines dropped
+/// the gradient count by two — the comment explaining the deletion says
+/// `linear-gradient`. The body had the same exposure and 20 instances of it: a
+/// comment naming a pictograph it is explaining the removal of counted as a
+/// pictograph on the page.
+///
+/// Conservative on purpose. Only a line whose TRIMMED START is `//`, `*` or
+/// `<!--` is dropped, plus whole `/* ... */` blocks. A naive `//` strip would
+/// eat every `https://` in the file, which is the kind of over-reach this whole
+/// audit has been undoing.
+const stripComments = t => t
+  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/<!--[\s\S]*?-->/g, ' ')
+  .split('\n').filter(l => !/^\s*(\/\/|\*(?!\/))/.test(l)).join('\n')
+
 export function bodyOf(html) {
   const i = html.indexOf('<body')
   if (i < 0) return ''
-  return html.slice(i).replace(/\\u\{([0-9a-fA-F]{1,6})\}|\\u([0-9a-fA-F]{4})/g,
+  return stripComments(html.slice(i)).replace(/\\u\{([0-9a-fA-F]{1,6})\}|\\u([0-9a-fA-F]{4})/g,
     (m, a, b) => { const cp = parseInt(a || b, 16)
                    return cp > 0x10FFFF ? m : String.fromCodePoint(cp) })
 }
@@ -363,6 +380,18 @@ if (SELF_TEST) {
     'SPORT_META spelled eight sport emoji this way and no counter saw them')
   check('a four-digit escape decodes too',
     bodyOf('<body>\\u26BE</body>') === '<body>\u26BE</body>')
+  check('a line comment naming a glyph is not a glyph on the page',
+    emojiCensus(bodyOf('<body>\n  // the 📰 Desk icon was deleted here\n</body>')).decorative === 0,
+    'prose about a deletion counted as the thing deleted — the gradient bug, in the body')
+  check('a block comment is stripped too',
+    emojiCensus(bodyOf('<body>/* 📰 gone */</body>')).decorative === 0)
+  check('an HTML comment is stripped',
+    emojiCensus(bodyOf('<body><!-- 📰 gone --></body>')).decorative === 0)
+  check('a URL is NOT eaten by the line-comment rule',
+    bodyOf('<body>const u = "https://example.com/\u{1F4F0}"</body>').includes('https://example.com'),
+    'a naive // strip would delete every URL in the file')
+  check('real code on the page still counts',
+    emojiCensus(bodyOf('<body><span>📰 Desk</span></body>')).decorative === 1)
   check('plain text is untouched',
     bodyOf('<body>plain text</body>') === '<body>plain text</body>')
   check('an out-of-range escape is left as written, not thrown on',
