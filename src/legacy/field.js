@@ -22372,7 +22372,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26j';
+  const SW_VERSION = '2026-08-26k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -39946,12 +39946,6 @@ function renderScoreTicker() {
     })
     .sort((a,b) => b.trendScore - a.trendScore);
   if (!liveGames.length) { wrap.style.display = 'none'; return; }
-  const sp = s => s?.includes('basketball')||s?.includes('nba') ? '🏀'
-    : s?.includes('hockey')||s?.includes('nhl') ? '🏒'
-    : s?.includes('baseball')||s?.includes('mlb') ? '⚾'
-    : s?.includes('football')||s?.includes('nfl') ? '🏈'
-    : s?.includes('tennis') ? '🎾'
-    : s?.includes('afl')||s?.includes('australian') ? '🏉' : '🏅';
   const chips = liveGames.map(({gid, e, drama, trendBonus}) => {
     const fire = drama >= getDramaDial() ? ' fire' : '';
     const icon = drama >= Math.min(getDramaDial()+20,95) ? '🔥' : drama >= getDramaDial() ? '⚡' : '';
@@ -39970,7 +39964,14 @@ function renderScoreTicker() {
     const leagueTag = league ? `<span class="ticker-league">${league}</span>` : '';
     const perTag = per ? ` <span class="ticker-per">${per}</span>` : '';
     const text = `${leagueTag}${awayNick} <span class="ticker-score">${e.awayScore||0}–${e.homeScore||0}</span> ${homeNick}${perTag}${icon?' '+icon:''}${rising}`;
-    return `<div class="ticker-chip${fire}" onclick="scrollToGame('${gid}')" title="Drama ${Math.round(drama)}${trendBonus>=8?' · rising':''}">${text}</div>`;
+    // ADR-002 Step 3: the raw composite drama number must not reach user-visible
+    // output on a LIVE game, and a `title` attribute is user-visible — it renders
+    // as a native tooltip on hover. This ticker is live-only (`state === 'in'`),
+    // and it was emitting `title="Drama 87"`. The number is gone; `rising` is a
+    // named factual observation about the trend, not a composite score, so it
+    // stays and the attribute is emitted only when there is something to say.
+    const _title = trendBonus >= 8 ? ' title="Rising"' : '';
+    return `<div class="ticker-chip${fire}" onclick="scrollToGame('${gid}')"${_title}>${text}</div>`;
   }).join('');
   const _tickerHTML = `<div class="score-ticker">${chips}</div>`;
   // Skip DOM write if content unchanged — avoids reflow on every 30s poll

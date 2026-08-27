@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-200  decorative-emoji
+193  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
 148  decorative-emoji-labelled
-52  decorative-emoji-alone
+45  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -315,7 +315,7 @@
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
 
-52  emoji-announced
+45  emoji-announced
 # WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
 #
 # Every other line here asks some form of "does this look like decoration", and
@@ -342,6 +342,16 @@
 # "Fire game" and "Heating up" are NOT invented here. They already existed in
 # this file, at the one drama-band site that was captioned — which is why that
 # site never appeared in the uncaptioned count. Its glyphs went too.
+#
+# A DEAD SPORT-GLYPH FUNCTION, seven more. `sp = s => ...basketball... ?
+# '\U0001F3C0' : ...` was declared inside the live score ticker and never
+# called: the chip template computes `league` ('NBA', 'NHL', ...) two lines
+# further down and renders that instead. Six glyphs plus a fallback, reachable
+# by nothing. STANDARDS Rule 63.
+#
+# Reading that block for the glyphs is what surfaced the ADR-002 exposure fixed
+# in the same push — the chip's `title` attribute. Auditing chrome found a
+# compliance defect, which is an argument for the audits.
 #
 # A FOURTH FORM: the caption is CONCATENATED at runtime.
 #
