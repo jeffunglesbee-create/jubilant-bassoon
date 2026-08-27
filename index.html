@@ -11500,14 +11500,14 @@ function parseSeriesRecord(g) {
   if(/tied 3.?3|3.3|game 7/i.test(raw))
     return {tied:true,wins:3,losses:3,deciding:true,homeElim:false,awayElim:false,
             homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:6,
-            label:'Game 7 \u2014 winner takes all',icon:'\u{1F3C6}',importance:'series_deciding',boost:30};
+            label:'Game 7 \u2014 winner takes all',importance:'series_deciding',boost:30};
   const tieMat = raw.match(/tied\s+(\d)-(\d)/);
   if(tieMat){
     const a=parseInt(tieMat[1]),b=parseInt(tieMat[2]);
     const boost=a===2?12:a===1?8:0;
     return {tied:true,wins:a,losses:b,deciding:false,homeElim:false,awayElim:false,
             homeClinch:false,awayClinch:false,leadsName:null,leadingTeam:null,totalGames:a+b,
-            label:'Series tied '+a+'-'+b,icon:'\uD83D\uDCCA',importance:'playoff_impl',boost};
+            label:'Series tied '+a+'-'+b,importance:'playoff_impl',boost};
   }
   const leadMat = raw.match(/(\w[\w\s]+?)\s+leads?\s+(\d)-(\d)/i);
   if(!leadMat) return null;
@@ -11544,21 +11544,21 @@ function parseSeriesRecord(g) {
   const homeElim31=awayLeads&&wins===3&&losses===1, awayElim31=homeLeads&&wins===3&&losses===1;
   const homeElim30=awayLeads&&wins===3&&losses===0, awayElim30=homeLeads&&wins===3&&losses===0;
   const homeClinch=homeLeads&&wins===3, awayClinch=awayLeads&&wins===3;
-  let importance='playoff_impl',boost=5,label='',icon='\uD83D\uDCCA';
+  let importance='playoff_impl',boost=5,label='';
   if(homeElim||awayElim){ importance='elimination';boost=22;
-    label=(homeElim?g.home:g.away)+' must win';icon='\u26A0\uFE0F';
+    label=(homeElim?g.home:g.away)+' must win';
   } else if(homeElim31||awayElim31){ importance='elimination';boost=18;
-    label='Elimination game \u2014 season on the line';icon='\u26A0\uFE0F';
+    label='Elimination game \u2014 season on the line';
   } else if(homeElim30||awayElim30){ importance='elimination';boost=22;
-    label='Facing elimination sweep';icon='\u26A0\uFE0F';
+    label='Facing elimination sweep';
   } else if(homeClinch||awayClinch){ importance='clinch';boost=wins===3&&losses===2?18:15;
-    label=(homeClinch?g.home:g.away)+' \u2014 one win from advancing';icon='\u2713';
+    label=(homeClinch?g.home:g.away)+' \u2014 one win from advancing';
   } else if(wins===2&&losses===1){ boost=8;label='One team holds the edge';
   } else if(wins===1&&losses===0){ boost=5;label='Early series advantage'; }
   return {tied:false,wins,losses,deciding:false,leadsName,leadingTeam,
           homeElim:homeElim||homeElim31||homeElim30,
           awayElim:awayElim||awayElim31||awayElim30,
-          homeClinch,awayClinch,totalGames:wins+losses,label,icon,importance,boost};
+          homeClinch,awayClinch,totalGames:wins+losses,label,importance,boost};
 }
 
 // ── Standing Velocity (spec: 1xfpxvboLX4trAuA0Wz_KW3S0lRa60vXSaONUwRptZZ8) ──────────────
@@ -14749,7 +14749,7 @@ function buildDynamicPregames(){
           try {
             const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nba') : null;
             const _statStr = _sd ? ' \u00b7 ' + _sd.shortText : '';
-            const _spStr = (typeof isScoutsPick === 'function' && isScoutsPick(game)) ? ' \uD83D\uDD0D' : '';
+            const _spStr = (typeof isScoutsPick === 'function' && isScoutsPick(game)) ? " \u00b7 Scout's Pick" : '';
             return _base ? _base + _statStr + _spStr : null;
           } catch(e_) { return _base; }
         })(),
@@ -14790,7 +14790,7 @@ function buildDynamicPregames(){
           try {
             const _sd = typeof getStatOfDay === 'function' ? getStatOfDay(game, 'nhl') : null;
             const _statStr = _sd ? ' \u00b7 ' + _sd.shortText : '';
-            const _spStr = (typeof isScoutsPick === 'function' && isScoutsPick(game)) ? ' \uD83D\uDD0D' : '';
+            const _spStr = (typeof isScoutsPick === 'function' && isScoutsPick(game)) ? " \u00b7 Scout's Pick" : '';
             return _base ? _base + _statStr + _spStr : null;
           } catch(e_) { return _base; }
         })(),
@@ -27253,7 +27253,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26m';
+  const SW_VERSION = '2026-08-26n';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

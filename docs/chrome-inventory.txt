@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-155  decorative-emoji
+150  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
 146  decorative-emoji-labelled
-9  decorative-emoji-alone
+4  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -145,7 +145,7 @@
 # Defensible as DATA rather than decoration, and listed separately so it is never
 # conflated with the line above. The checklist would still prefer SVG.
 
-105  status-glyph
+101  status-glyph
 # ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
 # carry meaning, and they are still typography doing an icon's job.
 
@@ -267,6 +267,15 @@
 # `wct-*` (World Cup bracket), six `ts-*` (a tonight-summary card), three each of
 # `pw-*`, `sac-*`, `sq-*`, `wc-*`.
 #
+# THREE MORE `{label, icon}` FIELDS SURVIVED THE FIRST PASS and went on
+# 2026-08-27, plus a fourth as a mutable variable. The same-line rule required
+# `label:` and `icon:` on one line; these had the label on the PRECEDING line of
+# a multi-line object literal, and two more were spelled `icon:'\u{1F3C6}'`
+# rather than as characters — the escape blind spot, in the one file that had
+# already been cleaned once. `ctx.icon` has had no reader since the
+# `_importanceIcon` plumbing was deleted, so all of them were dead as well as
+# uncaptioned.
+#
 # TWO PARSING BUGS WERE CAUGHT BEFORE ANYTHING WAS DELETED, both in the tool
 # that decided what to delete:
 #
@@ -315,7 +324,7 @@
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
 
-7  emoji-announced
+2  emoji-announced
 # WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
 #
 # Every other line here asks some form of "does this look like decoration", and
@@ -340,7 +349,27 @@
 # so the glyph never speaks. `title` counts too, as the fallback name. An EMPTY
 # aria-label does not count, and there is a case for that.
 #
-# 82 -> 11 across 2026-08-26/27.
+# 82 -> 2 across 2026-08-26/27.
+#
+# THE TWO THAT REMAIN ARE THE CHECK'S FLOOR, not a backlog, and the distinction
+# is worth stating rather than chasing a zero that would be false.
+#
+# Both are the fire and bolt inside `dramaTierMark(tier)` — the ONE definition
+# of the drama-tier mark, after the three implementations of it were merged. Its
+# two call sites both hide the glyph from the accessibility tree: inline
+# `aria-hidden` in the markup for `.mlb-chip-drama`, and `setAttribute` for
+# `.drama-badge`. The check reads SOURCE POSITION, so it can credit an attribute
+# only where it sits beside the glyph, and it cannot follow a value from a
+# function to the elements that render it.
+#
+# The alternative was a suppression comment the check would honour. That is an
+# acknowledgment list, and scripts/history-check.mjs in field-laboratory forbids
+# one in its own words — "this repo has no acknowledgment list and must not
+# acquire one" — having been built to delete the one production shipped. The
+# same objection applies here, so the number stands at 2 and says why.
+#
+# Merging the three implementations is also what makes 2 the floor rather than
+# 6: one definition can only be counted once.
 #
 # THE ELEVEN THAT REMAIN ARE A LIMIT OF THE CHECK, NOT A BACKLOG, and it is
 # worth stating rather than chasing to a zero that would be false. The check
