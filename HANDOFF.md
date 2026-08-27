@@ -1,5 +1,46 @@
 # FIELD HANDOFF
 
+
+## Session 2026-08-26/27 — the unslop-ui chrome audit (jubilant-bassoon)
+
+**Session doc: `outbox/cc-session-2026-08-26-chrome-audit.md`**
+
+HEAD `796dae5` → `cba45b3`. Smoke **985/0 at every commit**. SW_VERSION
+`2026-08-26n`. Deploy gate and both viewport audits green on every push.
+
+`docs/chrome-inventory.txt` now carries **nine ratchet lines**, five created
+this session, enforced by `.github/workflows/chrome-inventory.yml` — which also
+did not exist: the ratchet ran only inside `deploy-gate.yml`, whose `paths`
+covered neither of the ratchet's own inputs.
+
+```
+decorative-emoji  275 → 150      emoji-announced   82 → 2   (new)
+  uncaptioned     166 →   4      glyph-ambiguity    7 → 1   (new)
+flag-emoji        102 →  92      unreferenced-css  61 → 0   (new)
+status-glyph      107 → 101      icon-in-a-box      4 → 1   (new)
+gradient           34 →  30      glyph-singleton      25    (new)
+backdrop-filter    19 →  12
+```
+
+**Read this if you touch the ticker:** the emoji audit turned up an ADR-002
+bright-line violation. The live score ticker emitted
+`title="Drama ${Math.round(drama)}"` — the raw composite, on `state === 'in'`
+chips, in the DOM. Fixed in `ae170a8`. Step 3 of the decision tree is explicit
+that a displayed composite number is a violation "regardless of other
+mitigations", and a `title` renders as a tooltip.
+
+**The mechanism worth carrying forward:** a check with ONE remedy gets that
+remedy. The boundary assertion asked "is there a boundary at 3:1?", whose only
+answer is *add a boundary* — nine were added and three were wrong. It asks
+"boundary at 3:1 **or** no fill of its own" now and prints which answer carried
+each element. Six further defects in the checks themselves are listed in the
+session doc; every one was caught by running the check, not by reviewing it.
+
+**Open, not backlogs:** `glyph-singleton` 25 is a house-style decision left
+deliberately unswept; `emoji-announced` 2 is the check's floor, both inside
+`dramaTierMark()` where the render sites hide the glyph but the source-position
+check cannot follow the reference.
+
 ## Session 2026-08-21 — field-laboratory CC-CMD queue (updated: EPL live; 3 asks corrected against HEAD)
 
 Filed from the **field-laboratory** session (docs in
