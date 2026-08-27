@@ -1,5 +1,53 @@
 # FIELD HANDOFF
 
+## Session 2026-08-27 — the NFL EP model moved to the relay (jubilant-bassoon)
+
+HEAD `254f05e` → this commit. Smoke **986/0**. SW_VERSION `2026-08-27a`.
+
+`_computeESPNPlayEPA` is **deleted**. `_fetchNFLGameEpa` now reads
+`GET /nfl/epa/plays?event={espnGameId}` from the relay, which computes the same
+numbers from the same table. Two copies of one EP model were free to disagree;
+there is one copy now, and `scripts/nfl-epa-transcription-check.mjs` in
+field-relay-nba holds this file's former code verbatim and blocks that deploy if
+the two ever diverge.
+
+### Integration state (Rule 65)
+
+| | |
+|---|---|
+| **Relay contract** | `GET {_UFL_RELAY}/nfl/epa/plays?event={numeric ESPN id}` → `{event, currentDrive, driveCount, plays:[{id, epa, ep_start, ep_end, scoringPlay, drive, down, distance, yardsToEndzone}]}`. Cache 25s (the `/espn-summary` TTL it borrows). Full row-by-row spec in CONTRACTS.md. |
+| **Client consumer** | `_fetchNFLGameEpa` (`src/legacy/field.js`), polled every 30s by `_pollNFLEpa`. Renders through `_buildUFLEpaHTML`, unchanged. |
+| **Integration status** | **VERIFIED.** Live probe run 33123265487 (relay, post-deploy): Seahawks at Titans, 149 route plays / 149 client plays / **0 disagreements**, 12 enumerated pairs all non-zero. |
+| **Known mismatches** | None. Two were found and closed before the switch — see below. |
+
+### What the switch had to fix first
+
+**The route served no situation label, and the renderer reads one.**
+`_buildUFLEpaHTML` prints `lp.situation`. The relay now serves the three numbers
+that label is built from — `down`, `distance`, `yardsToEndzone` — and the new
+`_epaSituation()` formats them here. Serving the string instead would put an
+English word list and an OWN/OPP viewpoint in the relay. Both the relay's
+transcription check (317 synthetic plays) and its live probe assert the label
+rebuilds from those numbers byte for byte, so the drop is measured lossless.
+
+**`homePts`/`awayPts` are gone from the NFL state, and nothing noticed.** This
+function stashed them from the last raw ESPN play. Nothing has ever read them:
+the only readers of that state are `_buildUFLEpaHTML` (`lastPlay`, `driveEpa`,
+`drivePlayCount`) and the card gate's `_epaLive?.lastPlay`. Rule 63 — they are
+not carried into the new contract. The UFL path still sets its own; untouched.
+
+**`_epLookup` and `_epTable` STAY.** The relay route is NFL-only;
+`_computeSRPlayEPA` (UFL/SportRadar) is still a browser-side consumer of that
+table, at three call sites. The CC-CMD said to delete them, and the CC-CMD was
+wrong — deleting them would have taken the UFL panel with it.
+
+**Smoke A-NFLEPA-1 pinned the deleted symbol** and the old `/espn-summary` URL,
+so it had to move with the code. A-NFLEPA-2 is new and asserts the browser-side
+EP model is **absent** — the CC-CMD's done condition, as a blocking check rather
+than a one-off grep, because a route that ships beside the old computation has
+duplicated the model rather than moved it.
+
+
 
 ## Session 2026-08-26/27 — the unslop-ui chrome audit (jubilant-bassoon)
 

@@ -6884,52 +6884,51 @@ async function uflEpaInit(){
 // ESPN play.start.{down,distance,yardsToEndzone} — yardsToEndzone IS yardline_100
 // with NO conversion (unlike SR, which needs _srSitToYL100); play.type.text,
 // play.scoringPlay, play.end.yardsToEndzone, per-play homeScore/awayScore present.
-function _computeESPNPlayEPA(play){
-  if(!play?.start) return null;
-  const SKIP=['Kickoff','Extra Point','Two-Point Conversion','Timeout','Two Minute Warning','End of Period','End of Half','End of Game'];
-  const ptext=play.type?.text||'';
-  if(SKIP.some(t=>ptext.includes(t))) return null;
-  const down=play.start.down, ytg=play.start.distance, yl100=play.start.yardsToEndzone;
-  if(!down||!ytg||!yl100) return null;                 // ESPN yardsToEndzone == yardline_100 directly
-  const epStart=_epLookup(down,ytg,yl100);
+// The situation label, and nothing else. The ESPN per-play EP model that used
+// to live here is gone (its name is deliberately not repeated: the done
+// condition for CC-CMD-2026-08-27-relay-per-play-epa is that the identifier
+// appears zero times in this file, and a grep cannot tell a definition from a
+// eulogy -- git log -S finds it). The relay computes EPA now, at
+// GET /nfl/epa/plays, so field-laboratory and this client cannot drift into two
+// EP models of the same quantity. The relay serves the three lookup inputs
+// rather than this string, because an English word list and an OWN/OPP
+// viewpoint are a display choice; the relay's transcription check and its live
+// route probe both assert the string rebuilds from those numbers byte for byte.
+//
+// `_epLookup` and `_epTable` STAY. They are still the UFL path's model
+// (`_computeSRPlayEPA`, three call sites) -- the relay route is NFL-only.
+function _epaSituation(down,ytg,yl100){
   const downs=['1st','2nd','3rd','4th'];
-  const sit=`${downs[down-1]||down} & ${ytg} @ ${yl100<=50?'OPP '+yl100:'OWN '+(100-yl100)}`;
-  if(play.scoringPlay){
-    const lc=ptext.toLowerCase();
-    const isFG=lc.includes('field goal')&&!lc.includes('miss');
-    const epEnd=isFG?3:6.96;
-    const epa=Math.round((epEnd-epStart)*100)/100;
-    return{epa,ep_start:epStart,ep_end:epEnd,situation:sit};
-  }
-  if(play.isTurnover){
-    const epEnd=-_epLookup(1,10,Math.max(1,Math.min(99,100-yl100)));
-    const epa=Math.round((epEnd-epStart)*100)/100;
-    return{epa,ep_start:epStart,ep_end:epEnd,situation:sit};
-  }
-  if(!play.end||play.end.yardsToEndzone===undefined||play.end.yardsToEndzone===null) return null;
-  const epEnd=_epLookup(play.end.down,play.end.distance,play.end.yardsToEndzone);
-  const epa=Math.round((epEnd-epStart)*100)/100;
-  return{epa,ep_start:epStart,ep_end:epEnd,situation:sit};
+  return `${downs[down-1]||down} & ${ytg} @ ${yl100<=50?'OPP '+yl100:'OWN '+(100-yl100)}`;
 }
 
 async function _fetchNFLGameEpa(espnGameId,fieldGameId){
   try{
-    const resp=await fetch(`${_UFL_RELAY}/espn-summary/sports/football/nfl/summary?event=${espnGameId}`);
+    const resp=await fetch(`${_UFL_RELAY}/nfl/epa/plays?event=${espnGameId}`);
     if(!resp.ok) return;
-    const summary=await resp.json();
-    const drives=summary.drives||{};
-    const prev=Array.isArray(drives.previous)?drives.previous:[];
-    const curr=drives.current;
+    const data=await resp.json();
+    const all=Array.isArray(data.plays)?data.plays:[];
+    if(!all.length) return;
     // Current drive if live; else the most recent completed drive (matches the
     // UFL "last drive" behavior, so a just-finished game still shows its close).
-    const curDrivePlays=(curr?.plays&&curr.plays.length)?curr.plays:(prev.length?(prev[prev.length-1].plays||[]):[]);
-    if(!curDrivePlays.length) return;
-    const plays=curDrivePlays.map(_computeESPNPlayEPA).filter(Boolean);
+    // `currentDrive` is null exactly when no drive is in progress -- the route
+    // answers that question directly, so the drive index is not inferred here.
+    // The relay omits plays that carry no EPA, so a live drive of nothing but a
+    // kickoff filters to empty and this returns, leaving the last render in
+    // place. That is what the old code did with the same drive.
+    const target=(data.currentDrive??null)!==null?data.currentDrive:all[all.length-1].drive;
+    const plays=all.filter(p=>p.drive===target)
+      .map(p=>({epa:p.epa,ep_start:p.ep_start,ep_end:p.ep_end,
+                situation:_epaSituation(p.down,p.distance,p.yardsToEndzone)}));
     if(!plays.length) return;
     const driveEpa=Math.round(plays.reduce((s,p)=>s+(p.epa||0),0)*100)/100;
-    const lastEvt=curDrivePlays[curDrivePlays.length-1];
+    // homePts/awayPts are NOT carried. This function used to stash them from the
+    // last raw ESPN play and nothing has ever read them -- the only readers of
+    // this state are _buildUFLEpaHTML (lastPlay, driveEpa, drivePlayCount) and
+    // the card gate's `_epaLive?.lastPlay`. The UFL path still sets them; that
+    // is its own contract and is untouched.
     const state={plays,driveEpa,drivePlayCount:plays.length,lastPlay:plays[plays.length-1]||null,
-      homePts:lastEvt?.homeScore??null,awayPts:lastEvt?.awayScore??null,updated:Date.now()};
+      updated:Date.now()};
     _uflEpaState[espnGameId]=state;
     if(typeof allData!=='undefined'){
       const gObj=(allData.sports||[]).flatMap(s=>s.games||[]).find(g=>g._id===fieldGameId);
@@ -22369,7 +22368,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26o';
+  const SW_VERSION = '2026-08-27a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

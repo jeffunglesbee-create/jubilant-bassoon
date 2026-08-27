@@ -1022,11 +1022,20 @@ assert('A199 — UFL-EPA: card template EPA block present',
   html.includes('_buildUFLEpaHTML') && html.includes('ufl-epa-live'),
   'EPA block must be present in card template and CSS');
 
-assert('A-NFLEPA-1 — NFL-EPA: ESPN PBP EPA wired (functions + route + gate + startup)',
-  html.includes('_computeESPNPlayEPA') && html.includes('_pollNFLEpa') &&
-  html.includes('nflEpaInit') && html.includes('/espn-summary/sports/football/nfl/summary') &&
+assert('A-NFLEPA-1 — NFL-EPA: relay EPA route wired (formatter + poll + route + gate + startup)',
+  html.includes('_epaSituation') && html.includes('_pollNFLEpa') &&
+  html.includes('nflEpaInit') && html.includes('/nfl/epa/plays?event=') &&
   html.includes("['UFL','NFL'].includes(g._sport)") && html.includes('setTimeout(nflEpaInit'),
-  'NFL EPA must be wired: _computeESPNPlayEPA/_pollNFLEpa/nflEpaInit, espn-summary route, NFL card gate, startup call');
+  'NFL EPA must be wired: _epaSituation/_pollNFLEpa/nflEpaInit, relay /nfl/epa/plays route, NFL card gate, startup call');
+
+// The done condition of CC-CMD-2026-08-27-relay-per-play-epa, as a blocking
+// check rather than a one-off grep. A route that ships BESIDE the browser's EP
+// model has not moved the model, it has duplicated it -- and two measurements
+// of one quantity are free to disagree. This fails if the old computation is
+// ever reintroduced under its own name.
+assert('A-NFLEPA-2 — NFL-EPA: the browser-side ESPN EP model is gone, not duplicated',
+  !html.includes('_compute' + 'ESPNPlayEPA'),
+  'the relay owns the NFL EP model now; a second copy here can drift from it');
 
 assert('A-NFLINJ-1 — NFL-INJ: injury designations wired (init + accessor + fetch + render + boot)',
   html.includes('nflInjuriesInit') && html.includes('getNFLInjuries') &&
