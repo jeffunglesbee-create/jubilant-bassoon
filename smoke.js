@@ -4850,16 +4850,23 @@ assert('A663 — _sseScoreTs stores typed events; getPulseChip emits 4 signal ty
   /scores\.length >= 3/.test(html) &&
   /totalDelta >= 0\.08/.test(html) &&
   /sit && sit\.outs >= 2/.test(html) &&
-  // Returns {icon, text}; window export.
-  /icon: '⚡'/.test(html) &&
-  /icon: '🔥'/.test(html) &&
-  /icon: '📊'/.test(html) &&
-  /icon: '⚾'/.test(html) &&
+  // Returns {type, text}; window export. The four signals were identified by a
+  // PICTOGRAPH until 2026-08-27 — {icon:'⚡'} and friends — and the chip then
+  // rendered that glyph both as its visible content and as the value of
+  // data-pulse-type. Nothing styled the attribute, and a screen reader read the
+  // chip's leading character as "high voltage". The signal name is now the
+  // attribute value, which is what a data attribute is for, and `text` was
+  // always the caption.
+  /type: 'lead_change'/.test(html) &&
+  /type: 'scoring_run'/.test(html) &&
+  /type: 'wp_move'/.test(html) &&
+  /type: 'mlb_situation'/.test(html) &&
+  /data-pulse-type="\$\{_p\.type\}"/.test(html) &&
   /window\.getPulseChip = getPulseChip/.test(html) &&
   // Card template invokes getPulseChip only on live cards.
   /if\(!isLive\|\|typeof window\.getPulseChip!=='function'\) return ''/.test(html) &&
   /pulse-chip/.test(html),
-  'CC-CMD pulse-cascade Pulse Chip: factual per-card annotation when notable live events arrive. _sseScoreTs migrated from raw-number timestamps to {type, ts, data} objects (legacy entries still tolerated by _getVelocity/_isSSECovered during rollout). score/lead_change/wp_update all push into the same ring buffer (max 20 entries). getPulseChip checks four signals in priority order — lead_change >=2 → ⚡, score >=3 → 🔥, cumulative wp_update |Δ| >= 0.08 → 📊, MLB close & late w/ runners on + 2 outs → ⚾ — and returns the first match as {icon, text}. Card template renders the chip only when isLive (state === in) so the chip disappears on its own once events age out of the 5-min window. RUWT-clean — every signal is a count or sum of named factual observations from the relay.');
+  'CC-CMD pulse-cascade Pulse Chip: factual per-card annotation when notable live events arrive. _sseScoreTs migrated from raw-number timestamps to {type, ts, data} objects (legacy entries still tolerated by _getVelocity/_isSSECovered during rollout). score/lead_change/wp_update all push into the same ring buffer (max 20 entries). getPulseChip checks four signals in priority order — lead_change >=2, score >=3, cumulative wp_update |Δ| >= 0.08, MLB close & late w/ runners on + 2 outs — and returns the first match as {type, text}, where type names the signal and doubles as the data-pulse-type attribute value. Card template renders the chip only when isLive (state === in) so the chip disappears on its own once events age out of the 5-min window. RUWT-clean — every signal is a count or sum of named factual observations from the relay.');
 
 // ── A664 / CC-CMD pulse-cascade CASCADE narrative ──
 assert('A664 — renderCascadeNarrative consumes bracket:updated delta and renders ripple lines on bracket tab',

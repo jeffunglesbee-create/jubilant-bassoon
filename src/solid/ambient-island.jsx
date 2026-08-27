@@ -124,7 +124,6 @@ function EditorialCard(props) {
       title={isOwl() && canToggle() ? 'Tap to expand' : ''}
     >
       <div class="ap-card-header">
-        <Show when={isOwl()}><span class="ap-card-icon">{props.data.icon}</span></Show>
         <span class="ap-card-label">{isOwl() ? props.data.label : 'FIELD Brief'}</span>
         <Show when={!isOwl() && props.data.date}><span class="ap-card-date">{props.data.date}</span></Show>
         <Show when={isOwl() && canToggle()}>

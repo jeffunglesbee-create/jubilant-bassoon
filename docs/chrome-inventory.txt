@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-193  decorative-emoji
+159  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
-148  decorative-emoji-labelled
-45  decorative-emoji-alone
+146  decorative-emoji-labelled
+13  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -145,7 +145,7 @@
 # Defensible as DATA rather than decoration, and listed separately so it is never
 # conflated with the line above. The checklist would still prefer SVG.
 
-109  status-glyph
+105  status-glyph
 # ✓ ⚠ ★ ✕ ☆ standing in for state icons. Between the two categories above: they
 # carry meaning, and they are still typography doing an icon's job.
 
@@ -315,7 +315,7 @@
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
 
-45  emoji-announced
+11  emoji-announced
 # WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
 #
 # Every other line here asks some form of "does this look like decoration", and
@@ -328,8 +328,30 @@
 # sees a tier marker and "blue circle" where the source data said
 # `tier === 'elite'`.
 #
-# Two remedies, no taste involved: give it a real text alternative (which makes
-# it captioned, and then usually deletable), or hide it from the tree. Target 0.
+# THREE remedies, no taste involved: give it a real text alternative (which makes
+# it captioned, and then usually deletable), give the ELEMENT an aria-label
+# (which replaces the accessible name outright), or hide it from the tree.
+#
+# THE SECOND ONE WAS MISSING AND THE CHECK WAS WRONG ABOUT FOUR ELEMENTS. Only
+# `aria-hidden` and `role="presentation"` were credited, so the pin, star,
+# calendar and share buttons — icon-only controls each carrying a real
+# `aria-label` like "Pin game to widget" — were flagged as defects. They are the
+# best-behaved elements on the page: an aria-label REPLACES the accessible name,
+# so the glyph never speaks. `title` counts too, as the fallback name. An EMPTY
+# aria-label does not count, and there is a case for that.
+#
+# 82 -> 11 across 2026-08-26/27.
+#
+# THE ELEVEN THAT REMAIN ARE A LIMIT OF THE CHECK, NOT A BACKLOG, and it is
+# worth stating rather than chasing to a zero that would be false. The check
+# reads SOURCE POSITION, so it can only credit an `aria-hidden` written inline
+# beside the glyph. Where a glyph is defined in one place (`dramaLabel()`,
+# `tierLabel`) and rendered somewhere else, the attribute IS applied — in the
+# markup for `.mlb-chip-drama`, via `setAttribute` for `.drama-badge` — and this
+# check cannot connect the two. Those badges are also drama-tier markers whose
+# CSS class already carries the tier; converting them to words would make an
+# ADR-002 question worse, not better, so hiding them from the tree is the
+# correct remedy and it has been applied.
 #
 # 82 -> 74 on 2026-08-26 by taking the FIRST remedy at eleven sites where the
 # word was already in the code and had been thrown away:
@@ -394,7 +416,7 @@
 # 200 characters. A wider window would start crediting an `aria-hidden` on an
 # unrelated ancestor, which is the direction that produces a false green.
 
-4  glyph-ambiguity
+3  glyph-ambiguity
 # ONE GLYPH, MANY MEANINGS — the mirror of the test that ended SPORT_ICONS.
 #
 # That map died because one glyph covered many KEYS: four English competitions

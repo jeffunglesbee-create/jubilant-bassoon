@@ -585,10 +585,10 @@ function showFieldHealthPanel() {
 // half. Color routing: green if avg > 200, amber if 150-200, red if < 150.
 
 function _briefQualityClassify(avg) {
-  if (avg == null || !isFinite(avg)) return { cls: 'fhp-warn', icon: '⚠️' };
-  if (avg > 200) return { cls: 'fhp-ok',   icon: '✅' };
-  if (avg >= 150) return { cls: 'fhp-warn', icon: '⚠️' };
-  return { cls: 'fhp-err', icon: '❌' };
+  if (avg == null || !isFinite(avg)) return { cls: 'fhp-warn' };
+  if (avg > 200) return { cls: 'fhp-ok' };
+  if (avg >= 150) return { cls: 'fhp-warn' };
+  return { cls: 'fhp-err' };
 }
 
 function renderBriefQualityRow(briefs) {
@@ -627,7 +627,7 @@ function renderBriefQualityRow(briefs) {
   }
   const cls = _briefQualityClassify(avg);
   target.outerHTML = `<div id="fhp-brief-quality" class="fhp-row ${cls.cls}">
-    ${cls.icon} <b>Brief Quality</b> avg ${Math.round(avg)} ${trend} · ${last14.length} archived
+    <b>Brief Quality</b> avg ${Math.round(avg)} ${trend} · ${last14.length} archived
   </div>`;
 }
 
@@ -5135,7 +5135,6 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-const AUTH_ICON = {tv:"📺",sub:"🔒",geo:"🌐",free:"✓"};
 
 // ═══════════════════════════════════════════════════════════════
 // MY SERVICES — entitlement hint layer (Option C)
@@ -5674,7 +5673,6 @@ function chipHTML(s, srKey, forcehave){
   const col=s.col||"#888";
   const auth=s.auth||"sub";
   const haveIt = forcehave || (srKey && MY_SERVICES.has(srKey) && !RSN_KEYS.has(srKey));
-  const icon = haveIt ? "" : (RSN_KEYS.has(srKey) ? "📍" : (AUTH_ICON[auth]||"🔒"));
   const tipHeader = haveIt ? "✓ You have access" : (AUTH_LABEL[auth]||"Subscription required");
   const tipBody = haveIt
     ? "Included in your saved services. Click to watch."
@@ -5702,7 +5700,7 @@ function chipHTML(s, srKey, forcehave){
     chipHref = s.url; // keep as fallback
   }
   return `<a class="stream-chip${haveClass}" data-srkey="${srKey}" aria-label="${s.name}: ${haveIt?"You have access":auth==="free"?"FREE":"Subscription required"}" style="color:${col};border-color:${col};background:${haveIt?col+"2a":col+"1a"}" href="${chipHref}" target="_blank" rel="noopener" ${chipOnClick}
-    >${s.name}${freeBadge}${haveSpan}<span class="chip-auth auth-${auth}">${icon}</span><span class="chip-tip"><strong>${tipHeader}</strong><br>${tipBody}${priceNote}</span></a>`;
+    >${s.name}${freeBadge}${haveSpan}<span class="chip-tip"><strong>${tipHeader}</strong><br>${tipBody}${priceNote}</span></a>`;
 }
 
 
@@ -8106,7 +8104,7 @@ function renderAll(skipUnchanged){
         <div class="card-right">
           ${liveBadge}
           <div class="${timeCls}">${(()=>{ try { const _ed = typeof findESPNScore==='function' ? findESPNScore(g) : null; return buildCardTimeDisplay(isLive, _ed, timeStr); } catch(_) { return timeStr; } })()}</div>
-          ${(()=>{ if(!isLive||typeof window.getPulseChip!=='function') return ''; try { const _eg=typeof findESPNScore==='function'?findESPNScore(g):null; const _p=window.getPulseChip(g._id, _eg); return _p ? `<div class="pulse-chip" data-pulse-type="${_p.icon}">${_p.icon} ${_p.text}</div>` : ''; } catch(_){ return ''; } })()}
+          ${(()=>{ if(!isLive||typeof window.getPulseChip!=='function') return ''; try { const _eg=typeof findESPNScore==='function'?findESPNScore(g):null; const _p=window.getPulseChip(g._id, _eg); return _p ? `<div class="pulse-chip" data-pulse-type="${_p.type}">${_p.text}</div>` : ''; } catch(_){ return ''; } })()}
           <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(_circadian==='PREVIEW'?streamsHTML(g.streams):streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';const firstVisible=(g.streams||[]).slice(0,3).some(s=>(typeof s==='string'?s:(s.key||''))===pk);if(firstVisible)return '';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to Apple Calendar, Google Calendar, or Outlook (.ics)" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
           ${_circadian==='LATE'&&_circEData?`<div class="circadian-late-recap">Final: ${(g.away||'').replace(/</g,'')} ${_circEData.awayScore??''} – ${(g.home||'').replace(/</g,'')} ${_circEData.homeScore??''}</div>`:""}
           ${g.crew?`<span class="crew-chip" title="Broadcast crew">🎙 ${g.crew}</span>`:""}
@@ -11961,7 +11959,7 @@ function injectJ1J4Badges() {
             // Option A: Scout's Pick brief footer — R2 analytics chips below brief text
         const _spChips = (typeof _buildAnalyticsChips === 'function') ? _buildAnalyticsChips(g) : [];
         const _spChipsHtml = (typeof _chipsHTML === 'function') ? _chipsHTML(_spChips) : '';
-        noteEl.innerHTML = '<span>' + ('🔍 ' + text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
+        noteEl.innerHTML = '<span>' + (text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
           + (_spChipsHtml ? '<div class="sp-analytics-footer">' + _spChipsHtml + '</div>' : '');
           } else {
             // Enqueue or poll existing job
@@ -12032,7 +12030,7 @@ function injectJ1J4Badges() {
                         // Option A: Scout's Pick brief footer — R2 analytics chips below brief text
                         const _spChips = (typeof _buildAnalyticsChips === 'function') ? _buildAnalyticsChips(g) : [];
                         const _spChipsHtml = (typeof _chipsHTML === 'function') ? _chipsHTML(_spChips) : '';
-                        noteEl2.innerHTML = '<span>' + ('🔍 ' + text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
+                        noteEl2.innerHTML = '<span>' + (text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
                           + (_spChipsHtml ? '<div class="sp-analytics-footer">' + _spChipsHtml + '</div>' : '');
                       }
                       break;
@@ -12211,18 +12209,17 @@ function wxBadge(wx){
   if(!wx) return '';
   const parts = [];
   const icon = wxIcon(wx);
-  if(wx.temp !== undefined) parts.push(`${icon} ${wx.temp}°F`);
+  if(wx.temp !== undefined) parts.push(`<span aria-hidden="true">${icon}</span> ${wx.temp}°F`);
   const windDisplay = wx.windNote
-    ? `💨 ${wx.windNote}`
-    : (wx.gusts||wx.wind||0) > 5 ? `💨 ${Math.round(wx.gusts||wx.wind)}mph ${cardinalDir(wx.windDir||0)}` : null;
+    ? `Wind ${wx.windNote}`
+    : (wx.gusts||wx.wind||0) > 5 ? `Wind ${Math.round(wx.gusts||wx.wind)}mph ${cardinalDir(wx.windDir||0)}` : null;
   if(windDisplay && !wx.windNote) parts.push(windDisplay);
-  else if(wx.windNote) { if(parts.length) parts[0] += ''; parts.push(`💨 ${wx.windNote}`); }
-  if((wx.rain||0)>1||(wx.precip||0)>1) parts.push(`🌧️ ${Math.round(wx.precip||wx.rain)}mm`);
+  else if(wx.windNote) { if(parts.length) parts[0] += ''; parts.push(`Wind ${wx.windNote}`); }
+  if((wx.rain||0)>1||(wx.precip||0)>1) parts.push(`Rain ${Math.round(wx.precip||wx.rain)}mm`);
   if((wx.snowfall||0)>0.2) parts.push('❄️ Snow');
   if((wx.aqi||0)>100){
-    const aqiEmoji = (wx.aqi||0)>200 ? '⚠️' : '🌫️';
     const aqiLabel = (wx.aqi||0)>200 ? 'Very unhealthy' : (wx.aqi||0)>150 ? 'Unhealthy' : 'Moderate AQI';
-    parts.push(`${aqiEmoji} AQI ${wx.aqi} — ${aqiLabel}`);
+    parts.push(`AQI ${wx.aqi} — ${aqiLabel}`);
   }
   if(!parts.length) return '';
   const alertStyle = wx.alert
@@ -12658,7 +12655,7 @@ function buildGolfTop10HTML(leaderboard, roundLabel){
   if(!players.length) return "";
 
   const titleHTML = roundLabel
-    ? `<div class="golf-lb-title">⛳ ${roundLabel}</div>`
+    ? `<div class="golf-lb-title">${roundLabel}</div>`
     : `<div class="golf-lb-title">⛳ Leaderboard</div>`;
 
   const rows = players.map(p => {
@@ -14308,7 +14305,7 @@ function buildATPScore(match){
     scoreChip = `✓ ${winnerName} · ${sets.join(' ')}`;
     situation = `${match.MatchTimeTotal} · Umpire: ${match.UmpireLastName||''}`.trim();
   } else if(isLive){
-    scoreChip = `🎾 ${sets.join(' ')}${gameStr}${serverDot}`.trim();
+    scoreChip = `${sets.join(' ')}${gameStr}${serverDot}`.trim();
     situation = (match.ExtendedMessage||'').replace(/\r\n/g,' ').replace(/\s+/g,' ').trim();
   } else {
     // Scheduled/upcoming
@@ -21843,7 +21840,7 @@ goToDate(TODAY_ISO);
 // item: { title, meta, badge, badgeClass }
 const STREAMING_APPS = [
   {
-    key:"espn", name:"ESPN App", emoji:"E", color:"#ff3c3c",
+    key:"espn", name:"ESPN App", color:"#ff3c3c",
     price:"Unlimited ~$30/mo", url:"https://www.espn.com/watch/",
     note:"ESPN Unlimited · ESPN Select includes ESPN+ only",
     items:[
@@ -21857,7 +21854,7 @@ const STREAMING_APPS = [
     ]
   },
   {
-    key:"apple", name:"Apple TV", emoji:"🍎", color:"#c0c0c0",
+    key:"apple", name:"Apple TV", color:"#c0c0c0",
     price:"$12.99/mo · 7-day free trial", url:"https://tv.apple.com/",
     note:"F1 + MLS + Friday Night Baseball all included — no extra pass needed",
     items:[
@@ -21869,7 +21866,7 @@ const STREAMING_APPS = [
     ]
   },
   {
-    key:"peacock", name:"Peacock", emoji:"🦚", color:"#00ffcc",
+    key:"peacock", name:"Peacock", color:"#00ffcc",
     price:"Premium ~$8.99/mo", url:"https://www.peacocktv.com/sports",
     note:"Premier League, SuperMotocross, IndyCar, Big Ten, Tour de France (ASO races)",
     items:[
@@ -21884,7 +21881,7 @@ const STREAMING_APPS = [
     ]
   },
   {
-    key:"max", name:"Max / HBO Max", emoji:"🎬", color:"#ff6b35",
+    key:"max", name:"Max / HBO Max", color:"#ff6b35",
     price:"Standard ~$18.49/mo", url:"https://www.hbomax.com/sports",
     note:"Giro d'Italia, NHL/MLB on TNT/TBS, Roland-Garros, NASCAR Driver Cam",
     items:[
@@ -21896,7 +21893,7 @@ const STREAMING_APPS = [
     ]
   },
   {
-    key:"paramount", name:"Paramount+", emoji:"⛰️", color:"#6699ff",
+    key:"paramount", name:"Paramount+", color:"#6699ff",
     price:"Essential ~$8.99/mo", url:"https://www.paramountplus.com/sports/",
     note:"UCL, Serie A, UEFA Europa, EFL, UFC, NWSL and more",
     items:[
@@ -21912,7 +21909,7 @@ const STREAMING_APPS = [
     ]
   },
   {
-    key:"prime", name:"Prime Video", emoji:"📦", color:"#f8cf47",
+    key:"prime", name:"Prime Video", color:"#f8cf47",
     price:"Amazon Prime ~$15/mo", url:"https://www.amazon.com/gp/video/storefront/sports",
     note:"NBA Playoffs 2nd Round (CLE-DET, LAL-OKC series), Thursday Night Football from Sep",
     items:[
@@ -21928,7 +21925,7 @@ const STREAMING_APPS = [
     ]
   },
   {
-    key:"netflix", name:"Netflix", emoji:"🎬", color:"#e50914",
+    key:"netflix", name:"Netflix", color:"#e50914",
     price:"Standard ~$15/mo", url:"https://www.netflix.com/browse/genre/81545700",
     note:"WWE Raw Mondays live · NFL Christmas Day · MLB Home Run Derby",
     items:[
@@ -22148,7 +22145,7 @@ function renderStreaming(){
       </div>`).join("");
     return `<div class="app-card">
       <div class="app-card-head">
-        <div class="app-logo" style="${logoStyle}">${app.emoji}</div>
+        <div class="app-logo" style="${logoStyle}">${(app.name||"?").slice(0,2)}</div>
         <div>
           <div class="app-name">${app.name}</div>
           ${app._circadianBadge ? `<span class="app-circadian-badge">${app._circadianBadge}</span>` : ''}
@@ -22372,7 +22369,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26k';
+  const SW_VERSION = '2026-08-26l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -27589,13 +27586,13 @@ document.addEventListener('visibilitychange', () => {
     const leadChanges = recent.filter(e => e && e.type === 'lead_change');
     if (leadChanges.length >= 2) {
       const mins = Math.max(1, Math.round((Date.now() - leadChanges[0].ts) / 60000));
-      return { icon: '⚡', text: leadChanges.length + ' lead changes in ' + mins + ' min' };
+      return { type: 'lead_change', text: leadChanges.length + ' lead changes in ' + mins + ' min' };
     }
 
     // Signal 2: scoring run (3+ score events in the window).
     const scores = recent.filter(e => e && e.type === 'score');
     if (scores.length >= 3) {
-      return { icon: '🔥', text: scores.length + ' scores in 5 min' };
+      return { type: 'scoring_run', text: scores.length + ' scores in 5 min' };
     }
 
     // Signal 3: odds velocity (cumulative |wpDelta| across wp_update events).
@@ -27603,7 +27600,7 @@ document.addEventListener('visibilitychange', () => {
     if (wpUpdates.length >= 1) {
       const totalDelta = wpUpdates.reduce((sum, e) => sum + Math.abs(e.data?.wpDelta || 0), 0);
       if (totalDelta >= 0.08) {
-        return { icon: '📊', text: 'Line moved ' + Math.round(totalDelta * 100) + '%' };
+        return { type: 'wp_move', text: 'Line moved ' + Math.round(totalDelta * 100) + '%' };
       }
     }
 
@@ -27619,7 +27616,7 @@ document.addEventListener('visibilitychange', () => {
           if (onBase >= 2) {
             const margin = Math.abs((espnGame.homeScore || 0) - (espnGame.awayScore || 0));
             if (margin <= 2) {
-              return { icon: '⚾', text: 'Runners on, 2 out, ' + _ordinal(sit.inning || espnGame.period || '?') };
+              return { type: 'mlb_situation', text: 'Runners on, 2 out, ' + _ordinal(sit.inning || espnGame.period || '?') };
             }
           }
         }
@@ -33908,7 +33905,6 @@ function renderAmbientPanel(){
     // Time-based label using ET timezone
     const _etHourStr = new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false});
     const _etH = parseInt(_etHourStr)||0;
-    const _owlIcon  = _etH >= 22 || _etH < 6  ? '🦉' : _etH < 14 ? '☀️' : '🎯';
     const _owlLabel = _etH >= 22 || _etH < 6  ? 'Night Owl'
                     : _etH < 14                ? 'Morning Report'
                     :                            'Game Recap';
@@ -33926,7 +33922,7 @@ function renderAmbientPanel(){
         : _owlTxtWindow;
       const _owlHasMore = _owlTxtRaw.length > _owlTxt.length;
       editorial = {
-        mode:'owl', icon:_owlIcon, label:_owlLabel, game:_owlGame, score:_owlScore,
+        mode:'owl', label:_owlLabel, game:_owlGame, score:_owlScore,
         truncatedText:_owlTxt, fullText:_owlTxtRaw, isTruncated:_owlHasMore, canToggle:_owlHasMore,
       };
     } else if (_briefActive) {
@@ -35600,6 +35596,7 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
       const badge = document.createElement('span');
       badge.className = `drama-badge drama-${displayTier}`;
       badge.textContent = dramaLabel(smoothed);
+      badge.setAttribute('aria-hidden', 'true');
       liveEl.insertAdjacentElement('afterend', badge);
     }
   }
@@ -37156,7 +37153,7 @@ function renderMobileLiveBar(){
     return `<div class="mlb-chip" data-scroll-home="${hId}">
       <span class="mlb-chip-teams">${away} @ ${home}</span>
       <span class="mlb-chip-score">${scoreStr}</span>
-      <span class="mlb-chip-drama d-${tier}">${tierLabel}</span>
+      <span class="mlb-chip-drama d-${tier}" aria-hidden="true">${tierLabel}</span>
     </div>`;
   }).join('');
   bar.innerHTML=`<div class="mlb-header">\u26a1 ${liveGames.length} Live</div><div class="mlb-row">${chips}</div>`;
@@ -37238,8 +37235,8 @@ async function shareGame(home, away, time, league, streams){
   }).join('/');
   const shareText = [
     `${away||''} @ ${home||''}`,
-    time ? `🕐 ${time}` : '',
-    svcNames ? `📺 ${svcNames}` : '',
+    time || '',
+    svcNames || '',
     league||'',
     '— via FIELD',
   ].filter(Boolean).join(' · ');
@@ -39948,7 +39945,6 @@ function renderScoreTicker() {
   if (!liveGames.length) { wrap.style.display = 'none'; return; }
   const chips = liveGames.map(({gid, e, drama, trendBonus}) => {
     const fire = drama >= getDramaDial() ? ' fire' : '';
-    const icon = drama >= Math.min(getDramaDial()+20,95) ? '🔥' : drama >= getDramaDial() ? '⚡' : '';
     const rising = trendBonus >= 8 ? ' ↑' : '';
     const sp2 = (e._sport||'').toLowerCase();
     const league = sp2.includes('nba')||sp2.includes('basketball') ? 'NBA'
@@ -39963,7 +39959,7 @@ function renderScoreTicker() {
     const homeNick = teamNick(e.home||'');
     const leagueTag = league ? `<span class="ticker-league">${league}</span>` : '';
     const perTag = per ? ` <span class="ticker-per">${per}</span>` : '';
-    const text = `${leagueTag}${awayNick} <span class="ticker-score">${e.awayScore||0}–${e.homeScore||0}</span> ${homeNick}${perTag}${icon?' '+icon:''}${rising}`;
+    const text = `${leagueTag}${awayNick} <span class="ticker-score">${e.awayScore||0}–${e.homeScore||0}</span> ${homeNick}${perTag}${rising}`;
     // ADR-002 Step 3: the raw composite drama number must not reach user-visible
     // output on a LIVE game, and a `title` attribute is user-visible — it renders
     // as a native tooltip on hover. This ticker is live-only (`state === 'in'`),
@@ -40686,7 +40682,6 @@ async function renderNightOwlRecap(){
       : '';
     el.innerHTML =
       '<div class="night-owl-section-head">'
-        +'<span class="night-owl-section-icon">🦉</span>'
         +'<span class="night-owl-section-title">'+_owlTitle+'</span>'
         +'<span class="night-owl-section-date">'+_owlDate+'</span>'
       +'</div>'

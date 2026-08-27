@@ -188,7 +188,16 @@ export function announcedEmoji(body) {
     const back = body.slice(Math.max(0, m.index - 200), m.index)
     const tag = back.lastIndexOf('<')
     const attrs = tag < 0 ? '' : back.slice(tag)
-    if (/aria-hidden\s*=\s*["']?true/.test(attrs) || /role\s*=\s*["']?presentation/.test(attrs)) continue
+    // AN aria-label ON THE ELEMENT IS THE STRONGEST REMEDY, not a missing one.
+    // It REPLACES the accessible name outright, so an icon-only button reading
+    // `<button aria-label="Pin game to widget" ...>[pushpin]</button>` announces
+    // the sentence, never the glyph. The first version of this check credited
+    // only aria-hidden and flagged four such buttons — the pin, star, calendar
+    // and share controls — which are the best-behaved elements on the page.
+    // `title` counts for the same reason: it is the fallback accessible name
+    // when nothing else supplies one.
+    if (/aria-hidden\s*=\s*["']?true/.test(attrs) || /role\s*=\s*["']?presentation/.test(attrs)
+        || /aria-label\s*=\s*["'][^"']{2,}/.test(attrs) || /title\s*=\s*["'][^"']{2,}/.test(attrs)) continue
     out.push(c)
   }
   return out
@@ -420,6 +429,14 @@ if (SELF_TEST) {
   check('aria-hidden="false" does NOT clear it',
     A('<body><span aria-hidden="false">🔥</span></body>').length === 1,
     'any aria-hidden attribute at all was being read as a pass')
+  check('an aria-label replaces the accessible name, so the glyph never speaks',
+    A('<body><button aria-label="Pin game to widget">📌</button></body>').length === 0,
+    'an icon-only button with a real label is the best-behaved case, not a defect')
+  check('a title also supplies an accessible name',
+    A('<body><button title="Add to calendar">📅</button></body>').length === 0)
+  check('an EMPTY aria-label does not clear it',
+    A('<body><button aria-label="">📌</button></body>').length === 1,
+    'matching the attribute name alone would pass an empty label')
   check('a flag is data, not an announcement defect',
     A('<body><span>🇪🇸</span></body>').length === 0)
 
