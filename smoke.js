@@ -1880,11 +1880,16 @@ assert('A295 — cardBriefCallsToday separate from journalismCallsToday (50 call
   html.includes('const cardBudget = cardBriefCallsToday()'),
   'MLB/WNBA/Stakes card briefs must use separate budget — not consume compound editorial budget');
 
-assert('A296 — Stakes brief: UCL Final renders card (bypasses imp guard), gets trophy icon not MUST WIN',
-  html.includes("'🏆 UCL FINAL'") &&
+// The label, not the pictograph. This asserted `'[trophy] UCL FINAL'` and so
+// broke on 2026-08-27 when the captioned glyphs were swept — the assertion was
+// named for the UCL Final getting its OWN label rather than the generic MUST
+// WIN, and measured a trophy character. Fourth instance of that shape in this
+// suite; A565, A630 and A663 were the others.
+assert('A296 — Stakes brief: UCL Final renders card (bypasses imp guard) under its own label, not MUST WIN',
+  html.includes("'UCL FINAL'") &&
   html.includes("_isMajorFinal && (!imp || imp === 'playoff_impl')") &&
   html.includes("field_stakes_brief_v' + _swv + '_'"),
-  'UCL Final must render stakes card with correct icon and versioned cache key');
+  'UCL Final must render a stakes card under its own label and a versioned cache key');
 
 assert('A297 — Stakes brief prompt explicitly forbids semifinal/elimination framing for finals',
   html.includes('This is the FINAL — not a semifinal') &&
@@ -2862,7 +2867,7 @@ assert('A398 — PM-20 Step 4: FIELD Health panel Score Confidence row + verifie
   // Tally object initialization
   html.includes('const _sc_tally = { verified: 0, mismatch: 0, single: 0 };') &&
   // The three states surface as labeled rows
-  html.includes('✅ verified') &&
+  html.includes('${_sc_tally.verified} games') &&   // the tally, not the tick that used to precede it
   html.includes('⚠ mismatch') &&
   html.includes('· single source') &&
   // Mismatch-detail listing with espn vs apisports comparison
@@ -2870,8 +2875,9 @@ assert('A398 — PM-20 Step 4: FIELD Health panel Score Confidence row + verifie
   html.includes('apisports:${m.apisports.awayScore}-${m.apisports.homeScore}') &&
   // Panel section id
   html.includes('id="fhp-score-confidence"') &&
-  // Header text
-  html.includes('🎯 Score Confidence') &&
+  // Header text. The pictograph that used to lead it was swept on 2026-08-27;
+  // the row is identified by its words and by the id asserted two lines above.
+  html.includes('Score Confidence${_sc_label}') &&
   // Mismatches truncated at 3 with "+ N more"
   html.includes('_sc_mismatches.slice(0, 3)') &&
   html.includes('+ ${_sc_mismatches.length - 3} more'),

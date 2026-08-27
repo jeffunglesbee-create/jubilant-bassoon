@@ -26,7 +26,7 @@ function OtwCard(props) {
       >
         <div class="ap-otw-fire">
           <span class="ap-otw-header">One to Watch</span>
-          <span class="ap-fire-badge">🔴 FIRE — {props.data.tierLabel}{props.data.ctxSuffix}</span>
+          <span class="ap-fire-badge">FIRE — {props.data.tierLabel}{props.data.ctxSuffix}</span>
           <span class="ap-fire-game">{props.data.away} {props.data.neutral ? 'vs' : '@'} {props.data.home}</span>
           <div class="ap-fire-row3">
             <span class="ap-fire-score">{props.data.scoreStr}</span>
@@ -144,15 +144,15 @@ function ArbCard(props) {
   return (
     <div class="ap-card ap-card-arb">
       <div class="ap-card-header">
-        <span class="ap-card-icon">📡</span>
+        <span class="ap-card-icon"></span>
         <span class="ap-card-label">Watch Free</span>
       </div>
       <div class="ap-card-arb-rows">
         <Show when={props.data.freeCount > 0}>
-          <div class="ap-arb-row">🎯 <strong>{props.data.freeCount} free tonight</strong> · {props.data.svcs.join(' · ')}</div>
+          <div class="ap-arb-row"><strong>{props.data.freeCount} free tonight</strong> · {props.data.svcs.join(' · ')}</div>
         </Show>
         <Show when={props.data.bestAdd}>
-          <div class="ap-arb-row">💡 Add <strong>{props.data.bestAdd?.name}</strong> · {props.data.bestAdd?.cost}/mo → +{props.data.bestAdd?.gameCount} games</div>
+          <div class="ap-arb-row">Add <strong>{props.data.bestAdd?.name}</strong> · {props.data.bestAdd?.cost}/mo → +{props.data.bestAdd?.gameCount} games</div>
         </Show>
       </div>
     </div>

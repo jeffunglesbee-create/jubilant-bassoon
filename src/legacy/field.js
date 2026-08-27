@@ -274,9 +274,9 @@ function classifyFieldError(error) {
 
 function buildFieldHealthPanel() {
   const rows = [];
-  const ok  = (label, detail) => `<div class="fhp-row fhp-ok">✅ <b>${label}</b> ${detail}</div>`;
+  const ok  = (label, detail) => `<div class="fhp-row fhp-ok"><b>${label}</b> ${detail}</div>`;
   const warn = (label, detail) => `<div class="fhp-row fhp-warn">⚠️ <b>${label}</b> ${detail}</div>`;
-  const err  = (label, detail) => `<div class="fhp-row fhp-err">❌ <b>${label}</b> ${detail}</div>`;
+  const err  = (label, detail) => `<div class="fhp-row fhp-err"><b>${label}</b> ${detail}</div>`;
 
   // ── App version ─────────────────────────────────────────────────────────
   const SW = window.SW_VERSION || '?';
@@ -458,7 +458,7 @@ function buildFieldHealthPanel() {
   }
   const _sc_total = _sc_tally.verified + _sc_tally.mismatch + _sc_tally.single;
   const _sc_lines = [];
-  _sc_lines.push(`<div style="color:#76e08a">✅ verified <span style="color:#999;float:right">${_sc_tally.verified} games</span></div>`);
+  _sc_lines.push(`<div style="color:#76e08a">verified <span style="color:#999;float:right">${_sc_tally.verified} games</span></div>`);
   if (_sc_tally.mismatch > 0)
     _sc_lines.push(`<div style="color:#ff6868">⚠ mismatch <span style="color:#999;float:right">${_sc_tally.mismatch} games</span></div>`);
   else
@@ -477,7 +477,7 @@ function buildFieldHealthPanel() {
   const _sc_label = _sc_total === 0 ? `<span style="color:#666;font-weight:400;font-size:.55rem"> · no live scores</span>` : '';
   rows.push(`<div id="fhp-score-confidence" style="margin-top:.4rem">
     <div style="color:#c9a84c;font-size:.6rem;font-weight:700;margin-bottom:.25rem">
-      🎯 Score Confidence${_sc_label}
+      Score Confidence${_sc_label}
     </div>
     <div style="color:#8888aa;font-size:.58rem">${_sc_lines.join('')}</div>
   </div>`);
@@ -513,10 +513,10 @@ function buildFieldHealthPanel() {
       : (_riPendingCount === _riFns.length ? `<span style="color:#666;font-weight:400;font-size:.55rem"> · not yet run</span>` : '');
     rows.push(`<div id="fhp-relay-init" style="margin-top:.4rem">
       <div style="color:#c9a84c;font-size:.6rem;font-weight:700;margin-bottom:.25rem">
-        🧩 Relay Init (9 overlays)${_riLabel}
+        Relay Init (9 overlays)${_riLabel}
       </div>
       <div style="color:#8888aa;font-size:.58rem">
-        <div style="color:#76e08a">✅ loaded <span style="color:#999;float:right">${_riOkCount}/9</span></div>
+        <div style="color:#76e08a">loaded <span style="color:#999;float:right">${_riOkCount}/9</span></div>
         ${_riFailCount > 0 ? `<div style="color:#ff6868">⚠ failed <span style="color:#999;float:right">${_riFailCount}/9</span></div>` : ''}
         ${_riPendingCount > 0 ? `<div style="color:#8888aa">· not yet run <span style="color:#999;float:right">${_riPendingCount}/9</span></div>` : ''}
         ${_riFailLines.join('')}
@@ -529,7 +529,7 @@ function buildFieldHealthPanel() {
   // directly from public GitHub API — same data, no auth surface in client.
   rows.push(`<div id="fhp-mcp" style="margin-top:.4rem">
     <div style="color:#c9a84c;font-size:.6rem;font-weight:700;margin-bottom:.25rem">
-      🛰️ RELAY · CI
+      RELAY · CI
     </div>
     <div id="fhp-mcp-body" style="color:#8888aa;font-size:.58rem">Fetching…</div>
   </div>`);
@@ -556,7 +556,7 @@ function showFieldHealthPanel() {
     ">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
         <span style="font-size:.7rem;font-weight:700;color:#c9a84c;letter-spacing:.08em">
-          ⚕ FIELD HEALTH — ${new Date().toLocaleTimeString()}
+          FIELD HEALTH — ${new Date().toLocaleTimeString()}
         </span>
         <button onclick="document.getElementById('fhp-overlay').remove()"
           style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:6px;
@@ -567,7 +567,7 @@ function showFieldHealthPanel() {
       </div>
       <div id="fhp-rows">${buildFieldHealthPanel()}</div>
       <div style="margin-top:.75rem;font-size:.55rem;color:#555;text-align:center">
-        Long-press ⚙ to open · Tap to close
+        Long-press to open · Tap to close
       </div>
     </div>`;
   panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
@@ -746,7 +746,7 @@ function buildRightNowTiers(g, eData) {
   const seriesEl = series
     ? `<span style="color:var(--gold2,#c9a84c);font-size:.55rem">${series}</span>`
     : (!isLive && typeof isScoutsPick === 'function' && isScoutsPick(g))
-      ? `<span style="color:#2dd4bf;font-size:.55rem">🔍 Scout's Pick</span>`
+      ? `<span style="color:#2dd4bf;font-size:.55rem">Scout's Pick</span>`
       : '';
 
   // Brief from relay KV cache (A312)
@@ -962,7 +962,7 @@ async function fetchMCPStatus() {
     const smokeCol = parseInt(smokeNum) >= 300 ? '#4caf82' : '#c9a84c';
 
     el.innerHTML = `
-      ${row('🧪', 'Smoke', `${smokeNum} assertions`, smokeCol)}
+      ${row('', 'Smoke', `${smokeNum} assertions`, smokeCol)}
       <div style="margin-top:.25rem;color:#555;font-size:.52rem;margin-bottom:.2rem">Recent runs:</div>
       ${ciRows}
       <div style="margin-top:.35rem">
@@ -1355,7 +1355,7 @@ const SR = {
   sling:     ["Sling TV",      "https://www.sling.com",                             "#00d4aa","sub", "Sling TV from $46/mo. MLB Network requires Sports Extra add-on (+$11/mo). Orange includes TNT, ESPN, FS1. Blue includes TNT, TBS, FS1 (no ESPN). Sports Extra adds MLB Network, NBA TV, NHL Network, SEC Network, beIN Sports."],
   youtubetv: ["YouTube TV",  "https://tv.youtube.com/",                           "#ff0000","sub", "YouTube TV Sports Plan from $54.99/mo (promo) or $64.99/mo. Includes ESPN, TBS, TNT, truTV, NBC, CBS, ABC, Fox, FS1, NFL Network, NBA TV. No MLB Network or NHL Network on Sports Plan (both excluded). ESPN Unlimited confirmed for fall 2026. Willow TV + Tennis Channel + Fox Soccer Plus require Sports Plus add-on (+$10.99/mo, also adds NFL RedZone, beIN Sports). MASN NOT available on YouTube TV."],
   directv:   ["DirecTV",       "https://www.directv.com/sports/",                  "#0066cc","sub", "DirecTV subscription required"],
-  nbcsn:     ["NBCSN",         "https://www.nbcsports.com/live",                      "#00b4d8","tv",  "Cable/streaming only (relaunched Nov 17 2025). CRITICAL RULE: NBCSN carries ONLY Peacock-exclusive content — when NBC OTA is broadcasting a game, NBCSN does NOT carry it (it stays on NBC+Peacock only). Sports on NBCSN: NBA Mon night + Peacock-exclusive playoff games. MLB SNB in Peacock-only window (Mar 29–May 30 & Sep 6–20), Sunday Leadoff, GOTD. EPL Peacock-exclusive matches. Big Ten/Notre Dame football. WNBA. Olympics Gold Zone. PROVIDERS: YouTube TV ✓, Xfinity ✓ (Ch.1211, Popular TV+). Fubo/Hulu — being added 2026. DirecTV ✗ not yet. Sling ✗ not available. NFL SNF: Peacock only, NOT on NBCSN."],
+  nbcsn:     ["NBCSN",         "https://www.nbcsports.com/live",                      "#00b4d8","tv",  "Cable/streaming only (relaunched Nov 17 2025). CRITICAL RULE: NBCSN carries ONLY Peacock-exclusive content — when NBC OTA is broadcasting a game, NBCSN does NOT carry it (it stays on NBC+Peacock only). Sports on NBCSN: NBA Mon night + Peacock-exclusive playoff games. MLB SNB in Peacock-only window (Mar 29–May 30 & Sep 6–20), Sunday Leadoff, GOTD. EPL Peacock-exclusive matches. Big Ten/Notre Dame football. WNBA. Olympics Gold Zone. PROVIDERS: YouTube TV ✓, Xfinity ✓ (Ch.1211, Popular TV+). Fubo/Hulu — being added 2026. DirecTV not yet. Sling not available. NFL SNF: Peacock only, NOT on NBCSN."],
   // ── MLB-specific ──────────────────────────────────────────────────────────────
   mlbn:      ["MLB Network", "https://www.mlb.com/network",                           "#002d72","sub", "MLB Network Showcase — national broadcast, blacked out in home markets. Prime Video carries same game exclusively in-market for Yankees TV territory. Available via Hulu, DirecTV, FuboTV Elite, Sling Sports Extra (+$11/mo), MLB+ ($5.99/mo), or MLB.TV ($149.99/season)."],
   mlbplus:   ["MLB+",         "https://www.mlb.com/network/subscribe",              "#002d72","sub", "MLB+ standalone streaming for MLB Network only — $5.99/mo or $59.99/yr. Includes 24/7 MLB Network live feed + live game audio for all 30 teams with no blackouts. New for 2026."],
@@ -5051,7 +5051,7 @@ mvSyncMvPanel(); // Set initial empty state
     const main = document.getElementById("main");
     if(!hardcoded.length){
       applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
-        <div style="font-size:1.5rem;margin-bottom:.75rem">📅</div>
+        <div style="font-size:1.5rem;margin-bottom:.75rem"></div>
         <div style="color:var(--white);margin-bottom:.5rem">No major events on ${label}</div>
         <div style="font-size:.72rem;color:var(--smoke)">Try a different date with the ‹ › arrows</div>
       </div>`);
@@ -5078,7 +5078,7 @@ mvSyncMvPanel(); // Set initial empty state
       // Retry button (the old undifferentiated message offered one that
       // could never succeed for this specific cause).
       applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
-        <div style="font-size:1.5rem;margin-bottom:.75rem">📅</div>
+        <div style="font-size:1.5rem;margin-bottom:.75rem"></div>
         <div style="color:var(--white);margin-bottom:.5rem">Today's AI schedule lookups are used up</div>
         <div style="font-size:.72rem;color:var(--smoke)">Try a date already covered by ESPN, or check back tomorrow.</div>
       </div>`);
@@ -5097,7 +5097,7 @@ mvSyncMvPanel(); // Set initial empty state
 
   if(!sections.length){
     applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
-      <div style="font-size:1.5rem;margin-bottom:.75rem">📅</div>
+      <div style="font-size:1.5rem;margin-bottom:.75rem"></div>
       <div style="color:var(--white);margin-bottom:.5rem">No major events on ${label}</div>
       <div style="font-size:.72rem;color:var(--smoke)">Try a different date with the ‹ › arrows</div>
     </div>`);
@@ -5148,7 +5148,7 @@ document.addEventListener("keydown",e=>{
 const SETUP_CATALOGUE = [
   {
     // Cable/satellite TV networks — authenticate with your cable or satellite provider login
-    group:"📡 Cable & Broadcast Networks",
+    group:"Cable & Broadcast Networks",
     services:[
       {key:"espn",    label:"ESPN"},
       {key:"abc",     label:"ABC"},
@@ -5169,7 +5169,7 @@ const SETUP_CATALOGUE = [
   },
   {
     // Streaming subscriptions — no cable required
-    group:"🎬 Streaming Subscriptions",
+    group:"Streaming Subscriptions",
     services:[
       {key:"espnplus",  label:"ESPN+ (App · MLB GOTD)"},
       {key:"peacock",  label:"Peacock"},
@@ -5185,7 +5185,7 @@ const SETUP_CATALOGUE = [
   },
   {
     // Virtual MVPDs — full live TV channel bundles, no cable box required
-    group:"📺 Live TV Packages",
+    group:"Live TV Packages",
     services:[
       {key:"youtubetv", label:"YouTube TV"},
       {key:"fubo",      label:"FuboTV"},
@@ -5197,7 +5197,7 @@ const SETUP_CATALOGUE = [
   },
   {
     // Team / league-specific direct-to-consumer apps (in-market or sport-specific)
-    group:"⚾ MLB Apps & Team Streams",
+    group:"MLB Apps & Team Streams",
     // ── MLB league-wide apps ──────────────────────────────────────────────
     // MLB.TV: 2,000+ out-of-market games. MLB+: MLB Network only ($5.99/mo).
     // Both distinct from ESPN linear TV and ESPN Game of the Day.
@@ -5218,7 +5218,7 @@ const SETUP_CATALOGUE = [
   },
   {
     // International & regional services
-    group:"🌐 International & Regional",
+    group:"International & Regional",
     services:[
       {key:"dazn",       label:"DAZN"},
       {key:"sky",        label:"Sky Sports (UK/Ireland)"},
@@ -5506,7 +5506,7 @@ function openSetup(){
   if(hintEl){
     if(city && suggested.length){
       const names = suggested.map(k=>SR[k]?SR[k][0]:k).join(", ");
-      hintEl.textContent = "📍 Detected: "+city+" — local options: "+names;
+      hintEl.textContent = "Detected: "+city+" — local options: "+names;
       hintEl.style.display = "block";
     } else {
       hintEl.style.display = "none";
@@ -6310,7 +6310,7 @@ function matchupHTML(g, sport){
     const eventName = g.home || "TBD";
     // Leader chip: injected from espnScores via leaderNote field, or game.leaderNote
     const leaderChip = g.leaderNote
-      ? `<span class="leader-chip">⛳ ${g.leaderNote}</span>`
+      ? `<span class="leader-chip">${g.leaderNote}</span>`
       : "";
     return `<span class="team-name event-name">${eventName}</span>${leaderChip}`;
   }
@@ -7042,8 +7042,8 @@ function buildMLBNAlertChip(game, smoothedDrama) {
     ? '<span style="font-size:.65rem;opacity:.75;display:block;margin-top:2px">Also: MLB Network Strike Zone (cable/satellite — Sports tier req)</span>'
     : '';
   const msg = tier === 'likely'
-    ? '📺 MLB Big Inning — live look-in likely'
-    : '📺 Check MLB Big Inning';
+    ? 'MLB Big Inning — live look-in likely'
+    : 'Check MLB Big Inning';
   const sub = 'Available on MLB App · ESPN App · Apple TV (MLB.TV/MLB+)';
   return `<div class="mlbn-alert${tier === 'likely' ? ' mlbn-alert-likely' : ''}" `
     + `onclick="window.open('https://www.mlb.com/network/shows/big-inning','_blank')" `
@@ -8071,17 +8071,17 @@ function renderAll(skipUnchanged){
           </div>
           ${g.venue&&!g.league?.includes("Playoffs")?`<div class="venue-line">${g.venue}</div>`:""}
           ${(g.espnGOTD||g.peacockGOTD||g.mlbnShowcase||g.localNote||g.gotdStreams||g._cflSpread!=null||g._cflTotal!=null)?`<div class="badge-row">
-            ${g.espnGOTD?'<span class="gotd-badge espn-gotd" title="ESPN App Game of the Day — requires ESPN Unlimited ($29.99/mo) or qualifying cable subscription. Local RSN blacked out.">📺 ESPN App GOTD</span>':""}
-            ${g.peacockGOTD?'<span class="gotd-badge peacock-gotd" title="Peacock Game of the Day — stream on Peacock, NBCSN simulcast. Local RSN blacked out in market.">🦚 Peacock GOTD · Free</span>':""}
-            ${g.mlbnShowcase?'<span class="gotd-badge" style="color:#6699ff;border-color:rgba(102,153,255,.4);background:rgba(102,153,255,.08)">📺 MLB Network</span>':""}
+            ${g.espnGOTD?'<span class="gotd-badge espn-gotd" title="ESPN App Game of the Day — requires ESPN Unlimited ($29.99/mo) or qualifying cable subscription. Local RSN blacked out.">ESPN App GOTD</span>':""}
+            ${g.peacockGOTD?'<span class="gotd-badge peacock-gotd" title="Peacock Game of the Day — stream on Peacock, NBCSN simulcast. Local RSN blacked out in market.">Peacock GOTD · Free</span>':""}
+            ${g.mlbnShowcase?'<span class="gotd-badge" style="color:#6699ff;border-color:rgba(102,153,255,.4);background:rgba(102,153,255,.08)">MLB Network</span>':""}
             ${(g._cflSpread!=null||g._cflTotal!=null)?(()=>{
               const sp=g._cflSpread!=null?`${g._cflSpread>0?'+':''}${g._cflSpread}`:'';
               const tot=g._cflTotal!=null?`O/U ${g._cflTotal}`:'';
               const label=[sp,tot].filter(Boolean).join(' · ');
               const pct=g.wp!=null?` · ${Math.round(g.wp*100)}% home`:'';
-              return `<span class="gotd-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.06)" title="CFL odds · ${label}${pct}">🏈 ${label}</span>`;
+              return `<span class="gotd-badge" style="color:var(--gold2);border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.06)" title="CFL odds · ${label}${pct}">${label}</span>`;
             })():''}
-            ${g.localNote?'<span class="gotd-badge local-cov" title="'+g.localNote+'">📍 Local</span>':""}
+            ${g.localNote?'<span class="gotd-badge local-cov" title="'+g.localNote+'">Local</span>':""}
             ${g.gotdStreams?streamsHTML(g.gotdStreams):""}
           </div>`:""}
           ${(()=>{ const _pb=buildParkFactorBadge(g); const _ub=buildUmpWatchBadge(g); return (_pb||_ub) ? `<div class="badge-row mlb-analytics-badges">${_pb}${_ub}</div>` : ''; })()}
@@ -8089,13 +8089,13 @@ function renderAll(skipUnchanged){
           ${(()=>{ const _rb=buildRoundBadge(g); return _rb?`<div class="badge-row round-badge-row">${_rb}</div>`:''; })()}
           ${(()=>{ const _rkb=buildRankBadge(g); return _rkb?`<div class="badge-row rank-badge-row">${_rkb}</div>`:''; })()}
           ${(()=>{ if(typeof isScoutsPick==='function'&&isScoutsPick(g))return ''; /* stat already folds into the Scout's Pick badge text -- see its own "Option B" comment */ const _sdb=(typeof getStatOfDay==='function'&&typeof buildStatOfDayBadge==='function')?buildStatOfDayBadge(g,sec?.sport||g._sport||''):''; return _sdb?`<div class="badge-row stat-day-badge-row">${_sdb}</div>`:''; })()}
-          ${g.crew?`<div class="crew-line">🎙 ${g.crew}</div>`:""}
+          ${g.crew?`<div class="crew-line">${g.crew}</div>`:""}
           ${/* BUG-09 fix (CC-CMD-2026-07-15-card-badges): isPlayoffGame(g), not raw g._gameImportance -- absent on Conference Finals entries; class/icon lookups below fall through to the 'playoff-impl' default when it's unset, a reasonable degrade. */''}
           ${isPlayoffGame(g)?`<div class="importance-badge ${g._gameImportance==='series_deciding'?'series-deciding':g._gameImportance==='elimination'?'elimination':g._gameImportance==='clinch'?'clinch':'playoff-impl'}">${g.narrative?.label||''}</div>`:""}
           ${(()=>{const _va=typeof findESPNScore==='function'?findESPNScore(g):null;const _vc=typeof buildVibeChips==='function'?buildVibeChips(g,_va,sec.sport):[];return _vc.length?'<div class="ganalytics">'+_vc.map(v=>'<span class="vibe '+v.cls+'"'+(v.onclick?' role="button" tabindex="0" style="cursor:pointer" onclick="'+v.onclick+'"':'')+'>'+v.label+'</span>').join('')+'</div>':'';})()}
           ${(()=>{ const _wcB=typeof buildWCBars==='function'?buildWCBars(g):''; return _wcB?`<div class="wc-bars-wrap">${_wcB}</div>`:''; })()}
           ${(()=>{const _ed=typeof findESPNScore==='function'?findESPNScore(g):null;const _dl=buildDramaLineTiers(g,_ed,sec.sport);if(_dl.tight){const _q=s=>s.replace(/"/g,'&quot;');return `<div class="card-drama-line" data-drama-tight="${_q(_dl.tight)}" data-drama-mid="${_q(_dl.mid)}" data-drama-full="${_q(_dl.full)}">${_dl.tight}</div>`;}return g.narrative?.label&&!isPlayoffGame(g)?`<div class="narrative-line${(g.narrative.boost||0)>=20?' narrative-hi':''}">${g.narrative.label}</div>`:'';})()}
-          ${g._layer4Watch?`<div class="layer4-watch-line">🔀 ${g._layer4Watch}</div>`:""}
+          ${g._layer4Watch?`<div class="layer4-watch-line">${g._layer4Watch}</div>`:""}
           ${(()=>{const _cs=buildCheapSeats(g);if(!_cs)return '';return `<div class="cheap-seats"><span class="cs-badge ${_cs.badgeClass}">${_cs.badge}</span><span class="cs-text">${_cs.text}</span></div>`;})()}
                     ${(()=>{const _ii=assessInjuryPriceImpact(g);if(!_ii)return '';return `<div class="injury-intel"><span class="ii-badge ${_ii.cls}">${_ii.badge}</span><span class="ii-text">${_ii.text}</span></div>`;})()}
           ${(()=>{ if(!['UFL','NFL'].includes(g._sport)||!g._epaLive?.lastPlay) return ''; return _buildUFLEpaHTML(g._epaLive); })()}
@@ -8105,11 +8105,11 @@ function renderAll(skipUnchanged){
           ${liveBadge}
           <div class="${timeCls}">${(()=>{ try { const _ed = typeof findESPNScore==='function' ? findESPNScore(g) : null; return buildCardTimeDisplay(isLive, _ed, timeStr); } catch(_) { return timeStr; } })()}</div>
           ${(()=>{ if(!isLive||typeof window.getPulseChip!=='function') return ''; try { const _eg=typeof findESPNScore==='function'?findESPNScore(g):null; const _p=window.getPulseChip(g._id, _eg); return _p ? `<div class="pulse-chip" data-pulse-type="${_p.type}">${_p.text}</div>` : ''; } catch(_){ return ''; } })()}
-          <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(_circadian==='PREVIEW'?streamsHTML(g.streams):streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';const firstVisible=(g.streams||[]).slice(0,3).some(s=>(typeof s==='string'?s:(s.key||''))===pk);if(firstVisible)return '';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to Apple Calendar, Google Calendar, or Outlook (.ics)" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})">⬆</button></div>
+          <div class="stream-row">${window.innerWidth<=600?buildMobileSmartChip(g.streams):(_circadian==='PREVIEW'?streamsHTML(g.streams):streamsHTMLCapped(g.streams,3)+(()=>{const pk=g.streams?.[0]?.key||'';const firstVisible=(g.streams||[]).slice(0,3).some(s=>(typeof s==='string'?s:(s.key||''))===pk);if(firstVisible)return '';return FREE_OTA.has(pk)?'<span class="free-badge">FREE</span>':FREE_CABLE.has(pk)?'<span class="free-badge free-cable">FREE W/ CABLE</span>':''})())}<button class="cal-btn" aria-label="Add to calendar" title="Add to Apple Calendar, Google Calendar, or Outlook (.ics)" data-game-id="${g._id||''}">📅</button><button class="share-btn" aria-label="Share" title="Share this game" onclick="event.stopPropagation();(navigator.share?navigator.share({title:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')}',text:'${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} · ${g.league||sec.sport||''}\n${timeStr} ET',url:location.href}):navigator.clipboard&&navigator.clipboard.writeText('${(g.away||'').replace(/'/g,'')} @ ${(g.home||'').replace(/'/g,'')} – ${timeStr} ET via FIELD\n'+location.href)).catch(()=>{})"></button></div>
           ${_circadian==='LATE'&&_circEData?`<div class="circadian-late-recap">Final: ${(g.away||'').replace(/</g,'')} ${_circEData.awayScore??''} – ${(g.home||'').replace(/</g,'')} ${_circEData.homeScore??''}</div>`:""}
-          ${g.crew?`<span class="crew-chip" title="Broadcast crew">🎙 ${g.crew}</span>`:""}
+          ${g.crew?`<span class="crew-chip" title="Broadcast crew">${g.crew}</span>`:""}
           ${FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?`<button class="standings-btn" onclick="event.stopPropagation();toggleStandings(this,'${sec.sport}','2025')" title="Show ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'table':'standings'}">▼ ${(FD_LEAGUE_MAP[sec.sport]||ESPN_STANDINGS_MAP[sec.sport]?.isSoccer)?'Table':'Standings'}</button>`:""}
-          ${_circadian==='PRIME'?`<button class="thread-btn" onclick="event.stopPropagation();toggleThreadDrawer('${g._id}')">💬 Thread</button>`:""}
+          ${_circadian==='PRIME'?`<button class="thread-btn" onclick="event.stopPropagation();toggleThreadDrawer('${g._id}')">Thread</button>`:""}
         </div>
         ${_circadian==='PRIME'?`<div class="thread-drawer" data-open="0" hidden><div class="thread-notes"></div><div class="thread-input-row"><input class="thread-input" maxlength="280" placeholder="say something" oninput="this.closest('.game-card').querySelector('.thread-send-btn').disabled=!this.value.trim()||this.value.trim().length>280" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();_threadSend('${g._id}');}"><button class="thread-send-btn" disabled onclick="event.stopPropagation();_threadSend('${g._id}')">Send</button></div></div>`:""}
       </div>`;
@@ -8872,7 +8872,7 @@ function buildTodaySchedule(){
   // this up next season needs to build a real caller (e.g. a per-game
   // matchupNote injection point) in addition to refreshing PL_FD.
   const PL_FD={
-    ARS:{pts:82,gd:43,gf:69},   // CONFIRMED CHAMPIONS 🏆 — 37 played, no game May 19
+    ARS:{pts:82,gd:43,gf:69},   // CONFIRMED CHAMPIONS — 37 played, no game May 19
     MCI:{pts:78,gd:43,gf:76},   // UPDATED: 77→78 — drew 1-1 vs BOU (Haaland 90+, Kroupi 39')
     BOU:{pts:56,gd:4},           // UPDATED: 55→56 — drew 1-1 vs City. Beats Iraola's record 56pts
     BHA:{pts:53,gd:9},           // Brighton — 37 played, no game May 19
@@ -10039,7 +10039,7 @@ function buildWCMediaCards() {
             ? getStatOfDay(game, 'FIFA World Cup 2026') : null;
           if (_wcSd) {
             journalNote = (journalNote ? journalNote + ' ' : '') +
-              '\uD83D\uDD0D Scout’s Pick: ' + _wcSd.shortText;
+              'Scout’s Pick: ' + _wcSd.shortText;
           }
         }
       } catch(e_) { captureFieldError('wc:media-card-journal-note', e_, true); }
@@ -10480,13 +10480,13 @@ function renderFieldDesk(){
     if(topPick){
       const sd = (typeof getStatOfDay === 'function')
         ? getStatOfDay(topPick, _gameSport(topPick)) : null;
-      const statLine = sd ? `<div style="font-size:.64rem;color:#2dd4bf;margin-top:.2rem">📊 ${sd.fullText}</div>` : '';
+      const statLine = sd ? `<div style="font-size:.64rem;color:#2dd4bf;margin-top:.2rem">${sd.fullText}</div>` : '';
       const gameKey = topPick._id || `${topPick.home}_${topPick.away}`;
       const ms = (typeof _bdlMilestonesCache !== 'undefined') ? _bdlMilestonesCache?.[gameKey] : null;
-      const msLine = ms ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">🏆 ${ms.playerName} needs ${ms.gap} more ${ms.stat}</div>` : '';
+      const msLine = ms ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">${ms.playerName} needs ${ms.gap} more ${ms.stat}</div>` : '';
       const isWCGame = /wc26|world cup|fifa/i.test(topPick._sport||topPick.league||'');
       const wcLine = isWCGame && /MD[23]/.test(topPick.league||'')
-        ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">⚽ Advancement on the line</div>` : '';
+        ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">Advancement on the line</div>` : '';
       const network = gameNetwork(topPick);
       const networkLine = network ? `<span style="opacity:.6"> · ${network}</span>` : '';
       const seriesLine = topPick.seriesRecord ? `<div style="font-size:.64rem;color:var(--smoke);margin-top:.15rem">${topPick.seriesRecord}</div>` : '';
@@ -11917,8 +11917,8 @@ function injectJ1J4Badges() {
         if (_spStat) _spStatLine = _spStat.shortText;
       } catch(e_) {}
       badge.textContent = _spStatLine
-        ? `🔍 Scout's Pick: ${_spStatLine}`
-        : '🔍 Scout\'s Pick';
+        ? `Scout's Pick: ${_spStatLine}`
+        : 'Scout\'s Pick';
       // Tooltip: full stat context + qualifying signal
       let scoutTitle = 'Under-the-radar tonight';
       try {
@@ -12216,7 +12216,7 @@ function wxBadge(wx){
   if(windDisplay && !wx.windNote) parts.push(windDisplay);
   else if(wx.windNote) { if(parts.length) parts[0] += ''; parts.push(`Wind ${wx.windNote}`); }
   if((wx.rain||0)>1||(wx.precip||0)>1) parts.push(`Rain ${Math.round(wx.precip||wx.rain)}mm`);
-  if((wx.snowfall||0)>0.2) parts.push('❄️ Snow');
+  if((wx.snowfall||0)>0.2) parts.push('Snow');
   if((wx.aqi||0)>100){
     const aqiLabel = (wx.aqi||0)>200 ? 'Very unhealthy' : (wx.aqi||0)>150 ? 'Unhealthy' : 'Moderate AQI';
     parts.push(`AQI ${wx.aqi} — ${aqiLabel}`);
@@ -12508,7 +12508,7 @@ async function renderMajorPreviewCard(container){
 
   container.innerHTML = `
     <div class="major-preview-card">
-      <div class="major-preview-title">⛳ ${major.name} — ${major.edition} Edition</div>
+      <div class="major-preview-title">${major.name} — ${major.edition} Edition</div>
       <div class="major-preview-meta">${major.venue} · ${major.city} · ${major.dates[0]}</div>
       <div class="major-preview-meta">${major.broadcastNote}</div>
       ${displayNote?`<div class="major-preview-note">${displayNote}</div>`:""}    </div>`;
@@ -12656,7 +12656,7 @@ function buildGolfTop10HTML(leaderboard, roundLabel){
 
   const titleHTML = roundLabel
     ? `<div class="golf-lb-title">${roundLabel}</div>`
-    : `<div class="golf-lb-title">⛳ Leaderboard</div>`;
+    : `<div class="golf-lb-title">Leaderboard</div>`;
 
   const rows = players.map(p => {
     const pos    = String(p.position || "");
@@ -13695,7 +13695,7 @@ function renderHRDBracket(bracket) {
     : `<div class="hrd-final-tbd">Final: TBD</div>`;
 
   const championHTML = bracket.champion
-    ? `<div class="hrd-champion">🏆 ${bracket.champion.name} — 2026 Home Run Derby Champion</div>`
+    ? `<div class="hrd-champion">${bracket.champion.name} — 2026 Home Run Derby Champion</div>`
     : '';
 
   return `<div class="hrd-card">
@@ -14411,7 +14411,7 @@ function buildSituationBadge(situation){
   // Basketball shot clock
   if(situation.shotClock) parts.push(`SC: ${situation.shotClock}`);
   // Hockey
-  if(situation.powerPlay) parts.push("⚡ Power Play");
+  if(situation.powerPlay) parts.push("Power Play");
   if(!parts.length) return "";
   return `<div class="situation-badge">${parts.join(" · ")}</div>`;
 }
@@ -16890,8 +16890,8 @@ function buildScoutingReport(game, sport) {
       const runDiff = pf.runFactor - 100;
       const hrDiff  = pf.hrFactor  - 100;
       const pfVal = runDiff > 0
-        ? `<em>+${runDiff}% runs</em> · +${hrDiff}% HR${pf.badgeClass === 'park-hitter-extreme' ? ' · 🚀 Launch Pad' : ''}`
-        : `<span class="scout-warn">${runDiff}% runs</span> · ${hrDiff}% HR${pf.badgeClass === 'park-pitcher' || pf.badgeClass === 'park-pitcher-extreme' ? ' · 🛡 Pitcher\'s Park' : ''}`;
+        ? `<em>+${runDiff}% runs</em> · +${hrDiff}% HR${pf.badgeClass === 'park-hitter-extreme' ? ' · Launch Pad' : ''}`
+        : `<span class="scout-warn">${runDiff}% runs</span> · ${hrDiff}% HR${pf.badgeClass === 'park-pitcher' || pf.badgeClass === 'park-pitcher-extreme' ? ' · Pitcher\'s Park' : ''}`;
       rows.push({ lbl: 'Park', val: `${pf.label || (game.venue ? game.venue.split(',')[0] : abbr)} · ${pfVal}` });
     }
     // HP Umpire
@@ -17237,13 +17237,13 @@ function buildNHLAnalyticsBadges(game) {
   const badges = [];
   // [SPECIAL TEAMS] — one team elite PP (≥25%) vs elite PK (≥88%)
   if ((hST.pp >= 25 || aST.pp >= 25) && (hST.pk >= 88 || aST.pk >= 88))
-    badges.push(`<span class="nhl-badge nhl-st" title="PP: ${ha} ${hST.pp}% · ${aa} ${aST.pp}% | PK: ${ha} ${hST.pk}% · ${aa} ${aST.pk}%">⚡ SPECIAL TEAMS</span>`);
+    badges.push(`<span class="nhl-badge nhl-st" title="PP: ${ha} ${hST.pp}% · ${aa} ${aST.pp}% | PK: ${ha} ${hST.pk}% · ${aa} ${aST.pk}%">SPECIAL TEAMS</span>`);
   // [POSSESSION] — SAT gap ≥ 8%
   const satGap = Math.abs(hST.sat - aST.sat);
   if (satGap >= 8) {
     const leader = hST.sat > aST.sat ? ha : aa;
     const leadSat = Math.max(hST.sat, aST.sat);
-    badges.push(`<span class="nhl-badge nhl-pos" title="Corsi: ${ha} ${hST.sat}% · ${aa} ${aST.sat}%">🏒 ${leader} ${leadSat.toFixed(0)}% SAT</span>`);
+    badges.push(`<span class="nhl-badge nhl-pos" title="Corsi: ${ha} ${hST.sat}% · ${aa} ${aST.sat}%">${leader} ${leadSat.toFixed(0)}% SAT</span>`);
   }
   return badges.join('');
 }
@@ -17677,7 +17677,7 @@ function getStatOfDay(game, sport) {
 function buildStatOfDayBadge(game, sport) {
   const s = getStatOfDay(game, sport);
   if (!s) return '';
-  return `<span class="stat-day-badge" title="${s.fullText}">📊 ${s.shortText}</span>`;
+  return `<span class="stat-day-badge" title="${s.fullText}">${s.shortText}</span>`;
 }
 
 // 2026-07-13 (CC-CMD-2026-07-13-fetchnhlrelayscores-migration): migrated
@@ -20783,8 +20783,8 @@ function renderNewspaper(bundle) {
 
   // 7. Streak Board — reads real win/loss streaks (record_streak_board, Phase 13)
   if (bundle.record_streak_board && !bundle.record_streak_board.degraded) {
-    const hot  = (bundle.record_streak_board.hot  || []).map(s => `<span class="np-streak-chip np-hot">🔥 ${s.team} × ${s.streak}</span>`).join('');
-    const cold = (bundle.record_streak_board.cold || []).map(s => `<span class="np-streak-chip np-cold">🧊 ${s.team} × ${s.streak}</span>`).join('');
+    const hot  = (bundle.record_streak_board.hot  || []).map(s => `<span class="np-streak-chip np-hot">${s.team} × ${s.streak}</span>`).join('');
+    const cold = (bundle.record_streak_board.cold || []).map(s => `<span class="np-streak-chip np-cold">${s.team} × ${s.streak}</span>`).join('');
     if (hot || cold) {
       parts.push(`<div class="np-section np-streaks"><div class="np-label">STREAK BOARD</div><div class="np-streak-row">${hot}${cold}</div></div>`);
     }
@@ -20891,7 +20891,7 @@ function applyFieldPickBadge() {
   if (!card) return;
   const badge = document.createElement('div');
   badge.className = 'field-pick-badge';
-  badge.textContent = "⭐ FIELD's Pick";
+  badge.textContent = "FIELD's Pick";
   card.prepend(badge);
 }
 
@@ -21981,17 +21981,17 @@ async function injectWikiChips(){
     if(!venueLine) continue;
     if(hWiki?.trending&&aWiki?.trending){
       const chip=document.createElement('div');chip.className='wiki-chip';
-      chip.textContent=`📈 In the news — both teams trending nationally`;
+      chip.textContent=`In the news — both teams trending nationally`;
       chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
       venueLine.insertAdjacentElement('afterend',chip);
     }else if(hWiki?.trending){
       const chip=document.createElement('div');chip.className='wiki-chip';
-      chip.textContent=`📈 In the news — ${home} (+${Math.round((hWiki.spikeRatio-1)*100)}% on Wikipedia)`;
+      chip.textContent=`In the news — ${home} (+${Math.round((hWiki.spikeRatio-1)*100)}% on Wikipedia)`;
       chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
       venueLine.insertAdjacentElement('afterend',chip);
     }else if(aWiki?.trending){
       const chip=document.createElement('div');chip.className='wiki-chip';
-      chip.textContent=`📈 In the news — ${away} (+${Math.round((aWiki.spikeRatio-1)*100)}% on Wikipedia)`;
+      chip.textContent=`In the news — ${away} (+${Math.round((aWiki.spikeRatio-1)*100)}% on Wikipedia)`;
       chip.style.cssText='font-size:.55rem;color:#34d399;margin-top:.15rem';
       venueLine.insertAdjacentElement('afterend',chip);
     }
@@ -22369,7 +22369,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26n';
+  const SW_VERSION = '2026-08-26o';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -26953,18 +26953,18 @@ function buildPickWidgetHTML(g, sport) {
   const pick = cache[gid];
   if (!pick) {
     return `<div class="pick-widget" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
-      <span class="pick-label">🎯 Pick:</span>
+      <span class="pick-label">Pick:</span>
       <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.away)}','${esc(sport)}','${esc(g.home)}','${esc(g.away)}')">${esc(g.away)}</button>
       <button class="pick-btn" onclick="event.stopPropagation();makePick('${esc(gid)}','${esc(g.home)}','${esc(sport)}','${esc(g.home)}','${esc(g.away)}')">${esc(g.home)}</button>
     </div>`;
   }
   if (!pick.resolved) {
     return `<div class="pick-widget pick-made" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
-      <span class="pick-label">🎯 Your pick:</span> <span class="pick-choice">${esc(pick.predictedWinner)}</span>
+      <span class="pick-label">Your pick:</span> <span class="pick-choice">${esc(pick.predictedWinner)}</span>
     </div>`;
   }
   const resultCls = pick.wasCorrect ? 'pick-correct' : 'pick-incorrect';
-  const resultIcon = pick.wasCorrect ? '✓' : '✗';
+  const resultIcon = pick.wasCorrect ? '✓' : '';
   // resolvedProbability is a 0-1 fraction (relay's resolveWinProbability
   // convention, e.g. 0.579) -- must be scaled to a percentage for display.
   const probPct = pick.resolvedProbability != null
@@ -26972,7 +26972,7 @@ function buildPickWidgetHTML(g, sport) {
   const probLine = (probPct != null && pick.probabilityLabel)
     ? `<span class="pick-prob">${esc(pick.probabilityLabel)}: ${esc(probPct)}%</span>` : '';
   return `<div class="pick-widget pick-resolved ${resultCls}" data-gameid="${esc(gid)}" data-home="${esc(g.home)}" data-away="${esc(g.away)}">
-    <span class="pick-label">🎯 ${esc(pick.predictedWinner)}</span> <span class="pick-result">${resultIcon}</span> ${probLine}
+    <span class="pick-label">${esc(pick.predictedWinner)}</span> <span class="pick-result">${resultIcon}</span> ${probLine}
   </div>`;
 }
 
@@ -29976,7 +29976,7 @@ async function renderMLBGameBriefCard(gameCard) {
 
   const inner = document.createElement('div');
   inner.className = 'sgb-inner';
-  inner.innerHTML = `<div class="sgb-tag">⚾ MLB · Field Brief</div>
+  inner.innerHTML = `<div class="sgb-tag">MLB · Field Brief</div>
     <div class="sgb-text pending">${cached || 'Loading brief…'}</div>`;
   card.appendChild(inner);
   gameCard.insertAdjacentElement('beforebegin', card);
@@ -30077,7 +30077,7 @@ async function renderWNBAGameBriefCard(gameCard) {
 
   const inner = document.createElement('div');
   inner.className = 'sgb-inner';
-  inner.innerHTML = `<div class="sgb-tag">🏀 WNBA · Field Brief</div>
+  inner.innerHTML = `<div class="sgb-tag">WNBA · Field Brief</div>
     <div class="sgb-text pending">${cached || 'Loading brief…'}</div>`;
   card.appendChild(inner);
   gameCard.insertAdjacentElement('beforebegin', card);
@@ -30222,17 +30222,17 @@ async function renderStakesBriefCard(gameCard) {
   const _isNBAFinalsGame = /nba finals/i.test(game.league||'');
   const _isSCFGame = /stanley cup final/i.test(game.league||'');
   const impIcon = _isMajorFinal
-    ? (/champions league.*final/i.test(game.league||'') ? '🏆 UCL FINAL'
-      : /europa league.*final/i.test(game.league||'') ? '🏆 UEL FINAL'
-      : /conference league.*final/i.test(game.league||'') ? '🏆 UECL FINAL'
-      : '🏆 FINAL')
-    : _isNBAFinalsGame   ? '🏆 NBA FINALS'
-    : _isSCFGame         ? '🏆 STANLEY CUP FINAL'
-    : _isCFG7            ? '⚡ GAME 7 — FINALS BOUND'
-    : _isG7              ? '⚡ GAME 7'
-    : imp === 'elimination'     ? '💀 WINNER-TAKE-ALL'
-    : imp === 'series_deciding' ? '⚡ SERIES DECIDING'
-    : '🏆 CLINCH';
+    ? (/champions league.*final/i.test(game.league||'') ? 'UCL FINAL'
+      : /europa league.*final/i.test(game.league||'') ? 'UEL FINAL'
+      : /conference league.*final/i.test(game.league||'') ? 'UECL FINAL'
+      : 'FINAL')
+    : _isNBAFinalsGame   ? 'NBA FINALS'
+    : _isSCFGame         ? 'STANLEY CUP FINAL'
+    : _isCFG7            ? 'GAME 7 — FINALS BOUND'
+    : _isG7              ? 'GAME 7'
+    : imp === 'elimination'     ? 'WINNER-TAKE-ALL'
+    : imp === 'series_deciding' ? 'SERIES DECIDING'
+    : 'CLINCH';
   const inner = document.createElement('div');
   inner.className = 'stakes-inner';
   inner.innerHTML = `<div class="stakes-tag">${impIcon}</div>
@@ -31156,13 +31156,13 @@ async function renderWCTournamentBracket() {
       // Elimination traps — idle teams at risk from today's other games
       const elimTraps = elimTrapsData?.traps || [];
       if (elimTraps.length) {
-        html += `<div class="wc-traps"><div class="wc-traps-head">🚨 Elimination Risk — at risk from today’s other games</div>`;
+        html += `<div class="wc-traps"><div class="wc-traps-head">Elimination Risk — at risk from today’s other games</div>`;
         for (const t of elimTraps) {
           html += `<div class="wc-trap-row">
             <span class="wc-trap-team">${t.team}</span>
             <span class="wc-trap-grp">Grp ${t.group}</span>
             <span class="wc-trap-stat"><strong>${t.type === 'ELIMINATION_TRAP' ? 'ELIMINATION' : 'DANGER'}</strong></span>
-            <span class="wc-trap-delta" style="color:${t.type === 'ELIMINATION_TRAP' ? '#ef4444' : '#f97316'}">${t.type === 'ELIMINATION_TRAP' ? '☠' : '⚠'}</span>
+            <span class="wc-trap-delta" style="color:${t.type === 'ELIMINATION_TRAP' ? '#ef4444' : '#f97316'}">${t.type === 'ELIMINATION_TRAP' ? '' : '⚠'}</span>
           </div>`;
         }
         html += `</div>`;
@@ -31518,7 +31518,7 @@ function renderStatsSection() {
   }
 
   if (mlbRows.length) {
-    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚾ MLB</div>${mlbRows.join('')}</div>`);
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">MLB</div>${mlbRows.join('')}</div>`);
   }
 
   // ── NFL ──────────────────────────────────────────────────────────────────
@@ -31571,7 +31571,7 @@ function renderStatsSection() {
   }
 
   if (nflRows.length) {
-    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">🏈 NFL</div>${nflRows.join('')}</div>`);
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">NFL</div>${nflRows.join('')}</div>`);
   }
 
   // ── NBA ──────────────────────────────────────────────────────────────────
@@ -31602,7 +31602,7 @@ function renderStatsSection() {
     }).join('');
     nbaContent += `<div class="stats-subsection"><div class="stats-subsection-label">Defensive Rating (lower = better)</div>${dRows}</div>`;
 
-    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">🏀 NBA</div>${nbaContent}</div>`);
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">NBA</div>${nbaContent}</div>`);
   }
 
   // ── NHL ──────────────────────────────────────────────────────────────────
@@ -31627,7 +31627,7 @@ function renderStatsSection() {
     }
 
     if (nhlContent) {
-      blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">🏒 NHL</div>${nhlContent}</div>`);
+      blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">NHL</div>${nhlContent}</div>`);
     }
   }
 
@@ -31643,7 +31643,7 @@ function renderStatsSection() {
       const fplRows = sorted.map(([name, d], i) => {
         return row(i+1, name, `${d.xGI90.toFixed(2)} xGI/90`, '', `${d.xG90 !== undefined ? d.xG90.toFixed(2)+'xG · ' : ''}${d.xA90 !== undefined ? d.xA90.toFixed(2)+'xA' : ''}`);
       }).join('');
-      blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚽ EPL</div><div class="stats-subsection"><div class="stats-subsection-label">xGoal Involvement per 90 (xGI/90)</div>${fplRows}</div></div>`);
+      blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">EPL</div><div class="stats-subsection"><div class="stats-subsection-label">xGoal Involvement per 90 (xGI/90)</div>${fplRows}</div></div>`);
     }
   }
 
@@ -31730,7 +31730,7 @@ function renderStatsSection() {
   }
 
   if (mlsRows.length) {
-    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">⚽ MLS</div>${mlsRows.join('')}</div>`);
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">MLS</div>${mlsRows.join('')}</div>`);
   }
 
   // ── Today's Games ──────────────────────────────────────────────────────────
@@ -31819,7 +31819,7 @@ function renderStatsSection() {
     });
   });
   if (_todayGames.length) {
-    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">📋 Today's Games</div>${_todayGames.join('')}</div>`);
+    blocks.push(`<div class="stats-sport-block"><div class="stats-sport-label">Today's Games</div>${_todayGames.join('')}</div>`);
   }
 
   if (!blocks.length) {
@@ -32159,7 +32159,7 @@ function renderCascadeNarrative(bracketUpdate) {
     return '<div class="cascade-line">' + team + grp + ' ' + dir + pct + 'pp</div>';
   }).join('');
 
-  container.innerHTML = '<div class="cascade-header">⚡ RIPPLE EFFECTS</div>' + lines;
+  container.innerHTML = '<div class="cascade-header">RIPPLE EFFECTS</div>' + lines;
   if (isNew) bracketTab.insertBefore(container, bracketTab.firstChild);
 }
 
@@ -32261,7 +32261,7 @@ async function renderWCSection() {
   const navLink = document.getElementById('wc-nav-link');
   if (phase === 'bracket') {
     if (title) title.textContent = 'Knockout Stage';
-    if (navLink) navLink.textContent = '⚽ Bracket';
+    if (navLink) navLink.textContent = 'Bracket';
     // In bracket phase, auto-switch to bracket tab
     switchWCTab('bracket');
   } else {
@@ -32859,7 +32859,7 @@ function renderWCGroups(standings, matchResults, oddsProbs, liveGames, opts = {}
     const liveGame = gi.liveGame || null;
     const rows = buildWCGroupRows(standings[g] || [], scenarios, g, liveGame);
     const simBanner = gi.simultaneousFinalDay
-      ? `<div class="wc-sim-banner" title="FIFA rule: final-matchday games kick off simultaneously. Neither team knows the other result.">⚡ Final day · Both games kick off simultaneously · ${gi.simultaneousKickoffLabel || ''}</div>`
+      ? `<div class="wc-sim-banner" title="FIFA rule: final-matchday games kick off simultaneously. Neither team knows the other result.">Final day · Both games kick off simultaneously · ${gi.simultaneousKickoffLabel || ''}</div>`
       : '';
     return buildWCGroupShell(g, rows, simBanner);
   }).join('') +
@@ -33121,7 +33121,7 @@ function _wcBuildWPBar(liveGame, wp, ctx) {
         <div class="wc-wp-draw" style="width:${dPct}%">${dLabel}</div>
         <div class="wc-wp-away" style="width:${aPct}%">${aLabel}</div>
       </div>
-      <div class="wc-wp-meta">⚽ Live · ${clock} · ${src}${surpriseFrag}</div>
+      <div class="wc-wp-meta">Live · ${clock} · ${src}${surpriseFrag}</div>
       ${advBarHTML}
     </td>
   </tr>`;
@@ -33158,7 +33158,7 @@ function _wcScenarioBadge(teamName, groupId, scenarios) {
     return wrap(`<span class="wc-sb wc-sb--safe" title="Mathematically qualified — through regardless of remaining results">✓ Through</span>${bfrag}`);
   }
   if (teamInfo.alwaysEliminated) {
-    return wrap('<span class="wc-sb wc-sb--out" title="Mathematically eliminated — cannot finish top 2 or as best 3rd">✗ Out</span>');
+    return wrap('<span class="wc-sb wc-sb--out" title="Mathematically eliminated — cannot finish top 2 or as best 3rd">Out</span>');
   }
   const c = teamInfo.scenarioCounts;
   const total = c.first + c.second + c.third + c.fourth;
@@ -33247,18 +33247,18 @@ const WCT_R32_SLOTS = [
 // Country flag emoji from FIFA code
 const WCT_FLAGS = {
   MEX:'🇲🇽',RSA:'🇿🇦',KOR:'🇰🇷',CZE:'🇨🇿',CAN:'🇨🇦',BIH:'🇧🇦',USA:'🇺🇸',PAR:'🇵🇾',
-  QAT:'🇶🇦',SUI:'🇨🇭',BRA:'🇧🇷',MAR:'🇲🇦',HAI:'🇭🇹',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',AUS:'🇦🇺',TUR:'🇹🇷',
+  QAT:'🇶🇦',SUI:'🇨🇭',BRA:'🇧🇷',MAR:'🇲🇦',HAI:'🇭🇹',SCO:'󠁧󠁢󠁳󠁣󠁴󠁿',AUS:'🇦🇺',TUR:'🇹🇷',
   GER:'🇩🇪',CUW:'🇨🇼',NED:'🇳🇱',JPN:'🇯🇵',CIV:'🇨🇮',ECU:'🇪🇨',SWE:'🇸🇪',TUN:'🇹🇳',
   ESP:'🇪🇸',CPV:'🇨🇻',BEL:'🇧🇪',EGY:'🇪🇬',KSA:'🇸🇦',URU:'🇺🇾',IRN:'🇮🇷',NZL:'🇳🇿',
   FRA:'🇫🇷',SEN:'🇸🇳',IRQ:'🇮🇶',NOR:'🇳🇴',ARG:'🇦🇷',ALG:'🇩🇿',AUT:'🇦🇹',JOR:'🇯🇴',
-  POR:'🇵🇹',COD:'🇨🇩',ENG:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',CRO:'🇭🇷',GHA:'🇬🇭',PAN:'🇵🇦',UZB:'🇺🇿',COL:'🇨🇴',
+  POR:'🇵🇹',COD:'🇨🇩',ENG:'󠁧󠁢󠁥󠁮󠁧󠁿',CRO:'🇭🇷',GHA:'🇬🇭',PAN:'🇵🇦',UZB:'🇺🇿',COL:'🇨🇴',
 };
 
 function wctTeamCard(slotData, cls = '') {
   if (!slotData) {
     return `<div class="wct-team wct-tbd ${cls}"><span class="wct-name" style="color:var(--smoke);font-style:italic">TBD</span></div>`;
   }
-  const flag = WCT_FLAGS[slotData.fifaCode] || '🏳️';
+  const flag = WCT_FLAGS[slotData.fifaCode] || '';
   const pct  = slotData.prob != null ? Math.round(slotData.prob * 100) + '%' : '';
   return `<div class="wct-team ${cls}">
     <span class="wct-flag">${flag}</span>
@@ -33391,7 +33391,7 @@ async function renderWCBracketTree() {
   treeEl.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr) 120px repeat(4,1fr);text-align:center;min-width:900px;margin-bottom:.3rem">
       ${leftHeads}
-      <div class="wct-col-head" style="color:var(--gold)">🏆</div>
+      <div class="wct-col-head" style="color:var(--gold)"></div>
       ${rightHeads}
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr) 120px repeat(4,1fr);min-width:900px;align-items:center;gap:2px 0;padding:0 2px">
@@ -33400,7 +33400,7 @@ async function renderWCBracketTree() {
       ${buildR32Round(leftQFPairs, 'left')}
       ${buildR32Round(leftSFPairs, 'left')}
       <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:0 4px">
-        <div style="font-size:.9rem">🏆</div>
+        <div style="font-size:.9rem"></div>
         <div class="wct-champion-label">Final</div>
         <div class="wct-match wct-champion" style="width:108px">
           ${wctTeamCard(slots['Final_A'])}
@@ -33720,7 +33720,7 @@ function buildWatchWindowReason(game) {
 
   // Scout's Pick: under-the-radar game — surface the signal in the Watch Window chip
   if (typeof isScoutsPick === 'function' && isScoutsPick(game)) {
-    if (!game.seriesRecord) parts.push('🔍 Scout\'s Pick');
+    if (!game.seriesRecord) parts.push('Scout\'s Pick');
   }
 
   // #29b: franchise misery context (abbreviated) — "14yr drought" fits the chip
@@ -34110,7 +34110,7 @@ function renderArbitrageBar(){
 
   if(rows.length===0){el.style.display='none';return;}
   el.style.display='flex';
-  el.innerHTML='<div class="arb-header">📡 Watch Free Tonight</div>'+rows.join('');
+  el.innerHTML='<div class="arb-header">Watch Free Tonight</div>'+rows.join('');
 }
 
 function renderWatchWindow(){
@@ -35559,7 +35559,7 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
         vcBadge.textContent = `${milestoneMs.shortLabel} · CRUNCH TIME`;
         vcBadge.title = `${milestoneMs.playerName} needs ${milestoneMs.gap} more ${milestoneMs.stat} to reach ${milestoneMs.next}`;
       } else {
-        vcBadge.textContent = '⚡ CRUNCH TIME';
+        vcBadge.textContent = 'CRUNCH TIME';
       }
       try {
         const sportKey = (card.dataset.sport||sport||'').toLowerCase();
@@ -35578,7 +35578,7 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
       } catch(_) {}
     } else {
       vcBadge.className = 'badge-worth';
-      vcBadge.textContent = '👀 WORTH WATCHING';
+      vcBadge.textContent = 'WORTH WATCHING';
     }
     liveEl.insertAdjacentElement('afterend', vcBadge);
     // ── PM-27: emit field:crunch for CRUNCH TIME only (not WORTH WATCHING) ──
@@ -36402,7 +36402,7 @@ function detectAndRenderDoubleFeature() {
   if (hotGames.length >= 2) {
     hotGames.sort((a, b) => b.rank - a.rank);
     const top2 = hotGames.slice(0, 2);
-    const text = '🎬 Double Feature — '
+    const text = 'Double Feature — '
       + top2[0].label + ' · ' + fieldTierLabel(top2[0].tier)
       + ' + ' + top2[1].label + ' · ' + fieldTierLabel(top2[1].tier);
 
@@ -37592,7 +37592,7 @@ function maybePushWorldCup(sections){
     const daysAway=Math.round((new Date(WC_START)-new Date(TODAY_ISO))/86400000);
     sections.push({sport:"FIFA World Cup 2026",games:[{
       home:"FIFA World Cup 2026",away:null,
-      league:`📅 Starts in ${daysAway} day${daysAway===1?"":"s"} \u2014 June 11, Estadio Azteca`,
+      league:`Starts in ${daysAway} day${daysAway===1?"":"s"} \u2014 June 11, Estadio Azteca`,
       start_time:WC_START+"T15:00:00Z",confirmed:true,
       venue:"16 host cities \u00b7 USA \u00b7 Mexico \u00b7 Canada",
       streams:resolveBundle("WC26_FOX"),
@@ -37608,7 +37608,7 @@ function maybePushWorldCup(sections){
     const day=Math.round((new Date(TODAY_ISO)-new Date(WC_START))/86400000)+1;
     sections.push({sport:"FIFA World Cup 2026",games:[{
       home:"FIFA World Cup 2026",away:null,
-      league:`🔴 Live \u2014 Day ${day} of 39 \u00b7 All matches on FOX \u00b7 FS1`,
+      league:`Live \u2014 Day ${day} of 39 \u00b7 All matches on FOX \u00b7 FS1`,
       start_time:TODAY_ISO+"T15:00:00Z",confirmed:true,
       venue:"foxsports.com/soccer or Fox One app for today\u2019s schedule",
       streams:resolveBundle("WC26_FOX"),
@@ -37626,8 +37626,8 @@ function maybePushFrenchOpen(sections){
   const isLive   = TODAY_ISO >= FO_START && TODAY_ISO <= FO_END;
   const daysAway = isLive ? 0 : Math.round((new Date(FO_START) - new Date(TODAY_ISO)) / 86400000);
   const phaseStr = isLive
-    ? "🔴 LIVE NOW · Roland Garros"
-    : `📅 Starts in ${daysAway} day${daysAway===1?"":"s"}`;
+    ? "LIVE NOW · Roland Garros"
+    : `Starts in ${daysAway} day${daysAway===1?"":"s"}`;
   const foGame = {
     home: "Roland Garros 2026",
     away: null,
@@ -37678,7 +37678,7 @@ function renderBaseballSitChip(eData){
   // Bases loaded urgency
   const basesLoaded = onFirst && onSecond && onThird;
   const situNote = basesLoaded
-    ? `<span class="sit-urgent">🚨 Bases Loaded</span>`
+    ? `<span class="sit-urgent">Bases Loaded</span>`
     : (onSecond||onThird) ? `<span class="sit-count">RISP</span>` : "";
 
   return `<div class="baseball-sit">${basesHTML}${countStr}<span class="sit-outs">${outsStr}</span>${situNote}</div>`;
@@ -37710,7 +37710,7 @@ function injectBaseballSitChips(){
 function renderMLBWhosUpNextChip(forecast){
   if(!forecast) return "";
   const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  return `<div class="mlb-whos-up-next">🔜 In ~${forecast.estMinutes} min: likely ${esc(forecast.name)}'s at-bat (#${forecast.slot})</div>`;
+  return `<div class="mlb-whos-up-next">In ~${forecast.estMinutes} min: likely ${esc(forecast.name)}'s at-bat (#${forecast.slot})</div>`;
 }
 
 
@@ -38012,7 +38012,7 @@ function renderCoverageDashboard(){
     ? `<div class="cov-head">✓ All ${stats.total} games tonight covered with your subscriptions</div>`
     : `<div class="cov-head">Tonight: <strong>${stats.covered}/${stats.total}</strong> games covered
         <span class="cov-pct">${pct}%</span></div>
-       ${bestKey ? `<div class="cov-tip">➕ Add <strong>${bestName}</strong>${bestPrice?` ($${bestPrice}/mo)`:''}
+       ${bestKey ? `<div class="cov-tip">Add <strong>${bestName}</strong>${bestPrice?` ($${bestPrice}/mo)`:''}
          → unlocks <strong>${bestGain}</strong> more game${bestGain===1?'':'s'} tonight</div>` : ''}
        ${stats.uncoveredCount>0 ? `<div class="cov-missing">${stats.uncovered.slice(0,3).map(g=>`${g.away||''}${g.away?' @ ':''}${g.home||''}`).join(' · ')}${stats.uncoveredCount>3?` +${stats.uncoveredCount-3} more`:''}</div>` : ''}`;
 
@@ -39408,14 +39408,14 @@ function buildDramaLineTiers(game, eData, sport){
     const winS=Math.max(hS,aS),loseS=Math.min(hS,aS);
     const score=winS+'–'+loseS;
     const peak=getDramaPeak(gid, game);
-    const drama=peak>=80?'\uD83D\uDD25 High drama':peak>=60?'\u26A1 Good game':'';
+    const drama=peak>=80?'High drama':peak>=60?'Good game':'';
     const tight=trim(join([score,series]),36),mid=trim(join([score,drama,series]),52),full=join([score,drama,series,firstSentence]);
     return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
   }
   const primary=series||narrative,extra=series?narrative:firstSentence;
   // Scout's Pick fallback: when no series/narrative text, surface the pick signal
   const scoutLabel = (!primary && !firstSentence && typeof isScoutsPick === 'function' && isScoutsPick(game))
-    ? '🔍 Scout\'s Pick' : '';
+    ? 'Scout\'s Pick' : '';
   if(!primary&&!firstSentence&&!scoutLabel)return empty;
   const tight=trim(scoutLabel||primary||firstSentence,36),mid=trim([scoutLabel||primary,extra].filter(Boolean).join(' · '),52),full=[scoutLabel||primary,firstSentence].filter(Boolean).join(' · ');
   return tight?{tight,mid:mid||tight,full:full||mid||tight}:empty;
@@ -39493,7 +39493,7 @@ function buildLifeStageContent(game, eData, stage) {
   const sp = (_gameSport(game)).toLowerCase();
   switch(stage) {
     case 'postponed':
-      return '<div class="card-stage-content card-stage-ppd">⛈ Postponed</div>';
+      return '<div class="card-stage-content card-stage-ppd">Postponed</div>';
     case 'pre': {
       // Pre-game: context from game data, no fabrication
       // Big game detection via Sport Classifier (now checks game.league independently)
@@ -39515,8 +39515,8 @@ function buildLifeStageContent(game, eData, stage) {
       const ms = _bdlMilestonesCache?.[game._id];
       if (ms) parts.push(`${ms.playerName} needs ${ms.gap} ${ms.stat}`);
       // GOTD surfacing in card brief — makes streaming context visible without badge-row scroll
-      if (game.peacockGOTD) parts.push('🦚 Peacock GOTD — free to stream');
-      else if (game.espnGOTD) parts.push('📺 Free on ESPN App / ESPN Unlimited');
+      if (game.peacockGOTD) parts.push('Peacock GOTD — free to stream');
+      else if (game.espnGOTD) parts.push('Free on ESPN App / ESPN Unlimited');
       // Fallback for sports without matchupNote (WNBA, MLB local games): show localNote or venue
       if (!parts.length && game.localNote) parts.push(game.localNote.slice(0,100));
       // Do NOT fall back to game.venue — the card template already renders .venue-line
@@ -40024,7 +40024,7 @@ function pinGame(gameId) {
   if (!localStorage.getItem('field_pin_hint_seen')) {
     localStorage.setItem('field_pin_hint_seen','1');
     const hint = document.createElement('div');
-    hint.textContent = '📌 Pinned — live in the corner as you scroll';
+    hint.textContent = 'Pinned — live in the corner as you scroll';
     hint.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:rgba(20,20,40,.95);color:#e8e8f0;font-size:.72rem;padding:.5rem 1rem;border-radius:6px;z-index:200;pointer-events:none;border:1px solid rgba(255,255,255,.12);white-space:nowrap';
     document.body.appendChild(hint);
     setTimeout(() => hint.remove(), 4000);
@@ -40236,11 +40236,11 @@ function openBottomSheet(gameId) {
     ${(game.matchupNote||game.localNote) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${game.matchupNote||game.localNote}</div></div>` : ''}
     <div id="bs-pl-inject"></div>
     <div id="bs-last-meeting"></div>
-    ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'🦚 Peacock GOTD · Free to stream · ':game.espnGOTD?'📺 Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
+    ${game.streams?.length ? `<div class="bs-section"><div class="bs-section-label">Watch On</div><div class="bs-section-body">${game.peacockGOTD?'Peacock GOTD · Free to stream · ':game.espnGOTD?'Free on ESPN App/Unlimited · ':''}${game.streams.slice(0,4).map(s=>s.label||s.name).filter(Boolean).join(' · ')}</div></div>` : ''}
     ${game.crew ? `<div class="bs-section"><div class="bs-section-label">Crew</div><div class="bs-section-body">${game.crew}</div></div>` : ''}
     <div style="margin-top:1rem;display:flex;gap:.6rem">
-      <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">📌 Pin game</button>
-      <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">⬆ Share</button>
+      <button onclick="pinGame('${gameId}');closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">Pin game</button>
+      <button onclick="navigator.share&&navigator.share({title:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')}',text:'${(game.away||'').replace(/'/g,'')} @ ${(game.home||'').replace(/'/g,'')} · ${game.league||sport||''}',url:location.href}).catch(()=>{});closeBottomSheet()" style="flex:1;padding:.55rem;border-radius:.6rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:inherit;font-size:.7rem;cursor:pointer">Share</button>
     </div>`;
   getEl('bs-overlay')?.classList.add('open');
   const _bsEl2 = getEl('bottom-sheet');
@@ -41136,7 +41136,7 @@ function renderHalftimeSwitch(){
   const scoreStr = `${ed.homeScore||0}–${ed.awayScore||0}`;
   const clockStr = ed.clock ? ` · ${fmtESPNClock(ed.clock)}` : '';
   panel.innerHTML = `<div class="halftime-inner" id="ht-inner">
-    <span class="ht-icon">🎯</span>
+    <span class="ht-icon"></span>
     <span class="ht-label">Perfect Switch</span>
     <span class="ht-matchup">${best.game.away||''} @ ${best.game.home||''} &nbsp;${scoreStr}${clockStr}</span>
     <span class="ht-drama">${fieldTierLabel(best.tier)}</span>
