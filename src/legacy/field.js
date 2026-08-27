@@ -22369,7 +22369,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26l';
+  const SW_VERSION = '2026-08-26m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -22979,11 +22979,23 @@ function getStatisticalExtremes(eData, sport){
 // already conveys the LIVE state; this badge is meant to convey the
 // drama TIER. "● LIVE" / "⚡ LIVE" / "🔥 LIVE" turned every drama-badge
 // into a second LIVE indicator stacked next to .live-badge.
+// THE DRAMA TIER'S MARK, DEFINED ONCE. Two functions used to carry this same
+// four-band mapping with the same four characters — `dramaLabel(score)` banding
+// on 80/60/40 for the live-card badge, and `tierLabel` banding on the named
+// states CRUNCH / CLOSE_LATE / LIVE for the MLB chip. The `glyph-ambiguity`
+// line in docs/chrome-inventory.txt counted that as one glyph meaning three
+// things, which was the wrong diagnosis: it was one THING implemented three
+// times. Merging the definitions is what resolves it, and no rendered pixel
+// changes.
+//
+// A function declaration rather than a const, because `tierLabel`'s call site
+// sits ~14,000 lines below this and hoisting makes the order irrelevant.
+function dramaTierMark(tier){
+  return tier === 'fire' ? '🔥' : tier === 'crunch' ? '⚡' : tier === 'warm' ? '●' : '';
+}
+
 function dramaLabel(score){
-  if(score>=80) return '🔥';
-  if(score>=60) return '⚡';
-  if(score>=40) return '●';
-  return '';
+  return dramaTierMark(score>=80 ? 'fire' : score>=60 ? 'crunch' : score>=40 ? 'warm' : '');
 }
 
 // ── Inject drama badges into rendered live cards ─────────────────────────
@@ -27830,7 +27842,7 @@ fieldEvents.addEventListener('field:crunch', (e) => {
       chip.className = 'fan-out-chip';
       chip.title = `CRUNCH TIME just activated in ${matchupLabel} — tap to see it`;
       chip.dataset.scrollTarget = sourceId;
-      chip.appendChild(document.createTextNode(` via ${matchupLabel}`));
+      chip.appendChild(document.createTextNode(`via ${matchupLabel}`));
       chip.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const srcCard = document.querySelector(`.game-card[data-gameid="${sourceId}"]`);
@@ -37138,9 +37150,7 @@ function renderMobileLiveBar(){
     const tier = (_t==='CRUNCH'||_t==='EXTRA_TIME') ? 'fire'
                : _t==='CLOSE_LATE'                  ? 'crunch'
                : _t==='LIVE'                        ? 'warm' : 'low';
-    const tierLabel = (_t==='CRUNCH'||_t==='EXTRA_TIME') ? '🔥'
-                    : _t==='CLOSE_LATE'                  ? '⚡'
-                    : _t==='LIVE'                        ? '●' : '';
+    const tierLabel = dramaTierMark(tier);   // `tier` above is the same four bands
     const tn=typeof teamNick==='function'?teamNick:n=>n;
     const away=tn(g.away||'').slice(0,12);
     const home=tn(g.home||'').slice(0,12);

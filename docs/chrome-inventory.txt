@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-159  decorative-emoji
+155  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
 146  decorative-emoji-labelled
-13  decorative-emoji-alone
+9  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -315,7 +315,7 @@
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
 
-11  emoji-announced
+7  emoji-announced
 # WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
 #
 # Every other line here asks some form of "does this look like decoration", and
@@ -416,7 +416,7 @@
 # 200 characters. A wider window would start crediting an `aria-hidden` on an
 # unrelated ancestor, which is the direction that produces a false green.
 
-3  glyph-ambiguity
+1  glyph-ambiguity
 # ONE GLYPH, MANY MEANINGS — the mirror of the test that ended SPORT_ICONS.
 #
 # That map died because one glyph covered many KEYS: four English competitions
@@ -435,4 +435,33 @@
 # the words beside it, so reuse there is not ambiguity. The declared number is
 # the WORST glyph, not a total, so it falls only when the most overloaded glyph
 # is fixed — which is the one worth fixing.
+#
+# 7 -> 1 on 2026-08-27, and the diagnosis in the paragraph above turned out to be
+# wrong in an instructive way. "A glyph used in seven unrelated contexts means
+# seven things" described the symptom. The cause, for the last three, was ONE
+# THING IMPLEMENTED THREE TIMES:
+#
+#   dramaLabel(score)   80 / 60 / 40                    -> fire / bolt / dot
+#   tierLabel           CRUNCH / CLOSE_LATE / LIVE      -> fire / bolt / dot
+#
+# The same four-band mapping to the same four characters, written twice, ~14,000
+# lines apart. `dramaTierMark(tier)` is now the single definition and both call
+# it; `tierLabel` collapsed to a one-liner because the `tier` variable on the
+# line above it already held the band. No rendered pixel changed, and the
+# ambiguity is gone because there is one place where the mark is decided.
+#
+# The other two were not tier badges at all and were miscounted as the same
+# thing:
+#
+#   the Drama Dial's ice/fire pair are the ENDS OF A SLIDER, a scale rather than
+#   a state. They are the words "Low" and "High" now, and the range input — whose
+#   only labels had been two pictographs — gained the aria-label it never had.
+#
+#   `.fan-out-chip::before { content: '\u26a1' }` was CSS-generated decoration in
+#   front of "via <matchup>", with the real explanation already in the chip's
+#   own title attribute. Deleted; the text lost the leading space the glyph had
+#   been occupying.
+#
+# One remains, which is a glyph appearing in one place and is what this line
+# looks like when it is satisfied.
 
