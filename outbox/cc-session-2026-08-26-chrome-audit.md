@@ -9,16 +9,16 @@ SW_VERSION `2026-08-26a` → `2026-08-26n`. Deploy gate green on every push.
 
 ```
                     start    end
-decorative-emoji      275 →  150
-  captioned           109 →  146     ← rose because the DETECTOR got honest
+decorative-emoji      275 →    4
+  captioned           109 →    0     (peaked at 146; the detector got honest, then it was swept)
   uncaptioned         166 →    4
 emoji-announced         —  →    2     (new line; 82 when first measured)
 glyph-ambiguity         —  →    1     (new line; 7 when first measured)
-glyph-singleton         —  →   25     (new line)
+glyph-singleton         —  →    0     (new line; 25 when first measured)
 icon-in-a-box           —  →    1     (new line; 4 when first measured)
 unreferenced-css        —  →    0     (new line; 61 when first measured)
 flag-emoji            102 →   92
-status-glyph          107 →  101
+status-glyph          107 →   39
 gradient               34 →   30
 backdrop-filter        19 →   12
 coloured-shadow        11 →   10
@@ -69,7 +69,12 @@ Every one of these was caught by running the check rather than by reviewing it.
    classes, 52 of which are emitted by `src/solid/` and `src/debrief/` — bundled
    by esbuild, absent from the page source. 105 → 61 once the corpus was the
    files that ship.
-6. **A blunt regex removed 32 `icon:` fields instead of 24**, catching
+6. **The body counter read its own documentation.** `bodyOf` did not strip
+   comments, so 67 decorative glyphs and 62 status glyphs in prose counted as
+   chrome on the page. A hand estimate said "about 20" — it checked only whether
+   a glyph's own line began with `//` and missed every block comment. Three
+   times the estimate, which is the argument for measuring.
+7. **A blunt regex removed 32 `icon:` fields instead of 24**, catching
    `getPulseChip`'s `{icon, text}`. Smoke failed at 984/985. Reverted and redone
    with a `label:`-in-the-same-object rule rather than patched forward.
 
@@ -94,10 +99,14 @@ green on every push. Smoke 985/0 at every commit. `chrome inventory` and
 
 ## Open, with unblock criteria (Rule 74)
 
-- **`glyph-singleton` 25.** 25 captioned glyphs used exactly once. A house-style
-  decision, deliberately not swept — 146 judgement calls at the end of a long
-  session is the condition that produced the three wrong boundaries above. The
-  ratchet stops the 26th. Unblocked by a decision, not by a probe.
+- **`glyph-singleton` 0 — CLOSED.** The objection to sweeping was "146 judgement
+  calls at the end of a long session", the condition that produced the three
+  wrong boundaries above. It was answered rather than overruled: one decision
+  applied 79 times, with a machine deciding membership. Two smoke assertions
+  broke and both deserved to, being named for one thing and measuring a glyph.
+  The sweep tool then hit the escape blind spot itself and three survived a pass
+  that reported success — which is why the number is read from the counter
+  afterwards and never from the tool.
 - **`emoji-announced` 2 — the check's floor, not a backlog.** Both are inside
   `dramaTierMark()`; both call sites hide the glyph, but the check reads source
   position and cannot follow a value from a function to its render sites. A

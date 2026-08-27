@@ -14,11 +14,11 @@ did not exist: the ratchet ran only inside `deploy-gate.yml`, whose `paths`
 covered neither of the ratchet's own inputs.
 
 ```
-decorative-emoji  275 → 150      emoji-announced   82 → 2   (new)
+decorative-emoji  275 →   4      emoji-announced   82 → 2   (new)
   uncaptioned     166 →   4      glyph-ambiguity    7 → 1   (new)
 flag-emoji        102 →  92      unreferenced-css  61 → 0   (new)
-status-glyph      107 → 101      icon-in-a-box      4 → 1   (new)
-gradient           34 →  30      glyph-singleton      25    (new)
+status-glyph      107 →  39      icon-in-a-box      4 → 1   (new)
+gradient           34 →  30      glyph-singleton   25 → 0   (new)
 backdrop-filter    19 →  12
 ```
 
@@ -36,8 +36,7 @@ answer is *add a boundary* — nine were added and three were wrong. It asks
 each element. Six further defects in the checks themselves are listed in the
 session doc; every one was caught by running the check, not by reviewing it.
 
-**Open, not backlogs:** `glyph-singleton` 25 is a house-style decision left
-deliberately unswept; `emoji-announced` 2 is the check's floor, both inside
+**Open, not backlogs:** `emoji-announced` 2 is the check's floor, both inside
 `dramaTierMark()` where the render sites hide the glyph but the source-position
 check cannot follow the reference.
 
