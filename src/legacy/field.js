@@ -12793,7 +12793,7 @@ function injectSlashGolfLeaderNotes(activeTournaments, leaderboards, rankings){
           matchupDiv.appendChild(chip);
         }
       }
-      if(chip && leaderNote) chip.textContent = "⛳ " + leaderNote;
+      if(chip && leaderNote) chip.textContent = leaderNote;
 
       // Round badge
       if(roundLabel){
@@ -19346,7 +19346,7 @@ function soccerGoalsInjectDOM(home, away) {
     const div = document.createElement('div');
     div.className = 'soccer-goals';
     div.style.cssText = 'font-size:.6rem;color:var(--smoke);margin-top:.15rem;letter-spacing:.01em;opacity:.85';
-    div.textContent = '⚽ ' + lines.join(' · ');
+    div.textContent = lines.join(' · ');
     sw.appendChild(div);
   });
 }
@@ -20194,7 +20194,7 @@ function renderESPNScores(){
               matchupDiv.appendChild(chip);
             }
           }
-          if(chip) chip.textContent = "⛳ " + golfDetail;
+          if(chip) chip.textContent = golfDetail;
           // Round badge update
           let roundBadge = card.querySelector(".round-badge");
           if(!roundBadge&&score.period){
@@ -20205,7 +20205,7 @@ function renderESPNScores(){
               leagueBadge.parentNode.insertBefore(roundBadge, leagueBadge.nextSibling);
             }
           }
-          if(roundBadge) roundBadge.textContent = (isGolfLive?"🔴 ":"")+(score.period||"");
+          if(roundBadge) roundBadge.textContent = (isGolfLive?"LIVE ":"")+(score.period||"");
         }
         return; // Skip team-sport score block for golf
       }
@@ -21160,7 +21160,7 @@ async function fetchSchedule(){
       if (streak >= 2) {
         const el = document.getElementById('streak-badge');
         if (el) {
-          el.textContent = (streak >= 100 ? '🏆 ' : '🔥 ') + streak + (streak===1?'':' days');
+          el.textContent = streak + (streak===1?' day':' days');
           el.style.display = 'flex';
           el.title = streak >= 100
             ? `${streak}-day streak — FIELD power user`
@@ -21557,7 +21557,7 @@ function updateTzPill(){
     "Australia/Sydney":"AEDT","Asia/Kolkata":"IST"
   };
   const short = abbr[tz] || tz.split("/").pop().replace("_"," ").slice(0,4);
-  pill.textContent = "🕐 "+short;
+  pill.textContent = short;
 }
 
 // ── Android-reliable game card tap via event delegation ──────────────────────
@@ -22372,7 +22372,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-26i';
+  const SW_VERSION = '2026-08-26j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -29601,7 +29601,7 @@ async function initFIELDBrief(sections){
     // J6: SMT note — inject editorial line into Sports Media Today section
     if(compound.smt_note){
       const smtBar=document.getElementById('smt-note-bar');
-      if(smtBar){smtBar.textContent='📋 '+trimToCompleteSentence(compound.smt_note);smtBar.style.display='block';}
+      if(smtBar){smtBar.textContent=trimToCompleteSentence(compound.smt_note);smtBar.style.display='block';}
     }
     // FIELD Desk: refresh after compound dispatch so it has all briefs available
     scheduleFieldDesk(200);
@@ -35548,7 +35548,7 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
     if (vcResult.badge === 'CRUNCH TIME') {
       vcBadge.className = 'badge-crunch badge-pulse';
       if (milestoneMs?.shortLabel) {
-        vcBadge.textContent = `⚡ ${milestoneMs.shortLabel} · CRUNCH TIME`;
+        vcBadge.textContent = `${milestoneMs.shortLabel} · CRUNCH TIME`;
         vcBadge.title = `${milestoneMs.playerName} needs ${milestoneMs.gap} more ${milestoneMs.stat} to reach ${milestoneMs.next}`;
       } else {
         vcBadge.textContent = '⚡ CRUNCH TIME';
@@ -35615,7 +35615,7 @@ function renderCardBadges(card, eData, sport, gid, smoothed) {
       const eb = document.createElement('span');
       eb.className = 'badge-ember';
       const tierLabel = emberResult.tier === 3 ? 'Local Gem' : emberResult.tier === 2 ? 'Regional Gem' : 'Buried Lead';
-      eb.textContent = `🔍 ${tierLabel}`;
+      eb.textContent = tierLabel;
       eb.title = `Buried Lead: Tier ${emberResult.tier} on ${emberResult.channel}${emberResult.lateClose?' · late-close game':''}${emberResult.contextFlag?' · context boost':''}`;
       liveEl.insertAdjacentElement('afterend', eb);
       if (gid) _emberResultCache[gid] = emberResult;

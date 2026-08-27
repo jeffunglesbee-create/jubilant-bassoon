@@ -17,12 +17,12 @@
 # `backdrop-filter` and `-webkit-backdrop-filter`. These are the measured
 # figures; the grep numbers were low.
 
-210  decorative-emoji
+200  decorative-emoji
 # 78 distinct. Lowered from 289 on 2026-08-26: `.media-icon`'s television emoji
 # went with the tinted box it sat in.
 
 148  decorative-emoji-labelled
-62  decorative-emoji-alone
+52  decorative-emoji-alone
 # THE PRODUCT DECISION, SPLIT INTO A MEASUREMENT AND A JUDGEMENT CALL.
 #
 # The line above sat at 288 with a note saying replacing an icon system is "a
@@ -315,7 +315,7 @@
 # checklist says "colored"; an unfilled control is not the pattern. Seven
 # self-test cases now pin each condition separately.
 
-62  emoji-announced
+52  emoji-announced
 # WHAT A SCREEN READER SAYS, which is a sharper question than "is this slop".
 #
 # Every other line here asks some form of "does this look like decoration", and
@@ -343,6 +343,21 @@
 # this file, at the one drama-band site that was captioned — which is why that
 # site never appeared in the uncaptioned count. Its glyphs went too.
 #
+# A FOURTH FORM: the caption is CONCATENATED at runtime.
+#
+#   chip.textContent = "\u26f3 " + leaderNote
+#   div.textContent  = '\u26bd ' + lines.join(' \u00b7 ')
+#   pill.textContent = "\U0001F550 " + short
+#
+# The literal holding the glyph is `"\u26f3 "` — no word in it, so the literal
+# rule calls it alone, while a reader sees `\u26f3 Scheffler -12`. Ten of these,
+# all deleted; the value they prefixed is the caption and it stays.
+#
+# Two of the ten carried state rather than decoration and became words:
+# `isGolfLive ? "\U0001F534 " : ""` is now `"LIVE "`, and a streak's
+# trophy-or-flame threshold went entirely, because the streak NUMBER is printed
+# immediately after it and says which is bigger without help.
+#
 # A THIRD FORM OF "CAPTIONED", found at 74 and gone by 57. The caption can live
 # in the same literal, in the next DOM node — and in a SIBLING FIELD of the same
 # object:
@@ -369,7 +384,7 @@
 # 200 characters. A wider window would start crediting an `aria-hidden` on an
 # unrelated ancestor, which is the direction that produces a false green.
 
-5  glyph-ambiguity
+4  glyph-ambiguity
 # ONE GLYPH, MANY MEANINGS — the mirror of the test that ended SPORT_ICONS.
 #
 # That map died because one glyph covered many KEYS: four English competitions
