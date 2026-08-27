@@ -231,6 +231,29 @@ export function glyphContexts(body) {
   }
   return by
 }
+/// A GLYPH USED EXACTLY ONCE IS A WORD INVENTED FOR ONE SENTENCE.
+///
+/// The 146 captioned emoji are not defects by any test in this file — each has
+/// its words beside it, which is the checklist's own bar. But 55 distinct
+/// glyphs is a vocabulary, and 25 of them appear a single time. A reader cannot
+/// learn a symbol they will see once, so a singleton is carrying no meaning the
+/// caption is not already carrying, and it is the half of the 146 with an
+/// argument behind it rather than a taste behind it.
+///
+/// Counted over CAPTIONED glyphs only — the uncaptioned ones are the
+/// emoji-announced line's business, and counting them twice would make two
+/// lines move for one edit.
+export function singletonGlyphs(body) {
+  const freq = new Map()
+  for (const m of body.matchAll(EMOJI)) {
+    const c = m[0]
+    if (FLAG(c) || STATUS.has(c)) continue
+    if (!(/[A-Za-z]{3,}/.test(spanAround(body, m.index)) || labelledBySibling(body, m.index))) continue
+    freq.set(c, (freq.get(c) || 0) + 1)
+  }
+  return [...freq].filter(([, n]) => n === 1).map(([c]) => c)
+}
+
 export const worstGlyphAmbiguity = body =>
   [...glyphContexts(body).values()].reduce((n, s) => Math.max(n, s.size), 0)
 
@@ -305,6 +328,7 @@ export function countsFor(html) {
     'icon-in-a-box': iconBoxes(css).length,
     'emoji-announced': announcedEmoji(body).length,
     'glyph-ambiguity': worstGlyphAmbiguity(body),
+    'glyph-singleton': singletonGlyphs(body).length,
   }
 }
 
@@ -448,6 +472,17 @@ if (SELF_TEST) {
   check('a page with no uncaptioned glyph scores 0',
     worstGlyphAmbiguity('<body><span>🔥 Hot</span></body>') === 0,
     'a captioned glyph takes its meaning from its words; reuse there is not ambiguity')
+  // ── a glyph used exactly once ────────────────────────────────────────────
+  check('a captioned glyph appearing once is a singleton',
+    singletonGlyphs('<body><span>🔥 Hot</span></body>').length === 1)
+  check('...and appearing twice is not',
+    singletonGlyphs('<body><span>🔥 Hot</span><span>🔥 Warm</span></body>').length === 0)
+  check('an UNCAPTIONED singleton is the announce line\'s business, not this one',
+    singletonGlyphs('<body><span>🔥</span></body>').length === 0,
+    'one edit would move two ratchet lines')
+  check('two different captioned glyphs are two singletons',
+    singletonGlyphs('<body><span>🔥 Hot</span><span>📊 Chart</span></body>').length === 2)
+
   check('two different glyphs do not pool their contexts',
     worstGlyphAmbiguity('<body>a = "🔥" b = "📊"</body>') === 1)
 

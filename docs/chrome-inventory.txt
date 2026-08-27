@@ -494,3 +494,27 @@
 # One remains, which is a glyph appearing in one place and is what this line
 # looks like when it is satisfied.
 
+25  glyph-singleton
+# A GLYPH USED EXACTLY ONCE IS A WORD INVENTED FOR ONE SENTENCE.
+#
+# The 146 captioned emoji are not defects by any test in this file — each has
+# its words beside it, which is the checklist's own bar, and 275 -> 150 came
+# from removing the ones that did not. What is left is 55 distinct glyphs, and
+# 25 of them appear a single time.
+#
+# 55 distinct symbols is a vocabulary. A reader cannot learn one they will see
+# once, so a singleton carries nothing its caption is not already carrying. That
+# is an argument, where "146 emoji feels like a lot" is a taste, and this line
+# records the half that has one.
+#
+# NOT SWEPT, DELIBERATELY. 146 individual judgement calls at the end of a long
+# session is the condition under which three wrong calls already got made today
+# — the .pick-reason / .pick-leader / .pk-banner boundaries, added because the
+# metric could only score the additive fix. The ratchet stops the 26th; which of
+# the 25 go, and whether the other 121 follow, is a house-style decision with a
+# real cost and it should be made deliberately rather than at the end of a
+# cleanup.
+#
+# Counted over CAPTIONED glyphs only. The uncaptioned ones are emoji-announced's
+# business, and counting them twice would make two lines move for one edit.
+
