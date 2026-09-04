@@ -29,7 +29,7 @@ duplicate.
 |---|---|
 | **Producer** | `scripts/build-field-data.js` → `outbox/field-data-today.json`, committed daily 07:30 UTC by `field-data.yml`. Schema 2.1: `_meta.window_dates`, `windowed_sports`, `day0_only_sports`, `notes_for_dates`, `games_found_by_date`; top-level `schedules_by_date`. |
 | **Consumer** | `scheduleForDate(fileData, iso)` in `field_utils.js`, duplicated in `field.js`; `fieldDataForDate(iso)` binds it to `_fieldDataCache`. Fetched from GitHub raw (`_SCHEDULE_BASE`), not the Worker. |
-| **Status** | **VERIFIED** for the payload — real 4-day file generated and read back. **UNVERIFIED in a browser**: the forward-day enrichment has no live probe yet (next step). |
+| **Status** | **VERIFIED end to end.** Probe run 33908369496 against the live deploy: `cacheAccepted:true`, `schema:2.1`, all four `window_dates`, and the client's own `scheduleForDate` returning 15 / 15 / 11 MLB entries for +1 / +2 / +3 (`outbox/forward-window-manifest-33908369496.json`). **Still unproven: the MLB enrichment match count.** A GitHub runner cannot reach site.api.espn.com from the browser (CORS-blocked on every fixture fetch across runs 1, 3 and 5), so no ESPN section renders and there is nothing to enrich. That field is reported, never asserted. |
 | **Known limits** | NHL/NBA are day-0 only — their relay endpoints are today-only, no date param (needs a relay route, Rule 70). `game_overlays` and matchupNotes are day 0 only: the `home\|away` key collides across a series, measured 15/15 on day 0 vs +1. |
 
 **Forward days are ESPN-based, enriched — not replaced.** The ESPN sweep covers

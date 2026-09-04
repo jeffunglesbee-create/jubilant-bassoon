@@ -435,3 +435,64 @@ FAIL**, asserted in the script.
 in around that. The Playwright probe (artifact 3) is **not built** and is the
 remaining piece — a task, not a carry-forward, tracked as the next step rather
 than closed out here.
+
+---
+
+## 15. Done condition — met, and the one claim still unproven
+
+**Probe run 33908369496, against the live deploy, conclusion: success.**
+Manifest: `outbox/forward-window-manifest-33908369496.json`.
+
+```json
+"cacheAccepted": true, "schema": "2.1", "testApi": "pl-verify",
+"window_dates": ["2026-09-04","2026-09-05","2026-09-06","2026-09-07"],
+"games_found_by_date": {"2026-09-04":16,"2026-09-05":15,"2026-09-06":15,"2026-09-07":11},
+"windowDaysReachingClient": 3, "windowMlbTotal": 41
+```
+
+Per day, read through the client's own `scheduleForDate`: **+1 → 15, +2 → 15,
++3 → 11 MLB entries.** Those match `games_found_by_date` exactly, so the file
+the generator wrote is the file the client reads.
+
+### Still unproven, and it will not be proven this way
+
+`mlbEnrichMatched` is `0/0`, and `renderedCardsTotal` is `0`. Not a failure —
+a GitHub runner cannot reach `site.api.espn.com` from the browser. Runs 1, 3
+and 5 all logged the same thing:
+
+> Access to fetch at 'https://site.api.espn.com/.../scoreboard?dates=20260905'
+> from origin 'https://jubilant-bassoon...' has been blocked by CORS policy
+
+No ESPN sections render, so there is nothing for the window to enrich. The
+`home|away` match rate between ESPN `team.displayName` and statsapi names
+remains **UNVERIFIED**, exactly as §14a said it was.
+
+That is why the enrichment degrades to a no-op rather than a guess: an
+unmatched entry is left untouched, never overwritten, and the count lands in
+`window._fieldDataEnrichCount`. A user's own browser reaches ESPN and will
+populate it. **Unblocks when:** anyone loads
+`https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify`, steps forward a
+day, and reads `window._plVerify.enrichCount()` — `{iso, matched, available}`.
+A `matched` well below `available` means name drift and wants a normalisation
+step. (Rule 74: what is staged, what blocks it, what unblocks it, exact command.)
+
+### Five probe runs, four of them my own defects
+
+Recorded because the pattern is the session's, not this feature's — every
+failure was in the instrument, never in the thing measured.
+
+| run | what failed | whose |
+|---|---|---|
+| 1 | read `window._fieldDataCache`; it is a module-level `let`, undefined by construction | probe |
+| 2 | raced its own deploy | probe |
+| 3 | navigated before finishing the assertions, so +2/+3 reported "did not reach the client" without ever being asked | probe |
+| 4 | `ReferenceError: days is not defined` — my run-3 fix deleted the declaration | probe |
+| 5 | — | passed |
+
+Run 3 is the sharpest: it reported a false negative on the product in the same
+manifest where it had already proved the product worked for +1.
+
+The run-4 fix was the guard rather than the line: both probe workflows now run
+`eslint no-undef` before Playwright installs, verified to catch that exact
+bug (9 errors naming `days`), and it found a latent bare-identifier reference
+in the drama-arc probe on the way through.
