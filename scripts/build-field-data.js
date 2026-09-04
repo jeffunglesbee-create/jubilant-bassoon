@@ -23,6 +23,25 @@ const https = require('https');
 
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 
+// ── Forward schedule window ───────────────────────────────────────────────
+// 4 days: day 0 plus 3 forward, matching index.html's own nav ceiling
+// (updateDateLabel: `next.disabled = diff >= 3`). This does not widen the nav.
+//
+// Only MLB, soccer/MLS and WNBA are windowed. NHL and NBA are day 0 only, and
+// not by choice: field-data.yml pre-fetches them from /nhl/v1/scoreboard/now
+// and todaysScoreboard_00.json, which are TODAY-ONLY endpoints with no date
+// parameter to pass. Serving them forward needs a date-capable relay route —
+// a cross-repo change (Rule 70), deliberately not attempted here. _meta
+// records this per-sport so no reader has to infer it from an empty array.
+const WINDOW_DAYS = 4;
+const WINDOWED_SPORTS = ['mlb', 'soccer', 'wnba'];
+const DAY0_ONLY_SPORTS = ['nhl', 'nba'];
+const addDays = (iso, n) => {
+  const d = new Date(iso + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
 // ESPN GOTD flags — set via workflow_dispatch input or env var
 // Format: "Team A|Team B,Team C|Team D" (home|away per game)
 const ESPN_GOTD_IDS   = (process.env.ESPN_GOTD_IDS   || '').split(',').filter(Boolean);
@@ -391,11 +410,11 @@ function parseNBA() {
 
 // ── Fetch full MLB schedule (Phase 1) ─────────────────────────────────────
 // Returns full game objects: home, away, start_time, venue, nationalBundle
-function parseMLBFull(espnGotdKeys) {
+function parseMLBFull(espnGotdKeys, dateISO) {
   return new Promise((resolve) => {
     const req = https.request({
       hostname: 'statsapi.mlb.com',
-      path: `/api/v1/schedule?sportId=1&date=${TODAY}&gameType=R,F,D,L,W&hydrate=game,team,venue,broadcasts(all)&limit=30`,
+      path: `/api/v1/schedule?sportId=1&date=${dateISO}&gameType=R,F,D,L,W&hydrate=game,team,venue,broadcasts(all)&limit=30`,
       method: 'GET',
       headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
     }, res => {
@@ -446,14 +465,14 @@ function parseMLBFull(espnGotdKeys) {
             };
 
             // Assign broadcast: live broadcasts(all) first, then day-of-week fallback
-            if (!isPlayoff) assignMLBBroadcast(game, TODAY, rawBroadcasts, espnGotdKeys);
+            if (!isPlayoff) assignMLBBroadcast(game, dateISO, rawBroadcasts, espnGotdKeys);
 
             return game;
           }).filter(Boolean);
 
           const ppd = games.filter(g => g._postponed);
           if (ppd.length) console.log(`MLB PPD: ${ppd.map(g => g.away + ' @ ' + g.home).join(', ')}`);
-          console.log(`MLB full schedule: ${games.length} game(s) (${ppd.length} PPD) for ${TODAY}`);
+          console.log(`MLB full schedule: ${games.length} game(s) (${ppd.length} PPD) for ${dateISO}`);
           resolve(games);
         } catch (e) { console.warn('MLB full parse failed:', e.message); resolve([]); }
       });
@@ -466,9 +485,9 @@ function parseMLBFull(espnGotdKeys) {
 
 // ── ESPN Soccer (generic) ─────────────────────────────────────────────────
 // leagueSlug: 'usa.1' (MLS), 'eng.1' (EPL), 'esp.1' (La Liga), etc.
-function parseESPNSoccer(leagueSlug, leagueName) {
+function parseESPNSoccer(leagueSlug, leagueName, dateISO) {
   return new Promise((resolve) => {
-    const dateStr = TODAY.replace(/-/g, '');
+    const dateStr = dateISO.replace(/-/g, '');
     const req = https.request({
       hostname: 'site.api.espn.com',
       path: `/apis/site/v2/sports/soccer/${leagueSlug}/scoreboard?dates=${dateStr}&limit=30`,
@@ -502,7 +521,7 @@ function parseESPNSoccer(leagueSlug, leagueName) {
               confirmed: true,
             };
           }).filter(Boolean);
-          if (games.length) console.log(`${leagueName}: ${games.length} game(s) for ${TODAY}`);
+          if (games.length) console.log(`${leagueName}: ${games.length} game(s) for ${dateISO}`);
           resolve(games);
         } catch (e) { console.warn(`${leagueName} parse error:`, e.message); resolve([]); }
       });
@@ -525,11 +544,11 @@ function parseESPNSoccer(leagueSlug, leagueName) {
 // today with real venue/team/start-time data) -- a genuinely different
 // response shape than the other parsers in this file, not the same shape
 // as parseNBA()'s pre-fetched CDN JSON.
-function parseWNBA() {
+function parseWNBA(dateISO) {
   return new Promise((resolve) => {
     const req = https.request({
       hostname: 'field-relay-nba.jeffunglesbee.workers.dev',
-      path: `/v2/games?sport=wnba&date=${TODAY}`,
+      path: `/v2/games?sport=wnba&date=${dateISO}`,
       method: 'GET',
       headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
     }, res => {
@@ -549,7 +568,7 @@ function parseWNBA() {
               league: 'WNBA',
             };
           }).filter(Boolean);
-          console.log(`WNBA: ${games.length} game(s) for ${TODAY}`);
+          console.log(`WNBA: ${games.length} game(s) for ${dateISO}`);
           resolve(games);
         } catch (e) { console.warn('WNBA parse error:', e.message); resolve([]); }
       });
@@ -643,24 +662,33 @@ function callClaude(prompt) {
 
 // ── Fetch MLS ─────────────────────────────────────────────────────────────
 // (kept as before, uses parseESPNSoccer internally)
-async function parseMLS() {
-  return parseESPNSoccer('usa.1', 'MLS');
+async function parseMLS(dateISO) {
+  return parseESPNSoccer('usa.1', 'MLS', dateISO);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
-async function main() {
-  const nhlGames  = parseNHL();
-  const nbaGames  = parseNBA();
-  const espnGotdKeys = await fetchEspnMlbGotd(TODAY);  // once per build — structural GOTD signal
-  const mlbGames  = await parseMLBFull(espnGotdKeys);   // Phase 1: full MLB schedule
-  const mlsGames  = await parseMLS();
-  const wnbaGames = await parseWNBA();
+// Fetch one day's games. NHL and NBA come from pre-fetched today-only files, so
+// they are populated for day 0 and empty for every forward day (see WINDOW_DAYS).
+async function fetchDay(dateISO, isDay0, espnGotdKeys) {
+  const nhlGames  = isDay0 ? parseNHL() : [];
+  const nbaGames  = isDay0 ? parseNBA() : [];
+  const mlbGames  = await parseMLBFull(isDay0 ? espnGotdKeys : new Set(), dateISO);
+  const mlsGames  = await parseMLS(dateISO);
+  const wnbaGames = await parseWNBA(dateISO);
 
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames.length} WNBA game(s) for ${TODAY}`);
+  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames.length} WNBA game(s) for ${dateISO}`);
+  return { nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames };
+}
+
+async function main() {
+  const espnGotdKeys = await fetchEspnMlbGotd(TODAY);  // once per build — structural GOTD signal, day 0 only
+
+  const day0 = await fetchDay(TODAY, true, espnGotdKeys);
+  const { nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames } = day0;
 
   // Structured schedule: full game entries for Phase 2 consumption
   // Phase 2 will use schedules.mlb, schedules.nhl, etc. to build game arrays.
-  const schedules = {
+  const shapeSchedules = ({ nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames }) => ({
     nhl: nhlGames.map(g => ({
       sport: 'NHL', home: g.home, away: g.away,
       start_time: g.start_time, venue: g.venue,
@@ -695,7 +723,27 @@ async function main() {
       start_time: g.start_time, venue: g.venue,
       league: g.league, confirmed: true,
     })),
-  };
+  });
+
+  const schedules = shapeSchedules(day0);
+
+  // ── Forward days ────────────────────────────────────────────────────────
+  // Each day is built independently. A day whose upstream fetch fails is
+  // ABSENT from window_dates rather than failing the run, so one bad day
+  // cannot void the days that succeeded. window_dates is therefore the honest
+  // record of what was actually fetched, not what was requested.
+  const schedulesByDate = { [TODAY]: schedules };
+  const windowDates = [TODAY];
+  for (let i = 1; i < WINDOW_DAYS; i++) {
+    const iso = addDays(TODAY, i);
+    try {
+      const day = await fetchDay(iso, false, null);
+      schedulesByDate[iso] = shapeSchedules(day);
+      windowDates.push(iso);
+    } catch (e) {
+      console.warn(`  \u2717 forward day ${iso} failed (${e.message}) -- omitted from window_dates`);
+    }
+  }
 
   // Log MLB broadcast assignments for verification
   const mlbWithBroadcast = schedules.mlb.filter(g => g.nationalBundle);
@@ -760,10 +808,27 @@ async function main() {
 
   const output = {
     _meta: {
-      schema_version: '2.0',  // Phase 1: adds schedules block
+      // 2.1 adds schedules_by_date. `schedules` is unchanged and still day 0,
+      // so a client cached before this change keeps working against it. The
+      // client's accept gate must admit BOTH 2.0 and 2.1 or a stale client
+      // rejects the whole file.
+      schema_version: '2.1',
       generated_at: new Date().toISOString(),
       for_date: TODAY,
       source: 'field-data workflow (automated)',
+      // Dates actually fetched, in order, day 0 first. A forward day whose
+      // fetch failed is absent here — this is the record of what exists, not
+      // what was requested.
+      window_dates: windowDates,
+      // Honest per-sport coverage: NHL and NBA are pre-fetched from today-only
+      // endpoints (see WINDOW_DAYS), so their forward days are empty by
+      // construction, not because there are no games.
+      windowed_sports: WINDOWED_SPORTS,
+      day0_only_sports: DAY0_ONLY_SPORTS,
+      // matchupNotes are day 0 only. One sequential AI call per target, so a
+      // naive per-day loop would multiply that spend by WINDOW_DAYS for the
+      // lowest-value field in the payload (STANDARDS Rule 78).
+      notes_for_dates: [TODAY],
       games_found: {
         nhl: nhlGames.length,
         nba: nbaGames.length,
@@ -771,19 +836,32 @@ async function main() {
         mls: mlsGames.length,
         wnba: wnbaGames.length,
       },
+      games_found_by_date: Object.fromEntries(
+        windowDates.map(d => [d, Object.values(schedulesByDate[d]).flat().length])
+      ),
       ai_notes: useAI,
       ai_backend: useGemini ? 'gemini-3.1-flash-lite' : (useClaude ? 'claude-sonnet-4' : 'none'),
-      note: 'Phase 1: schedules block added. index.html reads schedules.mlb for full schedule. game_overlays remain for backward compat.',
+      note: 'schedules_by_date carries the forward window; schedules stays day 0 for back-compat. game_overlays and matchupNotes are day 0 only.',
     },
-    // Phase 2 will consume this block. All sports, full game entries.
+    // Phase 2 will consume this block. All sports, full game entries. Day 0.
     schedules,
-    // Backward compat: overlay patches keyed by home|away
+    // The forward window, keyed by ISO date. Always contains day 0.
+    schedules_by_date: schedulesByDate,
+    // Backward compat: overlay patches keyed by home|away. Day 0 only — the
+    // key collides across days within a series, so widening it needs its own
+    // key-shape migration.
     game_overlays: overlays,
   };
 
   fs.writeFileSync('/tmp/field-data-today.json', JSON.stringify(output, null, 2));
   const totalSchedule = Object.values(schedules).flat().length;
-  console.log(`✅ Phase 1 output: ${totalSchedule} scheduled games + ${overlays.length} overlay(s)`);
+  const windowTotal = windowDates.reduce(
+    (n, d) => n + Object.values(schedulesByDate[d]).flat().length, 0);
+  console.log(`✅ Output: ${totalSchedule} day-0 games + ${overlays.length} overlay(s)`);
+  console.log(`   window: ${windowDates.length}/${WINDOW_DAYS} days [${windowDates.join(', ')}] = ${windowTotal} games`);
+  if (windowDates.length < WINDOW_DAYS) {
+    console.warn(`   \u26a0 ${WINDOW_DAYS - windowDates.length} forward day(s) missing — see warnings above`);
+  }
 }
 
 main().catch(e => { console.error('Fatal:', e.message); process.exit(1); });
