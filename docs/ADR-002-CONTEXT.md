@@ -419,3 +419,44 @@ newer `fieldGameTier()`/`fieldTierLabel()` system — both are real,
 currently-used systems, but an auditor following this doc would miss the
 more broadly-adopted one. Update Step 5 to name both, not just the older one.
 
+
+---
+
+## Real Violation Found and Fixed (2026-09-04)
+
+**Bottom-sheet Drama Arc sparkline** (`openBottomSheet`,
+`src/legacy/field.js`) rendered `buildDramaSparklineSVG(gameId, 200, 32)`
+with no state gate. `_bsIsFinal` gated only the arc *description* that
+follows it. The builder plots `getDramaHistory()`'s `d.s` values on a fixed
+0–100 axis and emits `<text …>${Math.round(peak)}</text>` — the peak
+composite drama score as visible SVG text.
+
+Step 3 (yes → bright-line) applied, and Step 4's amnesty did not: the
+section rendered on live games about 90 seconds in, once the ~30s sampler
+had written its third entry.
+
+Third instance of this exact shape, after the two of 2026-07-02. The
+pin-widget entry above already records "a drama sparkline SVG … a second
+discretized-composite-score live instance" — the same construct in a
+different host, missed here because two prior documents asserted this
+section was post-game and neither claim was re-verified (Rule 72).
+
+**Fix:** `isAmnestyState(state)` — a named, pure predicate returning true
+only for `'post'` or `'final'` — in `field_utils.js` and duplicated verbatim
+in `field.js` (smoke A191 requires a definition in index.html). `_bsIsFinal`
+derives from it, and the whole Drama Arc section sits behind it. The live
+sheet keeps `dramaLabel_bs`, the named-tier label, which is the Step 5
+pattern.
+
+**Held by:** smoke A74b (section gated), A74c (predicate body pinned in
+index.html), 8 enumerated unit pairs in `field_unit.js` including a
+case-sensitivity counterexample, and `drama-arc-amnesty-probe.yml` — a
+Playwright run against the live deploy whose manifest must show
+`liveSparklinePresent: false` and `postSparklinePresent: true`.
+
+**Note for future audits:** the polyline is in scope, not only the text
+label. The sibling repo (field-laboratory, `src/Desk.fs`) settled this at
+type level — *"the arc looks like a chart input. But it is a list of
+composite drama scores, and rendering any element of it is the same
+bright-line violation as rendering the peak."* Stripping the number and
+keeping the chart live is not a fix.

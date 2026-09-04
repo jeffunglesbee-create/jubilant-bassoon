@@ -49,3 +49,27 @@ Tapping a real finished game's card shows, in the specified order, the existing 
 - TASK 5 (20 pts): real forced test + smoke baseline
 
 Do not commit unless confidence >= 95. If score < 95, report verbatim and stop. Automate follow-ups. No fallbacks, only fixes.
+
+---
+
+## AMENDMENT — 2026-09-04
+
+The CONTEXT section above states the sparkline renders "for finished games
+specifically." **That was not true at `43a13586`, and it is not clear it was
+ever true.** `_bsIsFinal` gated the arc *description*; the SVG itself sat
+outside the gate, so `buildDramaSparklineSVG` — which emits
+`Math.round(peak)` as SVG text — rendered on live games roughly 90 seconds in
+(3 drama samples at ~30s).
+
+`git log -S` on the section template shows it entering the tree at
+`f2dfda2e` (the `src/legacy/field.js` split), already ungated; no commit in
+field.js's history removed a gate.
+
+Made true by `CC-CMD-2026-09-04-bottom-sheet-drama-arc-amnesty`: the whole
+Drama Arc section is now behind `isAmnestyState(eData?.state)`. Smoke A74b
+and A74c hold it there; `drama-arc-amnesty-probe.yml` proves it in a real
+browser against the live deploy.
+
+This is a Rule 72 case. The claim was inherited by two later documents
+(`CC-CMD-2026-07-19-bottom-sheet-stats-reconciliation.md` among them) and
+never re-verified against HEAD.
