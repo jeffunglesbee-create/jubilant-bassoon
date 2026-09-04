@@ -70,6 +70,13 @@ echo "🔎 Lint (auto-fix pass)..."
 # Anything it changes lands only in the generated artifact and is reverted by
 # the next sync. It changes nothing today (measured), so this is a guard, not a
 # rewrite — it turns a silent revert into a named failure.
+# The inlined uPlot CSS is a copy of node_modules/uplot/dist/uPlot.min.css.
+# A copy drifts: bumping the dependency updates the JS in the bundle and leaves
+# the stylesheet at whatever version was pasted. Caught a real 1-byte drift on
+# its first run.
+echo "📊 uPlot CSS drift check..."
+node "$REPO/scripts/uplot-css-check.mjs" >/dev/null 2>&1; UPCSS=$?
+
 echo "🔗 Generated-artifact check (index.html block vs field.js)..."
 node "$REPO/scripts/check-html-block-matches-source.mjs" >/dev/null 2>&1; BLOCK=$?
 
@@ -78,7 +85,12 @@ LINT_OUT=$("$REPO/node_modules/.bin/eslint" --cache --plugin html "$REPO/index.h
 LINT_ERRORS=$(echo "$LINT_OUT" | grep -c " error ")
 LINT=$( [ "$LINT_ERRORS" -eq 0 ] && echo 0 || echo 1 )
 
-if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
+# BLOCK and UPCSS were added to the report list below without being added here,
+# so they printed a message only when something ELSE had already failed and
+# never blocked on their own. Found 2026-09-04 while wiring UPCSS; the same
+# defect had shipped with BLOCK earlier the same day, in a commit whose message
+# claimed it "fails the commit". It did not. Both are in the condition now.
+if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ] || [ $BLOCK -ne 0 ] || [ $UPCSS -ne 0 ]; then
   echo ""
   echo "╔══════════════════════════════════════════════════════════╗"
   echo "║  CHECKS FAILED — commit blocked                          ║"
@@ -87,6 +99,7 @@ if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
   [ $UNIT  -ne 0 ] && echo "║  ❌ Units    — run: node field_unit.js                   ║"
   [ $LINT  -ne 0 ] && echo "║  ❌ Lint     — run: npm run lint  ($LINT_ERRORS error(s))$(printf '%*s' $((23 - ${#LINT_ERRORS})) '')║"
   [ $BLOCK -ne 0 ] && echo "║  ❌ index.html block diverged from src/legacy/field.js   ║"
+  [ $UPCSS -ne 0 ] && echo "║  ❌ uPlot CSS drift — run: npm run sync:uplot-css        ║"
   echo "║                                                          ║"
   echo "║  Rule 16: bypass = git commit --no-verify                ║"
   echo "║           MUST include [no-verify: reason] in msg        ║"

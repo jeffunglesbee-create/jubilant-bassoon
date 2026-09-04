@@ -4053,6 +4053,39 @@ body.stats-mode .main{margin-right:0 !important}
   min-height: 120px;
   contain: layout;
 }
+
+/* ── uPlot ──────────────────────────────────────────────────────
+   Vendored from node_modules/uplot/dist/uPlot.min.css (uplot ^1.6.32),
+   inlined because FIELD ships as a single HTML file — a <link> to a second
+   asset would be a second request and a second thing to version.
+
+   Regenerate with: node scripts/sync-uplot-css.mjs
+   Do not hand-edit the vendored block; put changes in the OVERRIDES below,
+   which is where FIELD's own design tokens take over.
+   ── vendored ── */
+.uplot, .uplot *, .uplot *::before, .uplot *::after {box-sizing: border-box;}.uplot {font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";line-height: 1.5;width: min-content;}.u-title {text-align: MUTATED;font-size: 18px;font-weight: bold;}.u-wrap {position: relative;user-select: none;}.u-over, .u-under {position: absolute;}.u-under {overflow: hidden;}.uplot canvas {display: block;position: relative;width: 100%;height: 100%;}.u-axis {position: absolute;}.u-legend {font-size: 14px;margin: auto;text-align: center;}.u-inline {display: block;}.u-inline * {display: inline-block;}.u-inline tr {margin-right: 16px;}.u-legend th {font-weight: 600;}.u-legend th > * {vertical-align: middle;display: inline-block;}.u-legend .u-marker {width: 1em;height: 1em;margin-right: 4px;background-clip: padding-box !important;}.u-inline.u-live th::after {content: ":";vertical-align: middle;}.u-inline:not(.u-live) .u-value {display: none;}.u-series > * {padding: 4px;}.u-series th {cursor: pointer;}.u-legend .u-off > * {opacity: 0.3;}.u-select {background: rgba(0,0,0,0.07);position: absolute;pointer-events: none;}.u-cursor-x, .u-cursor-y {position: absolute;left: 0;top: 0;pointer-events: none;will-change: transform;}.u-hz .u-cursor-x, .u-vt .u-cursor-y {height: 100%;border-right: 1px dashed #607D8B;}.u-hz .u-cursor-y, .u-vt .u-cursor-x {width: 100%;border-bottom: 1px dashed #607D8B;}.u-cursor-pt {position: absolute;top: 0;left: 0;border-radius: 50%;border: 0 solid;pointer-events: none;will-change: transform;/*this has to be !important since we set inline "background" shorthand */background-clip: padding-box !important;}.u-axis.u-off, .u-select.u-off, .u-cursor-x.u-off, .u-cursor-y.u-off, .u-cursor-pt.u-off {display: none;}
+/* ── overrides ────────────────────────────────────────────────
+   uPlot's defaults are built for a light page with a title and a legend.
+   FIELD has none of those. Everything here is either a token read or the
+   removal of a default that fights the surrounding card.
+
+   `width: min-content` is the one that matters: uPlot sets it on .uplot, which
+   collapses the chart inside any flex or grid parent rather than filling it.
+   Every FIELD mount is width-driven by its container. */
+.uplot { width: 100%; font-family: inherit; line-height: inherit; }
+.uplot canvas { display: block; }
+.u-title, .u-legend { display: none; }
+.u-wrap { touch-action: pan-y; }
+.u-axis { color: var(--smoke); }
+/* The cursor line is off by default (cursor.show is false for sparkline
+   contexts). When a chart opts into axes it also opts into the cursor, and
+   this keeps it on the page's own ink rather than uPlot's black. */
+.u-cursor-x, .u-cursor-y { border-color: var(--smoke) !important; }
+.u-select { background: rgba(255,255,255,.06); }
+/* A mount with no chart yet must not collapse to zero and reflow the card
+   when the chart arrives. Callers set an explicit height; this is the floor. */
+.field-chart { min-height: 2rem; width: 100%; }
+
 </style>
   <!-- field_utils.js: pure utility functions — FIELD domain vocabulary
        Loaded first so helpers are available to all scripts and inline handlers.
@@ -4883,6 +4916,7 @@ var _DOM = null;
 
 
 <script type="module">
+import { fieldChart, destroyChart } from '../utils/chart.js';
 import { fmtGolfToPar } from '../utils/golf-format.js';
 import { fieldTierRank, fieldTierLabel } from '../utils/tier.js';
 import { inferSport, golfRoundLabel } from '../utils/sport-format.js';
@@ -11909,6 +11943,47 @@ async function _fetchNFLGameEpa(espnGameId,fieldGameId){
       if(old) old.remove();
       const html=_buildUFLEpaHTML(state);
       if(html){ const hint=el.querySelector('.card-tap-hint'); if(hint) hint.insertAdjacentHTML('beforebegin',html); }
+
+      // The drive's expected-points line. Until now this function fetched every
+      // play of the drive and rendered exactly ONE of them -- state.lastPlay,
+      // as a text chip. The rest was fetched, filtered, stored, and thrown away
+      // at the point of display.
+      //
+      // The chip is untouched: it answers "what just happened", which a line
+      // cannot. The chart answers "how did the drive get here", which the chip
+      // cannot. Both, not either.
+      //
+      // MOUNTED SEPARATELY, ON PURPOSE. The chip above is removed and
+      // re-inserted as HTML every poll. A canvas inside it would be destroyed
+      // and rebuilt every cycle -- the ambient-panel scroll-reset shape
+      // (Rule 89) in a new place. This mount is created once and thereafter
+      // only handed new data, so fieldChart takes its setData path.
+      try{
+        const _epaPts=state.plays.map(p=>p.ep_end).filter(v=>typeof v==='number');
+        let _chartEl=el.querySelector('.ufl-epa-chart');
+        if(_epaPts.length>=2){
+          if(!_chartEl){
+            _chartEl=document.createElement('div');
+            _chartEl.className='field-chart ufl-epa-chart';
+            const hint2=el.querySelector('.card-tap-hint');
+            if(hint2) hint2.parentNode.insertBefore(_chartEl,hint2);
+            else el.appendChild(_chartEl);
+          }
+          // FIXED DOMAIN, not the series maximum. NFL expected points runs
+          // about -3 to 7, so a fixed range makes two drives comparable at a
+          // glance. Auto-scaling draws every drive as the same shape -- the
+          // exact failure field-laboratory's spark-check.mjs exists to catch
+          // ("renders every game as a wall topping out at 100%").
+          fieldChart(_chartEl,[_epaPts.map((_,i)=>i),_epaPts],{
+            height:34, range:[-3,7], colors:['var(--c-nba,#f97316)'],
+            labels:['expected points'],
+          });
+        } else if(_chartEl){
+          // Fewer than two points is not a line. Tear it down rather than leave
+          // a stale one describing the previous drive.
+          destroyChart(_chartEl); _chartEl.remove();
+        }
+      }catch(e_){captureFieldError('nfl:game-epa-chart', e_, true);}
     }
   }catch(e){captureFieldError('nfl:game-epa', e, true);}
 }
