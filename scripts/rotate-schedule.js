@@ -1,12 +1,20 @@
 #!/usr/bin/env node
 // scripts/rotate-schedule.js — Strip schedule entries older than 7 days
-// Run at session start or pre-commit to prevent unbounded file growth.
+// Run at session start to prevent unbounded file growth.
 // Safe: only removes entries that are unreachable via the 7-day date nav limit.
+//
+// 2026-09-04: retargeted from index.html to src/legacy/field.js. buildDateSchedule
+// lives in the JS source; index.html's script block is GENERATED from it by
+// scripts/sync-source.mjs, so rotating the artifact left the source untouched and
+// the next sync put every stripped entry straight back. Run
+// `node scripts/sync-source.mjs` after this to propagate — the pre-commit hook
+// does that anyway, and scripts/check-html-block-matches-source.mjs now fails
+// the commit if the two ever drift.
 
 const fs = require('fs');
 const path = require('path');
 
-const FILE = path.join(__dirname, '..', 'index.html');
+const FILE = path.join(__dirname, '..', 'src', 'legacy', 'field.js');
 const DAYS_TO_KEEP = 7;
 
 const today = new Date();
@@ -75,6 +83,7 @@ if (saved > 0) {
   fs.writeFileSync(FILE, content);
   console.log(`rotate-schedule: removed ${removals.length} date blocks, ${mlbRemoved} MLB entries`);
   console.log(`rotate-schedule: ${saved.toLocaleString()} bytes freed (${(before/1000).toFixed(0)}KB → ${(after/1000).toFixed(0)}KB)`);
+  console.log('rotate-schedule: wrote src/legacy/field.js — run scripts/sync-source.mjs to propagate into index.html');
 } else {
   console.log('rotate-schedule: nothing to rotate (all entries within 7-day window)');
 }
