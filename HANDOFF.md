@@ -1,5 +1,49 @@
 # FIELD HANDOFF
 
+## Session 2026-09-04b — the schedule looks 3 days forward (jubilant-bassoon)
+
+HEAD `1fe7b2e0` (+ generator `94ac7bb3`, data `45da9b09`). Smoke **993/0**.
+Units **69/0**. SW_VERSION `2026-09-04b`.
+Impact analysis: `outbox/impact-2026-09-04-forward-schedule-window.md`
+(read §14 — three things implementation proved wrong in it).
+
+The nav already reached +3 (`updateDateLabel`: `next.disabled = diff >= 3`).
+What did not extend was the quality of those days. Two `===` on
+`_meta.for_date` (field.js 8693, 20594) were the cliff; the second rejected the
+whole file unless dated exactly today.
+
+**Generator** now emits schema **2.1** with `schedules_by_date`, day 0 plus 3.
+`schedules` is unchanged and still day 0, so the accept gate admits 2.0 AND 2.1
+— a stale client must not reject a 2.1 file and fall back to a now-empty
+`mlbRaw`. That ordering is why the client deployed before the generator ran.
+
+**Live result** (run 33906790832): 16 / 15 / 15 / 11 MLB games across
+2026-09-04..07, start_times spanning 09-04 to 09-08, 5 entries carrying
+`nationalBundle`, 2 overlays (day 0 only), 35,028 bytes. Day 0 vs +3 shares
+1/15 matchups; day 0 vs +1 shares 15/15, which is a three-game series, not a
+duplicate.
+
+### Integration state (Rule 65)
+
+| | |
+|---|---|
+| **Producer** | `scripts/build-field-data.js` → `outbox/field-data-today.json`, committed daily 07:30 UTC by `field-data.yml`. Schema 2.1: `_meta.window_dates`, `windowed_sports`, `day0_only_sports`, `notes_for_dates`, `games_found_by_date`; top-level `schedules_by_date`. |
+| **Consumer** | `scheduleForDate(fileData, iso)` in `field_utils.js`, duplicated in `field.js`; `fieldDataForDate(iso)` binds it to `_fieldDataCache`. Fetched from GitHub raw (`_SCHEDULE_BASE`), not the Worker. |
+| **Status** | **VERIFIED** for the payload — real 4-day file generated and read back. **UNVERIFIED in a browser**: the forward-day enrichment has no live probe yet (next step). |
+| **Known limits** | NHL/NBA are day-0 only — their relay endpoints are today-only, no date param (needs a relay route, Rule 70). `game_overlays` and matchupNotes are day 0 only: the `home\|away` key collides across a series, measured 15/15 on day 0 vs +1. |
+
+**Forward days are ESPN-based, enriched — not replaced.** The ESPN sweep covers
+16 leagues; the window covers 3. Routing forward days to `buildTodaySchedule`
+would have lost 15 leagues. The window upgrades the MLB section in place
+(`nationalBundle` → streams, GOTD flags, `_postponed`, `isPlayoff`); an
+unmatched entry is left untouched and the count lands in
+`window._fieldDataEnrichCount`.
+
+**`mlbRaw` is now `[]`** — its 48 entries were dated 2026-06-02..10 against a
+one-day `isToday()` filter and had returned nothing since 2026-06-11. Smoke
+A75f keeps it that way.
+
+
 ## Session 2026-09-04 — the bottom-sheet Drama Arc sparkline was never gated (jubilant-bassoon)
 
 HEAD `43a13586` → `259fa5a1`. Smoke **988/0** (was 986 with A515 failing).

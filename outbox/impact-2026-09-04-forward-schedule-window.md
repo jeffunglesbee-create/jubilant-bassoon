@@ -346,3 +346,92 @@ Generator loop 20 min · client sites 15 min · `mlbRaw` + smoke 15 min ·
 probe workflow 20 min · run and verify 15 min. **~85 minutes**, up from the
 55 I quoted before this analysis — the schema-gate back-compat (§10.1) and the
 per-day failure isolation (§10.2) are real work that reading the code surfaced.
+
+---
+
+## 14. Corrections — what implementation found that this analysis got wrong
+
+Written after the build, against `94ac7bb3` (generator) and `1fe7b2e0` (client).
+Three items. Two were errors in this document; one was an omission.
+
+### 14a. §7 step 5 proposed a regression
+
+> "`goToDate` (5052): try the JSON window **before** `fetchESPNFixturesForDate`,
+> so +1..+3 get the rich path and only +4 and beyond hit ESPN."
+
+**Wrong.** `fetchESPNFixturesForDate`'s `FETCH_LEAGUES` covers **16 leagues** —
+NBA, WNBA, PGA, NHL, MLB, NFL, CFB and 9 soccer leagues. The forward window
+covers three (MLB, soccer, WNBA), and every other sport in
+`buildTodaySchedule` is a hardcoded array behind `isToday()`. Routing a forward
+day to that path would have **lost 15 leagues to gain broadcast data on one** —
+strictly worse than what a user sees at +1 today.
+
+**Built instead:** the ESPN sweep stays the base and the window **enriches** its
+`Baseball (MLB)` section in place. ESPN's MLB fixtures carry
+`bundle:"MLB_LOCAL"` for every game and no broadcast intelligence; the window
+carries `nationalBundle` (and the streams it resolves), `espnGOTD`,
+`peacockGOTD`, `mlbnShowcase`, `_postponed`, `isPlayoff`.
+
+Matching is on `home|away` display names. ESPN uses `team.displayName`;
+field-data uses statsapi names. They agree in the common case and this session
+could not verify the tail — the sandbox proxy 403s every upstream host. So the
+failure mode is designed to be inert and visible: an unmatched entry is left
+**untouched**, never overwritten, and the match count is written to
+`window._fieldDataEnrichCount` as `{iso, matched, available}`. Name drift shows
+up as a number, not as silence. **That count is the artifact the live probe
+must assert on.**
+
+### 14b. §4a listed `_mlbFieldDataByKey` for change. It must not change.
+
+`field.js:18693` reads `_fieldDataCache?.schedules?.mlb`. §4a marked it "must
+change — same lookup." It sits three lines above:
+
+```js
+const isEspnGOTD    = g.espnGOTD    || serverEntry?.espnGOTD    || ESPN_GOTD_SCHEDULE[TODAY_ISO]    === key;
+const isPeacockGOTD = g.peacockGOTD || serverEntry?.peacockGOTD || PEACOCK_GOTD_SCHEDULE[TODAY_ISO] === key;
+```
+
+Keying it to `viewingISO` while those lookups stay on `TODAY_ISO` would pair a
+forward day's games against **today's** GOTD table. Left on the day-0
+`schedules`, which is also consistent with GOTD and matchupNotes being day 0
+only. **Three sites changed, not four.**
+
+### 14c. Omission — two of the five sports cannot be windowed at all
+
+§3 said "the generator is already parameterised" and listed five date-carrying
+fetches. It did not check where NHL and NBA come from.
+
+`.github/workflows/field-data.yml` pre-fetches them:
+
+```
+"$RELAY/nhl/v1/scoreboard/now"                            > /tmp/nhl.json
+"$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json" > /tmp/nba.json
+```
+
+**Today-only endpoints with no date parameter.** `parseNHL`/`parseNBA` read
+those files; there is nothing to pass a date to. Serving them forward needs a
+date-capable relay route — a cross-repo change (Rule 70), deliberately not
+attempted.
+
+Handled honestly rather than hidden: `_meta.windowed_sports` is
+`['mlb','soccer','wnba']` and `_meta.day0_only_sports` is `['nhl','nba']`, so
+an empty forward array is never mistaken for "no games that day."
+
+### 14d. What this does to §11's required artifacts
+
+Artifact 3 (Playwright) changes shape with 14a. The manifest field
+`richPathUsed` was written against the replace-the-source design and no longer
+describes anything. It is replaced by, per day +1..+3:
+`espnSectionsPresent`, `mlbEnrichMatched`, `mlbEnrichAvailable`, `cardCount`.
+
+Pass requires `espnSectionsPresent: true` for every day in the window (the base
+path must not have regressed) and, on at least one day with MLB games,
+`mlbEnrichMatched > 0` (the enrichment actually matched). **All-zero remains a
+FAIL**, asserted in the script.
+
+### 14e. Estimate, honestly
+
+§13 said ~85 minutes. Generator, client, units, smoke and mutation proofs came
+in around that. The Playwright probe (artifact 3) is **not built** and is the
+remaining piece — a task, not a carry-forward, tracked as the next step rather
+than closed out here.
