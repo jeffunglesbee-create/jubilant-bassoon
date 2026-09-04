@@ -1,4 +1,5 @@
 
+import { fieldChart, destroyChart } from '../utils/chart.js';
 import { fmtGolfToPar } from '../utils/golf-format.js';
 import { fieldTierRank, fieldTierLabel } from '../utils/tier.js';
 import { inferSport, golfRoundLabel } from '../utils/sport-format.js';
@@ -7025,6 +7026,47 @@ async function _fetchNFLGameEpa(espnGameId,fieldGameId){
       if(old) old.remove();
       const html=_buildUFLEpaHTML(state);
       if(html){ const hint=el.querySelector('.card-tap-hint'); if(hint) hint.insertAdjacentHTML('beforebegin',html); }
+
+      // The drive's expected-points line. Until now this function fetched every
+      // play of the drive and rendered exactly ONE of them -- state.lastPlay,
+      // as a text chip. The rest was fetched, filtered, stored, and thrown away
+      // at the point of display.
+      //
+      // The chip is untouched: it answers "what just happened", which a line
+      // cannot. The chart answers "how did the drive get here", which the chip
+      // cannot. Both, not either.
+      //
+      // MOUNTED SEPARATELY, ON PURPOSE. The chip above is removed and
+      // re-inserted as HTML every poll. A canvas inside it would be destroyed
+      // and rebuilt every cycle -- the ambient-panel scroll-reset shape
+      // (Rule 89) in a new place. This mount is created once and thereafter
+      // only handed new data, so fieldChart takes its setData path.
+      try{
+        const _epaPts=state.plays.map(p=>p.ep_end).filter(v=>typeof v==='number');
+        let _chartEl=el.querySelector('.ufl-epa-chart');
+        if(_epaPts.length>=2){
+          if(!_chartEl){
+            _chartEl=document.createElement('div');
+            _chartEl.className='field-chart ufl-epa-chart';
+            const hint2=el.querySelector('.card-tap-hint');
+            if(hint2) hint2.parentNode.insertBefore(_chartEl,hint2);
+            else el.appendChild(_chartEl);
+          }
+          // FIXED DOMAIN, not the series maximum. NFL expected points runs
+          // about -3 to 7, so a fixed range makes two drives comparable at a
+          // glance. Auto-scaling draws every drive as the same shape -- the
+          // exact failure field-laboratory's spark-check.mjs exists to catch
+          // ("renders every game as a wall topping out at 100%").
+          fieldChart(_chartEl,[_epaPts.map((_,i)=>i),_epaPts],{
+            height:34, range:[-3,7], colors:['var(--c-nba,#f97316)'],
+            labels:['expected points'],
+          });
+        } else if(_chartEl){
+          // Fewer than two points is not a line. Tear it down rather than leave
+          // a stale one describing the previous drive.
+          destroyChart(_chartEl); _chartEl.remove();
+        }
+      }catch(e_){captureFieldError('nfl:game-epa-chart', e_, true);}
     }
   }catch(e){captureFieldError('nfl:game-epa', e, true);}
 }
@@ -22392,7 +22434,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-04c';
+  const SW_VERSION = '2026-09-04d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
