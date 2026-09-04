@@ -48,7 +48,10 @@ jobs:
         run: |
           git config user.email "probe@field"
           git config user.name "Drama Arc Amnesty Probe"
-          git add outbox/drama-arc-amnesty-manifest-*.json outbox/drama-arc-amnesty-*.png 2>/dev/null || true
+          # One pattern per call: `git add a b` aborts entirely if either
+          # glob matches nothing, which silently dropped the manifest on run 1.
+          git add outbox/drama-arc-amnesty-manifest-*.json || true
+          git add outbox/drama-arc-amnesty-*.png || true
           git status --short
           if git diff --cached --quiet; then
             echo "Nothing to commit"
