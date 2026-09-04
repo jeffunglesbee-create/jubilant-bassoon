@@ -53,6 +53,45 @@ export function classesIn(css) {
   return out
 }
 
+/// Classes belonging to uPlot rather than to FIELD.
+///
+/// This check's premise is that a class the stylesheet defines and no FIELD
+/// source emits is dead. That premise does not hold for a vendored charting
+/// library: uPlot builds its own DOM at runtime, so .u-wrap, .u-over, .u-axis
+/// and the rest are emitted by code that is bundled, not written here. Counting
+/// them as dead reports 18 findings that are all false.
+///
+/// The exclusion is a NAMESPACE, not the region, deliberately. FIELD's own
+/// overrides (.u-title { display: none }) sit outside the vendored markers and
+/// are just as unreachable from FIELD source, so a marker-based cut would miss
+/// them; and a marker-based cut would also stop checking .field-chart and the
+/// per-mount classes, which ARE FIELD's and SHOULD stay checked.
+///
+/// What stops this becoming a loophole is uplotNamespaceIsClean below: FIELD
+/// declares 1092 classes and not one of them starts with `u-` or is named
+/// `uplot` (measured 2026-09-04). If that ever stops being true, the guard
+/// fails rather than quietly widening what this check ignores.
+export function isUplotClass(cls) {
+  return cls === 'uplot' || cls.startsWith('u-')
+}
+
+/// The FIELD-authored part of the stylesheet: everything before the vendored
+/// uPlot header. Used only by the guard.
+///
+/// Takes RAW html, not styleBlockOf's output. styleBlockOf strips comments —
+/// correctly, and for a documented miscount — which removes the very marker
+/// this needs. Written against the stripped block first, the guard silently
+/// found no marker, treated the whole sheet as FIELD-authored, and reported all
+/// 19 uPlot classes as FIELD's own.
+export function fieldOwnedCss(html) {
+  const i = html.indexOf('<style>')
+  const j = html.indexOf('</style>', i)
+  if (i < 0 || j < 0) return ''
+  const block = html.slice(i + 7, j)
+  const u = block.indexOf('/* \u2500\u2500 uPlot \u2500')
+  return (u === -1 ? block : block.slice(0, u)).replace(/\/\*[\s\S]*?\*\//g, '')
+}
+
 /// The fragments that could START a class name built at runtime. A template's
 /// text before `${`, and a string literal ending in `-` before a `+`.
 ///
@@ -147,8 +186,13 @@ if (IS_MAIN) {
   const { corpus, files } = corpusFor(html)
   const prefixes = prefixesIn(corpus)
 
-  const by = { literal: [], prefix: [], unreferenced: [] }
-  for (const c of classes) by[reachability(c, corpus, prefixes)].push(c)
+  const by = { literal: [], prefix: [], unreferenced: [], vendored: [] }
+  for (const c of classes) {
+    // uPlot emits its own DOM from bundled code, so its namespace is reported
+    // separately rather than counted as dead. See isUplotClass.
+    if (isUplotClass(c)) { by.vendored.push(c); continue }
+    by[reachability(c, corpus, prefixes)].push(c)
+  }
 
   // Vacuity guards. A run that read no classes, or no sources, would report
   // zero dead classes and mean nothing by it.
@@ -160,6 +204,7 @@ if (IS_MAIN) {
 
   console.log(`\n  ${classes.size} class(es) in the stylesheet, against ${files.length} bundled source file(s)`)
   console.log(`  reached by: literal ${by.literal.length}, template/concat prefix ${by.prefix.length}`)
+  console.log(`  vendored (uPlot namespace, emitted by bundled library code): ${by.vendored.length}`)
   console.log(`  unreferenced: ${by.unreferenced.length}\n`)
   if (by.unreferenced.length) console.log(`  ${by.unreferenced.sort().join(' ')}\n`)
 
@@ -167,6 +212,13 @@ if (IS_MAIN) {
     `${classes.size} — everything below would pass vacuously`)
   check('the source corpus was actually read', files.length > 5,
     `${files.length} file(s) — every class would read as unreferenced`)
+
+  // The guard that keeps isUplotClass honest. If FIELD ever authors a class in
+  // uPlot's namespace, the exclusion above would start hiding it, and this
+  // fails instead.
+  const fieldOwned = [...classesIn(fieldOwnedCss(html))].filter(isUplotClass)
+  check('the uPlot namespace is uPlot\'s alone', fieldOwned.length === 0,
+    `FIELD declares ${fieldOwned.join(' ')} in uPlot's namespace — isUplotClass would hide ${fieldOwned.length === 1 ? 'it' : 'them'}`)
 
   const max = parseInventory(readFileSync(INVENTORY, 'utf8')).get(NAME)
   if (max === undefined) {
