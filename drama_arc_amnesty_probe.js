@@ -92,7 +92,7 @@ async function runCase(page, state) {
 
   let screenshot = null;
   try {
-    screenshot = `${OUT}/drama-arc-amnesty-post-${RUN_ID}.png`;
+    screenshot = `${OUT}/drama-arc-amnesty-post-latest.png`;
     await page.locator('#bs-content').screenshot({ path: screenshot, timeout: 10000 });
   } catch (e) { screenshot = null; }
 
@@ -120,7 +120,7 @@ async function runCase(page, state) {
   };
 
   fs.mkdirSync(OUT, { recursive: true });
-  const path = `${OUT}/drama-arc-amnesty-manifest-${RUN_ID}.json`;
+  const path = `${OUT}/drama-arc-amnesty-manifest-latest.json`;
   fs.writeFileSync(path, JSON.stringify(manifest, null, 2));
   console.log(JSON.stringify(manifest, null, 2));
 

@@ -7,6 +7,13 @@ on:
   push:
     paths: ['outbox/.trigger-drama-arc-amnesty-probe']
   workflow_dispatch:
+  # Daily. On demand only, this proves the ADR-002 amnesty gate on the bottom-sheet Drama Arc — a compliance
+  # boundary, so it is verified on a schedule rather than on request
+  # once and then decays silently: nothing re-checks it, and a regression would
+  # first be seen by a user. 11:40 UTC is an empty slot — the 6:00-9:30 range is
+  # crowded with this repo's data and deploy crons.
+  schedule:
+    - cron: '40 11 * * *'
 
 permissions:
   contents: write
@@ -63,8 +70,8 @@ jobs:
           git config user.name "Drama Arc Amnesty Probe"
           # One pattern per call: `git add a b` aborts entirely if either
           # glob matches nothing, which silently dropped the manifest on run 1.
-          git add outbox/drama-arc-amnesty-manifest-*.json || true
-          git add outbox/drama-arc-amnesty-*.png || true
+          git add outbox/drama-arc-amnesty-manifest-latest.json || true
+          git add outbox/drama-arc-amnesty-post-latest.png || true
           git status --short
           if git diff --cached --quiet; then
             echo "Nothing to commit"

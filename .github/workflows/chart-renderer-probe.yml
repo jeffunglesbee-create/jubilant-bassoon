@@ -9,6 +9,13 @@ on:
   push:
     paths: ['outbox/.trigger-chart-renderer-probe']
   workflow_dispatch:
+  # Daily. On demand only, this proves the chart renderer's contract (uPlot bundled and drawing, setData not remount,
+  # fixed domain, detached mounts reclaimed)
+  # once and then decays silently: nothing re-checks it, and a regression would
+  # first be seen by a user. 11:00 UTC is an empty slot — the 6:00-9:30 range is
+  # crowded with this repo's data and deploy crons.
+  schedule:
+    - cron: '0 11 * * *'
 
 permissions:
   contents: write
@@ -63,7 +70,7 @@ jobs:
         run: |
           git config user.email "probe@field"
           git config user.name "Chart Renderer Probe"
-          git add outbox/chart-renderer-manifest-*.json || true
+          git add outbox/chart-renderer-manifest-latest.json || true
           git status --short
           if git diff --cached --quiet; then
             echo "Nothing to commit"

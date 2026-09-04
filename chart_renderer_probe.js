@@ -125,7 +125,7 @@ const RUN_ID = process.env.GITHUB_RUN_ID || String(Date.now());
   };
 
   fs.mkdirSync(OUT, { recursive: true });
-  fs.writeFileSync(`${OUT}/chart-renderer-manifest-${RUN_ID}.json`, JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(`${OUT}/chart-renderer-manifest-latest.json`, JSON.stringify(manifest, null, 2));
   console.log(JSON.stringify(manifest, null, 2));
   await browser.close();
 

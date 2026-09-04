@@ -121,7 +121,7 @@ const addDays = (iso, n) => {
   };
 
   fs.mkdirSync(OUT, { recursive: true });
-  fs.writeFileSync(`${OUT}/forward-window-manifest-${RUN_ID}.json`, JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(`${OUT}/forward-window-manifest-latest.json`, JSON.stringify(manifest, null, 2));
   console.log(JSON.stringify(manifest, null, 2));
   await browser.close();
 
