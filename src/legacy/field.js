@@ -1,5 +1,5 @@
 
-import { fieldChart, destroyChart } from '../utils/chart.js';
+import { fieldChart, destroyChart, sweepDetachedCharts } from '../utils/chart.js';
 import { fmtGolfToPar } from '../utils/golf-format.js';
 import { fieldTierRank, fieldTierLabel } from '../utils/tier.js';
 import { inferSport, golfRoundLabel } from '../utils/sport-format.js';
@@ -22434,7 +22434,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-04e';
+  const SW_VERSION = '2026-09-04f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -41574,5 +41574,15 @@ if (location.search.includes('pl-verify')) {
     fieldDataMeta:  () => (_fieldDataCache && _fieldDataCache._meta) || null,
     scheduleForDate: (iso) => fieldDataForDate(iso),
     enrichCount:    () => window._fieldDataEnrichCount || null,
+    // The chart renderer, for the forward-window probe's sibling.
+    //
+    // The two real call sites cannot be driven from CI: the EPA chart needs a
+    // live NFL game through the relay, the WP chart needs an SSE wp_update, and
+    // a GitHub runner reaches neither (site.api.espn.com is CORS-blocked from
+    // the page, measured across three probe runs). What CAN be proved there is
+    // the renderer's own contract against the SHIPPED bundle -- that uPlot is
+    // really in it, really draws, and really takes setData on a second call
+    // rather than rebuilding the canvas.
+    fieldChart, destroyChart, sweepDetachedCharts,
   };
 }

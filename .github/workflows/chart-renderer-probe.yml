@@ -1,0 +1,82 @@
+name: Chart Renderer Probe
+# The chart renderer's contract, against the SHIPPED bundle in a real browser:
+# uPlot is really in it and really draws, a second call takes setData on the
+# same canvas rather than remounting (Rule 89), the fixed domain is honoured,
+# and a detached mount is reclaimed rather than leaked.
+# Trigger: push to outbox/.trigger-chart-renderer-probe OR dispatch.
+
+on:
+  push:
+    paths: ['outbox/.trigger-chart-renderer-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # A probe that throws before writing its manifest proves nothing, and
+      # `node --check` cannot catch it: run 33908009552 died on
+      # `ReferenceError: days is not defined` — valid syntax, undeclared
+      # binding, no manifest, one wasted round trip. no-undef catches exactly
+      # that class in seconds. browser env is required because page.evaluate
+      # callbacks legitimately reference window/document.
+      - name: Static check the probe (no-undef)
+        run: |
+          npm install eslint@8
+          npx eslint --no-eslintrc --env es2022,node,browser \
+            --parser-options ecmaVersion:2022,sourceType:script \
+            --rule '{"no-undef":"error"}' chart_renderer_probe.js
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      # The script exits 1 unless every forward day rendered AND the enrichment
+      # matched at least one fixture. Run it before the commit step so a failure
+      # is loud, then commit the manifest either way so a failing run still
+      # leaves its evidence behind.
+      - name: Run forward window probe
+        id: probe
+        continue-on-error: true
+        run: node chart_renderer_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Chart Renderer Probe"
+          git add outbox/chart-renderer-manifest-*.json || true
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "chart renderer probe result [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push origin main && break
+              sleep $((i * 5))
+            done
+          fi
+
+      - name: Fail the run if the probe failed
+        if: steps.probe.outcome != 'success'
+        run: |
+          echo "Probe failed — see the manifest committed to outbox/."
+          exit 1
