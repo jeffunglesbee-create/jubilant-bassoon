@@ -1900,7 +1900,28 @@ let allData = null;
 // Phase 2 — schedule JSON cache (field-data-today.json + mlbn-schedule.json)
 // Populated by fetchScheduleData() before buildTodaySchedule() runs.
 // Falls back to hardcoded arrays if fetch fails or times out.
-let _fieldDataCache = null;   // parsed field-data-today.json (schema 2.0)
+let _fieldDataCache = null;   // parsed field-data-today.json (schema 2.0 or 2.1)
+
+// ── Forward schedule window ───────────────────────────────────────────────────
+// Schedules for one ISO date from a parsed field-data-today.json, or null.
+// Schema 2.1 carries schedules_by_date (day 0 plus 3 forward, matching the date
+// nav's own `next.disabled = diff >= 3`). Schema 2.0 carries only `schedules`,
+// for day 0 — so a 2.0 file answers for its own for_date and nothing else.
+// Two levels of lookup, within STANDARDS Rule 76's fallback cap.
+// Duplicated verbatim in field_utils.js, which is where field_unit.js requires
+// it from; smoke A191 requires the index.html definition and A75d pins the body.
+function scheduleForDate(fileData, iso) {
+  if (!fileData || !iso) return null;
+  const byDate = fileData.schedules_by_date && fileData.schedules_by_date[iso];
+  if (byDate) return byDate;
+  return (iso === (fileData._meta && fileData._meta.for_date))
+    ? (fileData.schedules || null)
+    : null;
+}
+
+// Bound to the loaded cache.
+function fieldDataForDate(iso) { return scheduleForDate(_fieldDataCache, iso); }
+
 let _mlbnDataCache  = null;   // parsed mlbn-schedule.json byDate lookup
 
 // ── Canonical sport metadata — labels and plural forms ──
@@ -5090,6 +5111,45 @@ mvSyncMvPanel(); // Set initial empty state
 
   // Try ESPN first — free, no tokens, covers NBA/NHL/MLB + 9 soccer leagues
   const espnSections = await fetchESPNFixturesForDate(iso);
+
+  // Forward window enrichment (schema 2.1). ESPN's fixture sweep is the base and
+  // stays the base: it covers 16 leagues, where field-data windows only MLB,
+  // soccer and WNBA. Routing a forward day to buildTodaySchedule() instead would
+  // have LOST 15 of those leagues, so this upgrades the MLB section in place
+  // rather than replacing the source.
+  //
+  // ESPN's MLB fixtures carry no broadcast intelligence — every game gets
+  // bundle:"MLB_LOCAL". field-data carries nationalBundle, the GOTD flags and
+  // _postponed from statsapi. Match on `home|away` display names; an entry that
+  // does not match is simply not enriched, never corrupted. The match count is
+  // logged so a name-shape drift shows up as a number rather than silence.
+  if (espnSections) {
+    const _fdMlb = fieldDataForDate(iso)?.mlb || [];
+    if (_fdMlb.length) {
+      const _fdByKey = {};
+      _fdMlb.forEach(g => { _fdByKey[`${g.home}|${g.away}`] = g; });
+      let _enriched = 0;
+      espnSections.forEach(sec => {
+        if (sec.sport !== 'Baseball (MLB)') return;
+        sec.games.forEach(g => {
+          const src = _fdByKey[`${g.home}|${g.away}`];
+          if (!src) return;
+          _enriched++;
+          if (src.nationalBundle) {
+            g.nationalBundle = src.nationalBundle;
+            g.streams = resolveBundle(src.nationalBundle);
+          }
+          if (src.espnGOTD)     g.espnGOTD     = true;
+          if (src.peacockGOTD)  g.peacockGOTD  = true;
+          if (src.mlbnShowcase) g.mlbnShowcase = true;
+          if (src._postponed)   g._postponed   = true;
+          if (src.isPlayoff)    g.isPlayoff    = true;
+        });
+      });
+      if (FIELD_DEBUG) console.log(`[Phase2] ${iso}: enriched ${_enriched}/${_fdMlb.length} MLB fixtures from the forward window`);
+      window._fieldDataEnrichCount = { iso, matched: _enriched, available: _fdMlb.length };
+    }
+  }
   // 2026-07-13 (TYPED-RESULT-MIGRATION-QUEUE.md Bucket A #11): wrap the
   // ESPN success case in the same {ok,sections} shape fetchDateSchedule
   // now returns, so both paths route through one differentiated check
@@ -8596,104 +8656,36 @@ function buildTodaySchedule(){
   ].filter(g=>isToday(g.start_time));
   // Sources: MLB.com official schedule. GOTD: ESPN Press Room + Peacock blog.
   // Old entries removed May 31 2026 (pre-May 25 entries unreachable via isToday)
-  const mlbRaw=[
-    // ── MLB — Monday May 25, 2026 — Memorial Day slate (13 games) ──────
-    // Sources: MLB.com schedule verified May 25, 2026. NYY @ KC on ESPN (national exclusive).
-    // ── MLB — Tuesday May 26, 2026 — 15 games ──────────────────────
-    // Sources: MLB.com schedule verified May 26. TBS Tuesday: ATL @ BOS.
-    // ESPN GOTD: SEA @ ATH (Daily Update Ref confirmed).
-    // Peacock GOTD: not announced for Tue (weekly cadence, check Wed).
-    // ── MLB — Wednesday May 27, 2026 — 15 games ───────────────────────
-    // Sources: MLB.com schedule verified May 27, 2026. No standard national broadcast Wed.
-    // Check ESPN Press Room + peacocktv.com/sports/mlb for any GOTD before adding chips.
-    // ── MLB — Thursday May 28, 2026 — 6 games ───────────────────────
-    // Sources: MLB.com schedule verified May 28, 2026.
-    // ESPN GOTD: HOU @ TEX 8:05pm ET (auto-tagged via ESPN_GOTD_SCHEDULE)
-    // Peacock GOTD: CHC @ PIT 6:40pm ET (auto-tagged via PEACOCK_GOTD_SCHEDULE)
-    // ── MLB — Sunday May 31, 2026 — 15 games ──────────────────────────
-    // Source: MLB.com schedule verified May 31, 2026.
-    // Sunday Leadoff (Peacock): TOR @ BAL — 12:15pm ET — FIRST NBC game starts May 31
-    // Sunday Night Baseball (NBC + Peacock): CHC @ STL — 7:20pm ET
-    //   May 31 is first SNB game on NBC proper (prior weeks Peacock-only)
-    // No ESPN GOTD confirmed for Sunday — verify via ESPN Press Room
-    // ── MLB — Tuesday June 2, 2026 — 15 games (Lou Gehrig Day, all 30 teams in action) ──
-    // Source: MLB.com schedule verified June 2, 2026.
-    // TBS Tuesday: SD @ PHI 6:40pm ET (national, non-exclusive — keeps local RSN chips).
-    // MLB Network national game: COL @ LAA 9:38pm ET (per MLBN_SCHEDULE table, auto-tagged).
-    // ESPN GOTD: June block NOT yet announced by ESPN Press Room (last published block ended May 31).
-    //   "I don't know" rule applies — no espnGOTD flag set until ESPN announces June schedule.
-    // Peacock GOTD: weekly schedule for June 1-7 NOT yet posted (peacocktv.com blog still showing May 26-31 as of session start).
-    //   Recheck Wednesday and tag retroactively if needed.
-    {home:"Tampa Bay Rays",        away:"Detroit Tigers",       start_time:"2026-06-02T22:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL"},
-    {home:"Philadelphia Phillies", away:"San Diego Padres",     start_time:"2026-06-02T22:40:00Z", confirmed:true, venue:"Citizens Bank Park, Philadelphia PA",
-     nationalBundle:"MLB_TBS", streams:resolveBundle("MLB_TBS"),
-     matchupNote:"TBS Tuesday — SD @ PHI, 6:40pm ET. National broadcast on TBS + streaming on Max. Local RSN chips (NBCSP, SDPA) still active alongside TBS."},
-    {home:"Boston Red Sox",        away:"Baltimore Orioles",    start_time:"2026-06-02T22:45:00Z", confirmed:true, venue:"Fenway Park, Boston MA"},
-    {home:"Washington Nationals",  away:"Miami Marlins",        start_time:"2026-06-02T22:45:00Z", confirmed:true, venue:"Nationals Park, Washington DC"},
-    {home:"New York Yankees",      away:"Cleveland Guardians",  start_time:"2026-06-02T23:05:00Z", confirmed:true, venue:"Yankee Stadium, Bronx NY"},
-    {home:"Cincinnati Reds",       away:"Kansas City Royals",   start_time:"2026-06-02T23:10:00Z", confirmed:true, venue:"Great American Ball Park, Cincinnati OH"},
-    {home:"Atlanta Braves",        away:"Toronto Blue Jays",    start_time:"2026-06-02T23:15:00Z", confirmed:true, venue:"Truist Park, Atlanta GA"},
-    {home:"Minnesota Twins",       away:"Chicago White Sox",    start_time:"2026-06-02T23:40:00Z", confirmed:true, venue:"Target Field, Minneapolis MN"},
-    {home:"Milwaukee Brewers",     away:"San Francisco Giants", start_time:"2026-06-02T23:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI"},
-    {home:"St. Louis Cardinals",   away:"Texas Rangers",        start_time:"2026-06-02T23:45:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO"},
-    {home:"Chicago Cubs",          away:"Athletics",            start_time:"2026-06-03T00:05:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL"},
-    {home:"Houston Astros",        away:"Pittsburgh Pirates",   start_time:"2026-06-03T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX"},
-    {home:"Los Angeles Angels",    away:"Colorado Rockies",     start_time:"2026-06-03T01:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA"},
-    {home:"Arizona Diamondbacks",  away:"Los Angeles Dodgers",  start_time:"2026-06-03T01:40:00Z", confirmed:true, venue:"Chase Field, Phoenix AZ"},
-    {home:"Seattle Mariners",      away:"New York Mets",        start_time:"2026-06-03T01:40:00Z", confirmed:true, venue:"T-Mobile Park, Seattle WA"},
-    // ── Friday June 5 — Apple TV Friday Night Baseball doubleheader (————————————
-    {home:"Texas Rangers",         away:"Cleveland Guardians",   start_time:"2026-06-06T00:05:00Z", confirmed:true, venue:"Globe Life Field, Arlington TX",     streams:resolveBundle("MLB_APPLE"), espnGOTD:true, localNote:"Apple TV · FNB Game 1 · 8pm ET"},
-    {home:"Minnesota Twins",       away:"Kansas City Royals",    start_time:"2026-06-06T00:10:00Z", confirmed:true, venue:"Target Field, Minneapolis MN",        streams:resolveBundle("MLB_APPLE"), espnGOTD:true, localNote:"Apple TV · FNB Game 2 · 8pm ET"},
-    // ── Friday June 5 — regular slate (————————————————————————————————————————
-    {home:"Philadelphia Phillies",  away:"Chicago White Sox",    start_time:"2026-06-05T23:05:00Z", confirmed:true, venue:"Citizens Bank Park, Philadelphia PA"},
-    {home:"New York Yankees",       away:"Boston Red Sox",       start_time:"2026-06-05T23:05:00Z", confirmed:true, venue:"Yankee Stadium, Bronx NY"},
-    {home:"Toronto Blue Jays",      away:"Baltimore Orioles",    start_time:"2026-06-05T23:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
-    {home:"Miami Marlins",          away:"Tampa Bay Rays",       start_time:"2026-06-05T23:10:00Z", confirmed:true, venue:"loanDepot park, Miami FL"},
-    {home:"Atlanta Braves",         away:"Pittsburgh Pirates",   start_time:"2026-06-05T23:20:00Z", confirmed:true, venue:"Truist Park, Atlanta GA"},
-    {home:"Houston Astros",         away:"Athletics",            start_time:"2026-06-06T00:10:00Z", confirmed:true, venue:"Daikin Park, Houston TX"},
-    {home:"St. Louis Cardinals",    away:"Cincinnati Reds",      start_time:"2026-06-06T00:15:00Z", confirmed:true, venue:"Busch Stadium, St. Louis MO"},
-    {home:"Chicago Cubs",           away:"San Francisco Giants", start_time:"2026-06-06T00:20:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL"},
-    {home:"Milwaukee Brewers",      away:"Colorado Rockies",     start_time:"2026-06-06T00:40:00Z", confirmed:true, venue:"American Family Field, Milwaukee WI"},
-    {home:"Arizona Diamondbacks",   away:"Washington Nationals", start_time:"2026-06-06T01:40:00Z", confirmed:true, venue:"Chase Field, Phoenix AZ"},
-    {home:"San Diego Padres",       away:"New York Mets",        start_time:"2026-06-06T02:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
-    {home:"Detroit Tigers",         away:"Seattle Mariners",     start_time:"2026-06-05T23:10:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
-    // ── Sunday June 7 — NBC/Peacock Sunday Night Baseball ────────────────────
-    {home:"Chicago Cubs",           away:"San Francisco Giants", start_time:"2026-06-07T23:00:00Z", confirmed:true, venue:"Wrigley Field, Chicago IL", streams:resolveBundle("MLB_NBC"), nationalBundle:"MLB_NBC", matchupNote:"Sunday Night Baseball on NBC/Peacock. SFG vs CHC — Giants-Cubs rivalry night at Wrigley."},
-  
-    // ── MLB — Monday June 8, 2026 ──────────────────────────────────────────────
-    // Sources: MLB.com schedule verified June 8 2026. NYY @ CLE on FS1 national.
-    // MIL @ ATH at Las Vegas Ballpark (A's temp home, June 8-10 series).
-    {home:"Baltimore Orioles",     away:"Seattle Mariners",     start_time:"2026-06-08T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
-    {home:"Tampa Bay Rays",        away:"Boston Red Sox",       start_time:"2026-06-08T22:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL"},
-    {home:"Cleveland Guardians",   away:"New York Yankees",     start_time:"2026-06-08T22:40:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH", streams:resolveBundle("MLB_FOX"), nationalBundle:"MLB_FOX", matchupNote:"NYY @ CLE on FS1. 6:40pm ET."},
-    // ── MLB — Tuesday June 9, 2026 ─────────────────────────────────────────
-    {home:"Baltimore Orioles",     away:"Seattle Mariners",    start_time:"2026-06-09T22:35:00Z", confirmed:true, venue:"Oriole Park at Camden Yards, Baltimore MD"},
-    {home:"Miami Marlins",         away:"Arizona Diamondbacks",start_time:"2026-06-09T22:40:00Z", confirmed:true, venue:"LoanDepot Park, Miami FL"},
-    {home:"Tampa Bay Rays",        away:"Boston Red Sox",      start_time:"2026-06-09T22:40:00Z", confirmed:true, venue:"Tropicana Field, St. Petersburg FL"},
-    {home:"Cleveland Guardians",   away:"New York Yankees",    start_time:"2026-06-09T22:40:00Z", confirmed:true, venue:"Progressive Field, Cleveland OH"},
-    {home:"Detroit Tigers",        away:"Minnesota Twins",     start_time:"2026-06-09T22:40:00Z", confirmed:true, venue:"Comerica Park, Detroit MI"},
-    {home:"Pittsburgh Pirates",    away:"Los Angeles Dodgers", start_time:"2026-06-09T22:40:00Z", confirmed:true, venue:"PNC Park, Pittsburgh PA"},
-    {home:"Toronto Blue Jays",     away:"Philadelphia Phillies",start_time:"2026-06-09T00:07:00Z", confirmed:true, venue:"Rogers Centre, Toronto ON"},
-    {home:"New York Mets",         away:"St. Louis Cardinals", start_time:"2026-06-09T23:10:00Z", confirmed:true, venue:"Citi Field, New York NY"},
-    {home:"Chicago White Sox",     away:"Atlanta Braves",      start_time:"2026-06-09T23:40:00Z", confirmed:true, venue:"Guaranteed Rate Field, Chicago IL"},
-    {home:"Kansas City Royals",    away:"Texas Rangers",       start_time:"2026-06-09T23:40:00Z", confirmed:true, venue:"Kauffman Stadium, Kansas City MO"},
-    {home:"Colorado Rockies",      away:"Chicago Cubs",        start_time:"2026-06-10T00:40:00Z", confirmed:true, venue:"Coors Field, Denver CO"},
-    {home:"Los Angeles Angels",    away:"Houston Astros",       start_time:"2026-06-09T00:38:00Z", confirmed:true, venue:"Angel Stadium, Anaheim CA"},
-    {home:"San Diego Padres",      away:"Cincinnati Reds",      start_time:"2026-06-09T00:40:00Z", confirmed:true, venue:"Petco Park, San Diego CA"},
-    {home:"San Francisco Giants",  away:"Washington Nationals", start_time:"2026-06-09T00:45:00Z", confirmed:true, venue:"Oracle Park, San Francisco CA"},
-    {home:"Athletics",             away:"Milwaukee Brewers",    start_time:"2026-06-09T01:05:00Z", confirmed:true, venue:"Las Vegas Ballpark, Las Vegas NV", matchupNote:"A's hosting at Las Vegas Ballpark (temp home Jun 8-10 vs MIL)."},
-  ];
+  // mlbRaw — national-TV OVERRIDE list, not a schedule.
+  //
+  // Emptied 2026-09-04. It held 48 entries dated 2026-06-02 to 2026-06-10, and
+  // its only consumer is `mlbRaw.filter(g=>isToday(g.start_time))` below — a
+  // one-day filter, so every one of them had returned nothing since 2026-06-11.
+  // They were not stale data waiting for a garbage collector; they were an
+  // unreachable branch.
+  //
+  // This is the resting state the architecture note at the adapter already
+  // specifies: "Adapter is PRIMARY source. mlbRaw is the OVERRIDE/EXCEPTION
+  // list... For all-local days, mlbRaw = [] and adapter provides the full slate."
+  //
+  // Add an entry here only to override TODAY's slate when field-data-today.json
+  // is wrong or absent. Smoke A76b-MLBRAW fails on any entry outside the
+  // 4-day forward window, so this cannot silently accumulate again.
+  const mlbRaw=[];
   // Phase 2: build overlay map from field-data-today.json game_overlays
   const _mlbOverlayMap = {};
   if (_fieldDataCache?.game_overlays) {
     _fieldDataCache.game_overlays.forEach(o => { if (o._match_key) _mlbOverlayMap[o._match_key] = o; });
   }
-  // Phase 2: use live JSON when fresh (schema 2.0, dated today); else hardcoded mlbRaw
-  const _useJsonMlb = _fieldDataCache?.schedules?.mlb?.length > 0 &&
-                      _fieldDataCache._meta?.for_date === TODAY_ISO;
+  // Phase 2: use live JSON for the date being viewed; else hardcoded mlbRaw.
+  // Keyed on viewingISO, not TODAY_ISO — a 2.1 file answers for day 0 and the
+  // three days forward, so returning to today and stepping forward both take
+  // this path instead of falling off to the bare ESPN fixture list.
+  const _mlbForDate = fieldDataForDate(viewingISO)?.mlb || [];
+  const _useJsonMlb = _mlbForDate.length > 0;
   const _mlbSource  = _useJsonMlb
-    ? _fieldDataCache.schedules.mlb          // live — broadcast assignments pre-computed
-    : mlbRaw.filter(g=>isToday(g.start_time)); // fallback — hardcoded entries
+    ? _mlbForDate                              // live — broadcast assignments pre-computed
+    : mlbRaw.filter(g=>isToday(g.start_time)); // fallback — hardcoded overrides, day 0
 
   if (_useJsonMlb && FIELD_DEBUG) console.log(`[Phase2] MLB from JSON: ${_mlbSource.length} games`);
 
@@ -20588,10 +20580,17 @@ async function fetchScheduleData() {
       .then(r => r.ok ? r.json() : null),
   ]);
 
-  // field-data-today.json — only use if schema 2.0 and dated today
+  // field-data-today.json — accept schema 2.0 (day 0 only) or 2.1 (forward
+  // window). Containment, not equality: 2.1 carries window_dates, and the file
+  // is current as long as today is inside it. Admitting BOTH versions is what
+  // lets the generator ship 2.1 without a stale client rejecting the whole file
+  // and falling back to an empty mlbRaw.
   if (fdResult.status === 'fulfilled' && fdResult.value) {
     const d = fdResult.value;
-    if (d._meta?.schema_version === '2.0' && d._meta?.for_date === TODAY_ISO && !d.error) {
+    const _fdSchemaOk = d._meta?.schema_version === '2.0' || d._meta?.schema_version === '2.1';
+    const _fdCurrent  = d._meta?.for_date === TODAY_ISO ||
+                        (Array.isArray(d._meta?.window_dates) && d._meta.window_dates.includes(TODAY_ISO));
+    if (_fdSchemaOk && _fdCurrent && !d.error) {
       _fieldDataCache = d;
       if (FIELD_DEBUG) console.log(`[Phase2] field-data loaded: ${d._meta.games_found?.mlb||0} MLB, ${d._meta.games_found?.nhl||0} NHL, ${d._meta.games_found?.nba||0} NBA`);
     }
@@ -22393,7 +22392,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-04a';
+  const SW_VERSION = '2026-09-04b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

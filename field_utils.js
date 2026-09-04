@@ -918,13 +918,29 @@ function isAmnestyState(state) {
   return state === 'post' || state === 'final';
 }
 
+// ── Forward schedule window ───────────────────────────────────────────────────
+// Schedules for one ISO date from a parsed field-data-today.json, or null.
+// Schema 2.1 carries schedules_by_date (day 0 plus 3 forward, matching the date
+// nav's own `next.disabled = diff >= 3`). Schema 2.0 carries only `schedules`,
+// for day 0 — so a 2.0 file answers for its own for_date and nothing else.
+// Two levels of lookup, within STANDARDS Rule 76's fallback cap.
+// Pure so the window boundary is testable in isolation (field_unit.js).
+function scheduleForDate(fileData, iso) {
+  if (!fileData || !iso) return null;
+  const byDate = fileData.schedules_by_date && fileData.schedules_by_date[iso];
+  if (byDate) return byDate;
+  return (iso === (fileData._meta && fileData._meta.for_date))
+    ? (fileData.schedules || null)
+    : null;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     teamNick, teamSlug, teamSlugPair,
     gameNetwork, shiftTime, parseMatchweek, espnPeriodLabel,
     isOutdoorVenue, getVenueCoords,
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
-    toImpliedNum, dramaTier, isAmnestyState,
+    toImpliedNum, dramaTier, isAmnestyState, scheduleForDate,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
     espnTeamMatch,
     // WC Permutations Engine

@@ -26,6 +26,7 @@ const {
   wcPoissonExpectedGoals,
   wcMakePRNG,
   isAmnestyState,
+  scheduleForDate,
 } = require('./field_utils.js');
 
 let pass = 0, fail = 0;
@@ -762,6 +763,52 @@ test('isAmnestyState: enumerated state -> amnesty pairs', () => {
       `isAmnestyState(${JSON.stringify(input)}) should be ${expected}`);
   }
   assertEqual(cases.length, 8, 'all 8 enumerated pairs must run');
+});
+
+// ── scheduleForDate (forward schedule window) ──────────────────────────────
+// Enumerated pairs across the window boundary. The +4 and -1 rows are the
+// counterexamples: a predicate that just returned schedules for anything would
+// pass a test that only fed it dates already inside the window.
+test('scheduleForDate: 2.1 window — enumerated date -> hit/miss pairs', () => {
+  const file = {
+    _meta: { schema_version: '2.1', for_date: '2026-09-04',
+             window_dates: ['2026-09-04','2026-09-05','2026-09-06','2026-09-07'] },
+    schedules: { mlb: [{ id: 'day0' }] },
+    schedules_by_date: {
+      '2026-09-04': { mlb: [{ id: 'd0' }] },
+      '2026-09-05': { mlb: [{ id: 'd1' }] },
+      '2026-09-06': { mlb: [] },
+      '2026-09-07': { mlb: [{ id: 'd3' }] },
+    },
+  };
+  const cases = [
+    ['2026-09-04', true ],  // day 0
+    ['2026-09-05', true ],  // +1
+    ['2026-09-06', true ],  // +2 — present but empty; still a hit, not a miss
+    ['2026-09-07', true ],  // +3 — the nav ceiling
+    ['2026-09-08', false],  // +4 — outside the window
+    ['2026-09-03', false],  // -1 — behind day 0
+    [undefined,    false],
+    ['',           false],
+  ];
+  for (const [iso, expected] of cases) {
+    assertEqual(scheduleForDate(file, iso) !== null, expected,
+      `scheduleForDate(file, ${JSON.stringify(iso)}) hit should be ${expected}`);
+  }
+  assertEqual(cases.length, 8, 'all 8 enumerated pairs must run');
+  assertEqual(scheduleForDate(file, '2026-09-06').mlb.length, 0,
+    'a present-but-empty day returns its empty array, not the day-0 fallback');
+});
+
+test('scheduleForDate: 2.0 file answers for its own for_date and nothing else', () => {
+  const legacy = {
+    _meta: { schema_version: '2.0', for_date: '2026-09-04' },
+    schedules: { mlb: [{ id: 'day0' }] },
+  };
+  assertEqual(scheduleForDate(legacy, '2026-09-04').mlb.length, 1, '2.0 serves day 0');
+  assertEqual(scheduleForDate(legacy, '2026-09-05'), null, '2.0 must not serve a forward day');
+  assertEqual(scheduleForDate(null, '2026-09-04'), null, 'no file -> null');
+  assertEqual(scheduleForDate({}, '2026-09-04'), null, 'empty file -> null');
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────
