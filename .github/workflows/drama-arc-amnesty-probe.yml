@@ -1,0 +1,67 @@
+name: Drama Arc Amnesty Probe
+# Proves the bottom-sheet Drama Arc sparkline renders only in the ADR-002
+# amnesty zone (post-game). CC-CMD-2026-09-04-bottom-sheet-drama-arc-amnesty
+# TASK 4b. Trigger: push to outbox/.trigger-drama-arc-amnesty-probe OR dispatch.
+
+on:
+  push:
+    paths: ['outbox/.trigger-drama-arc-amnesty-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      # The script exits 1 unless liveSparklinePresent===false AND
+      # postSparklinePresent===true AND both sheets actually rendered.
+      # Run it before the commit step so a failure is loud, then commit the
+      # manifest either way so a failing run still leaves its evidence.
+      - name: Run drama arc amnesty probe
+        id: probe
+        continue-on-error: true
+        run: node drama_arc_amnesty_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Drama Arc Amnesty Probe"
+          git add outbox/drama-arc-amnesty-manifest-*.json outbox/drama-arc-amnesty-*.png 2>/dev/null || true
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "drama arc amnesty probe result [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push origin main && break
+              sleep $((i * 5))
+            done
+          fi
+
+      - name: Fail the run if the probe failed
+        if: steps.probe.outcome != 'success'
+        run: |
+          echo "Probe failed — see the manifest committed to outbox/."
+          exit 1
