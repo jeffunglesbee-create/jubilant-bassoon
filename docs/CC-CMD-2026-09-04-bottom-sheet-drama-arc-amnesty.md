@@ -1,6 +1,7 @@
 # CC-CMD — Bottom sheet: gate the Drama Arc sparkline to the amnesty zone
 
 **Date:** 2026-09-04
+**Status:** CLOSED 2026-09-04 — probe run 33893527177 success, manifest `outbox/drama-arc-amnesty-manifest-33893527177.json` shows `liveSparklinePresent:false` / `postSparklinePresent:true`, smoke 988/0.
 **Repo:** jeffunglesbee-create/jubilant-bassoon (sole — client-side only)
 **Branch:** main — commit directly. No feature branch. No PR.
 

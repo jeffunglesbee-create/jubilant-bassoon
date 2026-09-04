@@ -1,5 +1,43 @@
 # FIELD HANDOFF
 
+## Session 2026-09-04 — the bottom-sheet Drama Arc sparkline was never gated (jubilant-bassoon)
+
+HEAD `43a13586` → `259fa5a1`. Smoke **988/0** (was 986 with A515 failing).
+Units **67/0**. SW_VERSION `2026-09-04a`.
+Session doc: `outbox/cc-session-2026-09-04-drama-arc-amnesty.md`
+CC-CMD: `docs/CC-CMD-2026-09-04-bottom-sheet-drama-arc-amnesty.md`
+
+`openBottomSheet` rendered `buildDramaSparklineSVG` with no state gate —
+`_bsIsFinal` gated only the arc description that follows it. The builder emits
+`Math.round(peak)` as SVG text, so a **live** game showed a raw composite drama
+score about 90 seconds in. ADR-002 Step 3 (displayed composite) with Step 4's
+amnesty not applying.
+
+Two prior documents said this section was post-game. Neither was true at HEAD,
+and `git log -S` shows no commit ever removed a gate — a Rule 72 case, now
+amended in place.
+
+**Fix:** `isAmnestyState(state)` — true only for `'post'` or `'final'`, in
+`field_utils.js` and duplicated verbatim in `field.js` (smoke A191 requires the
+index.html definition). `_bsIsFinal` derives from it; the whole Drama Arc
+section sits behind it. The live sheet keeps `dramaLabel_bs`, the named-tier
+label, which is the ADR-002 Step 5 pattern.
+
+**Held by:** smoke A74b / A74c, 8 enumerated unit pairs (mutation-proved —
+making the predicate case-insensitive fails the block), and
+`drama-arc-amnesty-probe.yml`, a Playwright run against the live deploy.
+Run 1 (`33893391493`) is the negative control: against the pre-deploy site it
+reported `liveSparklinePresent: true`, `livePeakTextPresent: true`,
+`liveBsContentChildCount: 8` — the violation reproduced in a real browser, and
+proof the probe mounts the sheet rather than measuring nothing.
+
+**Also fixed, separate commit `4f1255bd`:** field.js carried a stale 53-line
+`UMPIRE_ABS_RATINGS` while index.html carried 78 fresher lines, so any
+`sync-source.mjs` run silently reverted the newer data. Ported forward.
+**Standing defect:** whatever regenerates that table writes index.html only and
+should write `src/legacy/field.js`.
+
+
 ## Session 2026-08-27 — the NFL EP model moved to the relay (jubilant-bassoon)
 
 HEAD `254f05e` → this commit. Smoke **986/0**. SW_VERSION `2026-08-27a`.
