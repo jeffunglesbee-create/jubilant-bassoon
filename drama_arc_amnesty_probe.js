@@ -87,7 +87,7 @@ async function runCase(page, state) {
 
   const live = haveData ? await runCase(page, 'in')   : { error: '_plVerify / #bs-content never appeared' };
   // Close the sheet between cases so the second render starts clean.
-  await page.evaluate(() => { try { closeBottomSheet && closeBottomSheet(); } catch (e) {} });
+  await page.evaluate(() => { try { window.closeBottomSheet?.(); } catch (e) {} });
   const post = haveData ? await runCase(page, 'post') : { error: '_plVerify / #bs-content never appeared' };
 
   let screenshot = null;

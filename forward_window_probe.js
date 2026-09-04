@@ -54,6 +54,7 @@ const addDays = (iso, n) => {
 
   const today = meta?.for_date || new Date().toISOString().slice(0, 10);
   const isoDays = [1, 2, 3].map(i => addDays(today, i));
+  const days = [];
 
   // ── ASSERTED: read every forward day BEFORE touching navigation ───────────
   // Run 33907641507 read +1, then called goToDate, and the resulting navigation

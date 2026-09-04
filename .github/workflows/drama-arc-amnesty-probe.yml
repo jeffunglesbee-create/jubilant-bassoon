@@ -22,6 +22,19 @@ jobs:
         with:
           node-version: '22'
 
+      # A probe that throws before writing its manifest proves nothing, and
+      # `node --check` cannot catch it: run 33908009552 died on
+      # `ReferenceError: days is not defined` — valid syntax, undeclared
+      # binding, no manifest, one wasted round trip. no-undef catches exactly
+      # that class in seconds. browser env is required because page.evaluate
+      # callbacks legitimately reference window/document.
+      - name: Static check the probe (no-undef)
+        run: |
+          npm install eslint@8
+          npx eslint --no-eslintrc --env es2022,node,browser \
+            --parser-options ecmaVersion:2022,sourceType:script \
+            --rule '{"no-undef":"error"}' drama_arc_amnesty_probe.js
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
