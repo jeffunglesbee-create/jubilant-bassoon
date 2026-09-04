@@ -45,7 +45,19 @@ const crypto = require('crypto');
 
 const ROOT = path.join(__dirname, '..');
 const REPORTERS = ['captureFieldError', 'console.error', 'console.warn', 'console.debug', 'throw'];
-const INDEX_HTML = path.join(ROOT, 'index.html');
+// 2026-09-04: retargeted from index.html to src/legacy/field.js, and the
+// <script> extraction dropped with it. Two defects, one fix:
+//   1. index.html's script block is GENERATED from field.js by
+//      scripts/sync-source.mjs, so a codemod applied to the artifact is
+//      reverted by the next sync.
+//   2. extractMainScript matched /<script>...<\/script>/ — a BARE script tag.
+//      The app block is <script type="module">. Measured at d7e8c819: the bare
+//      regex selects a 16,426-char block; the app block is 2,298,563 chars. So
+//      this tool has been operating on the wrong 0.7% of the file, silently.
+// The source file needs no extraction at all — it is the script. Run
+// scripts/sync-source.mjs after applying; check-html-block-matches-source.mjs
+// fails the commit if the two ever drift.
+const SOURCE_FILE = path.join(ROOT, 'src', 'legacy', 'field.js');
 
 function sha(s) { return crypto.createHash('sha256').update(s).digest('hex').slice(0, 16); }
 
@@ -60,10 +72,11 @@ async function getParser() {
   return parser;
 }
 
-function extractMainScript(html) {
-  const scriptMatches = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
-  const mainScript = scriptMatches.map(m => m[1]).sort((a, b) => b.length - a.length)[0];
-  if (!mainScript) throw new Error('No <script> block found in index.html');
+function extractMainScript(source) {
+  // src/legacy/field.js IS the script — no tag to strip. Kept as a named
+  // function so both read paths and the write path stay symmetric.
+  if (!source) throw new Error('src/legacy/field.js is empty');
+  const mainScript = source;
   return mainScript;
 }
 
@@ -129,7 +142,7 @@ function findCatches(mainScript, fnNode) {
 
 async function cmdList(pattern) {
   const parser = await getParser();
-  const html = fs.readFileSync(INDEX_HTML, 'utf8');
+  const html = fs.readFileSync(SOURCE_FILE, 'utf8');
   const mainScript = extractMainScript(html);
   const root = parser.parse(mainScript).rootNode;
 
@@ -169,13 +182,13 @@ async function cmdList(pattern) {
 async function cmdApply(manifestPath, opts) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const parser = await getParser();
-  const html = fs.readFileSync(INDEX_HTML, 'utf8');
+  const html = fs.readFileSync(SOURCE_FILE, 'utf8');
   const mainScript = extractMainScript(html);
 
   const currentHash = sha(mainScript);
   if (currentHash !== manifest.sourceHash) {
     console.error(`ABORT: sourceHash mismatch (manifest=${manifest.sourceHash}, current=${currentHash}).`);
-    console.error('index.html has changed since this manifest was generated -- re-run `list` against the current file rather than applying a stale manifest.');
+    console.error('src/legacy/field.js has changed since this manifest was generated -- re-run `list` against the current file rather than applying a stale manifest.');
     process.exit(1);
   }
 
@@ -314,8 +327,8 @@ async function cmdApply(manifestPath, opts) {
   // Function replacements return their value verbatim, no pattern parsing.
   const newHtml = html.replace(mainScript, () => newMainScript);
   if (newHtml === html) throw new Error('replace() no-op -- mainScript substring not found for splice, aborting without writing');
-  fs.writeFileSync(INDEX_HTML, newHtml);
-  console.log(`\nWrote ${INDEX_HTML}. Run smoke.js / field_smoke.js / field_unit.js next -- this tool does not run them for you.`);
+  fs.writeFileSync(SOURCE_FILE, newHtml);
+  console.log(`\nWrote ${SOURCE_FILE}. Run scripts/sync-source.mjs, then smoke.js / field_smoke.js / field_unit.js -- this tool does not run them for you.`);
 }
 
 (async () => {
