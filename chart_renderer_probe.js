@@ -44,12 +44,19 @@ const RUN_ID = process.env.GITHUB_RUN_ID || String(Date.now());
 
   let r = { error: 'test API never appeared' };
   if (apiReady) {
-    r = await page.evaluate(() => {
+    r = await page.evaluate(async () => {
       const V = window._plVerify;
       const out = {
         mounted: false, canvasCount: 0, hasAriaLabel: false, ariaLabel: null,
         sameCanvasAfterUpdate: false, canvasCountAfterUpdate: 0,
         instanceReused: false, rangeHonoured: false,
+        // Reported, not just the boolean. Run 33923552707 said rangeHonoured
+        // false and that was the probe reading too early: uPlot leaves
+        // scales.y.min/max null until the first draw resolves them, so the
+        // three states are unresolved / wrong / right and a bare false
+        // collapses the first two. Measured locally in a real browser:
+        // null immediately, 0 and 1 after two animation frames.
+        yMin: null, yMax: null, scaleResolved: false,
         sweptOnDetach: false, error: null,
       };
       try {
@@ -81,9 +88,16 @@ const RUN_ID = process.env.GITHUB_RUN_ID || String(Date.now());
         // ── 3. the fixed domain is the one asked for ───────────────────────
         // The series spans 0.38-0.71. An auto-scaled chart would report that
         // as its y range; a fixed one reports 0-1.
+        //
+        // Two frames, not zero: uPlot resolves scales during the draw, so
+        // reading synchronously after construction returns null for both.
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         try {
           const sc = u2 && u2.scales && u2.scales.y;
-          out.rangeHonoured = !!sc && sc.min === 0 && sc.max === 1;
+          out.yMin = sc ? sc.min : null;
+          out.yMax = sc ? sc.max : null;
+          out.scaleResolved = typeof out.yMin === 'number' && typeof out.yMax === 'number';
+          out.rangeHonoured = out.scaleResolved && out.yMin === 0 && out.yMax === 1;
         } catch (_) {}
 
         // ── 4. a detached mount is reclaimed ───────────────────────────────
@@ -125,7 +139,10 @@ const RUN_ID = process.env.GITHUB_RUN_ID || String(Date.now());
   if (manifest.canvasCountAfterUpdate !== manifest.canvasCount)
     problems.push(`canvas count went ${manifest.canvasCount} -> ${manifest.canvasCountAfterUpdate} — canvases are accumulating`);
   if (!manifest.instanceReused)   problems.push('a different uPlot instance came back — the update path did not run');
-  if (!manifest.rangeHonoured)    problems.push('y scale is not [0,1] — the fixed domain was ignored and the chart auto-scaled');
+  if (!manifest.scaleResolved)
+    problems.push(`the y scale never resolved (min=${manifest.yMin}, max=${manifest.yMax}) — the chart did not draw, so nothing below was measured`);
+  else if (!manifest.rangeHonoured)
+    problems.push(`y scale is [${manifest.yMin}, ${manifest.yMax}], not [0, 1] — the fixed domain was ignored and the chart auto-scaled`);
   if (!manifest.sweptOnDetach)    problems.push('a detached mount was NOT reclaimed — uPlot listeners are leaking');
   if (manifest.error)             problems.push(`in-page error: ${manifest.error}`);
 
