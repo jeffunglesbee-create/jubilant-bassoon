@@ -27351,7 +27351,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-04d';
+  const SW_VERSION = '2026-09-04e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32482,6 +32482,51 @@ document.addEventListener('visibilitychange', () => {
           }
         }
       } catch (_e) {}
+      // The win-probability line. The ring buffer above already holds every
+      // wp_update for this game -- it was captured for Pulse Chip's velocity
+      // signal and read nowhere else, so the series existed and was never
+      // drawn. A single number tells you the current WP; the line tells you
+      // whether the game got there slowly or in one swing, which is the
+      // question a viewer is actually asking.
+      //
+      // ADR-002: win probability is COMMODITY under Rule F -- the same class as
+      // xG and Elo, publishable by any neutral vendor. It carries none of the
+      // constraints the drama series does, and this chart is not gated.
+      //
+      // Same separate-mount pattern as the EPA drive chart: the card's own
+      // markup is rebuilt wholesale by renderESPNScores, so the chart lives in
+      // its own element and is only ever handed new data. If a re-render does
+      // take the card away, sweepDetachedCharts reclaims the instance on the
+      // next mount rather than leaking uPlot's window listeners.
+      try {
+        if (_wpGid) {
+          const _wpEvents = (_sseScoreTs.get(_wpGid) || [])
+            .filter(e => e.type === 'wp_update' && typeof e.data?.homeWP === 'number');
+          const _card = document.querySelector(`[data-gameid="${_wpGid}"]`);
+          if (_card) {
+            let _wpEl = _card.querySelector('.wp-trend-chart');
+            if (_wpEvents.length >= 2) {
+              if (!_wpEl) {
+                _wpEl = document.createElement('div');
+                _wpEl.className = 'field-chart wp-trend-chart';
+                _card.appendChild(_wpEl);
+              }
+              // FIXED 0-1 DOMAIN. homeWP is a probability (two call sites read
+              // it as `wp * 100`), so the axis is the full probability range
+              // and not the range this game happened to visit. A game that
+              // moved 48% to 52% must LOOK like a game that barely moved.
+              fieldChart(_wpEl,
+                [_wpEvents.map((_, i) => i), _wpEvents.map(e => e.data.homeWP)],
+                { height: 28, range: [0, 1], colors: ['var(--c-live)'],
+                  labels: ['home win probability'] });
+            } else if (_wpEl) {
+              // One point is not a trend. Remove it rather than draw a flat
+              // line that reads as "nothing is happening".
+              destroyChart(_wpEl); _wpEl.remove();
+            }
+          }
+        }
+      } catch (_e) { captureFieldError('sse:wp-trend-chart', _e, true); }
       try {
         if (typeof fieldEvents !== 'undefined') {
           fieldEvents.dispatchEvent(new CustomEvent('field:wp_update', { detail: data }));

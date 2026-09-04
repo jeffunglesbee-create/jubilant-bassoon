@@ -65,6 +65,34 @@ function chartTheme() {
  *        written to catch ("renders every game as a wall topping out at 100%").
  * @param {boolean} [opts.axes=false]  draw axes; off for sparkline contexts
  */
+// Every live instance, so detached ones can be reclaimed. FIELD rebuilds whole
+// cards and panels with innerHTML on its render cycles; when that happens the
+// mount element is discarded WITHOUT destroy() ever running, and uPlot's window
+// listeners outlive it. Nothing visible breaks — the leak is listeners and
+// canvases accumulating across a long session, which is exactly the kind of
+// thing that never shows up in a smoke run.
+//
+// A Set of elements, not WeakSet: this needs to be iterable to sweep.
+// sweepDetachedCharts() is what keeps it from being the leak it guards against.
+const _mounted = new Set();
+
+/**
+ * Destroy and forget every chart whose mount has left the document.
+ * Cheap (a Set walk plus document.contains per entry), so callers can run it
+ * on their own cadence rather than trying to hook every possible re-render.
+ */
+export function sweepDetachedCharts() {
+  let swept = 0;
+  for (const el of Array.from(_mounted)) {
+    if (!el || !document.contains(el)) {
+      if (el && el._uplot) { try { el._uplot.destroy(); } catch (_) {} el._uplot = null; }
+      _mounted.delete(el);
+      swept++;
+    }
+  }
+  return swept;
+}
+
 export function fieldChart(el, data, opts = {}) {
   if (!el || !Array.isArray(data) || data.length < 2) return null;
   const theme = chartTheme();
@@ -118,6 +146,10 @@ export function fieldChart(el, data, opts = {}) {
   el._uplot = u;
   el._uplotSeriesCount = data.length;
   el._uplotWidth = width;
+  _mounted.add(el);
+  // Sweep on mount rather than on a timer: a new chart appearing is exactly
+  // when old ones are most likely to have just been re-rendered away.
+  sweepDetachedCharts();
 
   // The canvas is unreadable to assistive tech. Rather than leave it silent or
   // let a screen reader announce a bare canvas, the mount carries a summary
@@ -148,4 +180,5 @@ export function destroyChart(el) {
     el._uplot = null;
     el._uplotSeriesCount = 0;
   }
+  _mounted.delete(el);
 }

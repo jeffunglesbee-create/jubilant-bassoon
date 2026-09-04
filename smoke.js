@@ -657,6 +657,8 @@ assert('A56 — field_utils.js loaded in index.html',
     ['A75h','uplot: EPA drive chart mounts separately from the re-rendered chip', [/class='field-chart ufl-epa-chart'|className='field-chart ufl-epa-chart'/, /fieldChart\(_chartEl,/]],
     ['A75i','uplot: EPA chart uses a FIXED domain, never the series maximum',   /fieldChart\(_chartEl,[\s\S]{0,120}range:\[-3,7\]/],
     ['A75j','uplot: vendored CSS present with FIELD overrides',                 [/\.uplot, \.uplot \*, \.uplot \*::before/, /\.uplot \{ width: 100%; font-family: inherit/]],
+    ['A75k','uplot: WP trend chart reads the existing wp_update ring buffer',   [/e\.type === 'wp_update' && typeof e\.data\?\.homeWP === 'number'/, /fieldChart\(_wpEl,/]],
+    ['A75l','uplot: WP chart uses the FIXED 0-1 probability domain',            /fieldChart\(_wpEl,[\s\S]{0,200}range: \[0, 1\]/],
     ['A76', 'ember-buried-lead: evaluateEMBER defined',               /function evaluateEMBER\s*\(/],
     ['A76b','ember-patent-fix: dramaScore absent from evaluateEMBER return + compound tag', [/return\s*\{[\s\S]{0,120}ember:\s*true[\s\S]{0,200}lateClose/, /EMBER BURIED LEAD.*lateClose/]],
     ['A77', 'build-game-context: buildGameContext defined',           /function buildGameContext\s*\(/],
@@ -989,6 +991,26 @@ const missingFromHtml = utilsFnNames.filter(fn => {
     new RegExp('import\\s*\\{[^}]*\\b' + fn + '\\b').test(html);
   return usedInHtml && !definedInHtml;
 });
+// A75m: src/utils/chart.js is bundled by esbuild, so its contents never appear
+// in index.html SOURCE — only in the deploy artifact. Asserted against the
+// module itself, the same way A191 reads field_utils.js.
+//
+// The claim: a chart whose mount leaves the document is destroyed, not
+// orphaned. FIELD rebuilds cards and panels with innerHTML, which discards a
+// mount without ever calling destroy(), and uPlot's window listeners outlive
+// the element. The leak is invisible in any single render.
+const _chartSrc = require('fs').readFileSync('src/utils/chart.js', 'utf8');
+assert('A75m — chart.js reclaims detached charts rather than leaking them',
+  /export function sweepDetachedCharts\(\)/.test(_chartSrc) &&
+  /^\s*_mounted\.add\(el\);/m.test(_chartSrc) &&
+  /^\s*sweepDetachedCharts\(\);/m.test(_chartSrc) &&
+  /document\.contains\(el\)/.test(_chartSrc),
+  'sweepDetachedCharts must exist, be called on mount, and test document.contains');
+assert('A75n — chart.js updates via setData instead of remounting',
+  /el\._uplot\.setData\(data\)/.test(_chartSrc) &&
+  /el\._uplotSeriesCount === data\.length/.test(_chartSrc),
+  'a chart re-rendered on a 15-30s poll must not rebuild its canvas (Rule 89)');
+
 assert('A191 — field_utils.js functions used in index.html must be defined there',
   missingFromHtml.length === 0,
   'Missing from index.html: ' + missingFromHtml.join(', ') + ' — inline from field_utils.js');
