@@ -66,6 +66,13 @@ node "$REPO/field_unit.js" >/dev/null 2>&1; UNIT=$?
 echo "🔎 Lint (auto-fix pass)..."
 "$REPO/node_modules/.bin/eslint" --plugin html --fix "$REPO/index.html" >/dev/null 2>&1 && git add "$REPO/index.html"
 
+# 2026-09-04: the autofix above runs AFTER the sync and git-adds index.html.
+# Anything it changes lands only in the generated artifact and is reverted by
+# the next sync. It changes nothing today (measured), so this is a guard, not a
+# rewrite — it turns a silent revert into a named failure.
+echo "🔗 Generated-artifact check (index.html block vs field.js)..."
+node "$REPO/scripts/check-html-block-matches-source.mjs" >/dev/null 2>&1; BLOCK=$?
+
 echo "🔎 Lint (ESLint — blocks on errors, not warnings)..."
 LINT_OUT=$("$REPO/node_modules/.bin/eslint" --cache --plugin html "$REPO/index.html" 2>&1)
 LINT_ERRORS=$(echo "$LINT_OUT" | grep -c " error ")
@@ -79,6 +86,7 @@ if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
   [ $SMOKE_D -ne 0 ] && echo "║  ❌ Smoke (per-day)   — run: node field_smoke.js        ║"
   [ $UNIT  -ne 0 ] && echo "║  ❌ Units    — run: node field_unit.js                   ║"
   [ $LINT  -ne 0 ] && echo "║  ❌ Lint     — run: npm run lint  ($LINT_ERRORS error(s))$(printf '%*s' $((23 - ${#LINT_ERRORS})) '')║"
+  [ $BLOCK -ne 0 ] && echo "║  ❌ index.html block diverged from src/legacy/field.js   ║"
   echo "║                                                          ║"
   echo "║  Rule 16: bypass = git commit --no-verify                ║"
   echo "║           MUST include [no-verify: reason] in msg        ║"
@@ -86,6 +94,7 @@ if [ $SMOKE -ne 0 ] || [ $UNIT -ne 0 ] || [ $LINT -ne 0 ]; then
   [ $SMOKE   -ne 0 ] && node "$REPO/smoke.js" "$REPO/index.html" 2>&1 | tail -5
   [ $SMOKE_D -ne 0 ] && node "$REPO/field_smoke.js" "$REPO/index.html" 2>&1 | tail -5
   [ $UNIT  -ne 0 ] && node "$REPO/field_unit.js"  2>&1 | tail -5
+  [ $BLOCK -ne 0 ] && node "$REPO/scripts/check-html-block-matches-source.mjs" 2>&1 | tail -12
   [ $LINT  -ne 0 ] && echo "$LINT_OUT" | grep " error " | head -5
   exit 1
 fi
