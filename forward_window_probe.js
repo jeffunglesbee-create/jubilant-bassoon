@@ -53,45 +53,52 @@ const addDays = (iso, n) => {
   }, { timeout: 30000 }).then(h => h.jsonValue()).catch(() => null);
 
   const today = meta?.for_date || new Date().toISOString().slice(0, 10);
-  const days = [];
+  const isoDays = [1, 2, 3].map(i => addDays(today, i));
 
-  for (let i = 1; i <= 3; i++) {
-    const iso = addDays(today, i);
-    let day = { iso, windowHasDay: false, windowMlbCount: 0, navigated: false,
-                cardCount: 0, sectionCount: 0,
-                mlbEnrichMatched: 0, mlbEnrichAvailable: 0, error: null };
-    try {
-      // ASSERTED: the window reached the client for this date. Needs no network
-      // beyond the field-data file the page already fetched.
-      const w = await page.evaluate((d) => {
-        const sched = window._plVerify.scheduleForDate(d);
-        return { has: !!sched, mlb: sched && sched.mlb ? sched.mlb.length : 0 };
-      }, iso);
-      day.windowHasDay   = w.has;
-      day.windowMlbCount = w.mlb;
+  // ── ASSERTED: read every forward day BEFORE touching navigation ───────────
+  // Run 33907641507 read +1, then called goToDate, and the resulting navigation
+  // destroyed the execution context — so +2 and +3 reported "the window did not
+  // reach the client" when they had never been asked. The assertion needs no
+  // navigation at all: scheduleForDate is a pure lookup over an already-fetched
+  // file. Reading all three first removes the dependency instead of chasing
+  // whatever navigates.
+  const windowRead = await page.evaluate((list) => list.map(d => {
+    const sched = window._plVerify.scheduleForDate(d);
+    return { iso: d, has: !!sched, mlb: sched && sched.mlb ? sched.mlb.length : 0 };
+  }), isoDays);
 
-      // REPORTED, NOT ASSERTED: rendering needs site.api.espn.com direct from
-      // the browser, which a GitHub runner cannot reach (run 33907104753:
-      // 403/404/502 across every fixture fetch). A zero here is the runner's
-      // network, not the product, so it is recorded and not used as a gate.
-      await page.evaluate(async (d) => { await window.goToDate?.(d); }, iso);
-      day.navigated = true;
-      await page.waitForTimeout(2500);
-      Object.assign(day, await page.evaluate(() => {
-        const main = document.getElementById('main');
-        const enrich = (window._plVerify.enrichCount && window._plVerify.enrichCount()) || {};
-        return {
-          sectionCount: main ? main.querySelectorAll('.sport-section, [data-sport]').length : 0,
-          cardCount:    main ? main.querySelectorAll('.game-card').length : 0,
-          mlbEnrichMatched:   enrich.matched   || 0,
-          mlbEnrichAvailable: enrich.available || 0,
-        };
-      }));
-    } catch (e) { day.error = String(e && e.message || e); }
-    console.log(`  [${iso}] window=${day.windowHasDay} mlb=${day.windowMlbCount} ` +
-                `| rendered cards=${day.cardCount} enriched=${day.mlbEnrichMatched}/${day.mlbEnrichAvailable}`);
-    days.push(day);
+  for (const w of windowRead) {
+    days.push({ iso: w.iso, windowHasDay: w.has, windowMlbCount: w.mlb,
+                navigated: false, cardCount: 0, sectionCount: 0,
+                mlbEnrichMatched: 0, mlbEnrichAvailable: 0, error: null });
+    console.log(`  [${w.iso}] window=${w.has} mlb=${w.mlb}`);
   }
+
+  // ── REPORTED, NOT ASSERTED: one navigation, at the end ────────────────────
+  // Rendering needs site.api.espn.com direct from the browser, which a GitHub
+  // runner cannot reach (runs 33907104753 and 33907641507: CORS-blocked on every
+  // fixture fetch). A zero here is the runner's network, not the product, so it
+  // is recorded and never gates the run. Context loss here costs nothing —
+  // everything asserted was already read above.
+  const nav = days[0];
+  try {
+    await page.evaluate(async (d) => { await window.goToDate?.(d); }, nav.iso);
+    nav.navigated = true;
+    await page.waitForTimeout(2500);
+    Object.assign(nav, await page.evaluate(() => {
+      const main = document.getElementById('main');
+      const pv = window._plVerify;
+      const enrich = (pv && pv.enrichCount && pv.enrichCount()) || {};
+      return {
+        sectionCount: main ? main.querySelectorAll('.sport-section, [data-sport]').length : 0,
+        cardCount:    main ? main.querySelectorAll('.game-card').length : 0,
+        mlbEnrichMatched:   enrich.matched   || 0,
+        mlbEnrichAvailable: enrich.available || 0,
+      };
+    }));
+  } catch (e) { nav.error = String(e && e.message || e); }
+  console.log(`  [${nav.iso}] rendered cards=${nav.cardCount} enriched=${nav.mlbEnrichMatched}/${nav.mlbEnrichAvailable}` +
+              (nav.error ? ` (nav: ${nav.error.slice(0, 60)})` : ''));
 
   const manifest = {
     url: BASE, runId: RUN_ID, commit: process.env.GITHUB_SHA || null,
