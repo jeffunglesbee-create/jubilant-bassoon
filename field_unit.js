@@ -25,6 +25,7 @@ const {
   wcApplyOutcome,
   wcPoissonExpectedGoals,
   wcMakePRNG,
+  isAmnestyState,
 } = require('./field_utils.js');
 
 let pass = 0, fail = 0;
@@ -739,6 +740,28 @@ test('parseNBAScoreboardGames: multiple games populate map correctly', () => {
   assert(map['car_vgk'] === '0032500102', 'SCF G3 tricode key present');
   assert(map['hurricanes_golden knights'] === '0032500102', 'SCF G3 teamName key present');
   assertEqual(Object.keys(map).length, 8, '2 games × 4 keys each = 8');
+});
+
+// ── isAmnestyState (ADR-002 amnesty gate) ──────────────────────────────────
+// Enumerated pairs, not spot checks. The 'POST' row is the counterexample:
+// the predicate is case-sensitive on purpose, and a test that only feeds it
+// values it already handles is not a test.
+test('isAmnestyState: enumerated state -> amnesty pairs', () => {
+  const cases = [
+    ['post',      true ],
+    ['final',     true ],
+    ['in',        false],
+    ['pre',       false],
+    [undefined,   false],
+    [null,        false],
+    ['',          false],
+    ['POST',      false],
+  ];
+  for (const [input, expected] of cases) {
+    assertEqual(isAmnestyState(input), expected,
+      `isAmnestyState(${JSON.stringify(input)}) should be ${expected}`);
+  }
+  assertEqual(cases.length, 8, 'all 8 enumerated pairs must run');
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────

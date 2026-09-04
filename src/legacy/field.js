@@ -22393,7 +22393,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-08-27a';
+  const SW_VERSION = '2026-09-04a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -40186,6 +40186,23 @@ function _openGameSheetTablet(gameId) {
   card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+// ── ADR-002 amnesty predicate ─────────────────────────────────────────────────
+// The amnesty zone is post-game only (docs/ADR-002-CONTEXT.md, Defense 4:
+// "begins when state === 'final' or state === 'post'"). Composite-drama output
+// — the drama sparkline, its peak number, the arc description — may render only
+// when this returns true. ADR-002 Step 3 makes a displayed composite a
+// bright-line violation outside that zone.
+// Duplicated verbatim in field_utils.js, which is where field_unit.js requires
+// it from. That duplication is the established convention here (teamNick,
+// dramaTier, wxBadge, shiftTime) and smoke A191 enforces it: a function used in
+// index.html must also be defined there. Smoke A74c asserts the two bodies stay
+// identical, so the copies cannot drift.
+// Case-sensitive by design: ESPN emits lowercase, and a case-insensitive
+// predicate would silently widen the zone.
+function isAmnestyState(state) {
+  return state === 'post' || state === 'final';
+}
+
 function openBottomSheet(gameId) {
   // iPad-1 (regression fix): V3 CSS hides .bottom-sheet at min-width:820px.
   // Tap handlers on game cards still call this function regardless of
@@ -40233,7 +40250,7 @@ function openBottomSheet(gameId) {
     ? (drama >= 85 ? 'Fire game' : drama >= 65 ? 'Heating up' : drama >= 45 ? 'In play' : '')
     : '';
   // Postgame: build richer drama context from history + score log
-  const _bsIsFinal = eData?.state === 'post';
+  const _bsIsFinal = isAmnestyState(eData?.state);
   let _bsPostgameDrama = '';
   if (_bsIsFinal) {
     try {
@@ -40255,7 +40272,7 @@ function openBottomSheet(gameId) {
     ${gameBrief ? `<div class="bs-section bs-jrn-link" onclick="openJournalismForGame('${gameId}')"><div class="bs-section-label">Read full coverage →</div></div>` : ''}
     ${(_bsIsFinal && _bsPostgameDrama) ? `<div class="bs-section"><div class="bs-section-label">Game Summary</div><div class="bs-section-body">${_bsPostgameDrama}${(()=>{const _sn=buildScoreNarrativeContext(gameId,game.home||'',game.away||'',sport);return _sn?'<br>'+_sn.replace('[SCORE NARRATIVE] ',''):'';})()}</div></div>` : ''}
     ${(!_bsIsFinal && dramaLabel_bs) ? `<div class="bs-section"><div class="bs-section-label">Live Intelligence</div><div class="bs-section-body">${dramaLabel_bs}</div></div>` : ''}
-    ${sparkline ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}${_bsIsFinal?(()=>{const _ad=buildDramaArcDescription(gameId);return _ad?`<div class="bs-section-body" style="font-size:.68rem;opacity:.75;margin-top:.25rem">${_ad.replace('[DRAMA ARC] ','')}</div>`:''})():''}</div>` : ''}
+    ${(_bsIsFinal && sparkline) ? `<div class="bs-section"><div class="bs-section-label">Drama Arc</div>${sparkline}${(()=>{const _ad=buildDramaArcDescription(gameId);return _ad?`<div class="bs-section-body" style="font-size:.68rem;opacity:.75;margin-top:.25rem">${_ad.replace('[DRAMA ARC] ','')}</div>`:''})()}</div>` : ''}
     ${story ? `<div class="bs-section"><div class="bs-section-label">Story</div>${story}</div>` : ''}
     ${(game.matchupNote||game.localNote) ? `<div class="bs-section"><div class="bs-section-label">Context</div><div class="bs-section-body">${game.matchupNote||game.localNote}</div></div>` : ''}
     <div id="bs-pl-inject"></div>

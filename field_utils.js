@@ -905,13 +905,26 @@ function parseNBAScoreboardGames(games, gameIdMap) {
   return gameIdMap;
 }
 
+// ── ADR-002 amnesty predicate ─────────────────────────────────────────────────
+// The amnesty zone is post-game only (docs/ADR-002-CONTEXT.md, Defense 4:
+// "begins when state === 'final' or state === 'post'"). Composite-drama output
+// — the drama sparkline, its peak number, the arc description — may render only
+// when this returns true. ADR-002 Step 3 makes a displayed composite a
+// bright-line violation outside that zone.
+// Named and pure so the gate is testable in isolation and cannot drift from the
+// sites that consume it. Case-sensitive by design: ESPN emits lowercase, and a
+// case-insensitive predicate would silently widen the zone.
+function isAmnestyState(state) {
+  return state === 'post' || state === 'final';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     teamNick, teamSlug, teamSlugPair,
     gameNetwork, shiftTime, parseMatchweek, espnPeriodLabel,
     isOutdoorVenue, getVenueCoords,
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
-    toImpliedNum, dramaTier,
+    toImpliedNum, dramaTier, isAmnestyState,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
     espnTeamMatch,
     // WC Permutations Engine
