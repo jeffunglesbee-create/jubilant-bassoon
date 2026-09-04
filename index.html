@@ -27276,7 +27276,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-04b';
+  const SW_VERSION = '2026-09-04c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -46364,6 +46364,13 @@ if (location.search.includes('pl-verify')) {
       const ex = allData.sports.find(s => s.sport === sport.sport);
       if (!ex) allData.sports.push(sport);
     },
+    // Forward schedule window. _fieldDataCache is module-level, so a probe
+    // reading window._fieldDataCache gets undefined by construction and every
+    // measurement reads as a miss — which is exactly how run 33907104753
+    // reported cacheAccepted:false against a client that was working.
+    fieldDataMeta:  () => (_fieldDataCache && _fieldDataCache._meta) || null,
+    scheduleForDate: (iso) => fieldDataForDate(iso),
+    enrichCount:    () => window._fieldDataEnrichCount || null,
   };
 }
 </script>
