@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 // scripts/sync-umpire-abs-ratings.js — Regenerate UMPIRE_ABS_RATINGS in
-// index.html from the real weekly outbox/mlb/umpire_abs.json data.
+// src/legacy/field.js from the real weekly outbox/mlb/umpire_abs.json data.
+//
+// 2026-09-04: this wrote index.html directly until today. index.html's script
+// block is generated from src/legacy/field.js by scripts/sync-source.mjs, so
+// every regenerated table lived only in the generated artifact. field.js kept
+// the May-27 launch values, and the next sync-source run silently reverted the
+// fresh ones — measured at 43a13586: field.js held 53 lines ('neon'
+// challenged:3), index.html held 78 ('neon' challenged:4). Writing the source
+// and letting the sync propagate is the fix; the workflow now runs
+// sync-source.mjs after this script and commits both files.
 //
 // CC-CMD-2026-07-10-mlb-umpire-abs-sync: UMPIRE_ABS_RATINGS was frozen at
 // May 27 launch data while mlb-weekly-update.py already refreshed
@@ -29,7 +38,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const INDEX_FILE = path.join(__dirname, '..', 'index.html');
+const SOURCE_FILE = path.join(__dirname, '..', 'src', 'legacy', 'field.js');
 const JSON_FILE  = path.join(__dirname, '..', 'outbox', 'mlb', 'umpire_abs.json');
 
 function main() {
@@ -37,13 +46,13 @@ function main() {
   try {
     raw = JSON.parse(fs.readFileSync(JSON_FILE, 'utf8'));
   } catch (e) {
-    console.log(`sync-umpire-abs-ratings: could not read/parse ${JSON_FILE} (${e.message}) -- leaving index.html untouched`);
+    console.log(`sync-umpire-abs-ratings: could not read/parse ${JSON_FILE} (${e.message}) -- leaving src/legacy/field.js untouched`);
     return;
   }
 
   const entries = Object.entries(raw.data || {});
   if (!entries.length) {
-    console.log('sync-umpire-abs-ratings: no umpire entries in JSON -- leaving index.html untouched');
+    console.log('sync-umpire-abs-ratings: no umpire entries in JSON -- leaving src/legacy/field.js untouched');
     return;
   }
 
@@ -59,11 +68,11 @@ function main() {
 
   const newBlock = `const UMPIRE_ABS_RATINGS = {\n${lines.join('\n')}\n};`;
 
-  let content = fs.readFileSync(INDEX_FILE, 'utf8');
+  let content = fs.readFileSync(SOURCE_FILE, 'utf8');
   const startMarker = 'const UMPIRE_ABS_RATINGS = {';
   const start = content.indexOf(startMarker);
   if (start === -1) {
-    console.error('sync-umpire-abs-ratings: could not find "const UMPIRE_ABS_RATINGS = {" in index.html -- aborting, not writing');
+    console.error('sync-umpire-abs-ratings: could not find "const UMPIRE_ABS_RATINGS = {" in src/legacy/field.js -- aborting, not writing');
     process.exitCode = 1;
     return;
   }
@@ -89,12 +98,12 @@ function main() {
   const updatedContent = before + newBlock + after;
 
   if (updatedContent === content) {
-    console.log(`sync-umpire-abs-ratings: no change (${entries.length} umpires, source updated ${raw.updated || 'unknown'} -- identical to current index.html)`);
+    console.log(`sync-umpire-abs-ratings: no change (${entries.length} umpires, source updated ${raw.updated || 'unknown'} -- identical to current src/legacy/field.js)`);
     return;
   }
 
-  fs.writeFileSync(INDEX_FILE, updatedContent);
-  console.log(`sync-umpire-abs-ratings: regenerated UMPIRE_ABS_RATINGS with ${entries.length} umpires (source updated ${raw.updated || 'unknown'})`);
+  fs.writeFileSync(SOURCE_FILE, updatedContent);
+  console.log(`sync-umpire-abs-ratings: regenerated UMPIRE_ABS_RATINGS with ${entries.length} umpires in src/legacy/field.js (source updated ${raw.updated || 'unknown'}) -- run scripts/sync-source.mjs to propagate into index.html`);
 }
 
 main();

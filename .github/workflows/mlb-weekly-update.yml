@@ -19,7 +19,7 @@ jobs:
         run: python3 scripts/mlb-weekly-update.py
 
       # CC-CMD-2026-07-10-mlb-umpire-abs-sync: regenerates UMPIRE_ABS_RATINGS
-      # in index.html from the JSON the step above just wrote. This is the
+      # from the JSON the step above just wrote. This is the
       # STATIC FALLBACK baked into the page, not the primary live path --
       # mlbStatsInit() (index.html) already patches UMPIRE_ABS_RATINGS at
       # runtime on every page load via a CF Worker (/mlb-umpire-scrape,
@@ -27,14 +27,23 @@ jobs:
       # CF 1010 blocks GitHub Actions IPs, only real browsers can call it).
       # This step keeps the fallback fresh (weekly, not frozen since launch)
       # for the window before that runtime patch completes, or if it fails.
-      - name: Sync UMPIRE_ABS_RATINGS in index.html from real weekly data
+      - name: Sync UMPIRE_ABS_RATINGS in src/legacy/field.js from real weekly data
         run: node scripts/sync-umpire-abs-ratings.js
+
+      # 2026-09-04: the generator above writes src/legacy/field.js, the JS
+      # source. index.html's script block is generated FROM it, so it must be
+      # regenerated here or the fresh table never reaches the shipped page.
+      # Until today the generator wrote index.html directly and field.js kept
+      # the May-27 launch values, so the next sync-source run silently reverted
+      # every weekly refresh (measured at 43a13586: 53 stale lines vs 78 fresh).
+      - name: Propagate into index.html
+        run: node scripts/sync-source.mjs
 
       - name: Commit updated tables
         run: |
           git config user.email "mlb-stats@field"
           git config user.name "MLB-Stats-Bot"
-          git add outbox/mlb/ index.html
+          git add outbox/mlb/ src/legacy/field.js index.html
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           # No [skip ci] here (unlike before): index.html may now be part of
           # this commit, and deploy-gate.yml's own paths filter is what
@@ -43,7 +52,7 @@ jobs:
           # UMPIRE_ABS_RATINGS committed on main but never shipped to
           # production -- deploy-gate.yml also syncs SW_VERSION itself
           # whenever it runs, so no manual version bump is needed here.
-          git commit -m "MLB weekly update $(date -u +%Y-%m-%d) -- umpire ABS ratings synced to index.html"
+          git commit -m "MLB weekly update $(date -u +%Y-%m-%d) -- umpire ABS ratings synced to src/legacy/field.js + index.html"
           for i in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin main && break
             sleep $((i * 5))
