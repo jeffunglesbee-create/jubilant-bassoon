@@ -1,5 +1,49 @@
 # FIELD HANDOFF
 
+## Session 2026-09-04c — one chart renderer for every series (jubilant-bassoon)
+
+HEAD `f1734160`. Smoke **1001/0**. Units **69/0**. SW_VERSION `2026-09-04f`.
+Session doc: `outbox/cc-session-2026-09-04-chart-renderer.md`
+
+Seven series rendered seven ways; two hand-rolled SVG builders sharing no code.
+`src/utils/chart.js` is now the single renderer — `fieldChart` / `destroyChart`
+/ `sweepDetachedCharts`, colours and fonts from the page's own CSS tokens,
+`setData` on re-call so a 15-30s poll never rebuilds a canvas (Rule 89).
+
+uPlot ^1.6.32, bundled by esbuild, **22.5 KB gzipped** against a 2,583 KB page.
+
+**Two consumers, both drawing series that already existed and were discarded:**
+the NFL EPA drive (149 plays fetched, `state.lastPlay` rendered) and home win
+probability (the `wp_update` ring buffer, captured for Pulse Chip and drawn
+nowhere).
+
+**Fixed domains, never the series maximum** — `[-3,7]` for EPA, `[0,1]` for WP.
+Auto-scaling draws every game as the same shape, the failure
+field-laboratory's `spark-check.mjs` exists to catch.
+
+**ADR-002:** the renderer knows nothing about drama and must not learn. WP and
+EPA are commodity under Rule F. The drama series keeps its amnesty gate at the
+call site.
+
+### Integration state (Rule 65)
+
+| | |
+|---|---|
+| **Producer** | `src/utils/chart.js`, bundled into index.html by `scripts/build-bundle.mjs`. CSS inlined between vendored markers; `npm run sync:uplot-css` regenerates, `npm run check:uplot-css` gates drift. |
+| **Consumers** | `_fetchNFLGameEpa` (`.ufl-epa-chart`) and the SSE `wp_update` handler (`.wp-trend-chart`). Both mount BESIDE the markup FIELD rebuilds, never inside it. |
+| **Status** | **VERIFIED** against the deployed bundle — probe run 33923935346, `outbox/chart-renderer-manifest-latest.json`: canvas drawn, same canvas node and instance across an update, y scale 0-1 with the series spanning 0.38-0.71, detached mount reclaimed, zero console errors. |
+| **Known limit** | The probe does NOT prove the two charts appear on a card. Those call sites need a live NFL game and an SSE event; a GitHub runner reaches neither (ESPN CORS-blocked, measured across four runs). It proves the renderer contract, which is the part that rots silently. |
+
+**Three probes now run daily** — 11:00 chart renderer, 11:20 forward window,
+11:40 drama-arc amnesty — each overwriting one `-latest.json` rather than
+leaving a manifest per run.
+
+**Open, and now specified rather than deferred:** whether field-laboratory
+needs uPlot at all. It already has a type-sealed 30-bar sparkline that uPlot
+would duplicate and weaken. `docs/CC-CMD-2026-09-04-laboratory-chart-decision.md`
+makes that a decision on evidence; WONTDO is an expected and successful outcome.
+
+
 ## Session 2026-09-04b — the schedule looks 3 days forward (jubilant-bassoon)
 
 HEAD `1fe7b2e0` (+ generator `94ac7bb3`, data `45da9b09`). Smoke **993/0**.
