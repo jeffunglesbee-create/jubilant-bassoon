@@ -1,5 +1,81 @@
 # FIELD HANDOFF
 
+## Session 2026-09-05 — the relay now says where everything came from (cross-repo)
+
+HEAD `126d0289` — **no client commits this session.** Smoke **1000/1**, and the
+one failure is A515 by design, see below. SW_VERSION `2026-09-04f` unchanged.
+Relay session doc: `field-relay-nba/outbox/cc-session-2026-09-05-provenance.md`
+View: https://claude.ai/code/artifact/a1afea94-e7d5-4848-82f8-a03a4cbf00d0
+
+All work landed in `field-relay-nba`. This entry exists because four things
+changed on the other side of the contract and a client session should not have
+to reverse-engineer them from a diff (Rule 65).
+
+### Every relay response now carries provenance headers
+
+Additive, exposed cross-origin, on **186 of 186** routes. Response bodies are
+byte-identical — nothing here needed changing and nothing broke.
+
+| header | example |
+|---|---|
+| `X-FIELD-Route` | `/wc/odds-probs` |
+| `X-FIELD-Source` | `api.the-odds-api.com` |
+| `X-FIELD-Kind` | `upstream` \| `store` \| `proxy` \| `trigger` \| `computed` |
+| `X-FIELD-Served-At` | when the RESPONSE was made |
+| `X-FIELD-Data-Written-At` | when the DATA was written, absent if nothing was read |
+| `X-FIELD-Data-Age-Seconds` | `4362` — `/health` was serving 72-minute-old data under a header that said "now" |
+
+`Access-Control-Expose-Headers` names all seven, so this client can read them
+today and currently does not. **The age header is the one worth wiring**: it
+answers "is this stale?" for any cached relay payload without a round trip.
+
+### `/wc/odds-probs` now returns zero rows, and that is correct
+
+A hand-entered Germany v Ecuador row had been injected into that response since
+2026-06-12 whenever the Odds API did not list the fixture — pHome 0.56, lambdas
+off a screenshot. Its exit condition was "once the Odds API lists this game",
+which became unreachable when the match was played on 06-25. It ran 72 more days,
+and by 09-05 it was not one row among 71: it was the **only** row.
+
+Deleted (`db2540c`). Out of season `/wc/odds-probs` serves `probs: []`.
+
+**This client handles that correctly and it was verified, not assumed.**
+`fetchWCOddsProbabilities` reads
+`data.ok && Array.isArray(data.probs) ? data.probs : []`, resets
+`window._wcOddsCache = {}` and populates from an empty list — so the cache
+empties rather than going stale. `fetchCFLOddsProbs` returns its previous cache
+on `!r.ok`. No change needed here.
+
+### New relay refusal states this client already survives
+
+The odds credit guard can now decline a call rather than spend past the monthly
+floor. `/wc/odds-probs` and `/cfl/odds-probs` answer **503** with
+`{ ok: false, guarded: true }`; the `/odds/*` proxy answers **429** with
+`X-RELAY-Error: odds-credit-guard`. Both are distinguishable from a 500, which
+was deliberate. Every consumer here already branches on `!r.ok`.
+
+Both routes also gained `cost`, `charged`, `reconciled` and `cached` fields —
+additive, ignored here, and used by the relay's own probes to keep its ledger
+honest against the provider's receipt.
+
+### A515 is failing and nothing is broken
+
+`SW_VERSION date 2026-09-04 !== today ET 2026-09-05`. A515 requires SW_VERSION to
+start with **today's** ET date, so it fails every day after the last deploy. The
+count was 1001/0 on 09-04 and is 1000/1 now for that reason alone.
+
+It clears on the next deploy-triggering commit, which must bump SW_VERSION in
+**both** `index.html` and `sw.js`. A HANDOFF- or outbox-only commit does not
+trigger `deploy-gate.yml` (it filters on index.html, sw.js, field_utils.js,
+wrangler.jsonc), so this entry does not need a bump and does not get one.
+
+### Worth doing here next, in order
+
+1. **Read `X-FIELD-Data-Age-Seconds`** on cached relay fetches and let a stale
+   payload say so in the UI. The relay computes it; nothing here reads it.
+2. Nothing else. The three daily probes (11:00 chart renderer, 11:20 forward
+   window, 11:40 drama-arc amnesty) are green and unchanged.
+
 ## Session 2026-09-04c — one chart renderer for every series (jubilant-bassoon)
 
 HEAD `f1734160`. Smoke **1001/0**. Units **69/0**. SW_VERSION `2026-09-04f`.
