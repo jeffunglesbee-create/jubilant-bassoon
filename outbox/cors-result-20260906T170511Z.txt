@@ -1,0 +1,42 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/ambient/state  [20260906T170511Z]
+maxtime=15s accept=(none)
+=== HEAD (not what a browser sends) ===
+HTTP/2 200 
+date: Sun, 06 Sep 2026 17:05:12 GMT
+content-type: application/json
+access-control-expose-headers: X-FIELD-Route, X-FIELD-Source, X-FIELD-Kind, X-FIELD-Served-At, X-FIELD-Manifest, X-FIELD-Data-Written-At, X-FIELD-Data-Age-Seconds
+x-field-kind: durable-object
+x-field-manifest: 2026-09-06T15:20:08.903Z
+x-field-route: /ambient/state
+x-field-served-at: 2026-09-06T17:05:12.141Z
+x-field-source: do:AMBIENT_DO
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=E%2BLuuuMZKu40JpivcpXONH%2FpZhrWha0kR9JSKKzxhqFlzxcrfjKOv9eMlB42vaKR5DDKQcsvuTPIjv8ZohQ07NPTjy9O4AMzg%2FysTvKr3DiBc3dQx3%2FB8LBvfr4hXAm9JuRcZTnR6AfOUbSueA0gzYJvT4udYZFkVq5uOQ%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a36f0ea0a8dc1ef1-SEA
+alt-svc: h3=":443"; ma=86400
+
+
+=== GET headers (what a browser actually receives) ===
+HTTP/2 200 
+date: Sun, 06 Sep 2026 17:05:12 GMT
+content-type: application/json
+content-length: 145
+access-control-expose-headers: X-FIELD-Route, X-FIELD-Source, X-FIELD-Kind, X-FIELD-Served-At, X-FIELD-Manifest, X-FIELD-Data-Written-At, X-FIELD-Data-Age-Seconds
+x-field-kind: durable-object
+x-field-manifest: 2026-09-06T15:20:08.903Z
+x-field-route: /ambient/state
+x-field-served-at: 2026-09-06T17:05:12.349Z
+x-field-source: do:AMBIENT_DO
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=kcIyJgOzAUPmBk%2FbykKNFeKCppDLuOM%2BMkjuyZzveokZuoPczCNYOgcE4%2Bv3w8SvxDfDRjSAKO2SMfx4l47dt5%2FMo5qIKpwDjaB5Zk%2Fi5fuIy3EkH2L18ZPEh57jhwlqOseqKULPAc2CwY4L9IHBE6wCHDXx3Gz0OH0yng%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a36f0ea34d950d62-SEA
+alt-svc: h3=":443"; ma=86400
+
+
+=== ACAO present in the GET response? ===
+NO access-control-allow-origin HEADER
+
+=== BODY (first 400 chars) ===
+{"clientCount":0,"sportCount":0,"liveGames":[],"lastPoll":"2026-09-05T10:08:38.781Z","bsdSocketState":null,"bsdSubscribed":[],"ts":1788714312645}
