@@ -7443,6 +7443,26 @@ assert('A-TENNIS-9 — the filter runs before the mapping, not after',
   /const rows = all\.filter\(_tennisTierAllowed\);/.test(html),
   'filtering after mapping wastes work and invites a half-filtered path');
 
+// A live feed is match-level: a tournament is in it only while a ball is in the
+// air. Measured 2026-09-06 — the US Open was present at 03:23Z with Round of 32
+// in play and gone at 05:55Z without having ended, because its day's play had.
+assert('A-TENNIS-10 — the day card is fetched, not only what is live right now',
+  html.includes('/bsd/tennis/matches/by-date?date=') &&
+  /Promise\.allSettled\(\[/.test(html),
+  'a Grand Slam must not vanish for twelve hours between sessions');
+
+// allSettled, not all: a dead by-date route must not cost the live scores, and
+// a dead live route must not empty the section.
+assert('A-TENNIS-11 — the live row wins a collision, so an in-progress match keeps its sets',
+  /for\(const m of dayRows\) if\(m\?\.id != null\) byId\.set\(m\.id, m\);\s*\n\s*for\(const m of liveRows\) if\(m\?\.id != null\) byId\.set\(m\.id, m\);/.test(html),
+  'the by-date copy of a live match can be the pre-match row with no sets on it');
+
+// A scheduled match must not wear a LIVE badge — that is inventing a fact.
+assert('A-TENNIS-12 — a not-yet-started match is pre, never in',
+  /notstarted\|scheduled\|not_started/.test(html) &&
+  /\? 'pre'/.test(html),
+  'the day feed carries fixtures hours away; calling them live is a fabrication');
+
 assert('A-TENNIS-4 — the ATP injector cannot overwrite a BSD-sourced scoreline',
   /if\(game\._bsdTennis\) return;/.test(html),
   'injectATPScores must skip games that already carry BSD set data');

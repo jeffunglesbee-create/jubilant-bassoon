@@ -9634,11 +9634,39 @@ function _tennisTierAllowed(m){
 
 async function fetchTennisLive(){
   try{
-    const r = await fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/live`,
-                          {signal:AbortSignal.timeout(5000)});
-    if(!r.ok) return [];
-    const all = await r.json();
-    if(!Array.isArray(all) || !all.length) return [];
+    // TWO SOURCES, not one. /live is match-level: a tournament is in the feed
+    // only while a ball is in the air. Measured 2026-09-06 — the US Open was
+    // present at 03:23Z with Round of 32 in play and gone at 05:55Z without
+    // having ended, because its day's play had. The by-date route carries the
+    // whole day's card, so a Grand Slam is on the page before the first serve
+    // and stays after the last.
+    //
+    // Both are fetched together and either may fail alone. A dead by-date route
+    // must not cost us the live scores, and a dead live route must not empty
+    // the section — that is the whole reason this is Promise.allSettled and not
+    // Promise.all.
+    const today = new Date().toISOString().slice(0,10);
+    const [liveR, dayR] = await Promise.allSettled([
+      fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/live`, {signal:AbortSignal.timeout(5000)}),
+      fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/by-date?date=${today}`, {signal:AbortSignal.timeout(5000)}),
+    ]);
+    const readRows = async (res) => {
+      if(res.status !== 'fulfilled' || !res.value?.ok) return [];
+      const j = await res.value.json();
+      return Array.isArray(j) ? j : (j?.results ?? []);
+    };
+    const liveRows = await readRows(liveR);
+    const dayRows  = await readRows(dayR);
+
+    // LIVE WINS ON A COLLISION. A match appears in both feeds while it is being
+    // played, and the by-date copy can be the pre-match row with no sets on it.
+    // Keying by id and letting the live row overwrite means an in-progress match
+    // never renders as though it had not started.
+    const byId = new Map();
+    for(const m of dayRows) if(m?.id != null) byId.set(m.id, m);
+    for(const m of liveRows) if(m?.id != null) byId.set(m.id, m);
+    const all = [...byId.values()];
+    if(!all.length) return [];
     // Tier filter FIRST, so nothing below the bar is even mapped. Measured
     // 2026-09-06: the eight live matches at 05:55 were three Challenger
     // (Phan Thiet 3, Vietnam) and five UTR (PTT Miami), so this legitimately
@@ -9692,7 +9720,12 @@ async function fetchTennisLive(){
         venue: t,
         confirmed: true,
         streams: resolveBundle("TENNIS_TC"),
-        state: m.status === 'finished' ? 'post' : 'in',
+        // Three states, not two. The by-date feed carries matches that have not
+        // started, and calling them 'in' would put a LIVE badge on a fixture
+        // hours away — which is inventing a fact about a game.
+        state: m.status === 'finished' ? 'post'
+             : /notstarted|scheduled|not_started/i.test(String(m.status || '')) ? 'pre'
+             : 'in',
         _sport: 'Tennis',
         // Marks this game as BSD-sourced so injectATPScores leaves it alone.
         // Without it the ATP injector fuzzy-matches tournament words longer
@@ -22596,7 +22629,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-06b';
+  const SW_VERSION = '2026-09-06c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
