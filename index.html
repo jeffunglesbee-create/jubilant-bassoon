@@ -14483,6 +14483,96 @@ function buildCFLStaticFallback() {
 //   Fri(5), Sat(6), Sun(0) → rugby in season; ask rugby only
 // Cricket/IPL is fully hardcoded in buildTodaySchedule so never asked here.
 // AFL Thu games are hardcoded in buildTodaySchedule; no need to ask the model.
+// ── Tennis: live matches from BSD, via the relay ───────────────────────────
+//
+// WHY THIS EXISTS. Tennis had two producers, both hardcoded tournament windows:
+// the Italian Open (May 6-17 2026) and Roland Garros (May 24 - Jun 7 2026).
+// Both closed months ago, so no Tennis section was ever pushed, so
+// fetchATPLiveScores() returned at its first line — it guards on
+// `.sport-section[data-sport="Tennis"]` existing — and nothing polled. Tennis
+// rendered nothing through the entire US Open.
+//
+// Meanwhile the relay has served /bsd/tennis/matches/live since it was built,
+// with zero consumers: `grep -c "bsd/tennis"` in this file returned 0 on
+// 2026-09-06. Two routes, no callers.
+//
+// SHAPE, read from a real capture and not from documentation. The payload is a
+// bare ARRAY of match objects (not {results:[]}), each carrying:
+//   tournament{id,name,circuit,category,surface}, player1/player2{name,short_name},
+//   status, round_name, match_date, player1_sets, player2_sets,
+//   sets_detail[{p1,p2,tiebreak?}], current_game_p1/p2, current_point, is_serving_p1
+// Captured to field-laboratory data/tennis-live.json 2026-09-06: 11 matches,
+// statuses `live` and `interrupted`, two sets carrying a `tiebreak` array.
+//
+// THE SET-SCORE RULE, measured on all 11 rows rather than assumed. The set
+// being played sits in the SAME array as the finished ones with nothing marking
+// it. What identifies it is that `player1_sets + player2_sets` counts only
+// COMPLETED sets, so sets_detail is either that long or exactly one longer.
+// [{3,6},{6,1},{5,5}] at 1-1 in sets is two finished sets and a live one at 5-5.
+// Reading the last entry as finished would print 5-5 as a set score, which is
+// not a score a set can end on.
+//
+// Rule 60: consumed as the relay serves it. No field is renamed here.
+async function fetchTennisLive(){
+  try{
+    const r = await fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/live`,
+                          {signal:AbortSignal.timeout(5000)});
+    if(!r.ok) return [];
+    const rows = await r.json();
+    if(!Array.isArray(rows) || !rows.length) return [];
+
+    const games = rows.map(m => {
+      const detail = Array.isArray(m.sets_detail) ? m.sets_detail : [];
+      const setsWon = (m.player1_sets ?? 0) + (m.player2_sets ?? 0);
+      // Completed sets are the first `setsWon` entries — never the whole array.
+      const completed = detail.slice(0, setsWon);
+      const live = detail.length === setsWon + 1 ? detail[detail.length - 1] : null;
+
+      const setStr = completed
+        .map(x => `${x.p1}-${x.p2}${Array.isArray(x.tiebreak) ? `(${Math.min(x.tiebreak[0],x.tiebreak[1])})` : ''}`)
+        .join(' ');
+      // Games in the live set, then the point score, then who is serving.
+      const liveStr = live ? ` ${live.p1}-${live.p2}` : '';
+      const ptStr = (live && m.current_point) ? ` · ${m.current_point}` : '';
+      const serveStr = live ? (m.is_serving_p1 ? ' ●' : ' ○') : '';
+
+      const p1 = m.player1?.short_name || m.player1?.name
+                 || (m.home_pair?.name) || '?';
+      const p2 = m.player2?.short_name || m.player2?.name
+                 || (m.away_pair?.name) || '';
+
+      const t = m.tournament?.name || 'Tennis';
+      const round = m.round_name ? ` · ${m.round_name}` : '';
+      const surface = m.tournament?.surface ? ` · ${m.tournament.surface}` : '';
+
+      return {
+        home: p1,
+        away: p2,
+        league: `${t}${round}${surface}`,
+        start_time: m.match_date || new Date().toISOString(),
+        venue: t,
+        confirmed: true,
+        streams: resolveBundle("TENNIS_TC"),
+        state: m.status === 'finished' ? 'post' : 'in',
+        _sport: 'Tennis',
+        // Marks this game as BSD-sourced so injectATPScores leaves it alone.
+        // Without it the ATP injector fuzzy-matches tournament words longer
+        // than three characters against `game.home`, and a name like
+        // "US Open, Men" would let an unrelated ATP event overwrite a real
+        // BSD scoreline with the wrong one.
+        _bsdTennis: true,
+        _tennisScore: `${setStr}${liveStr}${ptStr}${serveStr}`.trim(),
+        _tennisStatus: m.status || '',
+      };
+    }).filter(g => g.home && g.home !== '?');
+
+    return games.length ? [{sport:"Tennis", games}] : [];
+  }catch(e){
+    if(FIELD_DEBUG) console.warn("FIELD tennis live:", e.message);
+    return [];
+  }
+}
+
 async function fetchSupplemental(isoDate,dayOfWeek,monthYear){
   const d=new Date().getDay(); // 0=Sun,1=Mon,...,6=Sat
   if(d===1||d===2||d===3||d===4) return []; // Mon-Thu: no Top14/URC (rugby runs Fri/Sat/Sun)
@@ -19306,6 +19396,11 @@ function injectATPScores(tournaments){
   tennisSections.forEach(sec => {
     (sec.games||[]).forEach(game => {
       if(!game._id) return;
+      // BSD already carries this match's real sets. The fuzzy match below
+      // keys on tournament words longer than three characters, so "US Open,
+      // Men" would match an unrelated ATP event on "open" and replace a
+      // correct scoreline with a wrong one.
+      if(game._bsdTennis) return;
       const gameName = (game.home||'').toLowerCase();
 
       // Match ATP tournament to FIELD game by keyword — same fuzzy pattern as golf
@@ -25965,7 +26060,15 @@ async function fetchSchedule(){
   loadOverlayData(); // async enhancement — editorial patches from relay
 
   // ── Then fetch supplemental (rugby etc.) async and merge if anything returns ─
-  fetchSupplemental(isoDate,dayOfWeek,monthYear).then(supplemental=>{
+  // Tennis rides the same async-merge path rugby already uses rather than a
+  // second mechanism. fetchSupplemental returns [] Mon-Thu by design (rugby
+  // runs Fri-Sun), so tennis cannot live inside it — a Monday US Open match
+  // would be dropped by a day gate that has nothing to do with tennis.
+  Promise.all([
+    fetchSupplemental(isoDate,dayOfWeek,monthYear),
+    fetchTennisLive(),
+  ]).then(([supp,tennis])=>{
+    const supplemental=[...(supp||[]),...(tennis||[])];
     if(supplemental && supplemental.length){
       try { performance.mark('field:supplemental'); } catch(_) {}
       allData={sports:[...verified,...supplemental]};
@@ -27351,7 +27454,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-04f';
+  const SW_VERSION = '2026-09-06';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

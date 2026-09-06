@@ -7374,5 +7374,38 @@ assert('A-BRIEFID-1 — archiveBrief call sites use _briefGameId, never the gNN 
   !/archiveBrief\([^)]*game\._id\s*\|\|\s*game\.id/.test(html),
   'every archiveBrief call must pass _briefGameId(game); game._id is a DOM ordinal, not an external id');
 
+// ── Tennis: live, not a hardcoded tournament window ────────────────────────
+// Tennis had two producers, both date windows — Italian Open (May 6-17 2026)
+// and Roland Garros (May 24 - Jun 7 2026). Both closed, so no Tennis section
+// was ever pushed, so fetchATPLiveScores() returned at its guard on
+// `.sport-section[data-sport="Tennis"]` and nothing polled. The sport rendered
+// nothing through the entire US Open and no assertion here noticed, because
+// every assertion was about how tennis renders and none about whether it does.
+
+assert('A-TENNIS-1 — a Tennis section comes from the live feed, not only a date window',
+  /async function fetchTennisLive\(\)/.test(html) &&
+  html.includes('/bsd/tennis/matches/live'),
+  'tennis must have a producer that does not depend on a hardcoded tournament window');
+
+assert('A-TENNIS-2 — fetchTennisLive is actually merged into the render path',
+  /Promise\.all\(\[\s*fetchSupplemental\([^)]*\),\s*fetchTennisLive\(\),?\s*\]\)/.test(html),
+  'a producer nothing awaits is dead code — it must join the async section merge');
+
+// The set being played sits in the SAME array as the finished ones with nothing
+// marking it. What identifies it is that player1_sets + player2_sets counts only
+// COMPLETED sets. Reading the whole array as finished prints 5-5 as a set score,
+// which is not a score a set can end on.
+assert('A-TENNIS-3 — completed sets are sliced by the set summary, never the whole array',
+  /const completed = detail\.slice\(0, setsWon\)/.test(html) &&
+  /detail\.length === setsWon \+ 1/.test(html),
+  'the live set is identified by the summary falling one short of sets_detail');
+
+// The ATP injector fuzzy-matches tournament words longer than three characters
+// against game.home, so "US Open, Men" would match an unrelated ATP event on
+// "open" and replace a correct BSD scoreline with a wrong one.
+assert('A-TENNIS-4 — the ATP injector cannot overwrite a BSD-sourced scoreline',
+  /if\(game\._bsdTennis\) return;/.test(html),
+  'injectATPScores must skip games that already carry BSD set data');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
