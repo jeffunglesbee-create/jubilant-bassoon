@@ -1,0 +1,89 @@
+name: Tennis Live Probe
+
+# Does the deployed page render tennis when tennis is being played?
+#
+# smoke.js checks that the code exists and is wired. All four of its tennis
+# assertions would have passed on 2026-09-05 while the page showed no tennis at
+# all — the failure was never in the rendering code, it was that no section was
+# ever created. Only a browser against the live URL can tell those apart
+# (Rule 61, and Rule 90's visual/rendering corollary).
+#
+# The regression this guards against ran roughly three months, through an entire
+# US Open, and nothing said so.
+#
+# Twice daily rather than hourly, at hours chosen so at least one lands during
+# play somewhere: 14:00 UTC is mid-afternoon in Europe, 23:00 UTC is US evening.
+# A probe that only ever runs at 4am would report NO PLAY forever and prove
+# nothing.
+
+on:
+  schedule:
+    - cron: '7 14 * * *'
+    - cron: '7 23 * * *'
+  push:
+    paths: ['outbox/.trigger-tennis-live-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tennis-live-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Probe the deployed page against the live feed
+        id: probe
+        continue-on-error: true
+        run: node tennis_live_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      # Committed BEFORE the job is allowed to fail. A FAIL verdict is the most
+      # valuable artifact this produces and losing it to a red step would be
+      # exactly backwards.
+      - name: Commit the reading
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Tennis Live Probe"
+          git add outbox/tennis-live-probe-*.json outbox/tennis-live-probe-*.png || true
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "probe: tennis renders when tennis is played [skip ci]"
+          for i in 1 2 3 4; do
+            git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0
+            sleep $((2**i))
+          done
+          exit 1
+
+      - name: Surface a FAIL verdict as a red job
+        if: always()
+        run: |
+          V=$(node -e "console.log(JSON.parse(require('fs').readFileSync('outbox/tennis-live-probe-latest.json','utf8')).verdict)")
+          R=$(node -e "console.log(JSON.parse(require('fs').readFileSync('outbox/tennis-live-probe-latest.json','utf8')).reason)")
+          echo "verdict: $V — $R"
+          # NO PLAY and UNKNOWN are honest non-results. Failing on them would
+          # train everyone to ignore this workflow, which is how the original
+          # regression survived three months.
+          [ "$V" = "FAIL" ] && exit 1 || exit 0
