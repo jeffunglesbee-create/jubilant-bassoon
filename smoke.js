@@ -7459,8 +7459,11 @@ assert('A-TENNIS-11 — the live row wins a collision, so an in-progress match k
 
 // A scheduled match must not wear a LIVE badge — that is inventing a fact.
 assert('A-TENNIS-12 — a not-yet-started match is pre, never in',
-  /notstarted\|scheduled\|not_started/.test(html) &&
-  /\? 'pre'/.test(html),
+  // The WHOLE ternary, not the fragment. `? 'pre'` alone occurs four times in
+  // this file, so the first version of this assertion could have passed on an
+  // unrelated match — it was green for a reason it did not name. The mutation
+  // attempt is what exposed it: the anchor was not unique enough to corrupt.
+  /m\.status === 'finished' \? 'post'\s*\n\s*: \/notstarted\|scheduled\|not_started\/i\.test\(String\(m\.status \|\| ''\)\) \? 'pre'\s*\n\s*: 'in',/.test(html),
   'the day feed carries fixtures hours away; calling them live is a fabrication');
 
 assert('A-TENNIS-4 — the ATP injector cannot overwrite a BSD-sourced scoreline',
