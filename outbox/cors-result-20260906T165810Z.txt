@@ -1,0 +1,35 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/ambient/state  [20260906T165810Z]
+maxtime=15s accept=(none)
+=== HEAD (not what a browser sends) ===
+HTTP/2 500 
+date: Sun, 06 Sep 2026 16:58:11 GMT
+content-type: text/plain; charset=UTF-8
+content-length: 17
+cache-control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+expires: Thu, 01 Jan 1970 00:00:01 GMT
+referrer-policy: same-origin
+x-frame-options: SAMEORIGIN
+server: cloudflare
+cf-ray: a36f045a99efb9b0-SEA
+alt-svc: h3=":443"; ma=86400
+
+
+=== GET headers (what a browser actually receives) ===
+HTTP/2 500 
+date: Sun, 06 Sep 2026 16:58:11 GMT
+content-type: text/plain; charset=UTF-8
+content-length: 17
+cache-control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+expires: Thu, 01 Jan 1970 00:00:01 GMT
+referrer-policy: same-origin
+x-frame-options: SAMEORIGIN
+server: cloudflare
+cf-ray: a36f045d7f192672-SEA
+alt-svc: h3=":443"; ma=86400
+
+
+=== ACAO present in the GET response? ===
+NO access-control-allow-origin HEADER
+
+=== BODY (first 400 chars) ===
+error code: 1101
