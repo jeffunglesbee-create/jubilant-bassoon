@@ -55,7 +55,21 @@ jobs:
           [ "$RC" = "28" ] && echo "(curl exit 28 — timed out while still streaming; headers above are complete)" >> "$OUT"
           echo "" >> "$OUT"
           echo "=== ACAO present in the GET response? ===" >> "$OUT"
-          grep -i '^access-control-allow-origin' "$OUT" >> "$OUT" 2>/dev/null || echo "NO access-control-allow-origin HEADER" >> "$OUT"
+          # Read from a COPY. `grep FILE >> FILE` makes grep read the file it is
+          # writing to; GNU grep refuses ("input file is also the output"),
+          # exits non-zero, and the || branch fires — so this line printed
+          # "NO ... HEADER" every single time, whatever the headers said.
+          #
+          # Measured 2026-09-06 on /live/ambient: the dump four lines above the
+          # verdict read `access-control-allow-origin: *` and the verdict read
+          # NO. A summary that contradicts the evidence it summarises is worse
+          # than no summary, because the summary is the part people quote.
+          cp "$OUT" /tmp/acao-scan.txt
+          if grep -qi '^access-control-allow-origin' /tmp/acao-scan.txt; then
+            grep -i '^access-control-allow-origin' /tmp/acao-scan.txt >> "$OUT"
+          else
+            echo "NO access-control-allow-origin HEADER" >> "$OUT"
+          fi
 
           echo "" >> "$OUT"
           echo "=== BODY (first ${LIMIT} chars) ===" >> "$OUT"
