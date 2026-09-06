@@ -35,6 +35,7 @@ const stamp = TS.replace(/[:.]/g, '-');
     pageLoaded: null, tennisSectionPresent: null, tennisCardCount: null,
     cardsWithSetScore: null, cardsWithOpponent: null,
     cardsMissingScore: null, cardsMissingOpponent: null, chips: null,
+    renderedTournaments: null, missingTournaments: null,
     sampleCardText: null, verdict: null, reason: null,
   };
 
@@ -139,9 +140,14 @@ const stamp = TS.replace(/[:.]/g, '-');
       const noScore = cards.filter((c) => !SCORE.test(chipOf(c)));
       const noOpp = cards.filter((c) => !OPPONENT.test(txt(c)));
       const name = (c) => (c.getAttribute('data-home') || txt(c).slice(0, 60) || '(unnamed)');
+      // The league badge carries `${tournament}${round}${surface}`, so the
+      // tournament name is its head. Read it, because "8 expected, 8 rendered"
+      // is a count and the question is WHICH.
+      const leagueOf = (c) => txt(c.querySelector('.league-badge')).split(' · ')[0].trim();
       return {
         present: Boolean(sec),
         cards: cards.length,
+        renderedTournaments: [...new Set(cards.map(leagueOf).filter(Boolean))].sort(),
         withScore: cards.length - noScore.length,
         withOpponent: cards.length - noOpp.length,
         // The actual identities, plus their raw text, so a disagreement between
@@ -160,6 +166,7 @@ const stamp = TS.replace(/[:.]/g, '-');
     manifest.tennisCardCount = counts.cards;
     manifest.cardsWithSetScore = counts.withScore;
     manifest.cardsWithOpponent = counts.withOpponent;
+    manifest.renderedTournaments = counts.renderedTournaments;
     manifest.cardsMissingScore = counts.cardsMissingScore;
     manifest.cardsMissingOpponent = counts.cardsMissingOpponent;
     manifest.chips = counts.chips;
@@ -207,6 +214,18 @@ const stamp = TS.replace(/[:.]/g, '-');
     manifest.reason = `page renders ${manifest.tennisCardCount} tennis card(s) but `
       + `${manifest.cardsWithSetScore} carry a set score and `
       + `${manifest.cardsWithOpponent} name an opponent — empty: ${names || '(unnamed)'}`;
+  } else if ((manifest.missingTournaments = (manifest.expectedTournaments || [])
+                .filter((t) => !(manifest.renderedTournaments || []).includes(t))).length) {
+    // THE PROOF THIS PROBE EXISTS FOR. The relay names the competitions in an
+    // allowed tier; the page must show every one. A tournament the relay says
+    // is on today and the page does not render is the exact 2026-06..09
+    // regression at competition granularity — the US Open present upstream and
+    // absent on screen — and a card count cannot see it. Seven cards from a
+    // Challenger would satisfy any count while the Grand Slam was missing.
+    manifest.verdict = 'FAIL';
+    manifest.reason = `relay names ${manifest.expectedTournaments.length} tournament(s) in an `
+      + `allowed tier; the page renders ${(manifest.renderedTournaments || []).length}. `
+      + `MISSING: ${manifest.missingTournaments.join(', ')}`;
   } else {
     manifest.verdict = 'PASS';
     const short = (manifest.cardsMissingScore || []).map((c) => c.home);
@@ -214,7 +233,8 @@ const stamp = TS.replace(/[:.]/g, '-');
       + `${manifest.cardsWithSetScore} with a set score, ${manifest.cardsWithOpponent} with an opponent`
       // A partial PASS states WHICH card fell short in the same breath as the
       // verdict (Rule 91). "6 of 7" with no name is a puzzle, not a result.
-      + (short.length ? ` — no score chip on: ${short.join(', ')}` : '');
+      + (short.length ? ` — no score chip on: ${short.join(', ')}` : '')
+      + `; tournaments proven on the page: ${(manifest.renderedTournaments || []).join(', ') || 'none'}`;
   }
 
   fs.mkdirSync('outbox', { recursive: true });
