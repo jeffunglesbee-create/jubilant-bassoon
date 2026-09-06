@@ -31,6 +31,7 @@ const stamp = TS.replace(/[:.]/g, '-');
     ts: TS, fieldUrl: FIELD_URL, relay: RELAY,
     relayReachable: null, relayLiveMatches: null,
     relayLiveMatchesAllTiers: null, tiersSeen: null,
+    dayFeedCount: null, dayFeedTruncated: null, expectedTournaments: null,
     pageLoaded: null, tennisSectionPresent: null, tennisCardCount: null,
     cardsWithSetScore: null, cardsWithOpponent: null,
     cardsMissingScore: null, cardsMissingOpponent: null, chips: null,
@@ -39,11 +40,33 @@ const stamp = TS.replace(/[:.]/g, '-');
 
   // 1. What the relay says is being played.
   try {
-    const r = await fetch(`${RELAY}/bsd/tennis/matches/live`, { signal: AbortSignal.timeout(20000) });
+    // BOTH FEEDS, because the page reads both. Counting only /live meant this
+    // probe reported "NO PLAY — nothing to render, nothing proven" at any hour
+    // when no allowed-tier match happened to be in progress, while the page was
+    // correctly showing the day's Grand Slam card from by-date. A check that
+    // cannot see what it is checking is worse than no check: it reports a
+    // healthy page as unproven and trains the reader to skip it.
+    const today = new Date().toISOString().slice(0, 10);
+    const [liveRes, dayRes] = await Promise.allSettled([
+      fetch(`${RELAY}/bsd/tennis/matches/live`, { signal: AbortSignal.timeout(20000) }),
+      fetch(`${RELAY}/bsd/tennis/matches/by-date?date=${today}`, { signal: AbortSignal.timeout(20000) }),
+    ]);
+    const r = liveRes.status === 'fulfilled' ? liveRes.value : { ok: false };
     manifest.relayReachable = r.ok;
     if (r.ok) {
-      const rows = await r.json();
-      manifest.relayLiveMatchesAllTiers = Array.isArray(rows) ? rows.length : 0;
+      const liveJson = await r.json();
+      const dayJson = dayRes.status === 'fulfilled' && dayRes.value.ok ? await dayRes.value.json() : null;
+      const dayList = Array.isArray(dayJson) ? dayJson : (dayJson?.results ?? []);
+      manifest.dayFeedCount = dayList.length;
+      manifest.dayFeedTruncated = dayJson?.truncated ?? null;
+      // Deduplicated the same way the page does it, so the two counts are
+      // comparable. Counting the union without dedup would inflate the relay
+      // side and turn a correct page into a shortfall.
+      const seen = new Map();
+      for (const m of dayList) if (m?.id != null) seen.set(m.id, m);
+      for (const m of (Array.isArray(liveJson) ? liveJson : [])) if (m?.id != null) seen.set(m.id, m);
+      const rows = [...seen.values()];
+      manifest.relayLiveMatchesAllTiers = rows.length;
       // COUNT WHAT THE PAGE IS SUPPOSED TO SHOW, not what the relay serves.
       // The client renders majors, season finals, team cups and the ATP/WTA
       // tour, and drops UTR and Challenger. Comparing the page against the
@@ -58,10 +81,12 @@ const stamp = TS.replace(/[:.]/g, '-');
                              'atp_500', 'wta_500', 'atp_250', 'wta_250']);
       const NAMED = /^(ATP Finals|WTA Finals|Next Gen Finals|United Cup|Davis Cup|Billie Jean King Cup( Group I)?)$/;
       const allowed = (m) => TIERS.has(m?.tournament?.category) || NAMED.test(m?.tournament?.name || '');
-      manifest.relayLiveMatches = Array.isArray(rows) ? rows.filter(allowed).length : 0;
-      manifest.tiersSeen = Array.isArray(rows)
-        ? [...new Set(rows.map((m) => m?.tournament?.category ?? '(absent)'))].sort()
-        : [];
+      manifest.relayLiveMatches = rows.filter(allowed).length;
+      manifest.tiersSeen = [...new Set(rows.map((m) => m?.tournament?.category ?? '(absent)'))].sort();
+      // Named, not just counted: "8 expected, 8 rendered" says nothing about
+      // whether they are the RIGHT eight.
+      manifest.expectedTournaments = [...new Set(rows.filter(allowed)
+        .map((m) => m?.tournament?.name).filter(Boolean))].sort();
     }
   } catch (e) {
     manifest.relayReachable = false;
