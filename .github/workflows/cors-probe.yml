@@ -22,10 +22,44 @@ jobs:
           [ -z "$URL" ] && URL="https://baseballsavant.mlb.com/gf?game_pk=824274"
           TS=$(date -u +%Y%m%dT%H%M%SZ)
           OUT="outbox/cors-result-${TS}.txt"
+          MAXTIME=$(grep '^maxtime=' outbox/.trigger-cors-probe | cut -d= -f2-)
+          [ -z "$MAXTIME" ] && MAXTIME=20
+          ACCEPT=$(grep '^accept=' outbox/.trigger-cors-probe | cut -d= -f2-)
           echo "URL: $URL  [$TS]" > "$OUT"
-          curl -sI "$URL" >> "$OUT" 2>&1 || echo "(HEAD request failed or not supported)" >> "$OUT"
+          echo "maxtime=${MAXTIME}s accept=${ACCEPT:-(none)}" >> "$OUT"
+
+          # HEAD first, as before — but labelled, because a HEAD is NOT what a
+          # browser sends and some routes answer it differently. AmbientDO's
+          # /live/ambient router requires method === 'GET' and falls through to
+          # a 404 on anything else, so a HEAD-only probe would manufacture the
+          # very symptom it is meant to diagnose.
+          echo "=== HEAD (not what a browser sends) ===" >> "$OUT"
+          curl -sI --max-time 15 "$URL" >> "$OUT" 2>&1 || echo "(HEAD failed or unsupported)" >> "$OUT"
+
+          # THE ONE THAT MATTERS: a real GET, headers dumped, bounded in time.
+          # -D - writes the response headers from the GET itself rather than
+          # inferring them from a different method, and --max-time lets this
+          # work on a stream that never ends. Without it an SSE route hangs the
+          # job instead of answering it.
+          echo "" >> "$OUT"
+          echo "=== GET headers (what a browser actually receives) ===" >> "$OUT"
+          if [ -n "$ACCEPT" ]; then
+            curl -s -D - -o /dev/null --max-time "$MAXTIME" -H "Accept: ${ACCEPT}" "$URL" >> "$OUT" 2>&1
+          else
+            curl -s -D - -o /dev/null --max-time "$MAXTIME" "$URL" >> "$OUT" 2>&1
+          fi
+          RC=$?
+          # 28 is curl's timeout, which for a stream means it CONNECTED and was
+          # still receiving — a success, not a failure. Saying so stops the next
+          # reader treating a healthy stream as a broken route.
+          [ "$RC" = "28" ] && echo "(curl exit 28 — timed out while still streaming; headers above are complete)" >> "$OUT"
+          echo "" >> "$OUT"
+          echo "=== ACAO present in the GET response? ===" >> "$OUT"
+          grep -i '^access-control-allow-origin' "$OUT" >> "$OUT" 2>/dev/null || echo "NO access-control-allow-origin HEADER" >> "$OUT"
+
+          echo "" >> "$OUT"
           echo "=== BODY (first ${LIMIT} chars) ===" >> "$OUT"
-          curl -s "$URL" | head -c "$LIMIT" >> "$OUT" 2>&1 || echo "(GET request failed)" >> "$OUT"
+          curl -s --max-time "$MAXTIME" "$URL" | head -c "$LIMIT" >> "$OUT" 2>&1 || echo "(GET body read ended)" >> "$OUT"
           echo "OUT=$OUT" >> $GITHUB_ENV
 
       - name: Push result
