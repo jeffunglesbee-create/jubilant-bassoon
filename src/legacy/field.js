@@ -9628,9 +9628,22 @@ async function fetchTennisLive(){
       const round = m.round_name ? ` · ${m.round_name}` : '';
       const surface = m.tournament?.surface ? ` · ${m.tournament.surface}` : '';
 
+      // matchupHTML routes Tennis through its INDIVIDUAL_SPORTS branch, which
+      // renders `home` as an event name and IGNORES `away` entirely. Measured
+      // on the deployed page 2026-09-06: passing player2 as `away` printed
+      // "J. Mensik" alone -- no opponent, no score -- while the probe reported
+      // PASS because it counted cards rather than reading them.
+      //
+      // So the matchup goes in `home` and the score goes in `leaderNote`, which
+      // is that branch's existing chip and what the Roland Garros entry already
+      // used. Nothing in matchupHTML changes: it is called from every sport, and
+      // teaching it a fourth layout would be the unprompted rewrite Rule 69
+      // prohibits.
+      const matchup = p2 ? `${p1} v ${p2}` : p1;
+
       return {
-        home: p1,
-        away: p2,
+        home: matchup,
+        away: "",
         league: `${t}${round}${surface}`,
         start_time: m.match_date || new Date().toISOString(),
         venue: t,
@@ -9644,10 +9657,13 @@ async function fetchTennisLive(){
         // "US Open, Men" would let an unrelated ATP event overwrite a real
         // BSD scoreline with the wrong one.
         _bsdTennis: true,
-        _tennisScore: `${setStr}${liveStr}${ptStr}${serveStr}`.trim(),
+        // The individual-sport chip. Not a bespoke `_tennisScore` field -- that
+        // was written first and rendered nowhere, which is Rule 63's dead code
+        // wearing the clothes of a feature.
+        leaderNote: `${setStr}${liveStr}${ptStr}${serveStr}`.trim(),
         _tennisStatus: m.status || '',
       };
-    }).filter(g => g.home && g.home !== '?');
+    }).filter(g => g.home && !g.home.startsWith('?'));
 
     return games.length ? [{sport:"Tennis", games}] : [];
   }catch(e){

@@ -31,6 +31,7 @@ const stamp = TS.replace(/[:.]/g, '-');
     ts: TS, fieldUrl: FIELD_URL, relay: RELAY,
     relayReachable: null, relayLiveMatches: null,
     pageLoaded: null, tennisSectionPresent: null, tennisCardCount: null,
+    cardsWithSetScore: null, cardsWithOpponent: null,
     sampleCardText: null, verdict: null, reason: null,
   };
 
@@ -62,15 +63,28 @@ const stamp = TS.replace(/[:.]/g, '-');
 
     const counts = await page.evaluate(() => {
       const sec = document.querySelector('.sport-section[data-sport="Tennis"]');
-      const cards = sec ? sec.querySelectorAll('.game-card') : [];
+      const cards = sec ? [...sec.querySelectorAll('.game-card')] : [];
+      // textContent, not innerText. The first run read innerText and got "" on a
+      // card the screenshot plainly showed, because innerText is layout-aware
+      // and returns nothing for a hidden or not-yet-laid-out element.
+      const txt = (el) => (el?.textContent || '').replace(/\s+/g, ' ').trim();
+      // A set score: "6-3", "7-6(6)", or several. This is what the card must
+      // actually SAY. Counting cards is not reading them — the 2026-09-06 run
+      // reported PASS on seven cards that showed one player and no score at all.
+      const SCORE = /\b\d{1,2}-\d{1,2}(\(\d{1,2}\))?/;
+      const OPPONENT = / v /;
       return {
         present: Boolean(sec),
         cards: cards.length,
-        sample: cards.length ? (cards[0].innerText || '').slice(0, 200) : null,
+        withScore: cards.filter((c) => SCORE.test(txt(c))).length,
+        withOpponent: cards.filter((c) => OPPONENT.test(txt(c))).length,
+        sample: cards.length ? txt(cards[0]).slice(0, 220) : null,
       };
     });
     manifest.tennisSectionPresent = counts.present;
     manifest.tennisCardCount = counts.cards;
+    manifest.cardsWithSetScore = counts.withScore;
+    manifest.cardsWithOpponent = counts.withOpponent;
     manifest.sampleCardText = counts.sample;
 
     await page.screenshot({ path: `outbox/tennis-live-probe-${stamp}.png`, fullPage: false });
@@ -98,13 +112,23 @@ const stamp = TS.replace(/[:.]/g, '-');
     // would let a permanently broken page report green every night.
     manifest.verdict = 'NO PLAY';
     manifest.reason = 'relay reports zero live matches — nothing to render, nothing proven';
-  } else if (manifest.tennisCardCount > 0) {
-    manifest.verdict = 'PASS';
-    manifest.reason = `relay ${manifest.relayLiveMatches} live, page ${manifest.tennisCardCount} card(s)`;
-  } else {
+  } else if (manifest.tennisCardCount === 0) {
     manifest.verdict = 'FAIL';
     manifest.reason = `relay reports ${manifest.relayLiveMatches} live match(es), page renders `
-      + `${manifest.tennisCardCount} tennis card(s) — this is the 2026-06..09 regression`;
+      + `0 tennis cards — this is the 2026-06..09 regression`;
+  } else if (manifest.cardsWithSetScore === 0 || manifest.cardsWithOpponent === 0) {
+    // A card is not a result. The first run of this probe passed on seven cards
+    // that each showed one player's name and nothing else — no opponent, no set
+    // score — because it counted cards rather than reading them. Rendering an
+    // empty card is a different defect from rendering none, and both are FAIL.
+    manifest.verdict = 'FAIL';
+    manifest.reason = `page renders ${manifest.tennisCardCount} tennis card(s) but `
+      + `${manifest.cardsWithSetScore} carry a set score and `
+      + `${manifest.cardsWithOpponent} name an opponent — cards without content`;
+  } else {
+    manifest.verdict = 'PASS';
+    manifest.reason = `relay ${manifest.relayLiveMatches} live, page ${manifest.tennisCardCount} card(s), `
+      + `${manifest.cardsWithSetScore} with a set score, ${manifest.cardsWithOpponent} with an opponent`;
   }
 
   fs.mkdirSync('outbox', { recursive: true });

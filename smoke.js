@@ -7403,6 +7403,25 @@ assert('A-TENNIS-3 — completed sets are sliced by the set summary, never the w
 // The ATP injector fuzzy-matches tournament words longer than three characters
 // against game.home, so "US Open, Men" would match an unrelated ATP event on
 // "open" and replace a correct BSD scoreline with a wrong one.
+// matchupHTML routes Tennis through INDIVIDUAL_SPORTS, which renders `home` as
+// an event name, IGNORES `away`, and shows one optional chip: leaderNote. The
+// first version passed the opponent as `away` and the score as `_tennisScore`.
+// Both were dropped on the floor — the deployed page showed "J. Menšik" alone,
+// no opponent and no set score, on seven cards, while every assertion here and
+// the live probe all reported green.
+assert('A-TENNIS-5 — the set score goes in leaderNote, the only chip that branch renders',
+  /leaderNote: `\$\{setStr\}\$\{liveStr\}\$\{ptStr\}\$\{serveStr\}`/.test(html) &&
+  // The PROPERTY, not the word. Banning the bare string fails on the comment
+  // that explains why the field is banned — the same comment-versus-code
+  // collision the short-circuit lint hit, rediscovered one file over.
+  !/_tennisScore\s*:/.test(html),
+  'a bespoke score field is dead data — matchupHTML reads leaderNote and nothing else');
+
+assert('A-TENNIS-6 — the opponent is inside home, since away is discarded for individual sports',
+  /const matchup = p2 \? `\$\{p1\} v \$\{p2\}` : p1;/.test(html) &&
+  /home: matchup,/.test(html),
+  'passing the opponent as `away` loses it entirely on an INDIVIDUAL_SPORTS card');
+
 assert('A-TENNIS-4 — the ATP injector cannot overwrite a BSD-sourced scoreline',
   /if\(game\._bsdTennis\) return;/.test(html),
   'injectATPScores must skip games that already carry BSD set data');
