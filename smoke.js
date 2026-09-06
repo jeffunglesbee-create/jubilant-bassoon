@@ -7543,6 +7543,18 @@ assert('A-TDRAW-11 — the Draw tab is hidden until there is a draw to show',
   /function _tennisRevealDrawNav\(rows\)\{/.test(html),
   'a tab that opens onto "nothing is playing" is chrome, not a feature');
 
+assert('A-TDRAW-15 — every anomaly kind the relay emits has words, not a raw key',
+  // The relay emits four kinds. A kind with no case falls through to
+  // `${kind}: ${matches}` and the page reads "cancelledRowsExcluded: 2",
+  // which is a variable name shown to a reader. cancelledRowsExcluded is the
+  // commonest of the four — it fires on every slam edition where a player
+  // withdrew — and it was the one with no case.
+  /a\.kind === 'roundNotAtCanonicalSize'/.test(html) &&
+  /a\.kind === 'cancelledRowsExcluded'/.test(html) &&
+  /a\.kind === 'matchesMissingAPlayerName'/.test(html) &&
+  /a\.kind === 'doublesRowsInDraw'/.test(html),
+  'a raw anomaly key on the page is a variable name shown to a reader');
+
 assert('A-TDRAW-13 — the centre column is the round NAMED Final, not the last one present',
   // The first version took rounds[length-1]. Right for a finished draw, wrong
   // for every draw still being played. tennis_draw_probe caught it live: the
