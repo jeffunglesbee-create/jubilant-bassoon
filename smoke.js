@@ -4471,25 +4471,50 @@ assert('A514 — J1/brief-tiers: buildCompoundPrompt enforces named-tier sort + 
   'buildCompoundPrompt must sort games by named league tier before slicing (ADR-002 H7), and brief instruction must include Tier 1/2/3 word budget rules');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ── SW_VERSION date must match today ET (A515) ───────────────────────────────
-// Prevents cosmetically wrong dates shipping — on FIELD, cosmetic = functional.
-assert('A515 — SW_VERSION date matches today (ET)',
+// ── SW_VERSION is well-formed (A515) ─────────────────────────────────────────
+//
+// THIS ASSERTED "matches TODAY in ET" until 2026-09-05, and that made smoke red
+// every day nobody deployed. Measured that day: 1000 passed, 1 failed, with
+// SW_VERSION at '2026-09-04f' and nothing wrong with it.
+//
+// The date rule is real. It belongs to a DEPLOY, not to a file, and it was
+// asserted in the one place that cannot know whether a deploy is happening.
+// Two consequences, both bad:
+//
+//   OFF the deploy path it fails for the passage of time. This repo's rule 3 is
+//   "smoke must pass before push", so every non-deploy commit had to bypass the
+//   hook. One in this session already did, with the reason written into the
+//   commit message: bumping SW_VERSION on a docs commit would be a FALSE deploy
+//   signal, since SW_VERSION exists to bust the shell cache.
+//
+//   ON the deploy path it asserted something already guaranteed. deploy-gate's
+//   A190 step seds SW_VERSION to today's ET date across sw.js, field.js and
+//   index.html and commits it back — three steps before smoke runs. A515 could
+//   only agree with a value written moments earlier by the same job.
+//
+// So the date moved to deploy-gate, where a deploy is by definition happening
+// today, and where it now also catches a sed that silently matched nothing —
+// which that step assumed rather than checked. What stays here is the half
+// smoke can actually decide: the FORM. A190 separately asserts sw.js and
+// index.html agree, so this is not that check either.
+assert('A515 — SW_VERSION is a YYYY-MM-DD date with an optional revision letter',
   (() => {
-    const m = html.match(/SW_VERSION = '(\d{4}-\d{2}-\d{2})/);
-    if (!m) return false;
-    const swDate = m[1];
-    const todayET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const y = todayET.getFullYear();
-    const mo = String(todayET.getMonth() + 1).padStart(2, '0');
-    const d = String(todayET.getDate()).padStart(2, '0');
-    const todayStr = `${y}-${mo}-${d}`;
-    if (swDate !== todayStr) {
-      console.error(`  SW_VERSION date ${swDate} !== today ET ${todayStr}`);
+    const m = html.match(/SW_VERSION = '([^']*)'/);
+    if (!m) { console.error('  no SW_VERSION found in index.html'); return false; }
+    if (!/^\d{4}-\d{2}-\d{2}[a-z]?$/.test(m[1])) {
+      console.error(`  SW_VERSION '${m[1]}' is not YYYY-MM-DD with an optional lowercase letter`);
+      return false;
+    }
+    // A real date, not merely digit-shaped: '2026-13-45' matches the pattern.
+    const [y, mo, d] = m[1].slice(0, 10).split('-').map(Number);
+    const dt = new Date(Date.UTC(y, mo - 1, d));
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) {
+      console.error(`  SW_VERSION '${m[1]}' is shaped like a date but is not one`);
       return false;
     }
     return true;
   })(),
-  'SW_VERSION must start with today\'s ET date — cosmetic correctness is functional correctness on FIELD');
+  'SW_VERSION must be YYYY-MM-DD plus an optional revision letter; the DEPLOY-DAY rule is enforced in deploy-gate.yml, which is the only place that knows a deploy is happening');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── WC Groups filter pill (A516) ─────────────────────────────────────────────

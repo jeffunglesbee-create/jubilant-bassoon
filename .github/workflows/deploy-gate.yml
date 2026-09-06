@@ -116,6 +116,42 @@ jobs:
           done
           echo "✅ SW_VERSION sync committed back to repo"
 
+      # THE DEPLOY-DAY RULE, moved here from smoke.js A515 on 2026-09-05.
+      #
+      # A515 asserted "SW_VERSION starts with today's ET date" inside smoke.js,
+      # which runs on every commit and cannot know whether a deploy is
+      # happening. That made smoke red every day nobody deployed — measured
+      # 1000/1 on 2026-09-05 with SW_VERSION at 2026-09-04f and nothing wrong
+      # with it — and this repo's rule 3 is "smoke must pass before push", so
+      # ordinary commits had to bypass the hook to land.
+      #
+      # Here the question is answerable: this job only runs when a deploy path
+      # changed, so the deploy IS today.
+      #
+      # It also closes a gap the sync step had. That step seds three files and
+      # then echoes a tick mark; `sed` exits 0 when its pattern matches nothing,
+      # so a renamed constant or a changed quoting style would have printed
+      # "✅ SW_VERSION synced" while changing nothing at all. Nothing downstream
+      # would have noticed once A515 stopped being the thing that noticed.
+      #
+      # Reads index.html, which is what actually ships — sw.js and field.js are
+      # the sources it is assembled from, and A190 asserts they agree.
+      - name: SW_VERSION is dated today (ET)
+        run: |
+          set -euo pipefail
+          TODAY=$(TZ='America/New_York' date +%Y-%m-%d)
+          SHIPPED=$(grep -o "SW_VERSION = '[^']*'" index.html | head -1 | grep -o "'[^']*'" | tr -d "'")
+          echo "index.html carries SW_VERSION '${SHIPPED}'; today in ET is ${TODAY}"
+          case "$SHIPPED" in
+            "${TODAY}"|"${TODAY}"[a-z]) echo "✅ dated today" ;;
+            *)
+              echo "::error::SW_VERSION '${SHIPPED}' is not dated ${TODAY}."
+              echo "The A190 sync step above should have set it. A sed that matches"
+              echo "nothing exits 0, so check that the constant is still spelled"
+              echo "\`const SW_VERSION = '...'\` in sw.js and src/legacy/field.js."
+              exit 1 ;;
+          esac
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."
