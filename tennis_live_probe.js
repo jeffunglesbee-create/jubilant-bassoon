@@ -70,15 +70,29 @@ const stamp = TS.replace(/[:.]/g, '-');
       // and returns nothing for a hidden or not-yet-laid-out element.
       const txt = (el) => (el?.textContent || '').replace(/\s+/g, ' ').trim();
       // A set score: "6-3", "7-6(6)", or several. This is what the card must
-      // actually SAY. Counting cards is not reading them — the 2026-09-06 run
+      // actually SAY. Counting cards is not reading them — the 05:30 run
       // reported PASS on seven cards that showed one player and no score at all.
-      const SCORE = /\b\d{1,2}-\d{1,2}(\(\d{1,2}\))?/;
+      //
+      // NO LEADING \b. The first version had one and reported 6 of 7 on a page
+      // where all seven chips were correct. textContent concatenates a card's
+      // elements with no separator, so the chip is glued to the player name:
+      // "C. Papa v S. Ziegann" + "0-0 ○" reads as "Ziegann0-0", and `n` to `0`
+      // is not a word boundary because both are word characters. The other six
+      // matched by accident — their chips carry a second number after a space
+      // ("· 30-15"), which does have one. The card the check named was correct
+      // and the check was wrong.
+      const SCORE = /\d{1,2}-\d{1,2}(\(\d{1,2}\))?/;
       const OPPONENT = / v /;
       // A COUNT CANNOT NAME WHAT IS OFF. The 05:47 run reported 6 of 7 cards
       // carrying a set score while its own screenshot showed seven chips, and
       // nothing in the manifest could say which card it meant. Same limitation
       // the F# gate solved by carrying the failing rows instead of a number.
-      const noScore = cards.filter((c) => !SCORE.test(txt(c)));
+      // Read the CHIP, not the whole card. The chip is where the score lives,
+      // and scanning concatenated card text is what let a player's name change
+      // whether the check could see it at all. A card with no chip element has
+      // no score, which is the honest reading.
+      const chipOf = (c) => txt(c.querySelector('.leader-chip'));
+      const noScore = cards.filter((c) => !SCORE.test(chipOf(c)));
       const noOpp = cards.filter((c) => !OPPONENT.test(txt(c)));
       const name = (c) => (c.getAttribute('data-home') || txt(c).slice(0, 60) || '(unnamed)');
       return {
