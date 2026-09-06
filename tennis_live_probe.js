@@ -35,6 +35,7 @@ const stamp = TS.replace(/[:.]/g, '-');
     pageLoaded: null, tennisSectionPresent: null, tennisCardCount: null,
     cardsWithSetScore: null, cardsWithOpponent: null,
     cardsMissingScore: null, cardsMissingOpponent: null, chips: null,
+    consoleErrors: null, failedRequests: null, relayCallsFromPage: null,
     renderedTournaments: null, missingTournaments: null,
     sampleCardText: null, verdict: null, reason: null,
   };
@@ -99,6 +100,34 @@ const stamp = TS.replace(/[:.]/g, '-');
   try {
     browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 1280, height: 1600 } });
+
+    // WHY, not just WHETHER. The 15:26 run reported FAIL with
+    // tennisSectionPresent false, on a page carrying the code and a relay
+    // holding 26 allowed-tier matches — and the manifest could not say which
+    // of those two facts had stopped being true in the browser. A probe that
+    // reports a failure it cannot explain sends the next reader guessing, and
+    // this session has already spent three verdicts on guesses.
+    //
+    // Console errors and failed requests are the two things that would answer
+    // it, and neither survives a screenshot.
+    const consoleErrors = [];
+    const failedRequests = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error' || m.type() === 'warning') {
+        consoleErrors.push(`${m.type()}: ${m.text()}`.slice(0, 300));
+      }
+    });
+    page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${String(e.message).slice(0, 300)}`));
+    page.on('requestfailed', (req) => {
+      failedRequests.push(`${req.method()} ${req.url().slice(0, 160)} — ${req.failure()?.errorText || '?'}`);
+    });
+    // Every relay call the PAGE makes, with its status. If the by-date leg is
+    // 4xx-ing or never fired, this is where it shows.
+    const relayCalls = [];
+    page.on('response', async (res) => {
+      const u = res.url();
+      if (u.includes('/bsd/tennis/')) relayCalls.push(`${res.status()} ${u.slice(0, 160)}`);
+    });
     await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 45000 });
     // The tennis section arrives on the async supplemental merge, not on first
     // paint. Wait for the app's own readiness sentinel, then give the merge a
@@ -106,6 +135,11 @@ const stamp = TS.replace(/[:.]/g, '-');
     await page.waitForFunction(() => window._fieldDataReady, { timeout: 30000 }).catch(() => {});
     await page.waitForSelector('.sport-section[data-sport="Tennis"]', { timeout: 20000 }).catch(() => {});
     manifest.pageLoaded = true;
+    manifest.consoleErrors = consoleErrors.slice(0, 12);
+    manifest.failedRequests = failedRequests.slice(0, 12);
+    // Empty is itself a finding: it means the page never asked, which is a very
+    // different defect from asking and being refused.
+    manifest.relayCallsFromPage = relayCalls.slice(0, 12);
 
     const counts = await page.evaluate(() => {
       const sec = document.querySelector('.sport-section[data-sport="Tennis"]');
@@ -201,8 +235,11 @@ const stamp = TS.replace(/[:.]/g, '-');
       + ' — nothing to render, nothing proven';
   } else if (manifest.tennisCardCount === 0) {
     manifest.verdict = 'FAIL';
+    const calls = (manifest.relayCallsFromPage || []);
     manifest.reason = `relay reports ${manifest.relayLiveMatches} live match(es), page renders `
-      + `0 tennis cards — this is the 2026-06..09 regression`;
+      + `0 tennis cards — this is the 2026-06..09 regression`
+      + `; page made ${calls.length} /bsd/tennis/ call(s)${calls.length ? ': ' + calls.join(' | ') : ''}`
+      + ((manifest.consoleErrors || []).length ? `; console: ${manifest.consoleErrors[0]}` : '');
   } else if (manifest.cardsWithSetScore === 0 || manifest.cardsWithOpponent === 0) {
     // A card is not a result. The first run of this probe passed on seven cards
     // that each showed one player's name and nothing else — no opponent, no set
