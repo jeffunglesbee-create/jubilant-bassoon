@@ -7470,5 +7470,83 @@ assert('A-TENNIS-4 — the ATP injector cannot overwrite a BSD-sourced scoreline
   /if\(game\._bsdTennis\) return;/.test(html),
   'injectATPScores must skip games that already carry BSD set data');
 
+// ── The tennis draw (renderTennisBracket) ──────────────────────────────────
+// The World Cup bracket tree generalised from a fixed 32-team knockout to
+// whatever ladder the relay ships. Each assertion below names the specific
+// thing that would be wrong, not "the bracket is wired".
+
+assert('A-TDRAW-1 — the draw comes from the relay route that joins the edges',
+  html.includes('/bsd/tennis/draw?tournament=') &&
+  /season=\$\{season\}/.test(html),
+  'the client must not join edges itself — the relay refuses ambiguity with a 409, this cannot');
+
+assert('A-TDRAW-2 — the column count comes from the response, never a constant',
+  // `repeat(${cols},1fr)` with cols read from the rounds array. A hardcoded
+  // repeat(4,1fr) would render a slam as a World Cup and drop three rounds.
+  /const cols = outer\.length;/.test(html) &&
+  /repeat\(\$\{cols\},1fr\) 130px repeat\(\$\{cols\},1fr\)/.test(html),
+  'a slam is seven rounds, a 64-draw is six, and a first-week draw is four');
+
+assert('A-TDRAW-3 — player names are escaped by a helper that is actually in scope',
+  // escapeHtml exists in this file but is a const INSIDE renderJQPanel and is
+  // not reachable from the tennis renderer. Naming it there is a
+  // ReferenceError at render time — the same class of defect that took three
+  // Durable Objects down on 2026-09-05.
+  /const _tdtEsc = \(s\) =>/.test(html) &&
+  /_tdtEsc\(p\.shortName \|\| p\.name \|\| 'TBD'\)/.test(html),
+  'BSD player names go into innerHTML and must be escaped by a function in scope');
+
+assert('A-TDRAW-4 — below 1180px the tree is REPLACED, not merely hidden',
+  // The WC tree hides itself narrow and relies on a probability table beside
+  // it. There is no table here, so hiding alone leaves a heading over nothing.
+  /class="tennis-draw-list"/.test(html) &&
+  /@media\(min-width:1180px\)\{ \.tennis-draw-list\{display:none\} \}/.test(html),
+  'a tab with a heading and no content is worse than no tab');
+
+assert('A-TDRAW-5 — the ranking is labelled as a ranking, never as a seed',
+  // There is no seed field anywhere on a BSD tennis row or player — measured
+  // 2026-09-06, current_ranking is the only candidate. A bracket position plus
+  // a bare number reads as a seed, so it carries a # and the class says rank.
+  /<span class="wct-rank">#\$\{p\.rank\}<\/span>/.test(html) &&
+  !/seed/i.test(html.slice(html.indexOf('function tdtPlayer'),
+                           html.indexOf('function tdtMatch'))
+                .replace(/\/\/[^\n]*/g, '')),
+  'printing a world ranking under a seed label is printing a different number');
+
+assert('A-TDRAW-6 — doubles and junior draws are excluded from the pick',
+  /if \(m\?\.is_doubles\) continue;/.test(html) &&
+  /Doubles\|Boys\|Girls\|Wheelchair\|Quad/.test(html),
+  'a doubles draw is pairs not players; this renderer would show one name of two');
+
+assert('A-TDRAW-7 — the tournament is derived from the day card, never hardcoded',
+  /function _tennisDrawPick\(rows\)\{/.test(html) &&
+  /_tennisDrawPick\(day\?\.results \|\| \[\]\)/.test(html),
+  'a hardcoded tournament id is a dead window three weeks later — there is already one in this file');
+
+assert('A-TDRAW-8 — every other mode dismisses tennis-mode',
+  // Four toggles: journalism, WC, pick-em, stats. A fifth mode that no other
+  // toggle dismisses leaves two full-viewport sections on screen at once.
+  (html.match(/classList\.contains\('tennis-mode'\)/g) || []).length >= 4,
+  'two full-viewport sections visible at once is the failure this guards');
+
+assert('A-TDRAW-9 — the relay refusing a draw is shown as a refusal, not as emptiness',
+  /the relay declined to assemble this draw/.test(html),
+  'a 409 and an empty draw are different states and the reader is entitled to know which');
+
+assert('A-TDRAW-10 — an off-canonical round is stated on the page, not only in the response',
+  /roundNotAtCanonicalSize/.test(html) &&
+  /make a full round/.test(html),
+  'five of six real slam editions are off canonical size; a reader who counts is owed the reason');
+
+assert('A-TDRAW-11 — the Draw tab is hidden until there is a draw to show',
+  /id="tennis-nav-link"[^>]*style="display:none"/.test(html) &&
+  /function _tennisRevealDrawNav\(rows\)\{/.test(html),
+  'a tab that opens onto "nothing is playing" is chrome, not a feature');
+
+assert('A-TDRAW-12 — the section and its render target exist in the markup',
+  /id="tennis-section"/.test(html) && /id="tennis-draw"/.test(html) &&
+  /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
+  'renderTennisBracket writes into #tennis-draw and returns silently if it is absent');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

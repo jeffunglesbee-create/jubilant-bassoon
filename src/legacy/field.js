@@ -8424,6 +8424,9 @@ function renderAll(skipUnchanged){
   attachNavLinkOnce('stats-nav-link', () => {
     if(typeof toggleStatsView==='function') toggleStatsView();
   });
+  attachNavLinkOnce('tennis-nav-link', () => {
+    if(typeof toggleTennisView==='function') toggleTennisView();
+  });
   setTimeout(injectJ1J4Badges, 300);    // J1/J4: Anti-Hype + Scout's Pick per-card badges
   setTimeout(()=>initFIELDBrief(sports).then(()=>renderAmbientPanel()).catch(e=>{
     captureFieldError('initFIELDBrief',e,false);
@@ -9673,6 +9676,11 @@ async function fetchTennisLive(){
     // renders zero cards at that hour. An empty tennis section is the correct
     // output when only lower-tier tennis is being played.
     const rows = all.filter(_tennisTierAllowed);
+    // The Draw tab appears only when there is a draw to show, and this is the
+    // one place that already holds the day's card. Called BEFORE the empty
+    // return below, so a day of nothing but Challengers hides the tab rather
+    // than leaving yesterday's showing.
+    _tennisRevealDrawNav(rows);
     if(!rows.length) return [];
 
     const games = rows.map(m => {
@@ -10975,6 +10983,17 @@ function toggleJournalismView() {
     if (_pickemNavLnk) _pickemNavLnk.classList.remove('active');
     const pickemSec = document.getElementById('pickem-section');
     if (pickemSec) { pickemSec.setAttribute('hidden', ''); pickemSec.style.display = ''; }
+  }
+  // ...and tennis-mode, which is the fifth. The `willActivate` guard matters
+  // here for the same reason it does above: this function also runs on the way
+  // OUT of journalism, and dismissing another mode then would close a tab the
+  // reader had just opened.
+  if (willActivate && body.classList.contains('tennis-mode')) {
+    body.classList.remove('tennis-mode');
+    const _tnNavLnk = document.getElementById('tennis-nav-link');
+    if (_tnNavLnk) _tnNavLnk.classList.remove('active');
+    const _tnSecJ = document.getElementById('tennis-section');
+    if (_tnSecJ) { _tnSecJ.setAttribute('hidden', ''); _tnSecJ.style.display = ''; }
   }
   const navLink = document.getElementById('jrn-nav-link');
   if (navLink) navLink.classList.toggle('active', willActivate);
@@ -22629,7 +22648,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-06c';
+  const SW_VERSION = '2026-09-06d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31591,6 +31610,12 @@ function toggleWCView() {
     }
     const pickemSec = document.getElementById('pickem-section');
     if (pickemSec) { pickemSec.setAttribute('hidden', ''); pickemSec.style.display = ''; }
+    if (document.body.classList.contains('tennis-mode')) {
+      document.body.classList.remove('tennis-mode');
+      document.getElementById('tennis-nav-link')?.classList.remove('active');
+    }
+    const _tnSec = document.getElementById('tennis-section');
+    if (_tnSec) { _tnSec.setAttribute('hidden', ''); _tnSec.style.display = ''; }
     renderWCSection();
     // Subscribe to BSD for any live WC game with bsdEventId
     setTimeout(_bsdActivateForWC, 500); // defer 500ms — let V2 poll populate espnScores first
@@ -31634,6 +31659,12 @@ function togglePickEmView() {
     }
     const wcSec = document.getElementById('wc-section');
     if (wcSec) { wcSec.setAttribute('hidden', ''); wcSec.style.display = ''; }
+    if (document.body.classList.contains('tennis-mode')) {
+      document.body.classList.remove('tennis-mode');
+      document.getElementById('tennis-nav-link')?.classList.remove('active');
+    }
+    const _tnSec = document.getElementById('tennis-section');
+    if (_tnSec) { _tnSec.setAttribute('hidden', ''); _tnSec.style.display = ''; }
     renderPickEmSection();
   } else {
     navLink?.classList.remove('active');
@@ -31737,6 +31768,292 @@ function renderPickEmSection() {
 }
 
 // ── Stats tab — cross-sport analytics surface ─────────────────────────────
+// ── TENNIS DRAW ─────────────────────────────────────────────────────────────
+//
+// The World Cup bracket tree, generalised. renderWCBracketTree() hardcodes four
+// columns a side and a slot id per match (`R32_73_A`, `SF_1_B`, …) because the
+// World Cup knockout is always the same 32-team shape. A tennis draw is not: a
+// slam is seven rounds, a Masters 1000 is six or seven depending on the field,
+// and a draw in its first week has four rounds of rows and three of nothing.
+//
+// So the columns are built from the response. There is no slot table here and
+// no CSS rule that assumes a column count — the grid template is written by the
+// renderer from the number of rounds the relay actually shipped.
+//
+// WHERE THE EDGES COME FROM. Not from here. field-relay-nba's
+// /bsd/tennis/draw?tournament=<id>&season=<YYYY> joins them by winner identity:
+// BSD serves no bracket and no parent-link field, but in single elimination a
+// player appears in at most one match per round, so the winner of an R64 match
+// appears in exactly one R32 match. Measured 2026-09-06: 126 edges resolve to
+// exactly one next match, 0 ambiguous. The relay refuses with a 409 rather than
+// guessing, and this renders nothing rather than inventing — a bracket with one
+// wrong edge shows a real name in a match they did not play.
+
+/// Which tournament's draw to show: the highest-tier one playing today.
+///
+/// DERIVED, NOT CONFIGURED. A hardcoded tournament id is a dead window three
+/// weeks after it is written — there is one in this file at the Italian Open
+/// that has been stale since May. This reads the day's card and takes the
+/// best-tier event in it, so the tab follows the calendar without anyone
+/// editing a date.
+const _TENNIS_DRAW_TIER_RANK = {
+  grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1,
+  atp_500: 2, wta_500: 2, atp_250: 3, wta_250: 3,
+};
+function _tennisDrawPick(rows){
+  const seen = new Map();
+  for (const m of rows || []) {
+    const t = m?.tournament;
+    if (!t?.id || !_tennisTierAllowed(m)) continue;
+    // Doubles and junior draws are separate tournament ids on BSD — measured
+    // 2026-09-06: 14/15/17 are the Australian Open men's, women's and mixed
+    // doubles, and 135/136/144/145 split the US Open the same way. Only the
+    // singles draws are offered here; a doubles bracket is a different shape
+    // (pairs, not players) and this renderer would show one name of two.
+    if (m?.is_doubles) continue;
+    if (/Doubles|Boys|Girls|Wheelchair|Quad/i.test(t.name || '')) continue;
+    const rank = _TENNIS_DRAW_TIER_RANK[t.category];
+    if (rank == null) continue;
+    const prev = seen.get(t.id);
+    if (!prev) seen.set(t.id, { id: t.id, name: t.name, category: t.category, rank, count: 1 });
+    else prev.count++;
+  }
+  // Best tier first, then the busiest draw of that tier — a slam mid-round has
+  // more matches on the day than one down to its last four.
+  return [...seen.values()].sort((a, b) => a.rank - b.rank || b.count - a.count)[0] || null;
+}
+
+/// Fetch today's card and the draw of whichever major it holds.
+async function fetchTennisDraw(){
+  const today = new Date().toISOString().slice(0,10);
+  const dayR = await fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/by-date?date=${today}`,
+                           {signal:AbortSignal.timeout(9000)});
+  if (!dayR.ok) throw new Error(`by-date ${dayR.status}`);
+  const day = await dayR.json();
+  const pick = _tennisDrawPick(day?.results || []);
+  if (!pick) return { pick: null, draw: null };
+  const season = String(new Date().getUTCFullYear());
+  const r = await fetch(`${V2_RELAY_BASE}/bsd/tennis/draw?tournament=${pick.id}&season=${season}`,
+                        {signal:AbortSignal.timeout(20000)});
+  if (!r.ok) {
+    // A 409 is the relay refusing an ambiguous or doubled draw. Surface the
+    // refusal — a blank tab and a refused tab are different states and the
+    // reader is entitled to know which one they are looking at.
+    let why = `HTTP ${r.status}`;
+    try { const e = await r.json(); if (e?.error) why = e.error; } catch(_e){}
+    return { pick, draw: null, refused: why };
+  }
+  return { pick, draw: await r.json() };
+}
+
+// Player names come from BSD and are rendered into innerHTML, so they are
+// escaped here. This file has an escapeHtml, but it is a const INSIDE
+// renderJQPanel() at line ~5348 and is not in scope anywhere else — reaching
+// for it by name would be a ReferenceError at render time, which is the class
+// of defect that took three Durable Objects down for a day on 2026-09-05.
+const _tdtEsc = (s) => String(s == null ? '' : s)
+  .replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+/// One player's line inside a match card. Reuses the WC tree's .wct-team.
+function tdtPlayer(p, isWinner, decided){
+  if (!p) return `<div class="wct-team"><span class="wct-name" style="color:var(--smoke);font-style:italic">TBD</span></div>`;
+  const cls = !decided ? '' : (isWinner ? ' tdt-won' : ' tdt-out');
+  // `rank` is the player's world ranking and NOT a seed. There is no seed field
+  // anywhere on a BSD tennis row or player — measured 2026-09-06, the only
+  // candidate on either object is current_ranking. Labelled with a # rather
+  // than the seed brackets a draw sheet would use, because they are different
+  // numbers and the bracket position is the one thing that would make a reader
+  // read this as a seed.
+  const rank = p.rank != null ? `<span class="wct-rank">#${p.rank}</span>` : '';
+  return `<div class="wct-team${cls}">
+    <span class="wct-name">${_tdtEsc(p.shortName || p.name || 'TBD')}</span>${rank}
+  </div>`;
+}
+
+function tdtMatch(n, extraCls){
+  const decided = n.winnerId != null;
+  return `<div class="wct-match ${extraCls || ''}">
+    ${tdtPlayer(n.p1, n.p1 && n.p1.id === n.winnerId, decided)}
+    ${tdtPlayer(n.p2, n.p2 && n.p2.id === n.winnerId, decided)}
+  </div>`;
+}
+
+/// Render the draw into #tennis-draw.
+async function renderTennisBracket(){
+  const host = document.getElementById('tennis-draw');
+  if (!host) return;
+  const titleEl = document.getElementById('tennis-draw-title');
+  const metaEl  = document.getElementById('tennis-draw-meta');
+  host.innerHTML = '<div class="wct-loading">Reading the draw…</div>';
+
+  let res;
+  try { res = await fetchTennisDraw(); }
+  catch(e){
+    captureFieldError('tennis:draw-fetch', e, true);
+    host.innerHTML = `<div class="wct-loading">The draw could not be read: ${_tdtEsc(String(e.message || e))}</div>`;
+    return;
+  }
+
+  if (!res.pick) {
+    host.innerHTML = '<div class="wct-loading">No ATP, WTA or Grand Slam singles draw is playing today.</div>';
+    if (metaEl) metaEl.textContent = '';
+    return;
+  }
+  if (titleEl) titleEl.textContent = res.pick.name;
+  if (!res.draw) {
+    host.innerHTML = `<div class="wct-loading">${_tdtEsc(res.pick.name)} — the relay declined to assemble this draw: `
+                   + `${_tdtEsc(res.refused || 'unknown')}.</div>`;
+    return;
+  }
+
+  const d = res.draw;
+  const rounds = (d.rounds || []).slice().sort((a,b) => a.index - b.index);
+  const nodesByRound = {};
+  for (const n of d.nodes || []) (nodesByRound[n.round] ||= []).push(n);
+
+  if (!rounds.length) {
+    host.innerHTML = `<div class="wct-loading">${_tdtEsc(res.pick.name)} — no main-draw rounds yet.</div>`;
+    return;
+  }
+
+  if (metaEl) {
+    const champ = (nodesByRound['Final'] || []).map(f =>
+      [f.p1, f.p2].find(p => p && p.id === f.winnerId)).filter(Boolean)[0];
+    metaEl.textContent = `${d.season} · ${d.mainDrawMatches} main-draw matches · `
+      + (champ ? `champion ${champ.name}` : 'in progress');
+  }
+
+  // TWO HALVES, as the WC tree does: rounds run inward from both sides and the
+  // final sits in the middle. The last round is the final and is rendered
+  // once, in the centre; every earlier round is split down the middle.
+  const inner = rounds[rounds.length - 1];
+  const outer = rounds.slice(0, -1);
+  const half = (r, side) => {
+    const ns = (nodesByRound[r.round] || []).slice()
+      .sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')) || a.id - b.id);
+    const mid = Math.ceil(ns.length / 2);
+    return side === 'left' ? ns.slice(0, mid) : ns.slice(mid);
+  };
+  const colHTML = (r, side) => `<div class="wct-round ${side === 'right' ? 'wct-right' : ''}">`
+    + half(r, side).map(n => tdtMatch(n, r.index >= rounds.length - 3 ? 'wct-sf' : '')).join('')
+    + '</div>';
+
+  const shortLabel = (x) => x.replace('Round of ', 'R')
+    .replace('Quarterfinals','QF').replace('Semifinals','SF');
+  const cols = outer.length;
+  const template = `repeat(${cols},1fr) 130px repeat(${cols},1fr)`;
+
+  const finalNode = (nodesByRound[inner.round] || [])[0] || null;
+  const centre = `<div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:0 4px">
+      <div class="wct-champion-label">${_tdtEsc(inner.round)}</div>
+      ${finalNode ? tdtMatch(finalNode, 'wct-champion') : '<div class="wct-match wct-champion"><div class="wct-team"><span class="wct-name" style="color:var(--smoke);font-style:italic">TBD</span></div></div>'}
+    </div>`;
+
+  // Anomalies on the page, not only in the response. Five of the six real slam
+  // editions read on 2026-09-06 are off canonical size somewhere — 65 or 66
+  // first-round rows where 64 exist, and US Open Men 2025 serves 31
+  // second-round matches where 32 do. A tree drawn from those rows is correct
+  // and does not add up, and a reader who counts is owed the reason.
+  const anomalyHTML = (d.anomalies || []).length
+    ? `<p class="tdt-anomaly">${(d.anomalies || []).map(a =>
+        a.kind === 'roundNotAtCanonicalSize'
+          ? `${_tdtEsc(a.round)} holds ${a.matches} matches where ${a.canonical} make a full round.`
+          : a.kind === 'matchesMissingAPlayerName'
+            ? `${a.matches} match(es) are missing a player name upstream.`
+            : `${_tdtEsc(a.kind)}: ${a.matches != null ? a.matches : ''}`
+      ).join(' ')}</p>`
+    : '';
+
+  const treeHTML = `<div class="tennis-draw-tree">
+    <div style="display:grid;grid-template-columns:${template};text-align:center;min-width:${cols*2*100+130}px;margin-bottom:.3rem">
+      ${outer.map(r => `<div class="wct-col-head">${_tdtEsc(shortLabel(r.round))}</div>`).join('')}
+      <div class="wct-col-head"></div>
+      ${outer.slice().reverse().map(r => `<div class="wct-col-head">${_tdtEsc(shortLabel(r.round))}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:${template};min-width:${cols*2*100+130}px;align-items:center;gap:2px 0;padding:0 2px">
+      ${outer.map(r => colHTML(r, 'left')).join('')}
+      ${centre}
+      ${outer.slice().reverse().map(r => colHTML(r, 'right')).join('')}
+    </div>
+    ${anomalyHTML}
+  </div>`;
+
+  // BELOW 1180px THE TREE IS REPLACED, NOT HIDDEN. The WC tree hides itself on
+  // a narrow viewport and shows a probability table that happens to sit beside
+  // it. There is no table here, so hiding alone would leave a tab with a
+  // heading and nothing under it.
+  const listHTML = `<div class="tennis-draw-list">
+    ${rounds.slice().reverse().map(r => `<div class="tdl-round">
+      <div class="tdl-round-head">${_tdtEsc(r.round)} · ${r.matches}</div>
+      ${(nodesByRound[r.round] || []).map(n => {
+        const decided = n.winnerId != null;
+        const nm = (p) => p ? _tdtEsc(p.shortName || p.name) : 'TBD';
+        const w = decided && n.p1 && n.p1.id === n.winnerId;
+        return `<div class="tdl-match"><span class="tdl-players">`
+          + `<span class="${decided ? (w ? 'tdl-winner' : 'tdl-loser') : ''}">${nm(n.p1)}</span>`
+          + ` v `
+          + `<span class="${decided ? (w ? 'tdl-loser' : 'tdl-winner') : ''}">${nm(n.p2)}</span>`
+          + `</span></div>`;
+      }).join('')}
+    </div>`).join('')}
+    ${anomalyHTML}
+  </div>`;
+
+  host.innerHTML = treeHTML + listHTML;
+}
+
+/// Show the Draw tab only when there is a draw to show. Called from the tennis
+/// fetch, which already has the day's card in hand.
+function _tennisRevealDrawNav(rows){
+  const link = document.getElementById('tennis-nav-link');
+  if (!link) return;
+  link.style.display = _tennisDrawPick(rows) ? '' : 'none';
+}
+
+function toggleTennisView() {
+  const isTennis = document.body.classList.toggle('tennis-mode');
+  const navLink = document.getElementById('tennis-nav-link');
+  const section = document.getElementById('tennis-section');
+  if (isTennis) {
+    navLink?.classList.add('active');
+    section?.removeAttribute('hidden');
+    if (section) section.style.display = 'block';
+    // Mutual exclusion, written out the way the other four toggles write it.
+    // Folding these into a shared helper would be a rewrite of four working
+    // functions in a commit about tennis (Rule 69), and the modes are already
+    // independent by design.
+    if (document.body.classList.contains('journalism-mode')) {
+      document.body.classList.remove('journalism-mode');
+      document.getElementById('jrn-nav-link')?.classList.remove('active');
+    }
+    const _tJrn = document.getElementById('field-journalism-section');
+    if (_tJrn) { _tJrn.setAttribute('hidden', ''); _tJrn.style.display = ''; }
+    if (document.body.classList.contains('wc-mode')) {
+      document.body.classList.remove('wc-mode');
+      document.getElementById('wc-nav-link')?.classList.remove('active');
+    }
+    const _tWc = document.getElementById('wc-section');
+    if (_tWc) { _tWc.setAttribute('hidden', ''); _tWc.style.display = ''; }
+    if (document.body.classList.contains('pickem-mode')) {
+      document.body.classList.remove('pickem-mode');
+      document.getElementById('pickem-nav-link')?.classList.remove('active');
+    }
+    const _tPk = document.getElementById('pickem-section');
+    if (_tPk) { _tPk.setAttribute('hidden', ''); _tPk.style.display = ''; }
+    if (document.body.classList.contains('stats-mode')) {
+      document.body.classList.remove('stats-mode');
+      document.getElementById('stats-nav-link')?.classList.remove('active');
+    }
+    const _tSt = document.getElementById('stats-section');
+    if (_tSt) { _tSt.setAttribute('hidden', ''); _tSt.style.display = ''; }
+    renderTennisBracket();
+  } else {
+    navLink?.classList.remove('active');
+    section?.setAttribute('hidden', '');
+    if (section) section.style.display = '';
+  }
+}
+
 function toggleStatsView() {
   const isStats = document.body.classList.toggle('stats-mode');
   const navLink = document.getElementById('stats-nav-link');
@@ -31766,6 +32083,12 @@ function toggleStatsView() {
     }
     const _pkSec = document.getElementById('pickem-section');
     if (_pkSec) { _pkSec.setAttribute('hidden', ''); _pkSec.style.display = ''; }
+    if (document.body.classList.contains('tennis-mode')) {
+      document.body.classList.remove('tennis-mode');
+      document.getElementById('tennis-nav-link')?.classList.remove('active');
+    }
+    const _tnSec = document.getElementById('tennis-section');
+    if (_tnSec) { _tnSec.setAttribute('hidden', ''); _tnSec.style.display = ''; }
     renderStatsSection();
   } else {
     navLink?.classList.remove('active');
@@ -41651,6 +41974,8 @@ window.switchWCTab           = switchWCTab;
 window.toggleJournalismView  = toggleJournalismView;
 window.togglePickEmView      = togglePickEmView;
 window.toggleStatsView       = toggleStatsView;
+window.toggleTennisView      = toggleTennisView;
+window.renderTennisBracket   = renderTennisBracket;
 window.toggleWCView          = toggleWCView;
 window.unpinGame             = unpinGame;
 window.toggleThreadDrawer    = toggleThreadDrawer;
