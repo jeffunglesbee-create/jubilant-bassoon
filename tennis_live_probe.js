@@ -32,6 +32,7 @@ const stamp = TS.replace(/[:.]/g, '-');
     relayReachable: null, relayLiveMatches: null,
     pageLoaded: null, tennisSectionPresent: null, tennisCardCount: null,
     cardsWithSetScore: null, cardsWithOpponent: null,
+    cardsMissingScore: null, cardsMissingOpponent: null, chips: null,
     sampleCardText: null, verdict: null, reason: null,
   };
 
@@ -73,11 +74,27 @@ const stamp = TS.replace(/[:.]/g, '-');
       // reported PASS on seven cards that showed one player and no score at all.
       const SCORE = /\b\d{1,2}-\d{1,2}(\(\d{1,2}\))?/;
       const OPPONENT = / v /;
+      // A COUNT CANNOT NAME WHAT IS OFF. The 05:47 run reported 6 of 7 cards
+      // carrying a set score while its own screenshot showed seven chips, and
+      // nothing in the manifest could say which card it meant. Same limitation
+      // the F# gate solved by carrying the failing rows instead of a number.
+      const noScore = cards.filter((c) => !SCORE.test(txt(c)));
+      const noOpp = cards.filter((c) => !OPPONENT.test(txt(c)));
+      const name = (c) => (c.getAttribute('data-home') || txt(c).slice(0, 60) || '(unnamed)');
       return {
         present: Boolean(sec),
         cards: cards.length,
-        withScore: cards.filter((c) => SCORE.test(txt(c))).length,
-        withOpponent: cards.filter((c) => OPPONENT.test(txt(c))).length,
+        withScore: cards.length - noScore.length,
+        withOpponent: cards.length - noOpp.length,
+        // The actual identities, plus their raw text, so a disagreement between
+        // this and a screenshot is settleable rather than a puzzle.
+        cardsMissingScore: noScore.map((c) => ({ home: name(c), text: txt(c).slice(0, 160) })),
+        cardsMissingOpponent: noOpp.map((c) => ({ home: name(c), text: txt(c).slice(0, 160) })),
+        // Every card's chip, so foreign content in a tennis card is visible.
+        chips: cards.map((c) => ({
+          home: c.getAttribute('data-home') || '(none)',
+          chip: txt(c.querySelector('.leader-chip')) || '(no chip)',
+        })),
         sample: cards.length ? txt(cards[0]).slice(0, 220) : null,
       };
     });
@@ -85,6 +102,9 @@ const stamp = TS.replace(/[:.]/g, '-');
     manifest.tennisCardCount = counts.cards;
     manifest.cardsWithSetScore = counts.withScore;
     manifest.cardsWithOpponent = counts.withOpponent;
+    manifest.cardsMissingScore = counts.cardsMissingScore;
+    manifest.cardsMissingOpponent = counts.cardsMissingOpponent;
+    manifest.chips = counts.chips;
     manifest.sampleCardText = counts.sample;
 
     await page.screenshot({ path: `outbox/tennis-live-probe-${stamp}.png`, fullPage: false });
@@ -122,13 +142,19 @@ const stamp = TS.replace(/[:.]/g, '-');
     // score — because it counted cards rather than reading them. Rendering an
     // empty card is a different defect from rendering none, and both are FAIL.
     manifest.verdict = 'FAIL';
+    const names = [...(manifest.cardsMissingScore || []), ...(manifest.cardsMissingOpponent || [])]
+      .map((c) => c.home).filter((v, i, a) => a.indexOf(v) === i).join(', ');
     manifest.reason = `page renders ${manifest.tennisCardCount} tennis card(s) but `
       + `${manifest.cardsWithSetScore} carry a set score and `
-      + `${manifest.cardsWithOpponent} name an opponent — cards without content`;
+      + `${manifest.cardsWithOpponent} name an opponent — empty: ${names || '(unnamed)'}`;
   } else {
     manifest.verdict = 'PASS';
+    const short = (manifest.cardsMissingScore || []).map((c) => c.home);
     manifest.reason = `relay ${manifest.relayLiveMatches} live, page ${manifest.tennisCardCount} card(s), `
-      + `${manifest.cardsWithSetScore} with a set score, ${manifest.cardsWithOpponent} with an opponent`;
+      + `${manifest.cardsWithSetScore} with a set score, ${manifest.cardsWithOpponent} with an opponent`
+      // A partial PASS states WHICH card fell short in the same breath as the
+      // verdict (Rule 91). "6 of 7" with no name is a puzzle, not a result.
+      + (short.length ? ` — no score chip on: ${short.join(', ')}` : '');
   }
 
   fs.mkdirSync('outbox', { recursive: true });
