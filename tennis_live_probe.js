@@ -30,6 +30,7 @@ const stamp = TS.replace(/[:.]/g, '-');
   const manifest = {
     ts: TS, fieldUrl: FIELD_URL, relay: RELAY,
     relayReachable: null, relayLiveMatches: null,
+    relayLiveMatchesAllTiers: null, tiersSeen: null,
     pageLoaded: null, tennisSectionPresent: null, tennisCardCount: null,
     cardsWithSetScore: null, cardsWithOpponent: null,
     cardsMissingScore: null, cardsMissingOpponent: null, chips: null,
@@ -42,7 +43,25 @@ const stamp = TS.replace(/[:.]/g, '-');
     manifest.relayReachable = r.ok;
     if (r.ok) {
       const rows = await r.json();
-      manifest.relayLiveMatches = Array.isArray(rows) ? rows.length : 0;
+      manifest.relayLiveMatchesAllTiers = Array.isArray(rows) ? rows.length : 0;
+      // COUNT WHAT THE PAGE IS SUPPOSED TO SHOW, not what the relay serves.
+      // The client renders majors, season finals, team cups and the ATP/WTA
+      // tour, and drops UTR and Challenger. Comparing the page against the
+      // unfiltered relay count would report FAIL every time only lower-tier
+      // tennis is being played — which is most hours — and a check that goes
+      // red on correct behaviour gets ignored, which is how the original
+      // three-month regression survived.
+      //
+      // This list is DUPLICATED from field.js on purpose and must be kept in
+      // step; smoke assertion A-TENNIS-7 fails if the two diverge.
+      const TIERS = new Set(['grand_slam', 'masters_1000', 'atp_1000', 'wta_1000',
+                             'atp_500', 'wta_500', 'atp_250', 'wta_250']);
+      const NAMED = /^(ATP Finals|WTA Finals|Next Gen Finals|United Cup|Davis Cup|Billie Jean King Cup( Group I)?)$/;
+      const allowed = (m) => TIERS.has(m?.tournament?.category) || NAMED.test(m?.tournament?.name || '');
+      manifest.relayLiveMatches = Array.isArray(rows) ? rows.filter(allowed).length : 0;
+      manifest.tiersSeen = Array.isArray(rows)
+        ? [...new Set(rows.map((m) => m?.tournament?.category ?? '(absent)'))].sort()
+        : [];
     }
   } catch (e) {
     manifest.relayReachable = false;
@@ -145,7 +164,9 @@ const stamp = TS.replace(/[:.]/g, '-');
     // No tennis is being played. An empty page is correct, and saying it PASSED
     // would let a permanently broken page report green every night.
     manifest.verdict = 'NO PLAY';
-    manifest.reason = 'relay reports zero live matches — nothing to render, nothing proven';
+    manifest.reason = `relay reports ${manifest.relayLiveMatchesAllTiers} live match(es) but `
+      + `0 in a tier FIELD shows (${(manifest.tiersSeen || []).join(', ') || 'none'})`
+      + ' — nothing to render, nothing proven';
   } else if (manifest.tennisCardCount === 0) {
     manifest.verdict = 'FAIL';
     manifest.reason = `relay reports ${manifest.relayLiveMatches} live match(es), page renders `

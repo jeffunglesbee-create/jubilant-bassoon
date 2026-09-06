@@ -7422,6 +7422,27 @@ assert('A-TENNIS-6 — the opponent is inside home, since away is discarded for 
   /home: matchup,/.test(html),
   'passing the opponent as `away` loses it entirely on an INDIVIDUAL_SPORTS card');
 
+// Tennis is limited to majors, the season finals, the team cups and the ATP/WTA
+// tour. Measured 2026-09-06 across all 636 tournaments on BSD's tennis surface:
+// this keeps 214 and drops 422, of which 301 are UTR and 117 Challenger.
+assert('A-TENNIS-7 — tennis is limited to majors, team cups and the ATP/WTA tour',
+  /const TENNIS_TIERS = new Set\(\[/.test(html) &&
+  html.includes("'grand_slam', 'masters_1000', 'atp_1000', 'wta_1000'") &&
+  /TENNIS_NAMED = \/\^\(ATP Finals\|WTA Finals\|Next Gen Finals\|United Cup\|Davis Cup\|Billie Jean King Cup/.test(html),
+  'the allow-list must name the tiers and the team events explicitly');
+
+// `other` cannot be allowed or denied wholesale — it holds the ATP/WTA Finals
+// and the team cups alongside two Australian Open wildcard playoffs and two
+// Winston-Salem satellite entries.
+assert('A-TENNIS-8 — an unrecognised tier is dropped, never defaulted in',
+  /const cat = m\?\.tournament\?\.category;\s*\n\s*if \(cat && TENNIS_TIERS\.has\(cat\)\) return true;/.test(html) &&
+  /return TENNIS_NAMED\.test\(m\?\.tournament\?\.name \|\| ''\);/.test(html),
+  'a new vendor tier must not reach the page because nobody updated a deny list');
+
+assert('A-TENNIS-9 — the filter runs before the mapping, not after',
+  /const rows = all\.filter\(_tennisTierAllowed\);/.test(html),
+  'filtering after mapping wastes work and invites a half-filtered path');
+
 assert('A-TENNIS-4 — the ATP injector cannot overwrite a BSD-sourced scoreline',
   /if\(game\._bsdTennis\) return;/.test(html),
   'injectATPScores must skip games that already carry BSD set data');

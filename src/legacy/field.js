@@ -9596,13 +9596,56 @@ function buildCFLStaticFallback() {
 // not a score a set can end on.
 //
 // Rule 60: consumed as the relay serves it. No field is renamed here.
+// Which tennis FIELD shows: majors, the season finals, the team cups, and the
+// ATP/WTA tour. Nothing below that.
+//
+// MEASURED, not asserted. The 2026-09-06 competition census read all 636
+// tournaments on BSD's tennis surface with the vendor's own `category` field:
+//
+//   301 utr          97 wta_250      25 grand_slam     16 atp_500
+//   117 challenger   31 atp_250      17 wta_500        11 wta_1000
+//                                    11 other          10 masters_1000
+//
+// This allow-list keeps 214 and drops 422. UTR and Challenger are the whole of
+// the drop bar four entries in `other` — two Australian Open wildcard playoffs
+// and two Winston-Salem M01/W01 — which are qualifying and satellite events.
+//
+// `other` is a mixed bag and cannot be allowed or denied wholesale: it holds
+// the ATP and WTA Finals, Next Gen Finals, United Cup, Davis Cup and Billie
+// Jean King Cup alongside those four. So the team events and season finals are
+// named, and the rest of `other` falls through.
+//
+// A category this list has never seen is DROPPED, not kept. A new tier arriving
+// from the vendor should not appear on the page because nobody updated a deny
+// list — the census diff is what surfaces it, and adding it here is a decision
+// someone makes on purpose.
+const TENNIS_TIERS = new Set([
+  'grand_slam', 'masters_1000', 'atp_1000', 'wta_1000',
+  'atp_500', 'wta_500', 'atp_250', 'wta_250',
+]);
+const TENNIS_NAMED = /^(ATP Finals|WTA Finals|Next Gen Finals|United Cup|Davis Cup|Billie Jean King Cup( Group I)?)$/;
+
+/// True when a BSD tennis match belongs to a competition FIELD shows.
+function _tennisTierAllowed(m){
+  const cat = m?.tournament?.category;
+  if (cat && TENNIS_TIERS.has(cat)) return true;
+  return TENNIS_NAMED.test(m?.tournament?.name || '');
+}
+
 async function fetchTennisLive(){
   try{
     const r = await fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/live`,
                           {signal:AbortSignal.timeout(5000)});
     if(!r.ok) return [];
-    const rows = await r.json();
-    if(!Array.isArray(rows) || !rows.length) return [];
+    const all = await r.json();
+    if(!Array.isArray(all) || !all.length) return [];
+    // Tier filter FIRST, so nothing below the bar is even mapped. Measured
+    // 2026-09-06: the eight live matches at 05:55 were three Challenger
+    // (Phan Thiet 3, Vietnam) and five UTR (PTT Miami), so this legitimately
+    // renders zero cards at that hour. An empty tennis section is the correct
+    // output when only lower-tier tennis is being played.
+    const rows = all.filter(_tennisTierAllowed);
+    if(!rows.length) return [];
 
     const games = rows.map(m => {
       const detail = Array.isArray(m.sets_detail) ? m.sets_detail : [];
@@ -22553,7 +22596,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-06a';
+  const SW_VERSION = '2026-09-06b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
