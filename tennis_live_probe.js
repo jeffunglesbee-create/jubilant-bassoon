@@ -30,7 +30,7 @@ const stamp = TS.replace(/[:.]/g, '-');
   const manifest = {
     ts: TS, fieldUrl: FIELD_URL, relay: RELAY,
     relayReachable: null, relayLiveMatches: null,
-    relayLiveMatchesAllTiers: null, tiersSeen: null,
+    relayLiveMatchesAllTiers: null, tiersSeen: null, startedCards: null,
     dayFeedCount: null, dayFeedTruncated: null, expectedTournaments: null,
     pageLoaded: null, tennisSectionPresent: null, tennisCardCount: null,
     cardsWithSetScore: null, cardsWithOpponent: null,
@@ -171,7 +171,21 @@ const stamp = TS.replace(/[:.]/g, '-');
       // whether the check could see it at all. A card with no chip element has
       // no score, which is the honest reading.
       const chipOf = (c) => txt(c.querySelector('.leader-chip'));
-      const noScore = cards.filter((c) => !SCORE.test(chipOf(c)));
+      // A SCHEDULED MATCH HAS NO SCORE, and that is not a shortfall.
+      //
+      // The 15:32 run passed and its reason still read "no score chip on:
+      // A. Sabalenka v T. Townsend, T. Paul v C. Alcaraz, D. Medvedev v
+      // F. Tiafoe..." — eight of today's upcoming US Open matches, every one
+      // rendering exactly right. `pre` state, empty sets_detail, empty chip.
+      //
+      // Third time this session that a value whose expected reading is empty
+      // has been printed as though it were a finding: field-laboratory's
+      // separation-check boundary-0, the relay's average-positions {}, and now
+      // this. A card that has not started is excluded from the denominator
+      // rather than annotated after the fact.
+      const started = (c) => !/\bpre\b/.test(c.className) && !/^\s*$/.test(chipOf(c));
+      const scored = cards.filter(started);
+      const noScore = scored.filter((c) => !SCORE.test(chipOf(c)));
       const noOpp = cards.filter((c) => !OPPONENT.test(txt(c)));
       const name = (c) => (c.getAttribute('data-home') || txt(c).slice(0, 60) || '(unnamed)');
       // The league badge carries `${tournament}${round}${surface}`, so the
@@ -182,7 +196,9 @@ const stamp = TS.replace(/[:.]/g, '-');
         present: Boolean(sec),
         cards: cards.length,
         renderedTournaments: [...new Set(cards.map(leagueOf).filter(Boolean))].sort(),
-        withScore: cards.length - noScore.length,
+        // Out of the cards that HAVE started, not out of every card.
+        startedCards: scored.length,
+        withScore: scored.length - noScore.length,
         withOpponent: cards.length - noOpp.length,
         // The actual identities, plus their raw text, so a disagreement between
         // this and a screenshot is settleable rather than a puzzle.
@@ -198,6 +214,7 @@ const stamp = TS.replace(/[:.]/g, '-');
     });
     manifest.tennisSectionPresent = counts.present;
     manifest.tennisCardCount = counts.cards;
+    manifest.startedCards = counts.startedCards;
     manifest.cardsWithSetScore = counts.withScore;
     manifest.cardsWithOpponent = counts.withOpponent;
     manifest.renderedTournaments = counts.renderedTournaments;
@@ -240,7 +257,8 @@ const stamp = TS.replace(/[:.]/g, '-');
       + `0 tennis cards — this is the 2026-06..09 regression`
       + `; page made ${calls.length} /bsd/tennis/ call(s)${calls.length ? ': ' + calls.join(' | ') : ''}`
       + ((manifest.consoleErrors || []).length ? `; console: ${manifest.consoleErrors[0]}` : '');
-  } else if (manifest.cardsWithSetScore === 0 || manifest.cardsWithOpponent === 0) {
+  } else if (manifest.startedCards > 0 && manifest.cardsWithSetScore === 0
+             || manifest.cardsWithOpponent === 0) {
     // A card is not a result. The first run of this probe passed on seven cards
     // that each showed one player's name and nothing else — no opponent, no set
     // score — because it counted cards rather than reading them. Rendering an
@@ -267,7 +285,9 @@ const stamp = TS.replace(/[:.]/g, '-');
     manifest.verdict = 'PASS';
     const short = (manifest.cardsMissingScore || []).map((c) => c.home);
     manifest.reason = `relay ${manifest.relayLiveMatches} live, page ${manifest.tennisCardCount} card(s), `
-      + `${manifest.cardsWithSetScore} with a set score, ${manifest.cardsWithOpponent} with an opponent`
+      + `${manifest.cardsWithSetScore} of ${manifest.startedCards} STARTED with a set score`
+      + ` (${manifest.tennisCardCount - manifest.startedCards} not yet under way, correctly chipless)`
+      + `, ${manifest.cardsWithOpponent} with an opponent`
       // A partial PASS states WHICH card fell short in the same breath as the
       // verdict (Rule 91). "6 of 7" with no name is a puzzle, not a result.
       + (short.length ? ` — no score chip on: ${short.join(', ')}` : '')
