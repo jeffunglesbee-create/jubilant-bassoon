@@ -1,0 +1,45 @@
+URL: https://field-relay-nba.jeffunglesbee.workers.dev/live/ambient  [20260906T172613Z]
+maxtime=10s accept=text/event-stream
+=== HEAD (not what a browser sends) ===
+HTTP/2 404 
+date: Sun, 06 Sep 2026 17:26:13 GMT
+content-type: text/plain;charset=UTF-8
+access-control-expose-headers: X-FIELD-Route, X-FIELD-Source, X-FIELD-Kind, X-FIELD-Served-At, X-FIELD-Manifest, X-FIELD-Data-Written-At, X-FIELD-Data-Age-Seconds
+x-field-kind: durable-object
+x-field-manifest: 2026-09-06T15:20:08.903Z
+x-field-route: /live/ambient
+x-field-served-at: 2026-09-06T17:26:13.521Z
+x-field-source: do:AMBIENT_DO
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=y1EVA6xLQIfpmC6OW4UVQVCqcfUDWuUcAUzDnNJst0N%2BcJiflbau%2FhKuJHw%2BSj3%2BFVm4%2FkOlzrqbww4Pelv9ygqupQnoDNxIcvpOKio5IMLbn%2B7z2W%2FP%2B5cSPuZZ4wNst%2F8d2POk2EHKvTr0yCbd9dv0tYvlSfzSqsKO8Q%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a36f2d6d6c378c16-LAX
+alt-svc: h3=":443"; ma=86400
+
+
+=== GET headers (what a browser actually receives) ===
+HTTP/2 200 
+date: Sun, 06 Sep 2026 17:26:13 GMT
+content-type: text/event-stream
+access-control-allow-origin: *
+cache-control: no-cache, no-store
+access-control-expose-headers: X-FIELD-Route, X-FIELD-Source, X-FIELD-Kind, X-FIELD-Served-At, X-FIELD-Manifest, X-FIELD-Data-Written-At, X-FIELD-Data-Age-Seconds
+x-field-kind: durable-object
+x-field-manifest: 2026-09-06T15:20:08.903Z
+x-field-route: /live/ambient
+x-field-served-at: 2026-09-06T17:26:13.796Z
+x-field-source: do:AMBIENT_DO
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=vCwGZzmpMh0Nj8jrhglbjKjxG8CvB1uNu7P%2FP30GX0BQLynBolxW%2Bos%2B%2FrEun%2FeoHt%2BbNg8mYw%2BgSSiEe1t7sq%2BfeQfOxQhA8Lb9BnvRjI49skcrhpbHAoVTXXqq8HYRQHY0Hx%2FXOhhlpCiWXJ4UTeRIGNsLYxPeciaF%2FQ%3D%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a36f2d6f0fdcb8d4-LAX
+alt-svc: h3=":443"; ma=86400
+
+(curl exit 28 — timed out while still streaming; headers above are complete)
+
+=== ACAO present in the GET response? ===
+access-control-allow-origin: *
+
+=== BODY (first 500 chars) ===
+event: connected
+data: {"clientId":70,"liveGames":[{"gameId":"espn:401816006","sport":"mlb","home":"Washington Nationals","away":"Pittsburgh Pirates","homeScore":5,"awayScore":1,"homeAbbr":"WSH","awayAbbr":"PIT","bsdEventId":null,"period":4,"periodLabel":"T4","clock":"0:00","state":"live"},{"gameId":"espn:401816002","sport":"mlb","home":"Cincinnati Reds","away":"Baltimore Orioles","homeScore":0,"awayScore":1,"homeAbbr":"CIN","awayAbbr":"BAL","bsdEventId":null,"period":3,"periodLabel":"T3","clock
