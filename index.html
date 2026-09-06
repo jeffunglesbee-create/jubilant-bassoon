@@ -27662,7 +27662,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-06d';
+  const SW_VERSION = '2026-09-06e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -36938,10 +36938,22 @@ async function renderTennisBracket(){
   }
 
   // TWO HALVES, as the WC tree does: rounds run inward from both sides and the
-  // final sits in the middle. The last round is the final and is rendered
-  // once, in the centre; every earlier round is split down the middle.
-  const inner = rounds[rounds.length - 1];
-  const outer = rounds.slice(0, -1);
+  // final sits in the middle.
+  //
+  // THE CENTRE IS THE ROUND NAMED 'Final', NOT THE LAST ROUND PRESENT. The
+  // first version took rounds[length-1] and rendered it as a single centre
+  // card, which is right for a finished draw and wrong for every draw still
+  // being played. Caught by tennis_draw_probe on its second run: the relay
+  // shipped US Open Men 2026 as 64/32/16/8 with the Round of 16 last, the
+  // centre drew ONE of those eight matches, and the tree came out at 113 cards
+  // against the list's 120. Seven matches were missing from the bracket and
+  // the page looked complete.
+  //
+  // A draw with no Final round yet has no centre column at all, and the grid
+  // template below drops the 130px gutter to match — a centre gutter with
+  // nothing in it is a stripe down the middle of the page.
+  const inner = rounds.find(r => r.round === 'Final') || null;
+  const outer = inner ? rounds.filter(r => r !== inner) : rounds;
   const half = (r, side) => {
     const ns = (nodesByRound[r.round] || []).slice()
       .sort((a,b) => String(a.date||'').localeCompare(String(b.date||'')) || a.id - b.id);
@@ -36955,13 +36967,19 @@ async function renderTennisBracket(){
   const shortLabel = (x) => x.replace('Round of ', 'R')
     .replace('Quarterfinals','QF').replace('Semifinals','SF');
   const cols = outer.length;
-  const template = `repeat(${cols},1fr) 130px repeat(${cols},1fr)`;
+  const template = inner
+    ? `repeat(${cols},1fr) 130px repeat(${cols},1fr)`
+    : `repeat(${cols},1fr) repeat(${cols},1fr)`;
+  const minW = cols * 2 * 100 + (inner ? 130 : 0);
 
-  const finalNode = (nodesByRound[inner.round] || [])[0] || null;
-  const centre = `<div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:0 4px">
+  const finalNode = inner ? ((nodesByRound[inner.round] || [])[0] || null) : null;
+  const centre = !inner ? '' :
+    `<div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:0 4px">
       <div class="wct-champion-label">${_tdtEsc(inner.round)}</div>
       ${finalNode ? tdtMatch(finalNode, 'wct-champion') : '<div class="wct-match wct-champion"><div class="wct-team"><span class="wct-name" style="color:var(--smoke);font-style:italic">TBD</span></div></div>'}
     </div>`;
+  // The centre column's own heading slot. Present only when the centre is.
+  const centreHead = inner ? '<div class="wct-col-head"></div>' : '';
 
   // Anomalies on the page, not only in the response. Five of the six real slam
   // editions read on 2026-09-06 are off canonical size somewhere — 65 or 66
@@ -36979,12 +36997,12 @@ async function renderTennisBracket(){
     : '';
 
   const treeHTML = `<div class="tennis-draw-tree">
-    <div style="display:grid;grid-template-columns:${template};text-align:center;min-width:${cols*2*100+130}px;margin-bottom:.3rem">
+    <div style="display:grid;grid-template-columns:${template};text-align:center;min-width:${minW}px;margin-bottom:.3rem">
       ${outer.map(r => `<div class="wct-col-head">${_tdtEsc(shortLabel(r.round))}</div>`).join('')}
-      <div class="wct-col-head"></div>
+      ${centreHead}
       ${outer.slice().reverse().map(r => `<div class="wct-col-head">${_tdtEsc(shortLabel(r.round))}</div>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:${template};min-width:${cols*2*100+130}px;align-items:center;gap:2px 0;padding:0 2px">
+    <div style="display:grid;grid-template-columns:${template};min-width:${minW}px;align-items:center;gap:2px 0;padding:0 2px">
       ${outer.map(r => colHTML(r, 'left')).join('')}
       ${centre}
       ${outer.slice().reverse().map(r => colHTML(r, 'right')).join('')}

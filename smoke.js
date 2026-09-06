@@ -7543,6 +7543,21 @@ assert('A-TDRAW-11 — the Draw tab is hidden until there is a draw to show',
   /function _tennisRevealDrawNav\(rows\)\{/.test(html),
   'a tab that opens onto "nothing is playing" is chrome, not a feature');
 
+assert('A-TDRAW-13 — the centre column is the round NAMED Final, not the last one present',
+  // The first version took rounds[length-1]. Right for a finished draw, wrong
+  // for every draw still being played. tennis_draw_probe caught it live: the
+  // relay shipped US Open Men 2026 as 64/32/16/8 with Round of 16 last, the
+  // centre drew ONE of those eight, and the tree came out 113 cards against
+  // the list's 120. Seven matches missing, and the page looked complete.
+  /const inner = rounds\.find\(r => r\.round === 'Final'\) \|\| null;/.test(html) &&
+  /const outer = inner \? rounds\.filter\(r => r !== inner\) : rounds;/.test(html),
+  'a draw in progress has no final, and its last round is a full round of matches');
+
+assert('A-TDRAW-14 — with no final there is no centre gutter either',
+  // A 130px centre column with nothing in it is a stripe down the page.
+  /repeat\(\$\{cols\},1fr\) 130px repeat\(\$\{cols\},1fr\)`\s*\n\s*: `repeat\(\$\{cols\},1fr\) repeat\(\$\{cols\},1fr\)`/.test(html),
+  'the grid template must drop the gutter when the centre column is absent');
+
 assert('A-TDRAW-12 — the section and its render target exist in the markup',
   /id="tennis-section"/.test(html) && /id="tennis-draw"/.test(html) &&
   /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
