@@ -1,0 +1,89 @@
+name: Tennis Draw Probe
+
+# Does the deployed page DRAW the draw?
+#
+# smoke.js carries twelve A-TDRAW rows and four of them are mutation-proved.
+# Every one is a claim about the file. None can tell you whether the tab opens,
+# the grid lays out, or the columns hold the players the relay shipped — and on
+# 2026-09-06 four tennis smoke assertions passed while the page rendered no
+# tennis at all, because no section was ever created. Structure and integration
+# are different claims (Rule 61, Rule 90's visual/rendering corollary).
+#
+# THE COMPARISON IS THE VERDICT. The probe asks the relay for the draw and the
+# page for what it drew, and fails when the two disagree. Neither number alone
+# means anything: an empty bracket is correct in December.
+#
+# Twice daily, offset from tennis-live-probe so the two do not contend for the
+# same runner minute. 15:20 UTC is mid-afternoon in Europe, 00:20 UTC is the US
+# evening — at least one lands during play at a slam.
+
+on:
+  schedule:
+    - cron: '20 15 * * *'
+    - cron: '20 0 * * *'
+  push:
+    paths: ['outbox/.trigger-tennis-draw-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tennis-draw-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Probe the deployed draw against the relay
+        id: probe
+        continue-on-error: true
+        run: node tennis_draw_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      # Committed BEFORE the job is allowed to fail. A FAIL verdict and the
+      # screenshot behind it are the most valuable things this produces.
+      - name: Commit the reading
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Tennis Draw Probe"
+          git add outbox/tennis-draw-probe-*.json outbox/tennis-draw-probe-*.png || true
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "probe: the tennis draw renders what the relay assembled [skip ci]"
+          for i in 1 2 3 4; do
+            git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0
+            sleep $((2**i))
+          done
+          exit 1
+
+      - name: Surface a FAIL verdict as a red job
+        if: always()
+        run: |
+          V=$(node -e "console.log(JSON.parse(require('fs').readFileSync('outbox/tennis-draw-probe-latest.json','utf8')).verdict)")
+          R=$(node -e "console.log(JSON.parse(require('fs').readFileSync('outbox/tennis-draw-probe-latest.json','utf8')).reason)")
+          echo "verdict: $V — $R"
+          # NO DRAW and UNKNOWN are honest non-results. Failing on them would
+          # train everyone to ignore this workflow, which is how the original
+          # three-month tennis regression survived.
+          [ "$V" = "FAIL" ] && exit 1 || exit 0
