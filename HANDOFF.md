@@ -1,5 +1,65 @@
 # FIELD HANDOFF
 
+## Session 2026-09-06 — A515 asserted a deploy rule from a file that cannot know a deploy is happening
+
+HEAD `126d0289` → `fcd965fa`. Smoke **1001 passed, 0 failed** — up from 1000/1,
+and the count is unchanged because A515 is still one assertion, now asserting
+something smoke can decide. SW_VERSION `2026-09-04f`, deliberately untouched.
+
+**This corrects the entry below it.** That entry says "Smoke 1000/1, and the one
+failure is A515 by design". The failure was real and the design was wrong.
+
+### What A515 was doing
+
+It asserted "SW_VERSION starts with today's ET date" inside `smoke.js`, which
+runs on every commit and cannot know whether a deploy is happening. Two
+consequences, both bad:
+
+**Off the deploy path it failed for the passage of time.** Rule 3 here is "smoke
+must pass before push", so every non-deploy commit had to bypass the hook. One
+in the previous session already did, with the reason written into its own commit
+message: bumping SW_VERSION on a docs commit would be a **false deploy signal**,
+since the constant exists to bust the shell cache.
+
+**On the deploy path it asserted something already guaranteed.**
+`deploy-gate.yml`'s A190 step seds SW_VERSION to today's ET date across `sw.js`,
+`src/legacy/field.js` and `index.html`, commits it back, and only *then* runs
+smoke. A515 could only ever agree with a value written moments earlier by the
+same job.
+
+### Where the date rule lives now
+
+`deploy-gate.yml`, which only runs when a deploy path changed — so the deploy is
+by definition today, and the question is answerable. Matcher proven against real
+values before shipping:
+
+```
+accept  2026-09-05      accept  2026-09-05f
+REJECT  2026-09-04f     REJECT  2026-9-05     REJECT  (empty)
+```
+
+**It also closes a gap the sync step had.** That step seds three files and echoes
+a tick mark. `sed` exits 0 when its pattern matches nothing, so a renamed
+constant or changed quoting would have printed "✅ SW_VERSION synced" while
+changing nothing — and once A515 stopped being the thing that noticed, nothing
+else would have. The new step reads `index.html`, which is what actually ships,
+and names the likely cause on failure.
+
+### What stays in smoke
+
+The half it can decide: the FORM. `YYYY-MM-DD` plus an optional lowercase
+revision letter, with a real-date check so `2026-13-45` does not pass a pattern
+it fits. A190 separately asserts `sw.js` and `index.html` agree, so this is not
+that check either.
+
+### Deploy-path state
+
+No client deploy this session. Last deploy-path commit remains `e698fdd0`
+(2026-09-04), which is why `2026-09-04f` is correct rather than stale — and is
+exactly what the moved assertion now compares against.
+
+---
+
 ## Session 2026-09-05 — the relay now says where everything came from (cross-repo)
 
 HEAD `126d0289` — **no client commits this session.** Smoke **1000/1**, and the
