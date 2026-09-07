@@ -43,6 +43,7 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     // How long the page took to put something on screen, and whether it ever
     // did. A slow render and an empty one are different findings.
     renderWaitMs: null, renderTimedOut: null, relayFetchMs: null,
+    setupOverlayDismissed: null, firstCardVisible: null, firstCardCoveredBy: null,
     verdict: null, reason: null,
   };
 
@@ -107,6 +108,30 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
 
     await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     m.pageLoaded = true;
+
+    // DISMISS THE FIRST-VISIT MODAL BEFORE ANYTHING IS LOOKED AT.
+    //
+    // `#setup-overlay` — "My Services — personalise your stream access" — opens
+    // on a browser with no localStorage, which every run of this probe is. It
+    // covers the page.
+    //
+    // The DOM counts below were never affected: page.evaluate reads through an
+    // overlay. THE SCREENSHOT WAS. Every PASS this probe has committed carries
+    // a picture of the setup modal rather than the draw, so the one artifact
+    // that shows what a reader sees has never once shown it — and under this
+    // project's own rule the screenshot IS the artifact.
+    //
+    // Clicked rather than hidden with CSS: hiding it would prove the draw
+    // renders under an overlay nobody dismissed, which is not the state a
+    // reader is ever in.
+    m.setupOverlayDismissed = await page.evaluate(() => {
+      const ov = document.getElementById('setup-overlay');
+      if (!ov || ov.style.display === 'none') return 'not shown';
+      const skip = document.getElementById('setup-skip');
+      if (skip) { skip.click(); return 'clicked skip'; }
+      return 'present, no skip control';
+    });
+    await page.waitForTimeout(500);
     // The nav link is revealed by the tennis fetch, which runs in the boot
     // chain. Waiting on the LINK rather than a fixed sleep — a sleep that is
     // too short reports a working page as broken.
@@ -147,7 +172,29 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     const read = await page.evaluate(() => {
       const sec = document.getElementById('tennis-section');
       const host = document.getElementById('tennis-draw');
+      // IS THE FIRST MATCH CARD ACTUALLY ON SCREEN AND ON TOP?
+      //
+      // Counting nodes proves they exist. It does not prove a reader can see
+      // them, and this probe has committed screenshots of a modal covering the
+      // draw while reporting PASS on the counts. elementFromPoint answers the
+      // question the counts cannot: what is painted at that pixel.
+      const first = host && host.querySelector('.tennis-draw-tree .wct-match');
+      let visible = null, covering = null;
+      if (first) {
+        const r = first.getBoundingClientRect();
+        const onScreen = r.width > 0 && r.height > 0
+                      && r.top < window.innerHeight && r.bottom > 0
+                      && r.left < window.innerWidth && r.right > 0;
+        if (!onScreen) visible = false;
+        else {
+          const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          visible = !!hit && (first === hit || first.contains(hit) || hit.contains(first));
+          if (!visible && hit) covering = hit.id || hit.className || hit.tagName;
+        }
+      }
       return {
+        firstCardVisible: visible,
+        firstCardCoveredBy: covering,
         sectionVisible: !!sec && !sec.hasAttribute('hidden'),
         treeMatchCards: host ? host.querySelectorAll('.tennis-draw-tree .wct-match').length : 0,
         listMatchRows: host ? host.querySelectorAll('.tennis-draw-list .tdl-match').length : 0,
@@ -159,6 +206,8 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
       };
     });
     m.sectionVisible = read.sectionVisible;
+    m.firstCardVisible = read.firstCardVisible;
+    m.firstCardCoveredBy = read.firstCardCoveredBy;
     m.treeMatchCards = read.treeMatchCards;
     m.listMatchRows = read.listMatchRows;
     m.columnHeads = read.columnHeads;
@@ -198,6 +247,11 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
         .replace('Quarterfinals', 'QF').replace('Semifinals', 'SF')) || r.round === 'Final');
     const champOk = m.relayChampion == null || m.championOnPage === true;
     if (!m.sectionVisible) { m.verdict = 'FAIL'; m.reason = 'the Draw tab opened onto a hidden section'; }
+    else if (m.firstCardVisible === false) {
+      m.verdict = 'FAIL';
+      m.reason = `the draw rendered but nothing can be seen: the first match card is`
+               + ` off screen or covered by ${m.firstCardCoveredBy || 'something'}`;
+    }
     else if (m.renderTimedOut && m.treeMatchCards === 0 && m.listMatchRows === 0) {
       // Still spinning after 30s, with the relay answering in relayFetchMs. That
       // is a latency finding, not an empty bracket, and calling it FAIL would
