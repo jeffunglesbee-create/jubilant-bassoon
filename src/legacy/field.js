@@ -22648,7 +22648,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-06f';
+  const SW_VERSION = '2026-09-07a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -31967,11 +31967,27 @@ async function renderTennisBracket(){
   // The centre column's own heading slot. Present only when the centre is.
   const centreHead = inner ? '<div class="wct-col-head"></div>' : '';
 
-  // Anomalies on the page, not only in the response. Five of the six real slam
-  // editions read on 2026-09-06 are off canonical size somewhere — 65 or 66
-  // first-round rows where 64 exist, and US Open Men 2025 serves 31
-  // second-round matches where 32 do. A tree drawn from those rows is correct
-  // and does not add up, and a reader who counts is owed the reason.
+  // Anomalies on the page, not only in the response.
+  //
+  // AN EARLIER VERSION OF THIS COMMENT WAS WRONG TWICE, and both corrections
+  // are the reason the line exists at all. It said five of six slam editions
+  // were off canonical size, citing 65 and 66 first-round rows where 64 exist.
+  //
+  //   Those 65s and 66s were WITHDRAWALS. Measured across five editions: six
+  //   players in two first-round rows each, every one of them a cancelled
+  //   fixture beside its finished replacement, none with two live rows. The
+  //   relay excludes them and every edition reads 127 matches.
+  //
+  //   And a first round has no canonical size to be off. A Masters 1000 is a
+  //   96 draw, so 32 players get a bye and its entry round holds 32 matches
+  //   where a 128 ladder says 64. Nine of the ten masters_1000 ids were
+  //   flagged on that round with not one match missing.
+  //
+  // What remains is real and rarer: an INNER round short of its size, which is
+  // a match the vendor does not have. US Open Men 2025 serves 31 second-round
+  // matches where 32 belong; Toronto 2025 serves 15 third-round matches where
+  // 16 do. A tree drawn from those rows is correct and does not add up, and a
+  // reader who counts is owed the reason.
   const anomalyHTML = (d.anomalies || []).length
     ? `<p class="tdt-anomaly">${(d.anomalies || []).map(a =>
         a.kind === 'roundNotAtCanonicalSize'
