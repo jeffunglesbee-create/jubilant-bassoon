@@ -32093,7 +32093,7 @@ async function renderTennisBracket(){
       ${centreHead}
       ${outer.slice().reverse().map(r => `<div class="wct-col-head">${_tdtEsc(shortLabel(r.round))}</div>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:${template};min-width:${minW}px;align-items:center;gap:2px 0;padding:0 2px">
+    <div style="display:grid;grid-template-columns:${template};min-width:${minW}px;align-items:start;gap:2px 0;padding:0 2px">
       ${outer.map(r => colHTML(r, 'left')).join('')}
       ${centre}
       ${outer.slice().reverse().map(r => colHTML(r, 'right')).join('')}

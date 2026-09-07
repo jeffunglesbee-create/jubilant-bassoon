@@ -7571,6 +7571,26 @@ assert('A-TENNIS-13 — the hardcoded Italian Open window is gone',
   !/home:"WTA\/ATP Field"/.test(html),
   'a composed placeholder is not a fact, and fetchTennisLive serves the real thing');
 
+assert('A-TDRAW-19 — the tennis rounds are top-aligned, and only the tennis ones',
+  // .wct-round is height:100% + space-around, which puts the Final — one card
+  // — in the vertical middle of a 2099px tree with ~1000px of nothing either
+  // side. Measured on the deployed page: tree 1440x2099, page 4367.
+  //
+  // The scoping half is the part that matters. renderWCBracketTree emits
+  // .wct-round too, so an unscoped rule would restyle the World Cup bracket
+  // from a commit about tennis.
+  /\.tennis-draw-tree \.wct-round\{\s*height:auto;\s*justify-content:flex-start;\s*\}/.test(html) &&
+  !/^\.wct-round\{[^}]*justify-content:flex-start/m.test(html),
+  'an unscoped .wct-round rule would silently restyle the World Cup bracket');
+
+assert('A-TDRAW-20 — the tennis grid starts its columns at the top',
+  // align-items:center on the grid would re-centre every column even with the
+  // rounds themselves top-aligned. The WC grid keeps center; only this one
+  // changes.
+  /grid-template-columns:\$\{template\};min-width:\$\{minW\}px;align-items:start/.test(html) &&
+  /repeat\(4,1fr\) 120px repeat\(4,1fr\);min-width:900px;align-items:center/.test(html),
+  'the World Cup grid must keep align-items:center — it is a different shape');
+
 assert('A-TDRAW-16 — the four team events with a knockout can reach the tab',
   // All seven named events sit in category `other`, which has no rank, so
   // until this list existed the loop skipped every one of them. That was right

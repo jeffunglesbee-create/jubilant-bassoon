@@ -3128,6 +3128,28 @@ body.stats-mode .main{margin-right:0 !important}
 .tdl-winner{font-weight:700;color:var(--platinum)}
 .tdl-loser{color:var(--smoke)}
 
+/* TOP-ALIGNED ROUNDS.
+   `.wct-round` is `height:100%` with `justify-content:space-around`, which
+   spreads a round's cards down the full height of the grid row. For the World
+   Cup that is four columns of similar size and it reads fine. For a 128 draw it
+   puts the Final — one card — in the vertical middle of a 2099px tree, with
+   roughly a thousand pixels of nothing above and below it. Measured on the
+   deployed page 2026-09-07: tree 1440x2099, page 4367.
+
+   Nothing structural is lost. There are no connector lines in this tree (the
+   `.wct-*` block above declares a heading for them and no rules), so a card's
+   vertical position never encoded which two matches feed it — `space-around`
+   spreads evenly, it does not align a match to its feeders.
+
+   SCOPED TO `.tennis-draw-tree`. `.wct-round` is emitted by
+   renderWCBracketTree's buildRound and buildR32Round as well as by this tree,
+   and changing it unscoped would silently restyle the World Cup bracket from a
+   commit about tennis. */
+.tennis-draw-tree .wct-round{
+  height:auto;
+  justify-content:flex-start;
+}
+
 /* A match whose winner is known reads differently from one still to be played.
    Weight and colour only — no badge, no icon, nothing that needs a legend. */
 .wct-team.tdt-won .wct-name{font-weight:700;color:var(--platinum)}
@@ -37119,7 +37141,7 @@ async function renderTennisBracket(){
       ${centreHead}
       ${outer.slice().reverse().map(r => `<div class="wct-col-head">${_tdtEsc(shortLabel(r.round))}</div>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:${template};min-width:${minW}px;align-items:center;gap:2px 0;padding:0 2px">
+    <div style="display:grid;grid-template-columns:${template};min-width:${minW}px;align-items:start;gap:2px 0;padding:0 2px">
       ${outer.map(r => colHTML(r, 'left')).join('')}
       ${centre}
       ${outer.slice().reverse().map(r => colHTML(r, 'right')).join('')}
