@@ -7543,6 +7543,34 @@ assert('A-TDRAW-11 — the Draw tab is hidden until there is a draw to show',
   /function _tennisRevealDrawNav\(rows\)\{/.test(html),
   'a tab that opens onto "nothing is playing" is chrome, not a feature');
 
+assert('A-TDRAW-19 — the scoreline is read winner-first, not p1-first',
+  // A 3-6 2-6 win for player 2 must print 6-3 6-2. Printing the raw p1/p2
+  // order would show the winner of a match losing every set in it.
+  /const winnerIsP1 = n\.p1 && n\.p1\.id === n\.winnerId;/.test(html) &&
+  /const a = winnerIsP1 \? st\.p1 : st\.p2;/.test(html) &&
+  /const b = winnerIsP1 \? st\.p2 : st\.p1;/.test(html),
+  'relay `sets` are p1/p2 in row order and carry no winner orientation');
+
+assert('A-TDRAW-20 — the tiebreak prints the LOSER of the breaker, as a draw sheet does',
+  // 7-6(4), not 7-6(7) and not 7-6(4-7). Measured shape: tiebreak is an
+  // optional two-element array on a set, [4,7] on a 6-7.
+  /Math\.min\(st\.tiebreak\[0\], st\.tiebreak\[1\]\)/.test(html),
+  'printing the winner of the breaker states the wrong number in the right place');
+
+assert('A-TDRAW-21 — the narrow-viewport list carries the score too',
+  // Without it the sub-1180px view is a list of names, and the relay has been
+  // serving sets all along with nothing reading them.
+  /class="tdl-score"/.test(html) && /\.tdl-score\{/.test(html),
+  'the list is the only tennis draw view below 1180px');
+
+assert('A-TENNIS-13 — the hardcoded Italian Open window is gone',
+  // It gated on two literal dates and emitted one card reading "WTA/ATP Field"
+  // with its round from a table keyed on day-of-month — no players, no scores.
+  // Dead since 17 May, and the second stale tennis window this file carried.
+  !/romeStart|ROME_ROUNDS/.test(html) &&
+  !/home:"WTA\/ATP Field"/.test(html),
+  'a composed placeholder is not a fact, and fetchTennisLive serves the real thing');
+
 assert('A-TDRAW-16 — the four team events with a knockout can reach the tab',
   // All seven named events sit in category `other`, which has no rank, so
   // until this list existed the loop skipped every one of them. That was right

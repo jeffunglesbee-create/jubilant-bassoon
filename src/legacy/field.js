@@ -8899,21 +8899,21 @@ function buildTodaySchedule(){
     // Colorado Rapids (MDT, 7:30 PM = 01:30 UTC) and D.C. United (EDT, 7:30 PM = 23:30 UTC) via ESPN
   ].filter(g=>isToday(g.start_time))
 
-  // ── Tennis: Italian Open Rome (May 6-17 2026) ──────────────────────────
-  const romeStart=new Date("2026-05-06T00:00:00Z"), romeEnd=new Date("2026-05-17T23:59:00Z");
-  const todayD=new Date(isoDate+"T12:00:00Z");
-  const tennisSections=[];
-  if(todayD>=romeStart&&todayD<=romeEnd){
-    const day=Math.round((todayD-romeStart)/86400000)+1;
-    const ROME_ROUNDS={6:"R128",7:"R128",8:"R64 — Top seeds enter",9:"R64",10:"R32",11:"ATP R32 · WTA R16",12:"ATP R16 · WTA QF",13:"ATP & WTA Quarter-finals",14:"ATP QF · WTA SF",15:"Semi-finals",16:"WTA Final",17:"ATP Final"};
-    const round=ROME_ROUNDS[todayD.getUTCDate()]||"Play";
-    tennisSections.push({sport:"Tennis",games:[{
-      home:"WTA/ATP Field",away:"",
-      league:`Italian Open 2026 — ${round} · Foro Italico, Rome`,
-      start_time:isoDate+"T09:00:00Z", confirmed:true, venue:"Foro Italico, Rome",
-      streams:resolveBundle("TENNIS_TC")
-    }]});
-  }
+  // ── Tennis ────────────────────────────────────────────────────────────
+  // DELETED 2026-09-07: a hardcoded Italian Open window, May 6-17 2026.
+  //
+  // It gated on two literal dates and, inside them, emitted ONE card reading
+  // "WTA/ATP Field" with its round read out of a table keyed on the day of the
+  // month — no players, no scores, no opponent. A composed placeholder rather
+  // than a fact, and dead since 17 May.
+  //
+  // It is also the second stale window this file carried: Roland Garros
+  // (May 24 - Jun 7) was the other, and between them tennis rendered nothing
+  // through an entire US Open while four smoke assertions passed.
+  //
+  // Real tennis now comes from `fetchTennisLive` — two live BSD feeds, tier
+  // filtered, with players, set scores and a state per match — and the draw
+  // from `renderTennisBracket`. Neither has a date in it.
 
   // ── Premier League Final Day Calculator ──────────────────────────────────────
   // Standings entering May 24 Final Day. Update pts/gd/gf values in daily update
@@ -9230,7 +9230,6 @@ function buildTodaySchedule(){
   if(iplGames.length)  sections.push({sport:"IPL",games:iplGames});
   if(wweGames.length)  sections.push({sport:"WWE/Pro Wrestling",games:wweGames});
   if(aflGames.length)  sections.push({sport:"Australian Football (AFL)",games:aflGames});
-  sections.push(...tennisSections);
   // All live-data soccer leagues — applyNarrativeContext before rendering
   // Fix: La Liga/Ligue 1/others previously had no narrative context → zero elimination boost
   applyNarrativeContext(eplGames);
@@ -31909,11 +31908,39 @@ function tdtPlayer(p, isWinner, decided){
   </div>`;
 }
 
+/// The scoreline, from the relay's `sets`, read from the WINNER's side.
+///
+/// SHAPE MEASURED, not assumed: every one of the 127 nodes in the captured
+/// Roland Garros draw carries `sets`, each entry is `{p1, p2}`, and `tiebreak`
+/// is an optional third key holding a two-element array — `[4,7]` on a 6-7 set.
+/// Present on some sets and absent on most, so it is read as optional.
+///
+/// Written winner-first, which is how a result is read aloud: a 3-6 2-6 win for
+/// player 2 prints `6-3 6-2`. Printing the raw p1/p2 order would show the
+/// champion of a match losing every set in it.
+///
+/// The tiebreak margin is the LOSER's points, in brackets, as a draw sheet
+/// prints it — `7-6(4)`, not `7-6(4-7)`.
+function tdtSets(n){
+  if (!Array.isArray(n.sets) || !n.sets.length || n.winnerId == null) return '';
+  const winnerIsP1 = n.p1 && n.p1.id === n.winnerId;
+  const parts = n.sets.map((st) => {
+    if (st == null || st.p1 == null || st.p2 == null) return null;
+    const a = winnerIsP1 ? st.p1 : st.p2;
+    const b = winnerIsP1 ? st.p2 : st.p1;
+    const tb = Array.isArray(st.tiebreak) && st.tiebreak.length === 2
+      ? `(${Math.min(st.tiebreak[0], st.tiebreak[1])})` : '';
+    return `${a}-${b}${tb}`;
+  }).filter(Boolean);
+  return parts.length ? `<div class="tdt-score">${_tdtEsc(parts.join(' '))}</div>` : '';
+}
+
 function tdtMatch(n, extraCls){
   const decided = n.winnerId != null;
   return `<div class="wct-match ${extraCls || ''}">
     ${tdtPlayer(n.p1, n.p1 && n.p1.id === n.winnerId, decided)}
     ${tdtPlayer(n.p2, n.p2 && n.p2.id === n.winnerId, decided)}
+    ${tdtSets(n)}
   </div>`;
 }
 
@@ -32085,11 +32112,15 @@ async function renderTennisBracket(){
         const decided = n.winnerId != null;
         const nm = (p) => p ? _tdtEsc(p.shortName || p.name) : 'TBD';
         const w = decided && n.p1 && n.p1.id === n.winnerId;
+        // The same scoreline the tree carries. Without it the narrow-viewport
+        // view is a list of names, and the relay has been serving the sets all
+        // along with nothing reading them.
+        const score = tdtSets(n).replace(/^<div class="tdt-score">|<\/div>$/g, '');
         return `<div class="tdl-match"><span class="tdl-players">`
           + `<span class="${decided ? (w ? 'tdl-winner' : 'tdl-loser') : ''}">${nm(n.p1)}</span>`
           + ` v `
           + `<span class="${decided ? (w ? 'tdl-loser' : 'tdl-winner') : ''}">${nm(n.p2)}</span>`
-          + `</span></div>`;
+          + `</span>${score ? `<span class="tdl-score">${score}</span>` : ''}</div>`;
       }).join('')}
     </div>`).join('')}
     ${anomalyHTML}
