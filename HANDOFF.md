@@ -3,11 +3,23 @@
 ## Session 2026-09-06/07 — the tennis draw: the WC bracket tree, generalised
 
 HEAD `af176071` → `8213c02b`. Smoke **1037 passed, 0 failed** — up from 1013.
-SW_VERSION `2026-09-06c` → **`2026-09-07a`** — set by `deploy-gate`'s A190 step,
-not by hand. Hand-bumps during this session were overwritten by it, which is the
-gate working: A190 seds the constant to today's ET date across `sw.js`,
-`src/legacy/field.js` and `index.html`, commits it back, and only then runs
-smoke. There is nothing for a commit to bump.
+SW_VERSION `2026-09-06c` → **`2026-09-07a`**.
+
+> **This paragraph has been wrong twice; here is what the history actually
+> shows.** A190 rewrites the DATE to today in **ET** and *preserves the suffix*
+> it finds in `sw.js`. So the suffix IS a commit's to bump — Rule 4 and the
+> Session Protocol are correct and were not the problem.
+>
+> The problem was mine: I bumped `2026-09-06f` → `2026-09-07a` **using the UTC
+> date** while ET was still 2026-09-06. A190 corrected it back to `2026-09-06a`
+> (`d79dcd7d`), then stamped `2026-09-07a` (`2d1b40ed`) once ET rolled over.
+> My later `b` and `c` bumps then failed to match, because the constant was no
+> longer the value I expected.
+>
+> A first version of this note claimed "there is nothing for a commit to bump."
+> That was a tidy story fitted to a `sed` that silently matched nothing, and it
+> would have taught the next session to stop bumping the suffix. Rule 4 already
+> says ET; the fix is to read it.
 Session doc: `outbox/cc-session-2026-09-06-tennis-bracket.md`
 
 ### What shipped
@@ -159,7 +171,8 @@ The probe now asserts what the counts cannot: the first card is on screen and
 painted on top (`elementFromPoint`), every in-viewport card is unobstructed, and
 the overlay state is named either way.
 
-Smoke **1037**, 0 failed. SW_VERSION is the gate's to set — see above.
+Smoke **1037**, 0 failed. SW_VERSION: the date is A190's, the suffix is the
+commit's, and both are ET — see the correction at the top.
 
 ---
 
