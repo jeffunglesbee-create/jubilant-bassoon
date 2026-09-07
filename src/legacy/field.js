@@ -31800,6 +31800,44 @@ const _TENNIS_DRAW_TIER_RANK = {
   grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1,
   atp_500: 2, wta_500: 2, atp_250: 3, wta_250: 3,
 };
+
+// TEAM EVENTS AND SEASON FINALS, which the category table cannot rank because
+// they all sit in `other` alongside wildcard playoffs and satellite events.
+//
+// Until this list existed, none of them could reach this tab at all: the loop
+// below read `rank == null` and skipped. That was right for three of the seven
+// and a silent loss for four, and nothing said which — a null-rank accident
+// reads exactly like a decision.
+//
+// The split is measured, not assumed. All seven were read from the deployed
+// draw route on 2026-09-06:
+//
+//   ADMITTED — a knockout the draw route renders
+//     209 ATP Finals 2025        SF=2 F=1        3 main-draw matches
+//       4 Next Gen Finals 2025   SF=2 F=1        3
+//     204 WTA Finals 2025        SF=2 F=1        3
+//     391 United Cup 2026        QF=4 SF=2 F=1   7
+//
+//   EXCLUDED — no main-draw round exists
+//     446 Davis Cup 2026              194 matches, every one outside the seven
+//     509 Billie Jean King Cup 2026    77 matches, likewise
+//     508 BJK Cup Group I 2026        130 matches, likewise
+//
+// The Cups are ties. A tie has no bracket, and rendering "no main-draw rounds
+// yet" over one would be the same false claim as calling a 96-draw's entry
+// round 32 missing matches.
+//
+// The round-robin group stage of the three Finals is also invisible here, and
+// correctly so: those 12-13 matches carry a BLANK round name, the relay counts
+// them under roundsOutsideMainDraw, and a round-robin is not a round. What
+// renders is the knockout the group stage feeds.
+const _TENNIS_DRAW_NAMED_RANK = {
+  'ATP Finals': 1, 'WTA Finals': 1, 'Next Gen Finals': 2, 'United Cup': 2,
+};
+// Named so the exclusion is a decision on the page rather than a gap in the
+// table above. If BSD ever serves a Davis Cup knockout under the seven-round
+// vocabulary, this line is what has to change, and it is findable.
+const _TENNIS_DRAW_NO_BRACKET = /^(Davis Cup|Billie Jean King Cup( Group I)?)$/;
 function _tennisDrawPick(rows){
   const seen = new Map();
   for (const m of rows || []) {
@@ -31812,7 +31850,8 @@ function _tennisDrawPick(rows){
     // (pairs, not players) and this renderer would show one name of two.
     if (m?.is_doubles) continue;
     if (/Doubles|Boys|Girls|Wheelchair|Quad/i.test(t.name || '')) continue;
-    const rank = _TENNIS_DRAW_TIER_RANK[t.category];
+    if (_TENNIS_DRAW_NO_BRACKET.test(t.name || '')) continue;
+    const rank = _TENNIS_DRAW_TIER_RANK[t.category] ?? _TENNIS_DRAW_NAMED_RANK[t.name || ''];
     if (rank == null) continue;
     const prev = seen.get(t.id);
     if (!prev) seen.set(t.id, { id: t.id, name: t.name, category: t.category, rank, count: 1 });
@@ -31912,7 +31951,18 @@ async function renderTennisBracket(){
   for (const n of d.nodes || []) (nodesByRound[n.round] ||= []).push(n);
 
   if (!rounds.length) {
-    host.innerHTML = `<div class="wct-loading">${_tdtEsc(res.pick.name)} — no main-draw rounds yet.</div>`;
+    // TWO DIFFERENT STATES, and they read identically if only one is written.
+    // A draw whose first round has not been scheduled has none YET. A
+    // competition played as ties never will — Davis Cup 2026 serves 194
+    // matches and not one of them is in the seven-round vocabulary. Those are
+    // excluded from the picker above, so this is the second lock rather than
+    // the first, and it exists because "yet" over a Davis Cup tie is the same
+    // false claim as calling a 96-draw's entry round 32 missing matches.
+    host.innerHTML = d.mainDrawMatches === 0 && (d.editionMatches || 0) > 0
+      ? `<div class="wct-loading">${_tdtEsc(res.pick.name)} is played as ties, not as a`
+        + ` single draw — ${d.editionMatches} matches this season, none of them in a`
+        + ` knockout round.</div>`
+      : `<div class="wct-loading">${_tdtEsc(res.pick.name)} — no main-draw rounds yet.</div>`;
     return;
   }
 

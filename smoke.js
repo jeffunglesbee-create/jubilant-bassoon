@@ -7543,6 +7543,30 @@ assert('A-TDRAW-11 — the Draw tab is hidden until there is a draw to show',
   /function _tennisRevealDrawNav\(rows\)\{/.test(html),
   'a tab that opens onto "nothing is playing" is chrome, not a feature');
 
+assert('A-TDRAW-16 — the four team events with a knockout can reach the tab',
+  // All seven named events sit in category `other`, which has no rank, so
+  // until this list existed the loop skipped every one of them. That was right
+  // for three and a silent loss for four, and a null-rank accident reads
+  // exactly like a decision.
+  /'ATP Finals': 1, 'WTA Finals': 1, 'Next Gen Finals': 2, 'United Cup': 2/.test(html) &&
+  /_TENNIS_DRAW_TIER_RANK\[t\.category\] \?\? _TENNIS_DRAW_NAMED_RANK\[t\.name \|\| ''\]/.test(html),
+  'the ATP/WTA/Next Gen Finals and the United Cup each serve a real knockout the route renders');
+
+assert('A-TDRAW-17 — the Cups are excluded by name, as a decision not a gap',
+  // Davis Cup 2026 serves 194 matches and not one is in the seven-round
+  // vocabulary. A tie has no bracket. Excluding it by omission would be
+  // indistinguishable from forgetting it.
+  /_TENNIS_DRAW_NO_BRACKET = \/\^\(Davis Cup\|Billie Jean King Cup\( Group I\)\?\)\$\//.test(html) &&
+  /if \(_TENNIS_DRAW_NO_BRACKET\.test\(t\.name \|\| ''\)\) continue;/.test(html),
+  'a competition played as ties must not be offered as a draw');
+
+assert('A-TDRAW-18 — "no rounds YET" and "never will" are different sentences',
+  // A draw whose first round is unscheduled has none yet. A competition played
+  // as ties never will. Writing only one makes the other a false claim.
+  /is played as ties, not as a/.test(html) &&
+  /d\.mainDrawMatches === 0 && \(d\.editionMatches \|\| 0\) > 0/.test(html),
+  '"yet" over a Davis Cup tie is the same false claim as 32 missing first-round matches');
+
 assert('A-TDRAW-15 — every anomaly kind the relay emits has words, not a raw key',
   // The relay emits four kinds. A kind with no case falls through to
   // `${kind}: ${matches}` and the page reads "cancelledRowsExcluded: 2",
