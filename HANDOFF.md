@@ -1,5 +1,124 @@
 # FIELD HANDOFF
 
+## Session 2026-09-06/07 — the tennis draw: the WC bracket tree, generalised
+
+HEAD `af176071` → `31bdb4ab`. Smoke **1031 passed, 0 failed** — up from 1013.
+SW_VERSION `2026-09-06c` → **`2026-09-07b`**.
+Session doc: `outbox/cc-session-2026-09-06-tennis-bracket.md`
+
+### What shipped
+
+A `#tennis-section` Draw tab rendering a live knockout bracket, built from
+`renderWCBracketTree`'s markup and CSS with the parts that assume 32 teams
+removed.
+
+Kept unchanged: `.wct-match` / `.wct-team` / `.wct-col-head` /
+`.wct-champion-label`, the two-halves layout, the 1180px breakpoint.
+
+Changed, and why:
+
+1. **Columns come from the response.** The WC tree hardcodes four columns a side
+   and a slot id per match (`R32_73_A`, `SF_1_B`). A slam is seven rounds, a
+   Masters six or seven, a first-week draw four. No CSS rule assumes a count.
+2. **Below 1180px the tree is REPLACED, not hidden.** The WC tree hides itself
+   and leans on a probability table beside it. There is no table here, so hiding
+   alone left a heading over nothing.
+3. **A fifth full-viewport mode**, so all four existing toggles dismiss
+   `tennis-mode`. Written out in each rather than folded into a helper — that
+   would be a rewrite of four working functions in a commit about tennis.
+4. **Anomalies on the page.** The WC bracket has nothing to declare; a draw does.
+
+### Live, verified
+
+```
+verdict PASS   136 US Open, Women 2026
+121 matches drawn in 5 rounds, 114 edges joined
+tree 121 / list 121 / relay 121
+```
+
+### Relay contract (Rule 65)
+
+```
+GET /bsd/tennis/draw?tournament=<id>&season=<YYYY>      max-age=300
+GET /bsd/tennis/tournaments[?category=<slug>]           max-age=3600
+
+200 { tournament, season, seasonsAvailable, rowsRead, declaredCount, truncated,
+      pages, editionMatches, mainDrawMatches, complete, roundsOutsideMainDraw,
+      rounds[ {round,index,matches,canonical,atCanonicalSize,entryRound,
+               openInnermostRound} ],
+      nodes [ {id,round,roundIndex,date,status,isDoubles,
+               p1{id,name,shortName,countryCode,rank}, p2{...},
+               winnerId, sets[]} ],
+      edges [ {from,to,playerId} ], anomalies[ {kind,...} ] }
+
+400 bad params · 404 no such edition · 409 player twice in a round, or
+ambiguous · 502 upstream ignored the tournament filter
+```
+
+**INTEGRATION STATUS: VERIFIED.** Consumer `renderTennisBracket()` → `#tennis-draw`.
+
+`rank` is a **world ranking, not a seed** — there is no seed field anywhere on a
+BSD row or player. Rendered with a `#` and `.wct-rank` for that reason.
+
+`canonical` is **null** on the entry round and on the innermost round of an
+unfinished draw. Both are edges of what is known — byes at one end, the calendar
+at the other — and neither has a size to be short of.
+
+### Team events: a null-rank accident, now a decision
+
+All seven sit in category `other`, which had no rank, so `_tennisDrawPick`
+skipped every one. Right for three, a silent loss for four, and nothing said
+which.
+
+| | |
+|---|---|
+| **Admitted** | ATP Finals · Next Gen Finals · WTA Finals (`SF=2 F=1`) · United Cup (`QF=4 SF=2 F=1`) |
+| **Excluded** | Davis Cup (194 matches, 0 in a knockout) · BJK Cup (77) · BJK Cup Group I (130) |
+
+Excluded **by name** via `_TENNIS_DRAW_NO_BRACKET`, not by omission — forgetting
+something is indistinguishable from deciding against it. The relay's weekly
+`tennis-tier-ladders` **fails** if an excluded event gains a draw or an admitted
+one loses it; those literals live here and the truth lives there.
+
+### Two bugs the browser found that 15 smoke rows could not
+
+Both times the file was internally consistent and every A-TDRAW row passed.
+
+1. **`the relay shipped 120; the page drew 113 tree cards and 120 list rows`** —
+   the centre column took `rounds[length-1]` as the final. In a draw still being
+   played that is Round of 16: eight matches rendered as one. `120 − 8 + 1 = 113`.
+   The tree looked complete, and the list that had all 120 is only visible below
+   1180px where the tree is not.
+2. **`cancelledRowsExcluded: 2`** — a variable name printed to a reader. Four
+   anomaly kinds, two cases, and the fall-through rendered the key.
+
+### Verification
+
+- **smoke** `A-TDRAW-1..18`, 18 rows. Nine mutation-proved, including restoring
+  the real centre-column bug.
+- **`tennis-draw-probe`** (Playwright, live URL, 1440×900) — 15:20 and 00:20 UTC,
+  path-triggered, dispatchable. Compares relay against page: card counts, list
+  rows, round columns, champion. `FAIL` is red; `NO DRAW` and `UNKNOWN` exit 0.
+
+### Two harness defects, mine
+
+`A-TDRAW-17` reported `NOT CAUGHT` twice and **neither mutation had run** — a
+shell loop split its spec on the `|` inside `t.name || ''`, then a Python rewrite
+read `stdout` while `smoke.js` writes failures to `stderr`. The check had caught
+it both times. **A mutation that cannot prove it was applied, and cannot see the
+failure it causes, is worse than no test.**
+
+### Carry-forwards
+
+- `nodes[].sets` is served and read by nothing — render scores on the cards or
+  stop serving the field.
+- The dead Italian Open window at `field.js:8900` is still there.
+- User-only: revoke the `GITHUB_PAT`, rotate the Odds API key, and remove the 13
+  `RELAY_SHARED_SECRET` literals **before** rotating.
+
+---
+
+
 ## Session 2026-09-06 — A515 asserted a deploy rule from a file that cannot know a deploy is happening
 
 HEAD `126d0289` → `fcd965fa`. Smoke **1001 passed, 0 failed** — up from 1000/1,
