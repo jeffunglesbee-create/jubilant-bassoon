@@ -46,6 +46,7 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     urlLoaded: null, setupOverlayState: null,
     treeHeightPx: null, treeWidthPx: null, pageHeightPx: null,
     treeDisplay: null, listDisplay: null, listHeightPx: null,
+    cardsInViewport: null, cardsCovered: null, cardsCoveredBy: null,
     firstCardVisible: null, firstCardCoveredBy: null,
     verdict: null, reason: null,
   };
@@ -187,6 +188,27 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
       // them, and this probe has committed screenshots of a modal covering the
       // draw while reporting PASS on the counts. elementFromPoint answers the
       // question the counts cannot: what is painted at that pixel.
+      // EVERY card, not just the first. The first-card check proved the draw
+      // is not behind a modal; it says nothing about a floating element landing
+      // on a card further down, which is what the full-page screenshot shows
+      // near the LIVE/SOON/UPCOMING legend.
+      //
+      // Only cards inside the viewport are asked: elementFromPoint is a
+      // viewport function and returns null for anything scrolled off, which
+      // would count every off-screen card as covered.
+      const covered = [];
+      if (host) {
+        for (const c of host.querySelectorAll('.tennis-draw-tree .wct-match')) {
+          const r = c.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          if (r.top < 0 || r.bottom > window.innerHeight) continue;
+          if (r.left < 0 || r.right > window.innerWidth) continue;
+          const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          if (!hit) continue;
+          if (c === hit || c.contains(hit) || hit.contains(c)) continue;
+          covered.push(hit.id || (typeof hit.className === 'string' ? hit.className : hit.tagName));
+        }
+      }
       const first = host && host.querySelector('.tennis-draw-tree .wct-match');
       let visible = null, covering = null;
       if (first) {
@@ -202,6 +224,12 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
         }
       }
       return {
+        cardsInViewport: (host ? [...host.querySelectorAll('.tennis-draw-tree .wct-match')] : [])
+          .filter((c) => { const r = c.getBoundingClientRect();
+                           return r.width > 0 && r.top >= 0 && r.bottom <= window.innerHeight
+                                  && r.left >= 0 && r.right <= window.innerWidth; }).length,
+        cardsCovered: covered.length,
+        cardsCoveredBy: [...new Set(covered)].slice(0, 5),
         firstCardVisible: visible,
         firstCardCoveredBy: covering,
         sectionVisible: !!sec && !sec.hasAttribute('hidden'),
@@ -215,6 +243,9 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
       };
     });
     m.sectionVisible = read.sectionVisible;
+    m.cardsInViewport = read.cardsInViewport;
+    m.cardsCovered = read.cardsCovered;
+    m.cardsCoveredBy = read.cardsCoveredBy;
     m.firstCardVisible = read.firstCardVisible;
     m.firstCardCoveredBy = read.firstCardCoveredBy;
     m.treeMatchCards = read.treeMatchCards;
