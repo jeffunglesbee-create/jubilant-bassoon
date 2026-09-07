@@ -149,3 +149,51 @@ applying — a `NOT CAUGHT` with no mutation applied is worse than no test.
 None from this work. Open from the earlier session and unchanged: GameDO (19)
 and BracketDO (12) CORS responses budgeted rather than fixed; three unprobed
 `/bsd` routes; the dead Italian Open window at `field.js:8900`.
+
+---
+
+## Team events, and a null-rank accident that read as a decision
+
+All seven named team events sit in category `other`, which has no entry in
+`_TENNIS_DRAW_TIER_RANK`, so `_tennisDrawPick` read a null rank and skipped every
+one of them. Right for three, a silent loss for four, and **nothing said which**.
+
+Measured against the deployed route, all seven:
+
+| | |
+|---|---|
+| **Admitted** | ATP Finals · Next Gen Finals · WTA Finals (`SF=2 F=1`, 3 matches) · United Cup (`QF=4 SF=2 F=1`, 7) |
+| **Excluded** | Davis Cup (194 matches, 0 in a knockout round) · BJK Cup (77) · BJK Cup Group I (130) |
+
+The Cups are ties. They are now excluded **by name**, not by omission —
+excluding something by forgetting it is indistinguishable from forgetting it,
+and if BSD ever serves a Davis Cup knockout, `_TENNIS_DRAW_NO_BRACKET` is the
+line that changes and it is findable.
+
+Second lock in the renderer: zero main-draw rounds with a non-empty season now
+reads *"is played as ties, not as a single draw"*, not *"no main-draw rounds
+yet"*. Different sentences; writing only one makes the other a false claim.
+
+## Two harness defects in five minutes, both mine
+
+`A-TDRAW-17` reported `NOT CAUGHT` twice, and **neither mutation had run**:
+
+1. A shell loop split its spec on `|`, which also appears inside the anchor
+   `t.name || ''`. The mutation was never applied and the harness said so only
+   as garbled output.
+2. The Python rewrite read `stdout` while `smoke.js` writes failures to
+   `stderr`. The check had caught it — 1030 passed, 1 failed — and the harness
+   could not see the failure it caused.
+
+Both are the harness, not the check. **A mutation that cannot prove it was
+applied, and cannot see the failure it causes, is worse than no test.**
+
+## Live, after the change
+
+```
+verdict PASS   136 US Open, Women 2026
+121 matches drawn in 5 rounds, 114 edges joined
+tree 121 / list 121 / relay 121
+```
+
+Smoke **1031**, 0 failed. SW_VERSION `2026-09-07b`.
