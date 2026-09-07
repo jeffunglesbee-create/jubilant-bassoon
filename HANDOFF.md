@@ -2,7 +2,7 @@
 
 ## Session 2026-09-06/07 — the tennis draw: the WC bracket tree, generalised
 
-HEAD `af176071` → `31bdb4ab`. Smoke **1031 passed, 0 failed** — up from 1013.
+HEAD `af176071` → `8213c02b`. Smoke **1037 passed, 0 failed** — up from 1013.
 SW_VERSION `2026-09-06c` → **`2026-09-07a`** — set by `deploy-gate`'s A190 step,
 not by hand. Hand-bumps during this session were overwritten by it, which is the
 gate working: A190 seds the constant to today's ET date across `sw.js`,
@@ -133,6 +133,31 @@ Standing, and **the user's alone** — not carry-forwards for a session to pick 
 revoke the `GITHUB_PAT`, rotate the Odds API key at the provider, and remove the
 13 `RELAY_SHARED_SECRET` literals **before** rotating (reversed,
 `bootstrap-relay-secret.yml` reinstalls the old value).
+
+### Top-aligned rounds, and the artifact that had never shown the draw
+
+`.wct-round` is `height:100%` + `space-around`, which put the Final — one card —
+in the vertical middle of a 2099px tree. Now `.tennis-draw-tree .wct-round` is
+`height:auto` + `flex-start` and the tennis grid is `align-items:start`.
+**Cards in the first screen: 32 → 62.** Scoped, because `renderWCBracketTree`
+emits `.wct-round` too and an unscoped rule would have restyled the World Cup
+bracket from a commit about tennis.
+
+Nothing structural was lost: this tree draws no connector lines, so a card's
+vertical position never encoded which two matches feed it.
+
+**Three artifact defects in `tennis_draw_probe.js`, all mine.** Every screenshot
+it had ever committed was of the `#setup-overlay` setup modal, not the draw —
+`page.evaluate` reads through an overlay, so the DOM counts were right and the
+one artifact showing what a reader sees never once showed it. Fixed with the
+page's own `?wpt` bypass (`index.html` ~5068), which names Playwright among its
+intended callers. Then the frame cropped 2099px to 900, so `fullPage` now. Then
+two readings I took off a downscaled image — a doubled bracket and a covered card
+— were both **refuted by the browser**: `listDisplay: none`, `cardsCovered: 0`.
+
+The probe now asserts what the counts cannot: the first card is on screen and
+painted on top (`elementFromPoint`), every in-viewport card is unobstructed, and
+the overlay state is named either way.
 
 Smoke **1037**, 0 failed. SW_VERSION is the gate's to set — see above.
 
