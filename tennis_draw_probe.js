@@ -40,6 +40,9 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     treeMatchCards: null, listMatchRows: null, columnHeads: null,
     championOnPage: null, anomalyLineOnPage: null,
     consoleErrors: null, failedRequests: null,
+    // How long the page took to put something on screen, and whether it ever
+    // did. A slow render and an empty one are different findings.
+    renderWaitMs: null, renderTimedOut: null, relayFetchMs: null,
     verdict: null, reason: null,
   };
 
@@ -68,8 +71,10 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
       if (pick) {
         const season = String(new Date().getUTCFullYear());
         m.pickedSeason = season;
+        const t = Date.now();
         const r = await fetch(`${RELAY}/bsd/tennis/draw?tournament=${pick.id}&season=${season}`,
                               { signal: AbortSignal.timeout(60000) });
+        m.relayFetchMs = Date.now() - t;
         m.relayDrawStatus = r.status;
         if (r.ok) {
           draw = await r.json();
@@ -111,9 +116,33 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
       return !!l && l.style.display !== 'none';
     });
 
-    // Open the tab the way a reader does, then wait for the fetch behind it.
+    // Open the tab the way a reader does, then WAIT FOR CONTENT, not for a
+    // clock.
+    //
+    // The fixed 12s wait here reported FAIL once with `0 tree card(s) and 0
+    // list row(s)` and a sample of "Reading the draw…" — the page's own fetch
+    // has a 20s timeout, so the probe was reading a render still in flight and
+    // calling it an empty bracket. A probe that gives up before the thing it
+    // measures has finished is measuring itself.
+    //
+    // 30s, which is beyond the client's own timeout, so a page that is going to
+    // fail has failed by then and one that is going to render has rendered.
     await page.evaluate(() => { if (typeof window.toggleTennisView === 'function') window.toggleTennisView(); });
-    await page.waitForTimeout(12000);
+    const t0 = Date.now();
+    try {
+      await page.waitForFunction(() => {
+        const h = document.getElementById('tennis-draw');
+        if (!h) return false;
+        // Either real content, or a settled message that is not the spinner.
+        if (h.querySelector('.wct-match, .tdl-match')) return true;
+        const loading = h.querySelector('.wct-loading');
+        return !!loading && !/Reading the draw/.test(loading.textContent || '');
+      }, { timeout: 30000 });
+      m.renderWaitMs = Date.now() - t0;
+    } catch (_) {
+      m.renderWaitMs = Date.now() - t0;
+      m.renderTimedOut = true;
+    }
 
     const read = await page.evaluate(() => {
       const sec = document.getElementById('tennis-section');
@@ -169,6 +198,14 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
         .replace('Quarterfinals', 'QF').replace('Semifinals', 'SF')) || r.round === 'Final');
     const champOk = m.relayChampion == null || m.championOnPage === true;
     if (!m.sectionVisible) { m.verdict = 'FAIL'; m.reason = 'the Draw tab opened onto a hidden section'; }
+    else if (m.renderTimedOut && m.treeMatchCards === 0 && m.listMatchRows === 0) {
+      // Still spinning after 30s, with the relay answering in relayFetchMs. That
+      // is a latency finding, not an empty bracket, and calling it FAIL would
+      // point at the wrong layer.
+      m.verdict = 'UNKNOWN';
+      m.reason = `the page was still loading after ${m.renderWaitMs}ms;`
+               + ` the relay answered in ${m.relayFetchMs}ms — a latency finding, not an empty draw`;
+    }
     else if (!listOk || !treeOk) {
       m.verdict = 'FAIL';
       m.reason = `the relay shipped ${want} main-draw matches; the page drew`
