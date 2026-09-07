@@ -3,7 +3,11 @@
 ## Session 2026-09-06/07 — the tennis draw: the WC bracket tree, generalised
 
 HEAD `af176071` → `31bdb4ab`. Smoke **1031 passed, 0 failed** — up from 1013.
-SW_VERSION `2026-09-06c` → **`2026-09-07b`**.
+SW_VERSION `2026-09-06c` → **`2026-09-07a`** — set by `deploy-gate`'s A190 step,
+not by hand. Hand-bumps during this session were overwritten by it, which is the
+gate working: A190 seds the constant to today's ET date across `sw.js`,
+`src/legacy/field.js` and `index.html`, commits it back, and only then runs
+smoke. There is nothing for a commit to bump.
 Session doc: `outbox/cc-session-2026-09-06-tennis-bracket.md`
 
 ### What shipped
@@ -130,7 +134,7 @@ revoke the `GITHUB_PAT`, rotate the Odds API key at the provider, and remove the
 13 `RELAY_SHARED_SECRET` literals **before** rotating (reversed,
 `bootstrap-relay-secret.yml` reinstalls the old value).
 
-Smoke **1035**, 0 failed. SW_VERSION `2026-09-07c`.
+Smoke **1037**, 0 failed. SW_VERSION is the gate's to set — see above.
 
 ---
 
