@@ -110,11 +110,27 @@ failure it causes, is worse than no test.**
 
 ### Carry-forwards
 
-- `nodes[].sets` is served and read by nothing — render scores on the cards or
-  stop serving the field.
-- The dead Italian Open window at `field.js:8900` is still there.
-- User-only: revoke the `GITHUB_PAT`, rotate the Odds API key, and remove the 13
-  `RELAY_SHARED_SECRET` literals **before** rotating.
+**None.** Both were closed the same session.
+
+`nodes[].sets` is now rendered, winner-first — a 3-6 2-6 win for player 2 prints
+`6-3 6-2`, because the relay's sets are p1/p2 in row order and carry no
+orientation. The tiebreak prints the **loser** of the breaker in brackets, as a
+draw sheet does: `7-6(4)`. Both the tree and the sub-1180px list carry it; the
+list is the only tennis draw view down there and a list of names is not a draw.
+
+The **Italian Open window is deleted**. It gated on two literal dates and emitted
+one card reading "WTA/ATP Field" with its round from a table keyed on the day of
+the month — no players, no scores, no opponent, and dead since 17 May. It was the
+second stale window this file carried; Roland Garros was the other, and between
+them tennis rendered nothing through an entire US Open while four smoke
+assertions passed. `A-TENNIS-13` now keeps it out.
+
+Standing, and **the user's alone** — not carry-forwards for a session to pick up:
+revoke the `GITHUB_PAT`, rotate the Odds API key at the provider, and remove the
+13 `RELAY_SHARED_SECRET` literals **before** rotating (reversed,
+`bootstrap-relay-secret.yml` reinstalls the old value).
+
+Smoke **1035**, 0 failed. SW_VERSION `2026-09-07c`.
 
 ---
 
