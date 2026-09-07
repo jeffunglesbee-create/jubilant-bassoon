@@ -43,7 +43,8 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     // How long the page took to put something on screen, and whether it ever
     // did. A slow render and an empty one are different findings.
     renderWaitMs: null, renderTimedOut: null, relayFetchMs: null,
-    setupOverlayDismissed: null, firstCardVisible: null, firstCardCoveredBy: null,
+    urlLoaded: null, setupOverlayState: null,
+    firstCardVisible: null, firstCardCoveredBy: null,
     verdict: null, reason: null,
   };
 
@@ -106,32 +107,38 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     page.on('console', (c) => { if (c.type() === 'error') consoleErrors.push(c.text().slice(0, 300)); });
     page.on('requestfailed', (r) => failedRequests.push(`${r.url().slice(0, 160)} ${r.failure()?.errorText || ''}`));
 
-    await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    // ?wpt — THE PAGE'S OWN BYPASS FOR EXACTLY THIS.
+    //
+    // index.html ~5068: `?wpt` sets `field_setup_done` in localStorage during
+    // boot, before the first-visit modal decides whether to show. Its comment
+    // names the callers — "WebPageTest, Lighthouse, Playwright, Layer 2 review"
+    // — so this probe was the intended user of a bypass it was not using.
+    //
+    // The previous attempt clicked the modal's Skip control after load, and the
+    // run before this one shows why that fails: the modal had not opened yet,
+    // the dismiss reported "not shown", and the screenshot came back with
+    // `firstCardVisible: false, coveredBy: setup-overlay`. Racing a modal is
+    // not the same as not having one.
+    //
+    // No fallback click behind it. If the bypass stops working the visibility
+    // check below FAILS and names what is covering the card, which is the
+    // outcome that gets it fixed — a second attempt would hide the regression.
+    const url = FIELD_URL + (FIELD_URL.includes('?') ? '&' : '?') + 'wpt=1';
+    m.urlLoaded = url;
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     m.pageLoaded = true;
 
-    // DISMISS THE FIRST-VISIT MODAL BEFORE ANYTHING IS LOOKED AT.
+    // UNUSED-BYPASS GUARD.
     //
-    // `#setup-overlay` — "My Services — personalise your stream access" — opens
-    // on a browser with no localStorage, which every run of this probe is. It
-    // covers the page.
     //
-    // The DOM counts below were never affected: page.evaluate reads through an
-    // overlay. THE SCREENSHOT WAS. Every PASS this probe has committed carries
-    // a picture of the setup modal rather than the draw, so the one artifact
-    // that shows what a reader sees has never once shown it — and under this
-    // project's own rule the screenshot IS the artifact.
-    //
-    // Clicked rather than hidden with CSS: hiding it would prove the draw
-    // renders under an overlay nobody dismissed, which is not the state a
-    // reader is ever in.
-    m.setupOverlayDismissed = await page.evaluate(() => {
+    // Recorded, not acted on. If `?wpt` ever stops suppressing the modal this
+    // says so by name rather than leaving the reader to infer it from a
+    // screenshot of the wrong thing.
+    m.setupOverlayState = await page.evaluate(() => {
       const ov = document.getElementById('setup-overlay');
-      if (!ov || ov.style.display === 'none') return 'not shown';
-      const skip = document.getElementById('setup-skip');
-      if (skip) { skip.click(); return 'clicked skip'; }
-      return 'present, no skip control';
+      if (!ov) return 'absent from the DOM';
+      return ov.style.display === 'none' ? 'suppressed by ?wpt' : 'SHOWING — the bypass did not work';
     });
-    await page.waitForTimeout(500);
     // The nav link is revealed by the tennis fetch, which runs in the boot
     // chain. Waiting on the LINK rather than a fixed sleep — a sleep that is
     // too short reports a working page as broken.
