@@ -44,6 +44,7 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     // did. A slow render and an empty one are different findings.
     renderWaitMs: null, renderTimedOut: null, relayFetchMs: null,
     urlLoaded: null, setupOverlayState: null,
+    treeHeightPx: null, treeWidthPx: null, pageHeightPx: null,
     firstCardVisible: null, firstCardCoveredBy: null,
     verdict: null, reason: null,
   };
@@ -222,7 +223,29 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     m.championOnPage = m.relayChampion ? read.meta.includes(m.relayChampion) : null;
     m.sampleText = read.text.slice(0, 400);
 
-    await page.screenshot({ path: `outbox/tennis-draw-probe-${stamp}.png`, fullPage: false });
+    // FULL PAGE, and the height recorded beside it.
+    //
+    // At 1440x900 the viewport shot showed the first three rounds and two
+    // EMPTY-looking QF columns — a 128 draw is roughly 2400px tall, each round
+    // is vertically centred in its column, and the innermost rounds sit far
+    // below the fold. Nothing was wrong; the artifact was cropped to the part
+    // that looks wrong.
+    //
+    // Second cropping defect in this file today. The first was the setup modal
+    // covering everything; this one is the frame cutting off most of it. An
+    // artifact that shows a third of the subject invites a conclusion about the
+    // other two thirds.
+    const dims = await page.evaluate(() => {
+      const h = document.getElementById('tennis-draw');
+      const t = h && h.querySelector('.tennis-draw-tree');
+      return { treeHeight: t ? Math.round(t.getBoundingClientRect().height) : null,
+               treeWidth: t ? Math.round(t.scrollWidth) : null,
+               pageHeight: Math.round(document.documentElement.scrollHeight) };
+    });
+    m.treeHeightPx = dims.treeHeight;
+    m.treeWidthPx = dims.treeWidth;
+    m.pageHeightPx = dims.pageHeight;
+    await page.screenshot({ path: `outbox/tennis-draw-probe-${stamp}.png`, fullPage: true });
   } catch (e) {
     m.pageLoaded = false;
     m.reason = `${m.reason ? m.reason + '; ' : ''}page: ${e.message}`;
