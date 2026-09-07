@@ -45,6 +45,7 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     renderWaitMs: null, renderTimedOut: null, relayFetchMs: null,
     urlLoaded: null, setupOverlayState: null,
     treeHeightPx: null, treeWidthPx: null, pageHeightPx: null,
+    treeDisplay: null, listDisplay: null, listHeightPx: null,
     firstCardVisible: null, firstCardCoveredBy: null,
     verdict: null, reason: null,
   };
@@ -238,10 +239,25 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
     const dims = await page.evaluate(() => {
       const h = document.getElementById('tennis-draw');
       const t = h && h.querySelector('.tennis-draw-tree');
+      // BOTH VIEWS, AND WHICH ONE IS PAINTED.
+      //
+      // The tree and the list are both written into the host; the list is meant
+      // to be display:none at 1180px and up. The full-page screenshot shows two
+      // stacked blocks of bracket-ish content and a downscaled image cannot
+      // settle which is which — so this asks the browser instead of inviting a
+      // conclusion from a picture.
+      const l = h && h.querySelector('.tennis-draw-list');
+      const cs = (el) => (el ? getComputedStyle(el).display : null);
       return { treeHeight: t ? Math.round(t.getBoundingClientRect().height) : null,
                treeWidth: t ? Math.round(t.scrollWidth) : null,
+               treeDisplay: cs(t),
+               listDisplay: cs(l),
+               listHeight: l ? Math.round(l.getBoundingClientRect().height) : null,
                pageHeight: Math.round(document.documentElement.scrollHeight) };
     });
+    m.treeDisplay = dims.treeDisplay;
+    m.listDisplay = dims.listDisplay;
+    m.listHeightPx = dims.listHeight;
     m.treeHeightPx = dims.treeHeight;
     m.treeWidthPx = dims.treeWidth;
     m.pageHeightPx = dims.pageHeight;
@@ -277,6 +293,13 @@ const TIER_RANK = { grand_slam: 0, masters_1000: 1, atp_1000: 1, wta_1000: 1 };
         .replace('Quarterfinals', 'QF').replace('Semifinals', 'SF')) || r.round === 'Final');
     const champOk = m.relayChampion == null || m.championOnPage === true;
     if (!m.sectionVisible) { m.verdict = 'FAIL'; m.reason = 'the Draw tab opened onto a hidden section'; }
+    else if (m.listDisplay && m.listDisplay !== 'none') {
+      // At 1440px the tree is the view. A list painted here means the reader
+      // scrolls the same 122 matches twice.
+      m.verdict = 'FAIL';
+      m.reason = `both views are painted at 1440px: the narrow-viewport list is`
+               + ` display:${m.listDisplay} and ${m.listHeightPx}px tall beneath the tree`;
+    }
     else if (m.firstCardVisible === false) {
       m.verdict = 'FAIL';
       m.reason = `the draw rendered but nothing can be seen: the first match card is`
