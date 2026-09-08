@@ -1,27 +1,27 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "33970214383",
-  "commit": "ac1dca5dd89fee73411a89a31254377044734df8",
-  "timestamp": "2026-09-05T13:54:32.027Z",
+  "runId": "34243028260",
+  "commit": "3ae42985a928cf3bee36bb97c64d08dc234efac0",
+  "timestamp": "2026-09-08T15:11:12.397Z",
   "cacheAccepted": true,
   "testApi": "pl-verify",
   "schema": "2.1",
-  "for_date": "2026-09-05",
+  "for_date": "2026-09-08",
   "window_dates": [
-    "2026-09-05",
-    "2026-09-06",
-    "2026-09-07",
-    "2026-09-08"
+    "2026-09-08",
+    "2026-09-09",
+    "2026-09-10",
+    "2026-09-11"
   ],
   "games_found_by_date": {
-    "2026-09-05": 15,
-    "2026-09-06": 15,
-    "2026-09-07": 11,
-    "2026-09-08": 15
+    "2026-09-08": 15,
+    "2026-09-09": 15,
+    "2026-09-10": 5,
+    "2026-09-11": 15
   },
   "days": [
     {
-      "iso": "2026-09-06",
+      "iso": "2026-09-09",
       "windowHasDay": true,
       "windowMlbCount": 15,
       "navigated": false,
@@ -32,9 +32,9 @@
       "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
     },
     {
-      "iso": "2026-09-07",
+      "iso": "2026-09-10",
       "windowHasDay": true,
-      "windowMlbCount": 11,
+      "windowMlbCount": 5,
       "navigated": false,
       "cardCount": 0,
       "sectionCount": 0,
@@ -43,7 +43,7 @@
       "error": null
     },
     {
-      "iso": "2026-09-08",
+      "iso": "2026-09-11",
       "windowHasDay": true,
       "windowMlbCount": 15,
       "navigated": false,
@@ -55,20 +55,20 @@
     }
   ],
   "windowDaysReachingClient": 3,
-  "windowMlbTotal": 41,
+  "windowMlbTotal": 35,
   "renderedCardsTotal": 0,
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
   "consoleErrors": [
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20260906&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=20260909&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
     "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=20260906&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20260909&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
     "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20260906&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20260909&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
     "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20260906&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20260909&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
     "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20260906&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.trophy/scoreboard?dates=20260909&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
     "Failed to load resource: net::ERR_FAILED"
   ]
 }
