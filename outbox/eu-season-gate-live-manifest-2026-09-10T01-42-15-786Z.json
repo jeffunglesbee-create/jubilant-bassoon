@@ -1,0 +1,43 @@
+{
+  "probed_at": "2026-09-10T01:42:15.786Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "coverage": "8 of 8 gated keys",
+  "deployedBytes": 2124648,
+  "helperPresentInDeployedBundle": true,
+  "keysBoundInDeployedBundle": {
+    "epl": true,
+    "laliga": true,
+    "seriea": true,
+    "bundesliga": true,
+    "ligue1": true,
+    "eflchamp": true,
+    "eflone": true,
+    "efltwo": true
+  },
+  "allEightBound": true,
+  "anyStillHardcodedFalse": false,
+  "deployedSwVersion": "2026-09-09a",
+  "relayGamesToday": {
+    "epl": 0,
+    "laliga": 0,
+    "seriea": 0,
+    "bundesliga": 0,
+    "ligue1": 0,
+    "eflchamp": 0,
+    "eflone": 1,
+    "efltwo": 0
+  },
+  "totalEuropeanGamesToday": 1,
+  "chipBarFound": true,
+  "chips": [
+    "ALL (32)",
+    "FREE",
+    "MLB (15)",
+    "AFL (1)",
+    "Tennis (16)"
+  ],
+  "chipBarSkeletonStillUp": false,
+  "europeanChipPresent": [],
+  "pageErrors": [],
+  "verdict": "PASS (gate) / NO CHIP despite 1 game(s) available today — investigate"
+}
