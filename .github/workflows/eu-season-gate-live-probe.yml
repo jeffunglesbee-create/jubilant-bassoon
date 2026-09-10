@@ -1,0 +1,46 @@
+# CC-CMD-2026-09-07-soccer-season-gates-autoroll — TASK 3.3.
+# Two claims, two kinds of evidence: the deployed bundle's text (decisive,
+# minify:false) and a real browser against the live URL (Rule 90).
+name: EU season gate live probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['outbox/.trigger-eu-season-gate-live']
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+      - name: Probe the deployed app
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+        run: node eu_season_gate_live_probe.js
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "EU Season Gate Probe"
+          git add outbox/eu-season-gate-live-*.png outbox/eu-season-gate-live-manifest-*.json || true
+          git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
+          git commit -m "probe: EU season gate live verification [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
