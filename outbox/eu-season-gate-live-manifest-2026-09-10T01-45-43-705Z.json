@@ -1,0 +1,61 @@
+{
+  "probed_at": "2026-09-10T01:45:43.706Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "coverage": "8 of 8 gated keys",
+  "deployedBytes": 2124648,
+  "helperPresentInDeployedBundle": true,
+  "keysBoundInDeployedBundle": {
+    "epl": true,
+    "laliga": true,
+    "seriea": true,
+    "bundesliga": true,
+    "ligue1": true,
+    "eflchamp": true,
+    "eflone": true,
+    "efltwo": true
+  },
+  "allEightBound": true,
+  "anyStillHardcodedFalse": false,
+  "deployedSwVersion": "2026-09-09a",
+  "etDate": "2026-09-09",
+  "utcDate": "2026-09-10",
+  "datesDiffer": true,
+  "relayGamesOnEtDate": {
+    "epl": 0,
+    "laliga": 0,
+    "seriea": 0,
+    "bundesliga": 0,
+    "ligue1": 0,
+    "eflchamp": 3,
+    "eflone": 0,
+    "efltwo": 0
+  },
+  "relayGamesOnUtcDate": {
+    "epl": 0,
+    "laliga": 0,
+    "seriea": 0,
+    "bundesliga": 0,
+    "ligue1": 0,
+    "eflchamp": 0,
+    "eflone": 1,
+    "efltwo": 0
+  },
+  "totalEuropeanGamesToday": 3,
+  "totalEuropeanGamesUtcToday": 1,
+  "chipBarFound": true,
+  "chips": [
+    "ALL (55)",
+    "FREE",
+    "MLB (15)",
+    "AFL (1)",
+    "Tennis (16)",
+    "Golf (1)",
+    "College Football (6)",
+    "NFL (2)",
+    "MLS (14)"
+  ],
+  "chipBarSkeletonStillUp": false,
+  "europeanChipPresent": [],
+  "pageErrors": [],
+  "verdict": "PASS (gate) / NO CHIP despite 3 fixture(s) on the ET date 2026-09-09 — investigate"
+}
