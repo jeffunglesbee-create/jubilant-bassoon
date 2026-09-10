@@ -82,40 +82,37 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   // placeholder -- so the probe read zero chips of ANY kind, including MLB which
   // certainly has games today, and then blamed the gate. The real bar is
   // `#sport-filters`, read from index.html rather than guessed.
-  // WAIT FOR THE SLATE TO SETTLE, not merely for the bar to exist.
+  // OBSERVE THE SLATE OVER A WINDOW AND TAKE THE MAXIMUM.
   //
-  // The previous condition was "#sport-filters has any text", which MLB, AFL and
-  // Tennis satisfy from the boot schedule, long before the async fetches that
-  // add Golf, CFB, NFL, MLS and the V2-injected European sections. Sampling
-  // there produced ALL(31) twice on the build that had produced ALL(62), and I
-  // read it as a regression in my own commit. Golf is what broke that story:
-  // it is not in FIELD_V2_SOURCES and nothing I changed touches it, so its
-  // absence could only be time.
+  // Three readings of this exact build gave ALL(31) and a fourth gave ALL(74).
+  // There is no regression between them -- it is how much of the slate has
+  // arrived when the sample is taken. Sections only ever GROW during a load, so
+  // the maximum over a window is the statistic, and a single sample is not.
   //
-  // Settled = the ALL count unchanged across three consecutive one-second
-  // samples, then a beat for the next poll tick. The observed value and how
-  // long it took are BOTH recorded, so a future short read is visible as a
-  // short read rather than inferred to be a defect.
-  const settle = await page.evaluate(async () => {
+  // A stability test does not work here and was tried: `31@4003ms` and
+  // `74@4003ms` both reported "stable" because three identical one-second
+  // samples happen easily while fetches are still outstanding. Stability is
+  // indistinguishable from not-having-started.
+  //
+  // I read the low samples as a regression in my own commit, retracted, then
+  // un-retracted. The whole series is recorded here so the next reader argues
+  // with data instead.
+  const obs = await page.evaluate(async (ms) => {
     const readAll = () => {
-      const t = document.querySelector('#sport-filters')?.textContent || '';
-      const m = t.match(/ALL\s*\((\d+)\)/);
-      return m ? Number(m[1]) : null;
+      const m = (document.querySelector('#sport-filters')?.textContent || '').match(/ALL\s*\((\d+)\)/);
+      return m ? Number(m[1]) : 0;
     };
-    const t0 = Date.now();
-    let last = null, stable = 0, samples = [];
-    while (Date.now() - t0 < 90000) {
-      await new Promise(r => setTimeout(r, 1000));
-      const n = readAll();
-      samples.push(n);
-      if (n !== null && n === last) stable++; else stable = 0;
-      last = n;
-      if (stable >= 3 && n > 0) break;
+    const t0 = Date.now(); const series = []; let best = 0, bestAt = 0;
+    while (Date.now() - t0 < ms) {
+      const n = readAll(); series.push(n);
+      if (n > best) { best = n; bestAt = Date.now() - t0; }
+      await new Promise(r => setTimeout(r, 2000));
     }
-    return { allCount: last, settledMs: Date.now() - t0, stable, samples: samples.slice(-12) };
-  });
-  m.settle = settle;
+    return { max: best, maxAtMs: bestAt, final: readAll(), windowMs: ms, series };
+  }, 60000);
+  m.observation = obs;
 
+  // Read the bar AFTER the observation window, so the chip list matches `max`.
   const chipInfo = await page.evaluate(() => {
     const bar = document.querySelector('#sport-filters');
     if (!bar) return { found: false, chips: [], skeletonStillUp: null };
@@ -141,7 +138,7 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   // The verdict is stated so it cannot be misread in either direction.
   m.verdict = !m.allEightBound ? 'FAIL — the deployed bundle does not carry all eight bindings'
     : m.anyStillHardcodedFalse ? 'FAIL — a key is still hardcoded false in the deployed bundle'
-    : m.chipBarSkeletonStillUp || m.chips.length === 0
+    : m.chipBarSkeletonStillUp || m.chips.length === 0 || m.observation.max === 0
       ? 'PASS (gate) / INCONCLUSIVE (render) — the chip bar rendered no chips AT ALL, not even for sports with games today, so the probe did not reach a rendered bar. Says nothing about the gate.'
     : m.europeanChipPresent.length ? 'PASS — gate deployed AND a European chip is rendering'
     : m.totalEuropeanGamesToday === 0
