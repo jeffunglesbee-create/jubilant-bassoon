@@ -1,0 +1,68 @@
+{
+  "probed_at": "2026-09-10T02:10:47.737Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "coverage": "8 of 8 gated keys",
+  "deployedBytes": 2126023,
+  "helperPresentInDeployedBundle": true,
+  "keysBoundInDeployedBundle": {
+    "epl": true,
+    "laliga": true,
+    "seriea": true,
+    "bundesliga": true,
+    "ligue1": true,
+    "eflchamp": true,
+    "eflone": true,
+    "efltwo": true
+  },
+  "allEightBound": true,
+  "anyStillHardcodedFalse": false,
+  "deployedSwVersion": "2026-09-09c",
+  "etDate": "2026-09-09",
+  "utcDate": "2026-09-10",
+  "datesDiffer": true,
+  "relayGamesOnEtDate": {
+    "epl": 0,
+    "laliga": 0,
+    "seriea": 0,
+    "bundesliga": 0,
+    "ligue1": 0,
+    "eflchamp": 3,
+    "eflone": 0,
+    "efltwo": 0
+  },
+  "relayGamesOnUtcDate": {
+    "epl": 0,
+    "laliga": 0,
+    "seriea": 0,
+    "bundesliga": 0,
+    "ligue1": 0,
+    "eflchamp": 0,
+    "eflone": 1,
+    "efltwo": 0
+  },
+  "totalEuropeanGamesToday": 3,
+  "totalEuropeanGamesUtcToday": 1,
+  "settle": {
+    "allCount": 31,
+    "settledMs": 4003,
+    "stable": 3,
+    "samples": [
+      31,
+      31,
+      31,
+      31
+    ]
+  },
+  "chipBarFound": true,
+  "chips": [
+    "ALL (31)",
+    "FREE",
+    "MLB (15)",
+    "AFL (1)",
+    "Tennis (15)"
+  ],
+  "chipBarSkeletonStillUp": false,
+  "europeanChipPresent": [],
+  "pageErrors": [],
+  "verdict": "PASS (gate) / NO CHIP despite 3 fixture(s) on the ET date 2026-09-09 — investigate"
+}
