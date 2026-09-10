@@ -6365,6 +6365,9 @@ const SPORT_CHIP_LABELS = {
   "UEFA Champions League":     "UCL",
   "UEFA Europa League":        "UEL",
   "UEFA Conference League":    "UECL",
+  "UEFA Champions League Qualifying":  "UCL Qual",
+  "UEFA Europa League Qualifying":     "UEL Qual",
+  "UEFA Conference League Qualifying": "UECL Qual",
   "EFL Championship":          "EFL Champ",
   "EFL League One":            "EFL L1",
   "EFL League Two":            "EFL L2",
@@ -20930,6 +20933,30 @@ async function fetchV2AllScores() {
   if (FIELD_V2_SOURCES.eflone)   injectV2SportSection('eflone',   'EFL League One');
   if (FIELD_V2_SOURCES.efltwo)   injectV2SportSection('efltwo',   'EFL League Two');
 
+  // UEFA competitions. Same defect, same fix: enabled since long before the
+  // eight domestic keys and with no card creator either, which the
+  // check-v2-key-has-card-path gate now makes impossible to reintroduce.
+  //
+  // Labels are the CLIENT's SPORT_CHIP_LABELS keys, so the chips read UCL / UEL
+  // / UECL, and 'UEFA Champions League' matches buildTodaySchedule's own
+  // sections.push({sport:"UEFA Champions League"}) so a repopulated uclGames
+  // merges rather than duplicating.
+  //
+  // The relay calls this competition 'UEFA Europa Conference League' where the
+  // client's chip map says 'UEFA Conference League'. Harmless — the injector
+  // filters on _sport === sportKey, never on the relay's league string — but
+  // recorded rather than silently reconciled.
+  if (FIELD_V2_SOURCES.ucl)        injectV2SportSection('ucl',        'UEFA Champions League');
+  if (FIELD_V2_SOURCES.europa)     injectV2SportSection('europa',     'UEFA Europa League');
+  if (FIELD_V2_SOURCES.conference) injectV2SportSection('conference', 'UEFA Conference League');
+  // Qualifying rounds are real and served: /v2/games?sport=uclqual&date=2026-08-26
+  // returns 4 finals (AEK Athens 4-0 Levski Sofia, Lyon 1-2 Fenerbahce, ...)
+  // with league "UEFA Champions League Qualifying". They run Jul-Aug, so these
+  // render nothing for most of the year, which is correct and not a gap.
+  if (FIELD_V2_SOURCES.uclqual)        injectV2SportSection('uclqual',        'UEFA Champions League Qualifying');
+  if (FIELD_V2_SOURCES.europaqual)     injectV2SportSection('europaqual',     'UEFA Europa League Qualifying');
+  if (FIELD_V2_SOURCES.conferencequal) injectV2SportSection('conferencequal', 'UEFA Conference League Qualifying');
+
   // ── Inject FIFA World Cup section into allData.sports ─────────────────────
   // V2 polling fetches wc26 games → espnScores. allData.sports may already
   // contain a FIFA section pushed by maybePushWorldCup() from wc26Raw
@@ -27749,7 +27776,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-09b';
+  const SW_VERSION = '2026-09-09c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

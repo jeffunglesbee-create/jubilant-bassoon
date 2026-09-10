@@ -4,12 +4,22 @@
 name: EU season gate live probe
 
 on:
+  schedule:
+    # 22:40 UTC daily: after European evening kick-offs have finished, and
+    # before the ET date rolls, so the slate the app is rendering still holds
+    # that day's fixtures. The probe reports NOT-TESTABLE-TODAY on days with no
+    # European fixtures rather than failing, so out-of-season days stay quiet.
+    - cron: '40 22 * * *'
   workflow_dispatch:
   push:
     paths: ['outbox/.trigger-eu-season-gate-live']
 
 permissions:
   contents: write
+
+concurrency:
+  group: eu-season-gate-live-probe
+  cancel-in-progress: false
 
 jobs:
   probe:

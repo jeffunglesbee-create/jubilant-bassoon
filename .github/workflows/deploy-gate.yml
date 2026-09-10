@@ -152,6 +152,18 @@ jobs:
               exit 1 ;;
           esac
 
+      # Enabling a V2 gate is not enough to make a card. ec6e3859 opened eight
+      # European gates and nothing rendered, because seven of them had no
+      # card CREATOR -- only score overlays, which never make a card. That class
+      # of gap is invisible for months because it only shows when a competition
+      # is in season; this file's own SOCCER_LEAGUES comment dates the same gap
+      # to 2026-08-02 and calls it "masked entirely by the May-Aug summer
+      # break". The invariant is static, so it holds in July too.
+      - name: Every V2 sport key has a card creator, not just a score overlay
+        run: |
+          node scripts/check-v2-key-has-card-path.mjs --self-test
+          node scripts/check-v2-key-has-card-path.mjs
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."
