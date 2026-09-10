@@ -35,7 +35,12 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     KEYS.map(k => [k, new RegExp(`${k}:\\s*_euSeasonActive\\(\\)`).test(html)]));
   m.allEightBound = Object.values(m.keysBoundInDeployedBundle).every(Boolean);
   m.anyStillHardcodedFalse = KEYS.some(k => new RegExp(`${k}:\\s*false`).test(html));
-  m.deployedSwVersion = (html.match(/SW_VERSION = '([^']+)'/) || [])[1] || null;
+  // Widened: esbuild re-emits this with its own spacing and quote style, so the
+  // source's exact form is not what lands in the bundle. The first version
+  // matched only `SW_VERSION = '...'` and reported null for a value that is
+  // present -- a false absence, which is the failure mode this whole session
+  // keeps turning up.
+  m.deployedSwVersion = (html.match(/SW_VERSION\s*[=:]\s*["']([0-9]{4}-[0-9]{2}-[0-9]{2}[a-z]?)["']/) || [])[1] || null;
 
   // ---- what the relay has TODAY, so an empty chip list is readable ----
   m.relayGamesToday = {};
@@ -55,13 +60,29 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForTimeout(25000);   // the V2 poll cycle needs to run at least once
 
-  m.chips = await page.evaluate(() => {
-    const bar = document.querySelector('#filter-bar, .filter-bar, [class*="filter"]');
-    if (!bar) return null;
-    return [...bar.querySelectorAll('button, a, span')]
-      .map(e => (e.textContent || '').trim()).filter(t => t && t.length < 40);
+  // THE SELECTOR WAS WRONG THE FIRST TIME AND REPORTED AN EMPTY APP.
+  // `[class*="filter"]` matched `.filter-chip-skeleton` -- the loading
+  // placeholder -- so the probe read zero chips of ANY kind, including MLB which
+  // certainly has games today, and then blamed the gate. The real bar is
+  // `#sport-filters`, read from index.html rather than guessed.
+  await page.waitForFunction(
+    () => (document.querySelector('#sport-filters')?.textContent || '').trim().length > 0,
+    { timeout: 45000 }).catch(() => {});
+
+  const chipInfo = await page.evaluate(() => {
+    const bar = document.querySelector('#sport-filters');
+    if (!bar) return { found: false, chips: [], skeletonStillUp: null };
+    const chips = [...bar.querySelectorAll('button, a, span')]
+      .map(e => (e.textContent || '').trim())
+      .filter(t => t && t.length < 40);
+    return { found: true, chips,
+             skeletonStillUp: !!bar.querySelector('.filter-chip-skeleton') };
   });
-  m.chipBarFound = m.chips !== null;
+  m.chipBarFound = chipInfo.found;
+  m.chips = chipInfo.chips;
+  // If the skeleton is still up, the bar has not rendered yet and an empty chip
+  // list says nothing about any gate.
+  m.chipBarSkeletonStillUp = chipInfo.skeletonStillUp;
   const chipText = (m.chips || []).join(' | ').toUpperCase();
   m.europeanChipPresent = ['EPL','PREMIER','LA LIGA','LALIGA','SERIE A','BUNDESLIGA','LIGUE 1','EFL','LEAGUE ONE','LEAGUE TWO','CHAMPIONSHIP']
     .filter(t => chipText.includes(t));
@@ -73,6 +94,8 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   // The verdict is stated so it cannot be misread in either direction.
   m.verdict = !m.allEightBound ? 'FAIL — the deployed bundle does not carry all eight bindings'
     : m.anyStillHardcodedFalse ? 'FAIL — a key is still hardcoded false in the deployed bundle'
+    : m.chipBarSkeletonStillUp || m.chips.length === 0
+      ? 'PASS (gate) / INCONCLUSIVE (render) — the chip bar rendered no chips AT ALL, not even for sports with games today, so the probe did not reach a rendered bar. Says nothing about the gate.'
     : m.europeanChipPresent.length ? 'PASS — gate deployed AND a European chip is rendering'
     : m.totalEuropeanGamesToday === 0
       ? 'PASS (gate) / NOT-TESTABLE-TODAY (render) — all eight bound in the deployed bundle; the relay has zero European games today (international break), so no chip can exist'
