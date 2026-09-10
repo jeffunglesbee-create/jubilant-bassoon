@@ -1,0 +1,55 @@
+# CC-CMD-2026-09-07-soccer-season-gates-autoroll — Task 0.4 and Task 3.3.
+#
+# Sandbox egress to *.workers.dev is blocked, so the relay can only be asked from
+# a runner. The probe distinguishes "the relay serves this key" from "no games
+# today", which a same-day probe cannot: 2026-09-10 is an international break and
+# every key returns 200 with count 0.
+#
+# It also refuses to treat a status code as an answer. Run from the blocked
+# sandbox the egress proxy returns its own 403 for every URL, and the first
+# version of this probe recorded that as a real HTTP status and passed its own
+# transport check. It now requires the body to echo the sport key it asked for.
+name: EU season gate probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      matchday:
+        description: 'a date on which these competitions demonstrably played'
+        required: false
+        default: '2026-08-30'
+  push:
+    paths: ['outbox/.trigger-eu-season-gate-probe']
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: probe all eight gated European keys
+        run: |
+          node scripts/eu-season-gate-probe.mjs --matchday=${{ inputs.matchday || '2026-08-30' }} \
+            2>&1 | tee outbox/eu-season-gate-probe.log
+
+      - name: Commit findings
+        if: always()
+        run: |
+          git config user.name "FIELD CI"
+          git config user.email "claude@field.dev"
+          git add outbox/eu-season-gate-probe.log || true
+          git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
+          git commit -m "probe: EU season gate relay coverage [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push; then echo "pushed on attempt $i"; exit 0; fi
+            git pull --rebase --autostash origin main || true
+            sleep $((i * 3))
+          done
+          exit 1
