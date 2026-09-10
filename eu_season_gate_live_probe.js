@@ -128,7 +128,12 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   // list says nothing about any gate.
   m.chipBarSkeletonStillUp = chipInfo.skeletonStillUp;
   const chipText = (m.chips || []).join(' | ').toUpperCase();
-  m.europeanChipPresent = ['EPL','PREMIER','LA LIGA','LALIGA','SERIE A','BUNDESLIGA','LIGUE 1','EFL','LEAGUE ONE','LEAGUE TWO','CHAMPIONSHIP']
+  // UCL/UEL/UECL were missing from this list, so a run showing `UCL (6)` in
+  // its own chip array reported europeanChipPresent: ['EFL']. The verdict
+  // was right by luck -- one other European chip happened to be present.
+  m.europeanChipPresent = ['EPL','PREMIER','LA LIGA','LALIGA','SERIE A','BUNDESLIGA','LIGUE 1',
+                           'EFL','LEAGUE ONE','LEAGUE TWO','CHAMPIONSHIP',
+                           'UCL','UEL','UECL','UEFA','CONFERENCE','EUROPA']
     .filter(t => chipText.includes(t));
   m.pageErrors = errors;
 
