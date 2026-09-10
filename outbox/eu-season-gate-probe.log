@@ -1,30 +1,31 @@
 relay: https://field-relay-nba.jeffunglesbee.workers.dev
-today: 2026-09-10   matchday probed: 2026-08-30 (fallback 2026-09-06)
+today: 2026-09-10   matchdays swept: 2026-08-29(Sat), 2026-08-30(Sun), 2026-09-05(Sat), 2026-09-06(Sun)
 checked 8 of 8 gated European keys — the eight hardcoded false in FIELD_V2_SOURCES
 
 key         today          matchday                       verdict
 ----------  -------------  -----------------------------  -------
-epl         200 n=0        200 n=4 @2026-08-30            SERVED
-            └─ EPL: Chelsea 4-3 Brighton & Hove Albion (final)
-laliga      200 n=0        200 n=3 @2026-08-30            SERVED
-            └─ La Liga: Real Madrid 4-0 Málaga (final)
-seriea      200 n=0        200 n=3 @2026-08-30            SERVED
-            └─ Serie A: Napoli 1-2 Como (final)
-bundesliga  200 n=0        200 n=2 @2026-08-30            SERVED
-            └─ Bundesliga: SC Freiburg 4-1 Werder Bremen (final)
-ligue1      200 n=0        200 n=3 @2026-08-30            SERVED
-            └─ Ligue 1: Paris FC 3-0 Nice (final)
-eflchamp    200 n=0        200 n=1 @2026-09-06            SERVED
-            └─ EFL Championship: Birmingham City 2-2 Wolverhampton Wanderers (final)
-eflone      200 n=1        200 n=2 @2026-08-30            SERVED
-            └─ EFL League One: AFC Wimbledon 1-0 Wigan Athletic (final)
-efltwo      200 n=0        200 n=0 @2026-09-06            NOT SERVED
+epl         200 n=0        200 n=4 @2026-08-29(Sat)       SERVED
+            └─ EPL: Liverpool 2-2 Nottingham Forest (final)
+laliga      200 n=0        200 n=3 @2026-08-29(Sat)       SERVED
+            └─ La Liga: Levante 5-2 Real Betis (final)
+seriea      200 n=0        200 n=4 @2026-08-29(Sat)       SERVED
+            └─ Serie A: Fiorentina 0-3 Frosinone (final)
+bundesliga  200 n=0        200 n=6 @2026-08-29(Sat)       SERVED
+            └─ Bundesliga: 1. FC Union Berlin 3-3 Eintracht Frankfurt (final)
+ligue1      200 n=0        200 n=5 @2026-08-29(Sat)       SERVED
+            └─ Ligue 1: Strasbourg 2-1 Lens (final)
+eflchamp    200 n=0        200 n=11 @2026-08-29(Sat)      SERVED
+            └─ EFL Championship: Derby County 0-3 Swansea City (final)
+eflone      200 n=1        200 n=9 @2026-08-29(Sat)       SERVED
+            └─ EFL League One: Blackpool 4-0 Peterborough United (final)
+efltwo      200 n=0        200 n=12 @2026-08-29(Sat)      SERVED
+            └─ EFL League Two: Barnet 2-2 Cheltenham Town (final)
 
 PASS  THE RELAY answered every probe — not a proxy, not an error page
 PASS  the relay honours ?date= rather than ignoring it
 PASS  at least one key is SERVED — the route family is real, not uniformly empty
+PASS  the swept dates span BOTH a Saturday and a Sunday
 
-1 of 8 key(s) NOT SERVED — these must NOT be enabled.
-  efltwo
+0 of 8 key(s) NOT SERVED — these must NOT be enabled.
 
 PASS
