@@ -15027,8 +15027,17 @@ function findScore(game) {
 const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // ── Phase 1: api-sports.io live scores (ESPN Pivot, May 2026) ────────────
 // Spec: docs/espn-pivot-phase0-1-2026-05-29.md  Relay: /v2/* routes live.
-// European leagues ended ≤2026-05-26 — set true next season.
+// The eight European club competitions auto-roll -- see _euSeasonActive below.
 const V2_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev';
+// European club seasons run Aug -> May every year. A boolean needs a human to
+// remember; an absolute-year date gate needs a human every July. This needs
+// neither. Opening a few weeks early is harmless (the relay simply returns no
+// games); opening late is a live product outage, which is what happened in
+// Aug 2026. Month-based so it auto-rolls every season.
+function _euSeasonActive(){
+  const m = new Date().getUTCMonth(); // 0=Jan
+  return m >= 7 || m <= 5;            // Aug(7)..Dec, Jan..Jun(5)
+}
 const FIELD_V2_SOURCES = {
   nba: true, nhl: true, mlb: true, wnba: true, // Phase 1/2: LIVE
   mls: true,
@@ -15037,10 +15046,10 @@ const FIELD_V2_SOURCES = {
              // Date coverage: fieldDatesToQuery's ≥16 ET tomorrow-add captures the
              // typical Saturday/Sunday AEST evening match window (AEST evening =
              // UTC next day ≈ ET afternoon previous day).
-  epl: false, // off-season
+  epl: _euSeasonActive(),
   ucl: true, europa: true, conference: true, uclqual: true, europaqual: true, conferencequal: true,
-  eflchamp: false, eflone: false, efltwo: false,             // EFL — season ended May 25 2026
-  laliga: false, seriea: false, bundesliga: false, ligue1: false,
+  eflchamp: _euSeasonActive(), eflone: _euSeasonActive(), efltwo: _euSeasonActive(),
+  laliga: _euSeasonActive(), seriea: _euSeasonActive(), bundesliga: _euSeasonActive(), ligue1: _euSeasonActive(),
   wc26: new Date() >= new Date('2026-06-11T00:00:00Z'), // auto-activates June 11 2026 UTC
   // NFL/CFB — added 2026-07-03, same day the backend adapter shipped.
   // Real follow-up caught before calling the wiring "complete": the
@@ -22649,7 +22658,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-07a';
+  const SW_VERSION = '2026-09-09a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
