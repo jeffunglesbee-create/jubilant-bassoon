@@ -14,12 +14,23 @@
 
 const RELAY = process.env.V2_RELAY_BASE || 'https://field-relay-nba.jeffunglesbee.workers.dev';
 
-// Saturday 2026-08-30: after every one of these seasons had started, per the
-// first-matchday table in the CC-CMD. EFL League Two plays Saturdays; if a key
-// shows zero here it is probed on a second matchday before being called unserved.
-const MATCHDAY = process.argv.find(a => a.startsWith('--matchday='))?.split('=')[1] || '2026-08-30';
-const FALLBACK = process.argv.find(a => a.startsWith('--fallback='))?.split('=')[1] || '2026-09-06';
+// ONE MATCHDAY IS NOT ENOUGH, and this probe learned that by getting it wrong.
+//
+// The first version probed 2026-08-30 with a 2026-09-06 fallback and reported
+// `efltwo` NOT SERVED. BOTH OF THOSE DATES ARE SUNDAYS. The top-five European
+// leagues play Sunday; EFL League Two plays Saturday and Tuesday and almost
+// never Sunday. The date had been chosen to suit five of the eight competitions
+// and then applied to all of them. On Saturday 2026-08-29 `efltwo` returns a
+// nine-game slate.
+//
+// A false NOT SERVED is the expensive direction: it leaves a live competition
+// gated off, which is the exact outage this CC-CMD exists to end. So the probe
+// sweeps several dates and takes the best answer, and asserts its own date set
+// spans both a Saturday and a Sunday.
+const DATES = (process.argv.find(a => a.startsWith('--dates='))?.split('=')[1]
+    || '2026-08-29,2026-08-30,2026-09-05,2026-09-06').split(',').map(d => d.trim()).filter(Boolean);
 const TODAY = new Date().toISOString().slice(0, 10);
+const dow = (d) => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(`${d}T12:00:00Z`).getUTCDay()];
 
 const KEYS = ['epl', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'eflchamp', 'eflone', 'efltwo'];
 
@@ -52,14 +63,19 @@ const probe = async (sport, date) => {
 const rows = [];
 for (const k of KEYS) {
     const today = await probe(k, null);
-    let day = await probe(k, MATCHDAY);
-    let usedDate = MATCHDAY;
-    if (day.status === 200 && day.count === 0) { day = await probe(k, FALLBACK); usedDate = FALLBACK; }
-    rows.push({ key: k, today, matchday: day, usedDate });
+    const tried = [];
+    let best = null, usedDate = null;
+    for (const d of DATES) {
+        const r = await probe(k, d);
+        tried.push(`${d}(${dow(d)}) n=${r.relayAnswered ? r.count : 'ERR'}`);
+        if (!best || (r.relayAnswered && r.count > (best.count ?? -1))) { best = r; usedDate = d; }
+        if (r.relayAnswered && r.count > 0) break;   // a positive settles it
+    }
+    rows.push({ key: k, today, matchday: best, usedDate, tried });
 }
 
 console.log(`relay: ${RELAY}`);
-console.log(`today: ${TODAY}   matchday probed: ${MATCHDAY} (fallback ${FALLBACK})`);
+console.log(`today: ${TODAY}   matchdays swept: ${DATES.map(d => `${d}(${dow(d)})`).join(', ')}`);
 console.log(`checked ${KEYS.length} of ${KEYS.length} gated European keys — the eight hardcoded false in FIELD_V2_SOURCES\n`);
 console.log('key         today          matchday                       verdict');
 console.log('----------  -------------  -----------------------------  -------');
@@ -68,13 +84,16 @@ for (const r of rows) {
     const served = r.matchday.status === 200 && r.matchday.count > 0;
     if (!served) unserved++;
     const t = `${r.today.status ?? 'ERR'} n=${r.today.count ?? '-'}`;
-    const m = `${r.matchday.status ?? 'ERR'} n=${r.matchday.count ?? '-'} @${r.usedDate}`;
+    const m = `${r.matchday.status ?? 'ERR'} n=${r.matchday.count ?? '-'} @${r.usedDate}(${dow(r.usedDate)})`;
     console.log(`${r.key.padEnd(10)}  ${t.padEnd(13)}  ${m.padEnd(29)}  ${served ? 'SERVED' : 'NOT SERVED'}`);
     if (served) {
         const g = r.matchday.sample;
         console.log(`            └─ ${g.league}: ${g.home.name} ${g.home.score}-${g.away.score} ${g.away.name} (${g.state})`);
     } else if (r.matchday.err) {
         console.log(`            └─ ${r.matchday.err}`);
+    } else {
+        // Rule 91: say what was actually asked before anyone reads NOT SERVED.
+        console.log(`            └─ zero on every date tried: ${r.tried.join(', ')}`);
     }
 }
 
@@ -92,6 +111,13 @@ check('the relay honours ?date= rather than ignoring it',
 check('at least one key is SERVED — the route family is real, not uniformly empty',
     rows.some(r => r.matchday.count > 0),
     'all eight empty on a real matchday would mean the probe, not the gates, is what is broken');
+// Written because its absence produced a false NOT SERVED. English lower
+// divisions play Saturday; the top five play Sunday. A date set covering only
+// one of those cannot answer for all eight competitions.
+check('the swept dates span BOTH a Saturday and a Sunday',
+    DATES.some(d => dow(d) === 'Sat') && DATES.some(d => dow(d) === 'Sun'),
+    `swept ${DATES.map(d => `${d}(${dow(d)})`).join(', ')} — a Sunday-only sweep reports EFL divisions unserved; `
+    + 'a Saturday-only sweep can do the same to a top-five league on a Sunday-only matchday');
 
 console.log(`\n${unserved} of ${KEYS.length} key(s) NOT SERVED — these must NOT be enabled.`);
 if (unserved) console.log(`  ${rows.filter(r => !(r.matchday.status === 200 && r.matchday.count > 0)).map(r => r.key).join(', ')}`);

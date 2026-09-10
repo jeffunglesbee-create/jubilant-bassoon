@@ -14,10 +14,10 @@ name: EU season gate probe
 on:
   workflow_dispatch:
     inputs:
-      matchday:
-        description: 'a date on which these competitions demonstrably played'
+      dates:
+        description: 'comma-separated matchdays to sweep; MUST span a Saturday and a Sunday'
         required: false
-        default: '2026-08-30'
+        default: '2026-08-29,2026-08-30,2026-09-05,2026-09-06'
   push:
     paths: ['outbox/.trigger-eu-season-gate-probe']
 
@@ -36,7 +36,8 @@ jobs:
 
       - name: probe all eight gated European keys
         run: |
-          node scripts/eu-season-gate-probe.mjs --matchday=${{ inputs.matchday || '2026-08-30' }} \
+          node scripts/eu-season-gate-probe.mjs \
+            --dates=${{ inputs.dates || '2026-08-29,2026-08-30,2026-09-05,2026-09-06' }} \
             2>&1 | tee outbox/eu-season-gate-probe.log
 
       - name: Commit findings
