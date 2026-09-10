@@ -6365,6 +6365,9 @@ const SPORT_CHIP_LABELS = {
   "UEFA Champions League":     "UCL",
   "UEFA Europa League":        "UEL",
   "UEFA Conference League":    "UECL",
+  "EFL Championship":          "EFL Champ",
+  "EFL League One":            "EFL L1",
+  "EFL League Two":            "EFL L2",
   "EFL Championship Playoffs": "EFL Champ",
   "EFL League One Playoffs":   "EFL L1",
   "EFL League Two Playoffs":   "EFL L2",
@@ -20893,6 +20896,40 @@ async function fetchV2AllScores() {
   // rather than duplicating, same guarantee WNBA's injection already has.
   if (FIELD_V2_SOURCES.mls) injectV2SportSection('mls', 'MLS Soccer');
 
+  // ── European league sections (CC-CMD-2026-09-10-eu-sections-not-injected) ──
+  //
+  // ec6e3859 opened the eight European gates and NO CARD APPEARED. Measured
+  // 2026-09-10: 3 EFL Championship fixtures on the ET date, gate open in the
+  // deployed bundle, chip counts summing exactly to ALL(55) with no EFL chip --
+  // the games were in espnScores and in no section.
+  //
+  // There are exactly two card-CREATING paths, and seven of the eight were in
+  // neither. SOCCER_LEAGUES/fetchSoccerFixtures holds only ger.1, eng.league
+  // and eng.trophy. injectV2SportSection was wired for cfb/nfl/wnba/mls.
+  // fetchPLFixtures and fetchV2AllScores only OVERLAY scores onto game objects
+  // that already exist -- this file's own SOCCER_LEAGUES comment says so, and
+  // dates the same systemic gap to 2026-08-02.
+  //
+  // Labels match SPORT_CHIP_LABELS keys exactly, so the chip reads EPL /
+  // La Liga / Serie A / Ligue 1 rather than the raw section name, and match the
+  // hardcoded arrays' own sections.push labels, so a repopulated eplRaw merges
+  // instead of duplicating -- the same guarantee MLS and WNBA already have.
+  //
+  // BUNDESLIGA IS DELIBERATELY ABSENT. It is the one of the eight that already
+  // has a card mechanism: ger.1 is in SOCCER_LEAGUES, re-added 2026-08-02 for
+  // exactly this defect. Adding a second creator would merge on a lowercased
+  // home|away key built from two sources that name clubs differently -- ESPN
+  // says "1. FC Union Berlin" where V2 says "Union Berlin" -- and a merge-key
+  // miss produces a duplicate card, not a missing one. One creator per
+  // competition.
+  if (FIELD_V2_SOURCES.epl)      injectV2SportSection('epl',      'Premier League');
+  if (FIELD_V2_SOURCES.laliga)   injectV2SportSection('laliga',   'La Liga');
+  if (FIELD_V2_SOURCES.seriea)   injectV2SportSection('seriea',   'Serie A');
+  if (FIELD_V2_SOURCES.ligue1)   injectV2SportSection('ligue1',   'Ligue 1');
+  if (FIELD_V2_SOURCES.eflchamp) injectV2SportSection('eflchamp', 'EFL Championship');
+  if (FIELD_V2_SOURCES.eflone)   injectV2SportSection('eflone',   'EFL League One');
+  if (FIELD_V2_SOURCES.efltwo)   injectV2SportSection('efltwo',   'EFL League Two');
+
   // ── Inject FIFA World Cup section into allData.sports ─────────────────────
   // V2 polling fetches wc26 games → espnScores. allData.sports may already
   // contain a FIFA section pushed by maybePushWorldCup() from wc26Raw
@@ -27712,7 +27749,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-09a';
+  const SW_VERSION = '2026-09-09b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
