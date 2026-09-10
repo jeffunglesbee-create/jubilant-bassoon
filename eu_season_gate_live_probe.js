@@ -42,15 +42,32 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   // keeps turning up.
   m.deployedSwVersion = (html.match(/SW_VERSION\s*[=:]\s*["']([0-9]{4}-[0-9]{2}-[0-9]{2}[a-z]?)["']/) || [])[1] || null;
 
-  // ---- what the relay has TODAY, so an empty chip list is readable ----
-  m.relayGamesToday = {};
+  // ---- what the relay has for the date the APP IS SHOWING ----
+  //
+  // THE FIRST WORKING VERSION COMPARED THE WRONG DAY. It asked the relay for its
+  // own default "today", which is UTC, and compared that against a chip list the
+  // client builds on the ET date. At 2026-09-10T01:42Z those are 09-09 and
+  // 09-10, and the one EFL League One fixture (19:00Z = 15:00 EDT on the 10th)
+  // is TOMORROW in ET. The probe reported "no chip despite 1 game available" and
+  // pointed at the gate. The app was right; the comparison was wrong. A units
+  // mismatch reads exactly like a defect.
+  m.etDate = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  m.utcDate = new Date().toISOString().slice(0, 10);
+  m.datesDiffer = m.etDate !== m.utcDate;
+  m.relayGamesOnEtDate = {};
+  m.relayGamesOnUtcDate = {};
   for (const k of KEYS) {
-    try {
-      const d = await (await fetch(`${RELAY}/v2/games?sport=${k}`)).json();
-      m.relayGamesToday[k] = d.sport === k ? d.count : 'BAD_SHAPE';
-    } catch (e) { m.relayGamesToday[k] = `ERR ${e.message}`; }
+    for (const [field, date] of [['relayGamesOnEtDate', m.etDate], ['relayGamesOnUtcDate', m.utcDate]]) {
+      try {
+        const d = await (await fetch(`${RELAY}/v2/games?sport=${k}&date=${date}`)).json();
+        m[field][k] = d.sport === k ? d.count : 'BAD_SHAPE';
+      } catch (e) { m[field][k] = `ERR ${e.message}`; }
+    }
   }
-  m.totalEuropeanGamesToday = Object.values(m.relayGamesToday).filter(n => typeof n === 'number').reduce((a, b) => a + b, 0);
+  const sum = o => Object.values(o).filter(n => typeof n === 'number').reduce((a, b) => a + b, 0);
+  // The client renders the ET slate, so THAT is the number a chip list answers to.
+  m.totalEuropeanGamesToday = sum(m.relayGamesOnEtDate);
+  m.totalEuropeanGamesUtcToday = sum(m.relayGamesOnUtcDate);
 
   // ---- claim 2: the rendered app ----
   const browser = await chromium.launch();
@@ -98,8 +115,8 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       ? 'PASS (gate) / INCONCLUSIVE (render) — the chip bar rendered no chips AT ALL, not even for sports with games today, so the probe did not reach a rendered bar. Says nothing about the gate.'
     : m.europeanChipPresent.length ? 'PASS — gate deployed AND a European chip is rendering'
     : m.totalEuropeanGamesToday === 0
-      ? 'PASS (gate) / NOT-TESTABLE-TODAY (render) — all eight bound in the deployed bundle; the relay has zero European games today (international break), so no chip can exist'
-      : `PASS (gate) / NO CHIP despite ${m.totalEuropeanGamesToday} game(s) available today — investigate`;
+      ? `PASS (gate) / NOT-TESTABLE-TODAY (render) — all eight bound in the deployed bundle, and the relay has ZERO European fixtures on the ET date the app renders (${m.etDate}), so no chip can exist and the app is correct. The bar DID render (${m.chips.length} chips), so this is a live reading. ${m.totalEuropeanGamesUtcToday} fixture(s) exist on UTC ${m.utcDate} — a different day, not this slate.`
+      : `PASS (gate) / NO CHIP despite ${m.totalEuropeanGamesToday} fixture(s) on the ET date ${m.etDate} — investigate`;
 
   fs.writeFileSync(`outbox/eu-season-gate-live-manifest-${stamp}.json`, JSON.stringify(m, null, 2));
   console.log(JSON.stringify(m, null, 2));
