@@ -188,6 +188,41 @@ of the class."
 - `field-relay-nba/.github/workflows/deploy.yml` — `check-quota-gate-ordering.mjs`
   blocks the deploy if either loop regresses on any of the three properties.
 
+## A Task 0 miss of my own, found by CI
+
+The relay's `verify` job failed after this landed, at the step **"Rule registry
+check -- no unregistered `## Rule N` (N>=89)"**. That failure is correct and it
+is mine.
+
+STANDARDS.md Rule 90 (RULE-COMPLIANCE-FOLLOWUP-A) requires every new rule to get
+a matching `codex` row — `category:"rule-registry", key:"rule-{N}"` — **in the
+same session**, and field-relay-nba's `deploy.yml` enforces it by scanning this
+repo's STANDARDS.md and querying its own D1.
+
+My Task 0 probe checked `STANDARDS-INDEX.md`, which is the file the CC-CMD
+named, and correctly reported it absent. **The actual registry is a D1 table.**
+"The index file does not exist" was a true answer to the wrong question — I read
+the document instead of probing the mechanism, which is the same substitution
+Rule 99 is about.
+
+It was also masked on the first run: the transient TLS reset at step 5 caused
+step 8 to be *skipped*, so the only reason this surfaced at all is that the
+re-run got past the reset. A flake hid a real failure for one attempt.
+
+Fixed by `field-relay-nba` `257b0b5`, `register-rule-99.yml`, on the existing
+`register-rule-98.yml` precedent — no new D1 write path invented. Two judgement
+calls in it:
+
+- **Registered `EXERCISED`, not `UNEXERCISED`.** Rule 90's normal flow is
+  register-then-flip, but Rule 99's case predates the rule: written from
+  `index.js:6503`, fixed in `dc7df57`, same session. `UNEXERCISED` would be
+  false on day one and would turn `rule90-staleness-monitor.yml` red in 14 days
+  over a rule that has already done its work.
+- The confirm step **greps for the key** rather than only printing the response,
+  so a silent no-op insert fails the run.
+
+This is a live D1 insert of one registry row, using the sanctioned mechanism.
+
 ## Carry-forward
 
 None. No deferred work without a second CC-CMD.
