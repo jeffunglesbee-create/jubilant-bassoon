@@ -1,5 +1,29 @@
 # FIELD HANDOFF
 
+## Session 2026-09-11 — Rule 99 (DISTINGUISHABILITY-A)
+
+HEAD `3bfa1a21` -> `3da97fb9`. Smoke **1037 passed, 0 failed** (unchanged; no
+`index.html` edit, so no SW_VERSION bump).
+
+Session doc: `outbox/cc-session-2026-09-11-rule99-distinguishability.md`
+
+STANDARDS.md Rule 99 at `:4906` — absence must be a sibling of the value, never
+a member of it. Paired fix in field-relay-nba `dc7df57`: a Cloudflare cache hit
+strips `x-requests-remaining`, `|| 0` read that as zero credits, and the odds
+snapshot terminated every remaining sport while the account sat at 44,235 of
+100,000 used.
+
+Two gates added, both mutation-proven and both wired to CI:
+`scripts/check-absence-collapse.mjs` here (census: **263 flagged / 0
+suppressed / 138,430 clean lines** across both repos — three counts, never a
+verdict), and `check-quota-gate-ordering.mjs` in the relay.
+
+**Task 0 correction worth carrying:** three rule registries diverge above 88.
+`STANDARDS.md` Rule 91 is SCOPE-LEGIBLE-A; SAMPLE-COVERAGE-A is Rule 91 in
+`field-relay-nba/CLAUDE.md` only; `jubilant-bassoon/CLAUDE.md` has no Rule 91.
+Cite cross-repo rules by tag and file, never by bare number.
+
+
 ## Session 2026-09-06/07 — the tennis draw: the WC bracket tree, generalised
 
 HEAD `af176071` → `8213c02b`. Smoke **1037 passed, 0 failed** — up from 1013.
