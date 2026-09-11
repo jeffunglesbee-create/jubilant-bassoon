@@ -4902,3 +4902,129 @@ and what reliability posture an undocumented dependency requires. They
 compose: Rule 98 point 3 explicitly extends Rule 80's discipline rather
 than restating it.
 
+
+## Rule 99 — Absence must be a sibling of the value (DISTINGUISHABILITY-A)
+
+At every boundary, the decoder must be able to represent at least as many
+states as the source can produce that warrant different action.
+
+The test is not "does this handle missing data." It is: **if I see this
+output, how many different upstream realities could have produced it?** If
+more than one, and they would warrant different responses, the type is too
+narrow.
+
+A source crossing a boundary can answer in at least five ways: a value; an
+absent field; an error status; a success stripped of its metadata (a cache
+hit); an unparseable body. A bare `number`, `bool` or `string` has room for
+one. `Unknown` must never gate a decision that `Zero` would gate.
+
+### The live instance that produced this rule
+
+`field-relay-nba src/index.js:6503`:
+
+```js
+const quotaRemaining = parseInt(r.headers.get('x-requests-remaining') || '0', 10) || 0;
+```
+
+`fetchSportOddsLive` runs with `cacheTtl: 900, cacheEverything: true`
+(`src/index.js:6498`). A Cloudflare edge cache hit returns the body without the
+vendor's `x-requests-remaining` header. `|| 0` turns "the edge answered, so the
+vendor never told us" into "the vendor told us zero."
+
+The collapse then travels. In `snapshotCronOdds`:
+
+| line | code |
+|---|---|
+| 6535 | `if (lastQuota !== null && lastQuota < ODDS_QUOTA_FLOOR) return lastQuota;` |
+| 6538 | `lastQuota = quotaRemaining;` |
+| 6539 | `if (!ok) continue;` |
+| 6540 | `if (quotaRemaining > 0 && quotaRemaining < ODDS_QUOTA_FLOOR) return lastQuota;` |
+
+Two things are worth reading closely, because both are the rule.
+
+**The `> 0` guard is present on 6540 and absent on 6535.** Someone already
+half-saw this and patched the line where the fabricated zero is produced —
+but the zero survives into `lastQuota` and kills the *next* iteration through
+6535, where `0 < 50` is simply true. A defence applied at one of two
+structurally identical sites is the signature of treating a symptom.
+
+**6538 assigns before 6539 checks `ok`.** A failed fetch's fabricated quota is
+recorded as though it were a reading.
+
+Measured 2026-09-11: MLS 0/17 rows, Bundesliga 0/2, CFB 0/4, NFL 0/1 across two
+dates, while the account sat at 44,235 of 100,000 credits used. Nothing was
+exhausted. One cache hit starved every sport after it.
+
+### The same move, under other labels
+
+| site | absence became |
+|---|---|
+| `field-relay-nba src/index.js:6503` | zero credits remaining |
+| `field-relay-nba scripts/rescore-quality-6b.mjs:89` (recorded), `:596` (live `(s.dims[k] \|\| 0)`) | zero points — silently omitted 20 of 294 |
+| client `1 - homeWP` (historical) | the draw folded into away |
+| `session_health` `title LIKE 'PENDING%'` | `OPEN —` entries read as not open |
+| a route present in the manifest | "route exists" read as "field shape verified" |
+| `closing_odds == opening_odds` | "observed twice, unchanged" indistinguishable from "observed once" |
+| era 6 `nonzero on 128/128` | 124 midpoint abstentions counted as success |
+
+### The correct forms already in this codebase
+
+Cite these rather than inventing new ones:
+
+- `Sport.Unrecognised of string` — carries the label that matched nothing,
+  instead of returning `None` and losing what was seen.
+- `Modelled: bool` + `Omission: string option` — separates "nobody looked"
+  from "deliberately not modelled."
+- `CAPPED_DIMS` — the partly-reachable population that a binary
+  reachable/unreachable list had nowhere to put.
+- `ThreeWayDrawMissing` — refuses to degrade a three-outcome market to
+  two-way rather than silently folding the draw.
+
+### Relationship to SAMPLE-COVERAGE-A — genus and species, not a duplicate
+
+`field-relay-nba CLAUDE.md` Rule 91 (SAMPLE-COVERAGE-A) requires a sampling
+probe to print its own denominator. That is this class at the reporting
+surface: a bare `PASS` cannot distinguish "186 of 186 verified" from "6
+verified, 180 inferred."
+
+They are not interchangeable, and neither makes the other redundant:
+
+- SAMPLE-COVERAGE-A is narrower in **scope** (probe output only) and more
+  specific in **remedy** (print `checked N of M`). It has nothing to say about
+  `parseInt(h || '0') || 0` — there is no sample and no probe.
+- Rule 99 is a rule about **types crossing a boundary**, and its remedy is
+  structural — make absence a sibling. It does not tell you to print a
+  denominator.
+
+**Where they meet, SAMPLE-COVERAGE-A governs.** A probe's report is a
+reporting surface; do not satisfy it by widening a type and leaving the
+printed result silent.
+
+**Numbering caution.** Three rule registries are in play and they diverge
+above 88: this file's Rule 91 is SCOPE-LEGIBLE-A, `jubilant-bassoon/CLAUDE.md`
+Rule 91 does not exist (that file ends at Rule 90, VERIFY-ARTIFACT-A), and
+SAMPLE-COVERAGE-A is Rule 91 in `field-relay-nba/CLAUDE.md` only. Cite
+SAMPLE-COVERAGE-A by its tag and its file, never by a bare "Rule 91."
+
+### Mechanical check
+
+`scripts/check-absence-collapse.mjs` flags absence-collapse on externally-read
+values across both repos. It reports three counts — flagged,
+suppressed-with-reason, clean — deliberately: a single pass/fail number would
+be this rule violating itself, since "0 flagged" cannot distinguish "nothing to
+find" from "the matcher matched nothing."
+
+Suppression requires a reason string, so the exemptions are themselves
+greppable:
+
+```js
+const n = parseInt(row.count, 10) || 0; // absence-ok: D1 COUNT(*) always present
+```
+
+### What the check cannot catch
+
+It is a syntactic matcher over source text. It does not see: a collapse across
+a function boundary (a helper returning `0` whose caller cannot tell);
+`Number(x)` or unary `+x` producing `NaN` later coerced; a schema-level default
+in D1 or a JSON parser; or a value collapsed by a library. Its clean count is
+"nothing matched these patterns," never "this file is free of the class."

@@ -164,6 +164,18 @@ jobs:
           node scripts/check-v2-key-has-card-path.mjs --self-test
           node scripts/check-v2-key-has-card-path.mjs
 
+      # STANDARDS.md Rule 99 (DISTINGUISHABILITY-A). NOT a count gate: the
+      # repo has 266 flagged sites today and most are correct defaults, so
+      # failing on the number would make the gate useless on day one (Rule 97 --
+      # CI as invariant, not error count). What IS asserted is that the check
+      # still works: --self-test proves the classifier can fail, and --require
+      # proves the matcher still reaches the main source file rather than
+      # silently matching nothing. The count is printed for the log.
+      - name: Absence-collapse census (Rule 99) — reports, does not gate on count
+        run: |
+          node scripts/check-absence-collapse.mjs --self-test
+          node scripts/check-absence-collapse.mjs . --require=src/legacy/field.js
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."
