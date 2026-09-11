@@ -1,43 +1,32 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "34492972255",
-  "commit": "88cd213bce482aab03e527fda7b0f9e613b26128",
-  "timestamp": "2026-09-10T15:03:41.114Z",
+  "runId": "34613949608",
+  "commit": "f4bdd554653e08ff01ea5837114119dd02fee53c",
+  "timestamp": "2026-09-11T15:05:43.176Z",
   "cacheAccepted": true,
   "testApi": "pl-verify",
   "schema": "2.1",
-  "for_date": "2026-09-10",
+  "for_date": "2026-09-11",
   "window_dates": [
-    "2026-09-10",
     "2026-09-11",
     "2026-09-12",
-    "2026-09-13"
+    "2026-09-13",
+    "2026-09-14"
   ],
   "games_found_by_date": {
-    "2026-09-10": 5,
     "2026-09-11": 15,
     "2026-09-12": 15,
-    "2026-09-13": 15
+    "2026-09-13": 15,
+    "2026-09-14": 10
   },
   "days": [
-    {
-      "iso": "2026-09-11",
-      "windowHasDay": true,
-      "windowMlbCount": 15,
-      "navigated": false,
-      "cardCount": 0,
-      "sectionCount": 0,
-      "mlbEnrichMatched": 0,
-      "mlbEnrichAvailable": 0,
-      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
-    },
     {
       "iso": "2026-09-12",
       "windowHasDay": true,
       "windowMlbCount": 15,
-      "navigated": false,
-      "cardCount": 0,
-      "sectionCount": 0,
+      "navigated": true,
+      "cardCount": 32,
+      "sectionCount": 35,
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
       "error": null
@@ -52,12 +41,34 @@
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
       "error": null
+    },
+    {
+      "iso": "2026-09-14",
+      "windowHasDay": true,
+      "windowMlbCount": 10,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
     }
   ],
   "windowDaysReachingClient": 3,
-  "windowMlbTotal": 45,
-  "renderedCardsTotal": 0,
+  "windowMlbTotal": 40,
+  "renderedCardsTotal": 32,
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
-  "consoleErrors": []
+  "consoleErrors": [
+    "Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-09-11&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-09-11&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ]
 }
