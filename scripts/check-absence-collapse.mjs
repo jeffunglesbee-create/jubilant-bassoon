@@ -59,6 +59,17 @@ const COLLAPSE = [
 
 const SUPPRESS = /\/\/\s*absence-ok:\s*(.*)$/;
 
+// Blind spot #1, closed 2026-09-12. A `.catch()` returning an empty literal is
+// the SAME collapse one call deeper: the query failed, and the caller reads "no
+// rows". The original matcher could not see it -- Rule 99's own "what the check
+// cannot catch" section listed it first -- and triaging the 263 findings is what
+// surfaced 7 live instances in field-relay-nba src/index.js, one of which
+// answers reason:'no active postseason series' when the query threw.
+//
+// A catch that rethrows is not a collapse, so the literal must be the whole body.
+// Separate op label, so these never hide inside the `|| []` bulk.
+const CATCH_COLLAPSE = /\.catch\s*\(\s*(?:\(\s*[\w$]*\s*\)|[\w$]+)\s*=>\s*\(?\s*(?:\[\s*\]|\{\s*\}|\{\s*results\s*:\s*\[\s*\]\s*\})/;
+
 const SKIP_DIRS = new Set(['node_modules', '.git', 'build', 'public', 'dist', 'obj', 'bin', '.wrangler']);
 const EXTS = new Set(['.js', '.mjs', '.cjs']);
 
@@ -84,6 +95,14 @@ function walk(dir, out = []) {
 
 // Exported so the self-test drives the SAME classifier the scan uses.
 export function classifyLine(line) {
+    // Checked FIRST: a catch-collapse is a real finding whether or not the same
+    // line also carries a `|| []`, and the more specific label is the useful one.
+    if (CATCH_COLLAPSE.test(line)) {
+        const sup = line.match(SUPPRESS);
+        const reason = sup && (sup[1] || '').trim();
+        return reason ? { kind: 'suppressed', op: 'catch-collapse', reason }
+                      : { kind: 'flagged', op: 'catch-collapse' };
+    }
     const collapse = COLLAPSE.find(([re]) => re.test(line));
     if (!collapse) return { kind: 'clean' };
     if (!EXTERNAL.some(re => re.test(line))) return { kind: 'clean' };
@@ -112,6 +131,12 @@ const FIXTURES = [
     [`let total = 0; total = total || 0;`,                                   'clean'],   // no external read
     [`const x = res.headers.get('etag');`,                                   'clean'],   // external, no collapse
     [`const label = cfg.name ?? 'default';`,                                 'clean'],   // not a zero-ish collapse
+    // catch-collapse: the query FAILED and the caller reads "no rows"
+    [`).bind(date).all().catch(() => ({ results: [] }));`,                   'flagged'],
+    [`const x = await f().catch(() => []);`,                                 'flagged'],
+    [`const x = await f().catch(e => ({}));`,                                'flagged'],
+    [`).all().catch(() => ({ results: [] })); // absence-ok: caller checks .error`, 'suppressed'],
+    [`const x = await f().catch(e => { log(e); throw e; });`,                'clean'],   // rethrows: no collapse
 ];
 function selfTest() {
     const bad = FIXTURES.filter(([l, want]) => classifyLine(l).kind !== want);
@@ -162,12 +187,27 @@ for (const root of roots) {
 console.log(`\nscanned ${filesScanned} files across ${roots.length} root(s): ${roots.join(', ')}`);
 console.log(`(${SELF} excluded from its own scan — it quotes the patterns it matches)`);
 console.log(`\n  flagged                 ${flagged.length}`);
+// Per-op breakdown, because one number hides the shape. `catch-collapse: 119`
+// next to `|| []: 171` is the difference between a census and a pile: the
+// catch-collapse bulk is probe and test scaffolding, and the handful in route
+// handlers is what anyone would act on.
+{
+    const byOp = {};
+    for (const f of flagged) byOp[f.op] = (byOp[f.op] || 0) + 1;
+    for (const [op, n] of Object.entries(byOp).sort((a, b) => b[1] - a[1]))
+        console.log(`      ${String(op).padEnd(16)} ${n}`);
+}
 console.log(`  suppressed-with-reason  ${suppressed.length}`);
 console.log(`  clean (lines)           ${cleanLines}`);
 console.log('\nThree counts, not a verdict. "flagged 0" alone cannot distinguish');
 console.log('"nothing to find" from "the matcher matched nothing" — run --require');
 console.log('against a known instance to rule the second out (Rule 99).');
 
+// --json emits every finding, for triage. The human-readable form stays the
+// default: a 263-line dump in CI is not a census anyone reads.
+if (args.includes('--json')) {
+    console.log(JSON.stringify({ flagged, suppressed, cleanLines, filesScanned }, null, 1));
+} else {
 console.log(`\n── first ${Math.min(10, flagged.length)} of ${flagged.length} flagged ──`);
 for (const f of flagged.slice(0, 10)) {
     console.log(`  ${f.at}  [${f.op}]${f.note ? `  ${f.note}` : ''}\n      ${f.text}`);
@@ -175,6 +215,7 @@ for (const f of flagged.slice(0, 10)) {
 if (suppressed.length) {
     console.log(`\n── suppressions (${suppressed.length}) ──`);
     for (const s of suppressed.slice(0, 10)) console.log(`  ${s.at}  ${s.reason}`);
+}
 }
 
 let failed = false;
