@@ -248,11 +248,24 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       const nav = await page.evaluate(() => {
         const note = document.querySelector('.empty-note');
         const el = document.getElementById('date-label');
+        const main = document.getElementById('main');
+        // applyMainHTML documents its own failure mode in a comment: with an
+        // active [data-lcp-anchor], the morph MOVES the anchor out of main into
+        // tmp, and "a true no-op pass with an active anchor left `main` with
+        // zero game cards after the successful skip". That is this symptom
+        // exactly, so name the children and say where the anchor now lives
+        // rather than inferring which of us is right.
         return {
           label: el ? el.textContent.trim() : null,
           cards: document.querySelectorAll('.game-card[data-gameid]').length,
           empty_note: note ? note.textContent.replace(/\s+/g, ' ').trim().slice(0, 160) : null,
           loading_wraps: document.querySelectorAll('.loading-wrap').length,
+          loading_wrap_in_main: main ? main.querySelectorAll('.loading-wrap').length : null,
+          main_children: main ? Array.from(main.children).map(
+            c => `${c.tagName.toLowerCase()}${c.id ? '#' + c.id : ''}${
+              c.className ? '.' + String(c.className).trim().split(/\s+/).slice(0, 3).join('.') : ''}`) : null,
+          lcp_anchor_anywhere: document.querySelectorAll('[data-lcp-anchor]').length,
+          lcp_anchor_in_main: main ? main.querySelectorAll('[data-lcp-anchor]').length : null,
         };
       });
       nav.ok = nav.cards > 0 || nav.empty_note !== null;
