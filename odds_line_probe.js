@@ -22,12 +22,26 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 1600 } });
+  // WHICH id the client actually sends is observable from outside the page —
+  // `allData` is module-scoped inside the esbuild bundle and is not on window,
+  // so the propagation state cannot be read directly. The request URL is the
+  // same fact at the boundary: /context/game/espn:401816899 means _gameId
+  // reached the card, /context/game/g19 means it did not.
+  const _ctxReqs = [];
+  const _v2Reqs  = [];
+  page.on('request', r => {
+    const u = r.url();
+    if (u.includes('/context/game/')) _ctxReqs.push(u);
+    else if (u.includes('/v2/games')) _v2Reqs.push(u);
+  });
   const m = {
     probed_at: new Date().toISOString(), url: URL,
     sw_version: null, cards_seen: 0,
     odds_slot_present_in_dom: false,
     slots_hidden: 0, slots_visible: 0,
     states: { no_odds: null, opened_only: null, unchanged: null, moved: null },
+    date_label: null, stepped_back_days: 0,
+    context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
 
@@ -36,6 +50,22 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // The odds line depends on debrief.oddsOutcome, which arrives with the
     // per-game context fetch, not with the first paint.
     await page.waitForTimeout(12000);
+
+    // The debrief only renders for games isGameOver() calls final. On a slate
+    // with nothing finished yet the probe reads a legitimate zero that looks
+    // identical to a broken render path — the ambiguity this probe exists to
+    // remove. Step back a day until at least one card is injected, and report
+    // which day was read and how many steps it took.
+    for (let i = 0; i < 2; i++) {
+      const injected = await page.evaluate(
+        () => document.querySelectorAll('.game-card[data-debrief-injected]').length);
+      if (injected > 0) break;
+      await page.click('#date-prev');
+      m.stepped_back_days++;
+      await page.waitForTimeout(12000);
+    }
+    m.date_label = await page.evaluate(
+      () => { const el = document.getElementById('date-label'); return el ? el.textContent.trim() : null; });
 
     const out = await page.evaluate(() => {
       // The main slate is innerHTML-built `.game-card[data-gameid]`; the
@@ -86,6 +116,20 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.debrief_visible = out.debriefVisible;
     m.existing_odds_layers = out.oddsLayers;
     m.debrief_cards = out.debriefCards;
+    m.context_game_requests = Array.from(new Set(_ctxReqs)).slice(0, 40);
+    m.v2_games_requests = _v2Reqs.length;
+    // Three named forms plus 'other' — a bare count would collapse exactly the
+    // distinction being measured.
+    const formOf = (u) => {
+      const id = decodeURIComponent(u.split('/context/game/')[1] || '').split('?')[0];
+      if (/^espn:/.test(id)) return 'espn_prefixed';
+      if (/^[A-Z]{2,5}_/.test(id)) return 'archive_composite';
+      if (/^g\d+$/.test(id)) return 'bare_slate_id';
+      return 'other';
+    };
+    m.context_id_forms = _ctxReqs.reduce((acc, u) => {
+      const f = formOf(u); acc[f] = (acc[f] || 0) + 1; return acc;
+    }, {});
     m.odds_layer_present_in_dom = out.rows.length > 0;
     m.odds_slot_present_in_dom = out.rows.length > 0;
     m.slots_hidden  = out.rows.filter(r => r.hidden || !r.text).length;
@@ -119,6 +163,9 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // the slot being absent from every card means the render path never ran, which
   // is the failure this probe exists for.
   if (m.error) { console.error(`PROBE ERROR: ${m.error}`); process.exit(1); }
+  console.log(`date read: ${m.date_label} (stepped back ${m.stepped_back_days} day(s)), `
+            + `/v2/games requests ${m.v2_games_requests}`);
+  console.log(`/context/game id forms: ${JSON.stringify(m.context_id_forms)}`);
   console.log(`slate cards ${m.slate_cards}, debrief-injected ${m.debrief_injected}, `
             + `debrief visible ${m.debrief_visible}, existing .debrief-odds layers ${m.existing_odds_layers}`);
 
