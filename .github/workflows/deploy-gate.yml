@@ -212,6 +212,16 @@ jobs:
       - name: The past-date slate source returns what the caller expects
         run: node scripts/check-relay-date-sections.mjs
 
+      # Rule 90: the two checks above have only ever passed, and "passes"
+      # looks exactly like "cannot match the code it is aimed at". Four
+      # mutations, each breaking one property and naming the assertion that
+      # must go red. Mutates field.js in the ephemeral checkout and restores
+      # via `git checkout --`; fails the job if the tree is dirty going in or
+      # coming out. Its own anchor/applied guards are self-tested: an absent
+      # or non-unique anchor reports a HARNESS DEFECT, never a result.
+      - name: Those checks can actually fail (mutation)
+        run: node scripts/mutate-relay-date-sections.mjs
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."
