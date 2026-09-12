@@ -1,0 +1,283 @@
+{
+  "probed_at": "2026-09-12T20:20:04.315Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "triggered_by": "workflow_dispatch",
+  "sw_version": "2026-09-12n",
+  "cards_seen": 0,
+  "odds_slot_present_in_dom": false,
+  "slots_hidden": 0,
+  "slots_visible": 0,
+  "states": {
+    "no_odds": null,
+    "opened_only": null,
+    "unchanged": null,
+    "moved": null
+  },
+  "date_label": "Today",
+  "stepped_back_days": 0,
+  "setup_overlay_dismissed": true,
+  "date_nav_error": null,
+  "slate_by_step": [
+    {
+      "step": 0,
+      "label": "Today",
+      "cards": 45
+    }
+  ],
+  "slate_settle_series": [],
+  "slate_settle_series_step0": [
+    {
+      "at_s": 5,
+      "total": 45,
+      "since_nav_ms": 23502,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 10,
+      "total": 45,
+      "since_nav_ms": 28507,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 15,
+      "total": 45,
+      "since_nav_ms": 33611,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 20,
+      "total": 45,
+      "since_nav_ms": 38618,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 25,
+      "total": 45,
+      "since_nav_ms": 43621,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 30,
+      "total": 45,
+      "since_nav_ms": 48623,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 35,
+      "total": 45,
+      "since_nav_ms": 53626,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 40,
+      "total": 45,
+      "since_nav_ms": 58631,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    }
+  ],
+  "slate_by_sport": {
+    "Baseball (MLB)": 15,
+    "Australian Football (AFL)": 1,
+    "Tennis": 24,
+    "Golf": 1,
+    "Canadian Football (CFL)": 4
+  },
+  "slate_sections_present": [
+    "Baseball (MLB)",
+    "Australian Football (AFL)",
+    "Tennis",
+    "Golf",
+    "Canadian Football (CFL)"
+  ],
+  "slate_read_at_ms": 58631,
+  "slate_settled_at_s": 15,
+  "slate_settle_reached": true,
+  "slate_cards_date_label": "Today",
+  "slate_cards_after_steps": 0,
+  "empty_note": null,
+  "main_state": null,
+  "page_errors": [
+    {
+      "phase": "boot",
+      "message": "Transition was skipped. New ViewTransition started",
+      "stack": ""
+    }
+  ],
+  "page_error_count": 1,
+  "date_nav_check": {
+    "label": "Yesterday",
+    "cards": 26,
+    "empty_note": null,
+    "loading_wraps": 0,
+    "loading_wrap_in_main": 0,
+    "main_children": [
+      "section#field-newspaper.field-newspaper.np-minimal",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section"
+    ],
+    "lcp_anchor_anywhere": 0,
+    "lcp_anchor_in_main": 0,
+    "rejections": [
+      "Transition was skipped. New ViewTransition started"
+    ],
+    "failure_kind": null,
+    "ok": true
+  },
+  "context_game_requests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/cfl_13419728"
+  ],
+  "context_id_forms": {
+    "other": 2
+  },
+  "v2_games_requests": 200,
+  "v2_games_by_sport": {
+    "nba": 8,
+    "nhl": 8,
+    "mlb": 8,
+    "wnba": 8,
+    "mls": 24,
+    "afl": 8,
+    "epl": 8,
+    "ucl": 8,
+    "europa": 8,
+    "conference": 8,
+    "uclqual": 8,
+    "europaqual": 8,
+    "conferencequal": 8,
+    "eflchamp": 8,
+    "eflone": 8,
+    "efltwo": 8,
+    "laliga": 8,
+    "seriea": 8,
+    "bundesliga": 8,
+    "ligue1": 8,
+    "wc26": 8,
+    "nfl": 8,
+    "cfb": 8
+  },
+  "v2_games_dates": {
+    "2026-09-12": 96,
+    "2026-09-13": 92,
+    "2026-09-11": 4,
+    "2026-09-10": 4,
+    "2026-09-09": 4
+  },
+  "espn_scores_by_sport": {
+    "(no _sport)": 44,
+    "mlb": 15,
+    "eflchamp": 11,
+    "epl": 9,
+    "efltwo": 11,
+    "bundesliga": 8,
+    "nfl": 13,
+    "cfb": 80,
+    "mls": 15,
+    "ligue1": 8,
+    "laliga": 8,
+    "seriea": 6,
+    "eflone": 11,
+    "afl": 1
+  },
+  "field_errors": [
+    {
+      "fn": "scores:find-espn-score-no-match",
+      "err": "no match found: Seattle Mariners @ Athletics",
+      "ts": 1789244405401
+    },
+    {
+      "fn": "scores:fetch-nba-relay",
+      "err": "RELAY scoreboard 403",
+      "ts": 1789244410162
+    },
+    {
+      "fn": "user:fetch-state",
+      "err": "HTTP 404",
+      "ts": 1789244409859
+    },
+    {
+      "fn": "unhandledrejection",
+      "err": "AbortError: Transition was skipped. New ViewTransition started",
+      "ts": 1789244411882
+    }
+  ],
+  "field_error_count": 4,
+  "field_errors_by_fn": {
+    "scores:find-espn-score-no-match": 1,
+    "scores:fetch-nba-relay": 1,
+    "user:fetch-state": 1,
+    "unhandledrejection": 1
+  },
+  "visible_samples": [],
+  "error": null,
+  "slate_cards": 45,
+  "debrief_injected": 1,
+  "debrief_visible": 1,
+  "existing_odds_layers": 0,
+  "debrief_cards": [
+    {
+      "gameid": "cfl_13419728",
+      "sport": "Canadian Football (CFL)",
+      "home": "Toronto Argonauts",
+      "away": "Ottawa RedBlacks",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    }
+  ],
+  "odds_layer_present_in_dom": false
+}
