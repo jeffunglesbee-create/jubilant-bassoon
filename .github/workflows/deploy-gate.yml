@@ -222,6 +222,18 @@ jobs:
       - name: Those checks can actually fail (mutation)
         run: node scripts/mutate-relay-date-sections.mjs
 
+      # injectV2SportSection had no else on its allData?.sports branch: with
+      # that falsy, both branches were skipped, nothing was reported, and
+      # eleven sports were missing from the live slate while captureFieldError,
+      # page.on('pageerror') and the network census all read clean. The first
+      # mutation deletes the restored else and confirms the check goes red —
+      # a test for a restored branch that cannot detect its absence is worth
+      # nothing.
+      - name: injectV2SportSection reports when it cannot inject
+        run: |
+          node scripts/check-v2-section-inject.mjs
+          node scripts/mutate-v2-section-inject.mjs
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."
