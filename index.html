@@ -7636,6 +7636,13 @@ function renderCard(enrichedGame, sport) {
   // debrief slot — Phase 3: buildDebrief assembles Layers 1-4 into an Element
   fillSlot(card, 'debrief', buildDebrief(enrichedGame));
 
+  // odds slot — THE LIVE PATH. The same call exists in updateCard, which is
+  // STAGED and has no caller, so wiring it only there rendered nothing at all.
+  // Distinct from buildOddsStory (src/debrief/index.ts): that reads `opening`
+  // only and never destructures `closing`, so it cannot say anything about
+  // movement. This is the movement line; it does not duplicate that layer.
+  fillSlot(card, 'odds', oddsLine(enrichedGame.debrief && enrichedGame.debrief.oddsOutcome));
+
   return card;
 }
 

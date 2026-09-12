@@ -7672,6 +7672,10 @@ assert('A-ODDS-5 — an absent price cannot arrive as 0%',
   /if \(typeof american !== 'number' \|\| !Number\.isFinite\(american\)\) return null;/.test(html),
   'Rule 99: _impliedPct returns null, never 0, for a missing price');
 
+assert('A-ODDS-7 — the odds line is wired into renderCard, the path that runs',
+  /fillSlot\(card, 'odds', oddsLine\(/.test(html),
+  'updateCard is STAGED and has no caller; wiring the slot only there renders nothing');
+
 assert('A-ODDS-6 — the odds slot carries no push affordance',
   !/card-odds[^}]*animation|card-odds[^}]*var\(--accent|\.card-odds[^}]*font-weight:\s*(6|7|8|9)00/.test(html),
   'Rule A: Rule F clears DISPLAY of a price and does not carry a badge, colour-by-magnitude or attention cue');
