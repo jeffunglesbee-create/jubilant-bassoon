@@ -204,6 +204,14 @@ jobs:
       - name: Every V2 sport key has a section label
         run: node scripts/check-v2-section-labels.mjs
 
+      # smoke.js can see that fetchRelayDateSections exists and that goToDate
+      # calls it; it cannot see what it RETURNS. These four properties are all
+      # about the return value, so they run the extracted source against stubs.
+      # 2b caught Promise.all turning one sport's rejection into a blank slate
+      # for all of them.
+      - name: The past-date slate source returns what the caller expects
+        run: node scripts/check-relay-date-sections.mjs
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."

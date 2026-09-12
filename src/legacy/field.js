@@ -15774,7 +15774,13 @@ function injectV2SportSection(sportKey, sectionLabel) {
 // no-events branch still handles a genuinely empty day.
 async function fetchRelayDateSections(iso) {
   const enabled = Object.entries(FIELD_V2_SOURCES).filter(([, v]) => v).map(([k]) => k);
-  const settled = await Promise.all(enabled.map(async key => {
+  // allSettled, not all. fetchV2Games catches everything and returns [] today,
+  // so no rejection is reachable through it right now — but Promise.all makes
+  // that a load-bearing property of a function this one does not own, and one
+  // rejection there would blank the ENTIRE past-date slate for every sport at
+  // once. Measured, not reasoned: check-relay-date-sections.mjs assertion 2b
+  // read `got undefined` against the Promise.all version.
+  const settled = (await Promise.allSettled(enabled.map(async key => {
     const label = V2_SECTION_LABEL[key];
     // A sport with no label would silently vanish; say so rather than drop it.
     if (!label) { captureFieldError('relay-date-sections:no-label', new Error(key), false); return null; }
@@ -15793,7 +15799,11 @@ async function fetchRelayDateSections(iso) {
         homeCuratedRank: fg.home?.curatedRank, awayCuratedRank: fg.away?.curatedRank,
       })),
     };
-  }));
+  }))).map((r, i) => {
+    if (r.status === 'fulfilled') return r.value;
+    captureFieldError(`relay-date-sections:${enabled[i]}`, r.reason, false);
+    return null;
+  });
   const sections = settled.filter(s => s && s.games.length);
   return sections.length ? sections : null;
 }
@@ -22916,7 +22926,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12k';
+  const SW_VERSION = '2026-09-12l';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
