@@ -258,6 +258,26 @@ function _impliedPct(american: unknown): number | null {
 
 function _fmtAmerican(n: number): string { return n > 0 ? `+${n}` : `${n}`; }
 
+/** Is this pair a SEQUENCE — two observations, the closing one strictly later?
+ *
+ *  Ported from field-laboratory's `OddsStory` (`src/Desk.fs`), which models
+ *  `NotASequence` as a first-class outcome:
+ *
+ *      match o.CapturedAt, c.CapturedAt with
+ *      | Some ot, Some ct -> ct > ot      // STRICTLY after
+ *      | _ -> false                        // unverifiable, so not a sequence
+ *
+ *  Both snapshots must be timestamped and the closing one strictly later.
+ *  Equal timestamps are one observation. A missing timestamp leaves the order
+ *  unverifiable, and assuming it holds is exactly the assumption this exists to
+ *  stop being made silently. Neither can support a claim about change.
+ */
+function _isSequence(open: MoneylineOdds, close: MoneylineOdds): boolean {
+  const ot = open?.captured_at ? Date.parse(open.captured_at) : NaN;
+  const ct = close?.captured_at ? Date.parse(close.captured_at) : NaN;
+  return Number.isFinite(ot) && Number.isFinite(ct) && ct > ot;
+}
+
 export function buildOddsMovement(debrief: DebriefData): HTMLElement | null {
   const odds = debrief?.oddsOutcome;
   if (!odds?.opening) return null;
@@ -268,14 +288,15 @@ export function buildOddsMovement(debrief: DebriefData): HTMLElement | null {
   const opened = `${_fmtAmerican(oh)} (${oPct.toFixed(0)}% implied)`;
 
   let text: string;
-  if (!close) {
-    text = `Home line opened ${opened}`;
-  } else if (open.captured_at && close.captured_at && open.captured_at === close.captured_at) {
-    // ODDS-PROOF.md: closing_odds was once the same snapshot as opening_odds,
-    // captured ~22s BEFORE it, which would have rendered "unchanged" on every
-    // card — "worse than rendering nothing, because it invents a finding".
-    // Identical timestamps mean ONE observation, and one observation cannot
-    // support a claim about change.
+  if (!close || !_isSequence(open, close)) {
+    // ODDS-PROOF.md, 2026-08-09: closing_odds was once the same snapshot as
+    // opening_odds, captured ~22 SECONDS BEFORE it, identical across moneyline,
+    // spread and total. Rendering "unchanged" from that pair is "worse than
+    // rendering nothing, because it invents a finding".
+    //
+    // The first version of this guard only caught identical timestamps, which
+    // is the one case that defect did NOT produce. A pair with no timestamps,
+    // or one captured out of order, fell through and claimed movement.
     text = `Home line opened ${opened}`;
   } else {
     const ch = close.moneyline ? close.moneyline.home : undefined;

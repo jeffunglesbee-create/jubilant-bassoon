@@ -7659,10 +7659,12 @@ assert('A-ODDS-1 — the dominant state renders nothing',
   /export function buildOddsMovement\(debrief: DebriefData\): HTMLElement \| null \{\s*\n\s*const odds = debrief\?\.oddsOutcome;\s*\n\s*if \(!odds\?\.opening\) return null;/.test(ts),
   'no odds is 46.6% of 116 measured rows and must render NOTHING — not a dash, not N/A');
 
-assert('A-ODDS-2 — one observation recorded twice cannot claim a change',
-  /open\.captured_at === close\.captured_at\)/.test(ts) &&
+assert('A-ODDS-2 — a claim about change requires a verified sequence',
+  /function _isSequence\(open: MoneylineOdds, close: MoneylineOdds\): boolean \{/.test(ts) &&
+  /Number\.isFinite\(ot\) && Number\.isFinite\(ct\) && ct > ot;/.test(ts) &&
+  /if \(!close \|\| !_isSequence\(open, close\)\) \{/.test(ts) &&
   /captured_at\?: string;/.test(ts),
-  'ODDS-PROOF.md: identical captured_at means ONE observation; "unchanged" there invents a finding');
+  'ODDS-PROOF.md: the closing snapshot was once captured 22s BEFORE the opening one. Equal, absent or reversed timestamps are all NOT a sequence. Behaviour is covered by scripts/check-odds-movement-sequence.mjs, four mutations proven.');
 
 assert('A-ODDS-3 — the unchanged claim is scoped to the moneyline it compared',
   /Home moneyline \$\{opened\}, unchanged from open/.test(ts),

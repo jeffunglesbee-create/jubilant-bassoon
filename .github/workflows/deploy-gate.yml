@@ -184,6 +184,16 @@ jobs:
       - name: Every declared render target reaches a caller that runs
         run: node scripts/check-render-reaches-dom.mjs
 
+      # Runs the real exported function against enumerated fixtures instead of
+      # matching source text. "unchanged from open" and a points shift are both
+      # claims about CHANGE, and a claim about change needs two observations in
+      # a known order — ODDS-PROOF.md records the day the "closing" snapshot was
+      # captured 22 seconds BEFORE the opening one. Four mutations are proven to
+      # fail this, including reverting to the equal-timestamps-only guard that
+      # shipped this morning.
+      - name: The odds movement line never claims change without a sequence
+        run: node --experimental-strip-types --no-warnings scripts/check-odds-movement-sequence.mjs
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."
