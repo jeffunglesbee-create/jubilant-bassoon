@@ -302,6 +302,32 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       // symptom was papered over.
       nav.ok = nav.cards > 0 ||
         (nav.failure_kind !== null && nav.failure_kind !== 'render-incomplete');
+
+      // A message is not automatically true. "No major events on Yesterday"
+      // appeared the moment 5f171c06 stopped the renderer discarding it — and
+      // 2026-09-11 had 42 rows across 9 sports in the relay census and 15
+      // completed MLB games. Rule 1 of this repo is DO NOT INVENT, so the check
+      // that reads the claim must not take it at face value.
+      if (nav.failure_kind === 'no-events') {
+        const d = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        try {
+          const r = await fetch(
+            `https://field-relay-nba.jeffunglesbee.workers.dev/context/date/${d}`,
+            { signal: AbortSignal.timeout(25000) });
+          const j = await r.json();
+          const rows = (j?.games?.regular?.length || 0) + (j?.games?.postseason?.length || 0);
+          nav.archive_rows_for_claimed_empty_date = rows;
+          nav.archive_date_checked = d;
+          if (rows > 0) {
+            nav.ok = false;
+            nav.no_events_is_false = true;
+          }
+        } catch (e) {
+          // Unreachable relay is not evidence either way; say so, do not guess.
+          nav.archive_rows_for_claimed_empty_date = null;
+          nav.archive_check_error = String(e.message || e).split('\n')[0];
+        }
+      }
       m.date_nav_check = nav;
     } catch (e) { m.date_nav_check = { error: String(e.message || e).split('\n')[0], ok: false }; }
 
@@ -362,7 +388,11 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     failed++;
     console.error(`FAIL — date-nav: ${JSON.stringify(nav)}`);
     for (const r of (nav && nav.rejections) || []) console.error(`  unhandled rejection: ${r}`);
-    if (nav && nav.failure_kind === 'render-incomplete') {
+    if (nav && nav.no_events_is_false) {
+      console.error(`  "no-events" claimed for ${nav.archive_date_checked}, but the relay archive`);
+      console.error(`  holds ${nav.archive_rows_for_claimed_empty_date} row(s) for that date. The message is false.`);
+      console.error('  CC-CMD-2026-09-12-no-events-is-false.');
+    } else if (nav && nav.failure_kind === 'render-incomplete') {
       console.error('  render-incomplete: sections resolved, renderAll() left the spinner up.');
       console.error('  The page is legible now (message + Retry) but the cause is still unnamed —');
       console.error('  CC-CMD-2026-09-12-past-date-slate-renders-nothing stays OPEN.');
