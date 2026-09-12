@@ -66,6 +66,22 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     visible_samples: [], error: null,
   };
 
+  // page.on('pageerror') does NOT fire for an unhandled promise rejection, and
+  // goToDate is an async function called from a click handler with no .catch().
+  // A throw anywhere after it writes the spinner would therefore leave the
+  // spinner up, produce no pageerror, and be invisible to every reading taken
+  // so far — which is exactly the state measured: main holds
+  // [#field-newspaper, div.loading-wrap], zero [data-lcp-anchor] anywhere (so
+  // the morph hypothesis is dead), zero page errors.
+  await page.addInitScript(() => {
+    window.__probeRejections = [];
+    window.addEventListener('unhandledrejection', (e) => {
+      const r = e.reason;
+      window.__probeRejections.push(
+        String((r && (r.stack || r.message)) || r).slice(0, 300));
+    });
+  });
+
   const dateLabel = () => page.evaluate(
     () => { const el = document.getElementById('date-label'); return el ? el.textContent.trim() : null; });
 
@@ -244,7 +260,10 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     try {
       _phase = 'date-nav-check';
       await page.click('#date-prev', { timeout: 8000 });
-      await page.waitForTimeout(20000);
+      // 30s, not 20s: the two awaits inside goToDate are bounded at 8s (per
+      // ESPN league, in parallel) and 15s (the AI fallback), so a 20s read can
+      // catch a legitimately-still-running load and call it a dead page.
+      await page.waitForTimeout(30000);
       const nav = await page.evaluate(() => {
         const note = document.querySelector('.empty-note');
         const el = document.getElementById('date-label');
@@ -266,6 +285,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
               c.className ? '.' + String(c.className).trim().split(/\s+/).slice(0, 3).join('.') : ''}`) : null,
           lcp_anchor_anywhere: document.querySelectorAll('[data-lcp-anchor]').length,
           lcp_anchor_in_main: main ? main.querySelectorAll('[data-lcp-anchor]').length : null,
+          rejections: (window.__probeRejections || []).slice(0, 5),
         };
       });
       nav.ok = nav.cards > 0 || nav.empty_note !== null;
@@ -327,6 +347,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   if (!nav || !nav.ok) {
     failed++;
     console.error(`FAIL — date-nav: ${JSON.stringify(nav)}`);
+    for (const r of (nav && nav.rejections) || []) console.error(`  unhandled rejection: ${r}`);
     console.error('  A past date must render cards OR one of goToDate\'s three .empty-note');
     console.error('  messages. Neither is CC-CMD-2026-09-12-past-date-slate-renders-nothing.');
   } else {
