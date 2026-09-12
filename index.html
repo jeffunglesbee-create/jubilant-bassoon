@@ -20736,9 +20736,16 @@ const _v2SectionInjected = {}; // sportKey -> true once its section exists in al
 // which were the only place these strings existed. Extracted so a second caller
 // (fetchRelayDateSections, for past-date navigation) cannot drift from them.
 //
-// nba / nhl / mlb have no V2 injector — their sections come from the ESPN
-// fixture sweep — so their labels are taken from FETCH_LEAGUES' own `section`
-// fields instead.
+// Six keys have no injectV2SportSection() call site — their sections are built
+// elsewhere — so their labels are taken from where those sections are actually
+// pushed: nba/nhl/bundesliga from FETCH_LEAGUES' own `section` field, mlb from
+// FETCH_LEAGUES ('Baseball (MLB)'), afl from the sections.push at the Squiggle
+// merge, wc26 from the FIFA injection block. All six were MISSING from the
+// first version of this map, which checked itself against the injector call
+// sites — the wrong denominator, since fetchRelayDateSections iterates
+// FIELD_V2_SOURCES. afl, bundesliga and wc26 are all enabled today, so all
+// three would have vanished from every past-date slate. check-v2-section-
+// labels.mjs now asserts against FIELD_V2_SOURCES as well (Rule 91).
 //
 // KNOWN INCONSISTENCY, not resolved here: FETCH_LEAGUES labels college football
 // 'CFB' and 'NCAA Football' while the V2 injector uses 'College Football'. This
@@ -20754,6 +20761,8 @@ const V2_SECTION_LABEL = {
   europaqual: 'UEFA Europa League Qualifying',
   conferencequal: 'UEFA Conference League Qualifying',
   nba: 'NBA', nhl: 'NHL', mlb: 'Baseball (MLB)',
+  afl: 'Australian Football (AFL)', bundesliga: 'Bundesliga',
+  wc26: 'FIFA World Cup 2026',
 };
 
 // One game object, built the same way whether it came from the live V2 poll
@@ -27973,7 +27982,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12j';
+  const SW_VERSION = '2026-09-12k';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

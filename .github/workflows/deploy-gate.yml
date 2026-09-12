@@ -194,6 +194,16 @@ jobs:
       - name: The odds movement line never claims change without a sequence
         run: node --experimental-strip-types --no-warnings scripts/check-odds-movement-sequence.mjs
 
+      # fetchRelayDateSections walks FIELD_V2_SOURCES and looks each key up in
+      # V2_SECTION_LABEL. A key with no label takes the no-label branch and its
+      # section disappears from every past-date slate, silently. The first
+      # version of this map was built from the injectV2SportSection call sites,
+      # which are a SUBSET of FIELD_V2_SOURCES — afl, bundesliga and wc26 were
+      # all enabled and all three were missing. The script checks both
+      # directions and prints both denominators.
+      - name: Every V2 sport key has a section label
+        run: node scripts/check-v2-section-labels.mjs
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."
