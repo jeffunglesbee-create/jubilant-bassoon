@@ -88,6 +88,9 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     v2_games_by_sport: null, v2_games_dates: null, espn_scores_by_sport: null,
     slate_state: null,   // window.__fieldSlateState(): allData shape + the injector's memo
+    // null when the comparison could not be made at all, [] when model and DOM
+    // agree. Not the same thing, never merged (Rule 99).
+    sections_model_not_in_dom: null,
     // The app's OWN swallowed-failure store. page.on('pageerror') sees uncaught
     // throws and the init-script hook sees unhandled rejections; neither sees a
     // failure the app caught on purpose. injectV2SportSection wraps its whole
@@ -581,6 +584,43 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     failed++;
     console.error(`FAIL — ${m.page_error_count} uncaught page error(s):`);
     for (const e of m.page_errors) console.error(`  [${e.phase}] ${e.message}\n      ${e.stack}`);
+  }
+
+  // AUTOMATED FOLLOW-UP for CC-CMD-2026-09-12-v2-sections-never-injected.
+  //
+  // The model and the DOM must agree on which sections exist. Measured
+  // 2026-09-12 against SW 2026-09-12o: allData.sports held FIFTEEN sections —
+  // College Football, NFL, MLS Soccer, Premier League, La Liga, Serie A,
+  // Ligue 1 and all three EFL tiers among them — _v2SectionInjected reported
+  // all ten as true, no v2-section-inject error of any kind fired, and the page
+  // rendered FIVE. Ten sections live in the model and never reach the page.
+  //
+  // Nothing else in this probe can see that. The DOM census alone reads a
+  // short slate, which is indistinguishable from a quiet sports day; the
+  // injector's own memo reads success. Only the two together say otherwise.
+  {
+    const model = (m.slate_state && m.slate_state.allData && m.slate_state.allData.sportsLabels) || null;
+    const dom = m.slate_sections_present || null;
+    if (model === null || dom === null) {
+      // Not a pass and not a failure — the comparison could not be made. Say
+      // which half was missing rather than letting an absent input read green.
+      console.log(`model-vs-DOM section check NOT RUN: `
+                + `${model === null ? 'no allData.sportsLabels' : ''}`
+                + `${model === null && dom === null ? ' and ' : ''}`
+                + `${dom === null ? 'no slate_sections_present' : ''}`);
+      m.sections_model_not_in_dom = null;
+    } else {
+      const inDom = new Set(dom);
+      m.sections_model_not_in_dom = model.filter(x => !inDom.has(x));
+      console.log(`sections in allData.sports but NOT in the DOM `
+                + `(${m.sections_model_not_in_dom.length} of ${model.length}): `
+                + `${JSON.stringify(m.sections_model_not_in_dom)}`);
+      if (m.sections_model_not_in_dom.length) {
+        failed++;
+        console.error(`FAIL — ${m.sections_model_not_in_dom.length} section(s) are in the model and not on `
+                    + `the page. injectV2SportSection pushed them and nothing rendered them.`);
+      }
+    }
   }
 
   // Stepping back a day must land on something a reader can act on.

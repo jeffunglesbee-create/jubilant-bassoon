@@ -1,5 +1,53 @@
 # CC-CMD-2026-09-12 — every injectV2SportSection section is missing from the live slate
 
+> **CORRECTION, 2026-09-12, after Task 0 ran. The diagnosis below is WRONG and
+> is kept for the record rather than edited away.**
+>
+> This document asserted the loss was `injectV2SportSection`'s missing `else` —
+> that `allData.sports` was falsy, both branches were skipped, and nothing was
+> reported. Task 0 measured it against SW `2026-09-12o`:
+>
+> ```
+> allData   { sportsIsArray: true, sportsLength: 15, sportsLabels: [
+>             "Baseball (MLB)", "Australian Football (AFL)", "Tennis", "Golf",
+>             "Canadian Football (CFL)", "College Football", "NFL",
+>             "MLS Soccer", "Premier League", "La Liga", "Serie A", "Ligue 1",
+>             "EFL Championship", "EFL League One", "EFL League Two" ] }
+> _v2SectionInjected  { cfb: true, nfl: true, mls: true, epl: true,
+>                       laliga: true, seriea: true, ligue1: true,
+>                       eflchamp: true, eflone: true, efltwo: true }
+> field_errors_by_fn  no v2-section-inject:* of any kind
+> slate_by_sport      MLB 15, Tennis 24, CFL 4, AFL 1, Golf 1 — five sections
+> ```
+>
+> **`injectV2SportSection` works.** It pushes every section, the memo records
+> every one, and no capture fires. The model holds fifteen sections and the page
+> renders five. **The loss is in the RENDER, not the injection** — ten sections
+> live in `allData.sports` and never reach the DOM.
+>
+> The function pushes, calls `buildFilters(allData.sports)`, sets its memo, and
+> returns. There is no `renderAll()` call anywhere between the inject block and
+> the end of `fetchV2AllScores`, and the slate stayed at 45 across sixty seconds
+> and several poll cycles, so no later render picked them up either.
+>
+> **Task 1's fix stands and Task 3's tests stand.** A branch that declines to
+> act and reports nothing is a defect class independent of whether it fired
+> here, and the no-target capture now exists for the day `allData.sports` IS
+> falsy. But the `else` was not the cause, and this document claimed it was.
+>
+> **What went wrong in the reasoning:** the previous measurement established
+> that the data reached `espnScores` and not the DOM, and `injectV2SportSection`
+> was the next link in the chain with a visible silent path. That made it the
+> obvious suspect and it was written up as the answer before the one command
+> that would separate "pushed and not rendered" from "never pushed" had been
+> run. Reading the function is a simulation of executing it — the repo's own
+> probe-first rule, applied to the wrong side of a boundary I had already
+> crossed twice in this session.
+>
+> **Continues as** `CC-CMD-2026-09-12-v2-sections-in-model-not-in-dom.md`.
+
+---
+
 Second CC-CMD from `CC-CMD-2026-09-12-slate-size-variance`, filed per Rule 87.4.
 That one asked why the slate read 129 and then 45; this one is the defect the
 answer turned out to be.
