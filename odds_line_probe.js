@@ -110,8 +110,12 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // The debrief only renders for games isGameOver() calls final, so a slate
     // with nothing finished reads a zero identical to a broken render path.
     // Step back a FIXED number of days rather than hunting: run 34697310538
-    // hunted, overshot to Thu Sep 10, and landed on a date the client renders
+    // hunted, overshot to Thu Sep 10, and landed on a date the client rendered
     // no slate for at all — which is a third reality the hunt cannot report.
+    // (That same date renders 14 cards as of run 34713228042 / SW 2026-09-12l;
+    // past dates now come from the relay. The fixed step stays anyway: the
+    // hunt's inability to REPORT which reality it found is the reason, not the
+    // particular date it landed on.)
     // One deterministic step, a settle long enough for the date's fixtures to
     // fetch and injectDebriefCards to run, and the slate size recorded at each
     // stop so an empty date is legible rather than indistinguishable.
@@ -261,8 +265,15 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // Runs on every invocation regardless of STEP_BACK_DAYS, so both scheduled
     // windows check it. Stepping back one day must land on SOMETHING a reader
     // can act on: cards, or one of goToDate's three .empty-note messages.
-    // Measured 2026-09-12: neither — 0 cards, 0 empty-notes, 1 .loading-wrap,
-    // stable across twelve samples over sixty seconds.
+    // Measured 2026-09-12 BEFORE the fix: neither — 0 cards, 0 empty-notes,
+    // 1 .loading-wrap, stable across twelve samples over sixty seconds. After
+    // 5f171c06 the message appeared and was FALSE ('no-events' against 24
+    // archive rows). After e721452d, run 34713228042 / SW 2026-09-12l reads
+    // 14 cards and failure_kind null on Thu Sep 10.
+    // NOTE this click COMPOSES with STEP_BACK_DAYS — it always steps one more
+    // day back from wherever the slate already is. With STEP_BACK_DAYS=1 this
+    // check therefore reads TWO days back, which is why its label and
+    // slate_by_step's last entry name different dates.
     try {
       _phase = 'date-nav-check';
       await page.click('#date-prev', { timeout: 8000 });

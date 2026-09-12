@@ -15,7 +15,7 @@ on:
         required: false
         default: ''
       step_back_days:
-        description: 'Days to step the slate back before reading the DOM. Default 0 — a past date currently renders neither cards nor a message (CC-CMD-2026-09-12-past-date-slate-renders-nothing), so stepping back measures that defect, not this one.'
+        description: 'Days to step the slate back before reading the DOM. Default 0. Since 2026-09-12 a past date renders a real slate sourced from the relay (CC-CMD-2026-09-12-past-date-slate-from-relay); before that it rendered neither cards nor a message, so manifests from earlier runs with this set above 0 are measuring that defect, not odds.'
         required: false
         default: '0'
   # 03:45 UTC = 23:45 ET, when the day's games are final and the client's own

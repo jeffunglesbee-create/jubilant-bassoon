@@ -1,5 +1,17 @@
 # CC-CMD-2026-09-12 — "No major events on Yesterday" is false
 
+**STATUS: CLOSED 2026-09-12 via Option B**, filed and executed as
+`CC-CMD-2026-09-12-past-date-slate-from-relay.md`. Done condition met by probe
+run 34713228042 (SW `2026-09-12l`): `date_nav_check.failure_kind` went
+`"no-events"` → `null` and `cards` went `0` → `14`, with `slate_by_step`
+reading `[Today 45, Yesterday 26]`.
+
+Task 4's done condition here asked for "cards, or `fetch-error`, for a date the
+relay census shows has rows" — cards is the branch that landed. The `no-events`
+message itself was not made truthful; it was made unreachable for dates the
+relay serves, which is the correct fix because the message was never the defect.
+Session doc: `outbox/cc-session-2026-09-12-past-date-slate-from-relay.md`.
+
 Surfaced the moment `5f171c06` stopped the renderer discarding it. The message
 was always being generated; nobody could see it.
 

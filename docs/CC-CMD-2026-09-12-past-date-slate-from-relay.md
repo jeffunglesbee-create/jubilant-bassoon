@@ -1,5 +1,19 @@
 # CC-CMD-2026-09-12 — source past-date slates from the relay, not ESPN
 
+**STATUS: CLOSED 2026-09-12.** Done condition met by probe run 34713228042
+(SW `2026-09-12l`), manifest `outbox/odds-line-probe-manifest-20260912T190808Z.json`
+in commit `5051c464`: `date_nav_check.cards: 14`, `failure_kind: null`,
+`slate_by_step` `[Today 45, Yesterday 26]`, `page_errors: []`. The prior red —
+`failure_kind: "no-events"` with `archive_rows_for_claimed_empty_date: 24` — is
+the assertion that flipped. Session doc:
+`outbox/cc-session-2026-09-12-past-date-slate-from-relay.md`.
+
+Shipped across `d62e02dc` (feature), `f4241be7` (three enabled sports had no
+label), `e721452d` (`Promise.all` made one sport's failure blank the whole
+slate), `678639c4` (mutation harness, 4/4 caught). Two defects were found in
+this CC-CMD's own first implementation, both by checks written for it; neither
+reached production.
+
 Option B of `CC-CMD-2026-09-12-no-events-is-false` Task 2. **Both halves planned
 here (Rule 70).**
 
