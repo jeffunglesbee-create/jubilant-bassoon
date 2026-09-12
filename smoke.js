@@ -7647,5 +7647,34 @@ assert('A-TDRAW-12 — the section and its render target exist in the markup',
   /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
   'renderTennisBracket writes into #tennis-draw and returns silently if it is absent');
 
+// ── Odds line (CC-CMD-2026-09-11-client-odds-story) ────────────────────────
+// Shaped by the measured distribution, not the interesting case: across 116
+// rows on four dates (2026-09-12), no-odds is 46.6% and both-prices-unchanged
+// is 26.7%. A line-moved rendering covers 9.5%.
+
+assert('A-ODDS-1 — the slot exists and starts hidden',
+  /<div class="card-odds" data-slot="odds" hidden><\/div>/.test(html),
+  'fillSlot only unhides on a non-empty string, so the dominant no-odds state must start hidden');
+
+assert('A-ODDS-2 — oddsLine returns null for the dominant state, so nothing renders',
+  /function oddsLine\(o\) \{\s*\n\s*if \(!o \|\| !o\.opening\) return null;/.test(html),
+  'no odds must render NOTHING — not a dash, not N/A, not an empty slot');
+
+assert('A-ODDS-3 — one observation recorded twice cannot claim a change',
+  /open\.captured_at === close\.captured_at\)\s*\n\s*return `Home line opened/.test(html),
+  'ODDS-PROOF.md: identical captured_at means one observation; rendering "unchanged" there invents a finding');
+
+assert('A-ODDS-4 — the unchanged claim is scoped to the moneyline it compared',
+  /unchanged from open/.test(html) && /Home moneyline \$\{opened\}, unchanged from open/.test(html),
+  'the motivating sample had an identical ML while the spread prices moved, so "the line is unchanged" would be false');
+
+assert('A-ODDS-5 — an absent price cannot arrive as 0%',
+  /if \(typeof american !== 'number' \|\| !Number\.isFinite\(american\)\) return null;/.test(html),
+  'Rule 99: _impliedPct returns null, never 0, for a missing price');
+
+assert('A-ODDS-6 — the odds slot carries no push affordance',
+  !/card-odds[^}]*animation|card-odds[^}]*var\(--accent|\.card-odds[^}]*font-weight:\s*(6|7|8|9)00/.test(html),
+  'Rule A: Rule F clears DISPLAY of a price and does not carry a badge, colour-by-magnitude or attention cue');
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
