@@ -28,6 +28,44 @@ A spinner says "still working". "No major events on Yesterday" is a **claim
 about the world**, and it is false. This repo's first rule is DO NOT INVENT.
 A user who navigates back one day is now told there was no sport yesterday.
 
+## Tasks 0 and 1 — ANSWERED 2026-09-12, and the answer moves the fix
+
+`outbox/odds-line-probe-manifest-20260912T183331Z.json`, measured from the live
+page in CI:
+
+```
+espn_mlb_probe: { "status": 200, "events": 0 }
+archive_rows_for_claimed_empty_date: 24      (relay /context/date/2026-09-11)
+```
+
+**ESPN answers 200 with zero events.** The sweep is not failing and it is not
+swallowing anything — `site.api.espn.com/.../baseball/mlb/scoreboard?dates=20260911`
+genuinely returns an empty `events` array. So `anyData` is correctly false, and
+the `no-events` branch is honest about what it was handed.
+
+**The relay has the same day's games.** 24 rows in the archive, and
+`/v2/games?sport=mlb&date=2026-09-11` returned **15 completed games** earlier
+today with `source: "espn-wc"` — ESPN-derived data, fetched by the relay, for
+the exact date the client's own ESPN call calls empty.
+
+So the client is asking the wrong source for a past date, not asking it badly.
+Neither `fetch-error` nor `no-events` is the right message, because neither the
+fetch nor the day is the problem.
+
+### What that changes
+
+Task 2 below was written as "pick the right message". That is now the wrong
+fix: it would make the client honest about a gap it does not need to have. The
+relay serves past dates and the client already talks to it everywhere else.
+
+**Revised Task 2: for a date that is not today, source the slate from the relay
+(`/v2/games` per sport, or `/context/date/{iso}`) rather than
+`fetchESPNFixturesForDate`.** `no-events` then means what it says, and
+`fetch-error` covers a relay that is unreachable.
+
+Scope note (Rule 69): that is a source change on the date-nav path only. It must
+not touch today's path, which works and is the hot path.
+
 ## Tasks
 
 0. **Probe.** Which of the two produced the empty array — instrument
