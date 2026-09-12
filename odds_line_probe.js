@@ -286,9 +286,16 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
           lcp_anchor_anywhere: document.querySelectorAll('[data-lcp-anchor]').length,
           lcp_anchor_in_main: main ? main.querySelectorAll('[data-lcp-anchor]').length : null,
           rejections: (window.__probeRejections || []).slice(0, 5),
+          failure_kind: note ? (note.getAttribute('data-failure') || '(unmarked)') : null,
         };
       });
-      nav.ok = nav.cards > 0 || nav.empty_note !== null;
+      // A message is not automatically a pass. 'render-incomplete' means
+      // sections resolved and the render did not happen — the open defect,
+      // now legible instead of blank, but still open. Treating it as a pass
+      // because a message appeared would silence the follow-up the moment the
+      // symptom was papered over.
+      nav.ok = nav.cards > 0 ||
+        (nav.failure_kind !== null && nav.failure_kind !== 'render-incomplete');
       m.date_nav_check = nav;
     } catch (e) { m.date_nav_check = { error: String(e.message || e).split('\n')[0], ok: false }; }
 
@@ -348,8 +355,14 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     failed++;
     console.error(`FAIL — date-nav: ${JSON.stringify(nav)}`);
     for (const r of (nav && nav.rejections) || []) console.error(`  unhandled rejection: ${r}`);
-    console.error('  A past date must render cards OR one of goToDate\'s three .empty-note');
-    console.error('  messages. Neither is CC-CMD-2026-09-12-past-date-slate-renders-nothing.');
+    if (nav && nav.failure_kind === 'render-incomplete') {
+      console.error('  render-incomplete: sections resolved, renderAll() left the spinner up.');
+      console.error('  The page is legible now (message + Retry) but the cause is still unnamed —');
+      console.error('  CC-CMD-2026-09-12-past-date-slate-renders-nothing stays OPEN.');
+    } else {
+      console.error('  A past date must render cards OR a marked .empty-note.');
+      console.error('  Neither is CC-CMD-2026-09-12-past-date-slate-renders-nothing.');
+    }
   } else {
     console.log(`date-nav OK — ${nav.label}: ${nav.cards} card(s)`
               + (nav.empty_note ? `, note "${nav.empty_note.slice(0, 60)}"` : ''));

@@ -7657,6 +7657,11 @@ assert('A-TDRAW-12 — the section and its render target exist in the markup',
   /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
   'renderTennisBracket writes into #tennis-draw and returns silently if it is absent');
 
+assert('A-DATENAV-2 — each failure note says WHICH failure it is',
+  ['budget-exhausted', 'fetch-error', 'no-events', 'render-incomplete']
+    .every(k => html.includes(`data-failure="${k}"`)),
+  'render-incomplete and fetch-error show the reader the same words on purpose, but a probe that cannot tell them apart would report the open defect as fixed the moment a message appeared — Rule 99');
+
 assert('A-DATENAV-1 — a surviving spinner becomes a message, never a blank page',
   /if \(document\.getElementById\('main'\)\?\.querySelector\('\.loading-wrap'\)\) \{/.test(html) &&
   /goToDate:spinner-survived-render/.test(html),

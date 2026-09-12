@@ -5206,14 +5206,14 @@ mvSyncMvPanel(); // Set initial empty state
       // for the same reason until the daily usage counter resets, so no
       // Retry button (the old undifferentiated message offered one that
       // could never succeed for this specific cause).
-      applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
+      applyMainHTML(`<div class="empty-note" data-failure="budget-exhausted" style="padding:3rem 2rem">
         <div style="font-size:1.5rem;margin-bottom:.75rem"></div>
         <div style="color:var(--white);margin-bottom:.5rem">Today's AI schedule lookups are used up</div>
         <div style="font-size:.72rem;color:var(--smoke)">Try a date already covered by ESPN, or check back tomorrow.</div>
       </div>`);
     } else {
       // Genuine failure — same friendly message with retry option as before this migration.
-      applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
+      applyMainHTML(`<div class="empty-note" data-failure="fetch-error" style="padding:3rem 2rem">
         <div style="font-size:1.5rem;margin-bottom:.75rem">⚠️</div>
         <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
         <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
@@ -5225,7 +5225,7 @@ mvSyncMvPanel(); // Set initial empty state
   const sections = scheduleResult.sections;
 
   if(!sections.length){
-    applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
+    applyMainHTML(`<div class="empty-note" data-failure="no-events" style="padding:3rem 2rem">
       <div style="font-size:1.5rem;margin-bottom:.75rem"></div>
       <div style="color:var(--white);margin-bottom:.5rem">No major events on ${label}</div>
       <div style="font-size:.72rem;color:var(--smoke)">Try a different date with the ‹ › arrows</div>
@@ -5252,10 +5252,17 @@ mvSyncMvPanel(); // Set initial empty state
   // spinner survived this function, the render did not happen, and the reader
   // gets the same failure message a thrown error would have produced. Unlike
   // the spinner, it says the load is over and offers Retry.
+  // data-failure marks WHICH failure this is. The message a reader sees is the
+  // same as a genuine fetch error's, deliberately — there is nothing useful to
+  // tell them apart at their level — but a probe that cannot distinguish
+  // "the fetch failed" from "sections resolved and the render did not happen"
+  // would report this defect as fixed the moment the message appeared. That is
+  // the collapse this whole line of work exists to stop (Rule 99), and adding
+  // the message without the marker would have introduced it.
   if (document.getElementById('main')?.querySelector('.loading-wrap')) {
     captureFieldError('goToDate:spinner-survived-render',
       new Error(`${iso}: ${sections.length} section(s) resolved, renderAll() left the spinner up`), false);
-    applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
+    applyMainHTML(`<div class="empty-note" data-failure="render-incomplete" style="padding:3rem 2rem">
       <div style="font-size:1.5rem;margin-bottom:.75rem">⚠️</div>
       <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
       <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
@@ -22788,7 +22795,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12e';
+  const SW_VERSION = '2026-09-12f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
