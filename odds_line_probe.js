@@ -61,6 +61,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     slate_settle_series: [],
     empty_note: null,
     main_state: null, page_errors: [], page_error_count: 0,
+    date_nav_check: null,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
@@ -234,6 +235,30 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.states.moved       = pick(r => !r.hidden && / pts toward (home|away)$/.test(r.text));
     m.visible_samples = out.rows.filter(r => !r.hidden && r.text).slice(0, 8);
 
+    // AUTOMATED FOLLOW-UP for CC-CMD-2026-09-12-past-date-slate-renders-nothing.
+    // Runs on every invocation regardless of STEP_BACK_DAYS, so both scheduled
+    // windows check it. Stepping back one day must land on SOMETHING a reader
+    // can act on: cards, or one of goToDate's three .empty-note messages.
+    // Measured 2026-09-12: neither — 0 cards, 0 empty-notes, 1 .loading-wrap,
+    // stable across twelve samples over sixty seconds.
+    try {
+      _phase = 'date-nav-check';
+      await page.click('#date-prev', { timeout: 8000 });
+      await page.waitForTimeout(20000);
+      const nav = await page.evaluate(() => {
+        const note = document.querySelector('.empty-note');
+        const el = document.getElementById('date-label');
+        return {
+          label: el ? el.textContent.trim() : null,
+          cards: document.querySelectorAll('.game-card[data-gameid]').length,
+          empty_note: note ? note.textContent.replace(/\s+/g, ' ').trim().slice(0, 160) : null,
+          loading_wraps: document.querySelectorAll('.loading-wrap').length,
+        };
+      });
+      nav.ok = nav.cards > 0 || nav.empty_note !== null;
+      m.date_nav_check = nav;
+    } catch (e) { m.date_nav_check = { error: String(e.message || e).split('\n')[0], ok: false }; }
+
     await page.screenshot({ path: `outbox/odds-line-probe-${stamp}.png`, fullPage: false });
   } catch (e) { m.error = String(e.message || e); }
 
@@ -270,5 +295,32 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     console.error('FAIL — no .game-card[data-gameid] at all. The page rendered no slate.');
     process.exit(1);
   }
+
+  // Two automated follow-ups. Both are conditions that were live and unnoticed
+  // on 2026-09-12 precisely because nothing asserted them.
+  let failed = 0;
+
+  // An uncaught throw is never acceptable and is never visible from the DOM.
+  // isFeaturedTierGame threw twelve times at boot, truncating the slate to 16
+  // cards where the same page rendered 44, and every DOM-shaped check passed.
+  if (m.page_error_count > 0) {
+    failed++;
+    console.error(`FAIL — ${m.page_error_count} uncaught page error(s):`);
+    for (const e of m.page_errors) console.error(`  [${e.phase}] ${e.message}\n      ${e.stack}`);
+  }
+
+  // Stepping back a day must land on something a reader can act on.
+  const nav = m.date_nav_check;
+  if (!nav || !nav.ok) {
+    failed++;
+    console.error(`FAIL — date-nav: ${JSON.stringify(nav)}`);
+    console.error('  A past date must render cards OR one of goToDate\'s three .empty-note');
+    console.error('  messages. Neither is CC-CMD-2026-09-12-past-date-slate-renders-nothing.');
+  } else {
+    console.log(`date-nav OK — ${nav.label}: ${nav.cards} card(s)`
+              + (nav.empty_note ? `, note "${nav.empty_note.slice(0, 60)}"` : ''));
+  }
+
+  if (failed) process.exit(1);
   console.log('\nPASS — the slot is in the live DOM; per-state observation is above.');
 })();
