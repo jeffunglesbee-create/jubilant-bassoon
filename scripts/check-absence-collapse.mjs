@@ -95,6 +95,11 @@ function walk(dir, out = []) {
 
 // Exported so the self-test drives the SAME classifier the scan uses.
 export function classifyLine(line) {
+    // A line that is entirely a comment is prose, not code. game-do.js:450 is a
+    // comment DESCRIBING the fire-and-forget pattern and was reported as an
+    // instance of it. Narrow: only a leading-`//` line, so a real collapse with
+    // a trailing comment still flags.
+    if (/^\s*\/\//.test(line)) return { kind: 'clean' };
     // Checked FIRST: a catch-collapse is a real finding whether or not the same
     // line also carries a `|| []`, and the more specific label is the useful one.
     if (CATCH_COLLAPSE.test(line)) {
@@ -137,6 +142,8 @@ const FIXTURES = [
     [`const x = await f().catch(e => ({}));`,                                'flagged'],
     [`).all().catch(() => ({ results: [] })); // absence-ok: caller checks .error`, 'suppressed'],
     [`const x = await f().catch(e => { log(e); throw e; });`,                'clean'],   // rethrows: no collapse
+    [`        // is in try/catch, the fetch is .catch(()=>{}) fire-and-forget.`, 'clean'],   // a comment about the pattern is not the pattern
+    [`const x = await f().catch(() => []); // still code, comment is trailing`,  'flagged'], // the narrowing must not swallow this
 ];
 function selfTest() {
     const bad = FIXTURES.filter(([l, want]) => classifyLine(l).kind !== want);
