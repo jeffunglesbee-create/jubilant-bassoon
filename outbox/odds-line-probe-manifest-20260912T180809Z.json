@@ -1,0 +1,622 @@
+{
+  "probed_at": "2026-09-12T18:08:14.757Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "triggered_by": "workflow_dispatch",
+  "sw_version": "2026-09-12i",
+  "cards_seen": 0,
+  "odds_slot_present_in_dom": true,
+  "slots_hidden": 0,
+  "slots_visible": 5,
+  "states": {
+    "no_odds": null,
+    "opened_only": null,
+    "unchanged": {
+      "game": "espn:401879284",
+      "text": "Home moneyline +125 (44% implied), unchanged from open"
+    },
+    "moved": {
+      "game": "espn:401879283",
+      "text": "Home moneyline -450 → -475, 0.8 pts toward home"
+    }
+  },
+  "date_label": "Today",
+  "stepped_back_days": 0,
+  "setup_overlay_dismissed": true,
+  "date_nav_error": null,
+  "slate_by_step": [
+    {
+      "step": 0,
+      "label": "Today",
+      "cards": 129
+    }
+  ],
+  "slate_settle_series": [],
+  "empty_note": null,
+  "main_state": null,
+  "page_errors": [],
+  "page_error_count": 0,
+  "date_nav_check": {
+    "label": "Yesterday",
+    "cards": 0,
+    "empty_note": "No major events on Yesterday Try a different date with the ‹ › arrows",
+    "loading_wraps": 0,
+    "loading_wrap_in_main": 0,
+    "main_children": [
+      "section#field-newspaper.field-newspaper.np-minimal",
+      "div.empty-note"
+    ],
+    "lcp_anchor_anywhere": 0,
+    "lcp_anchor_in_main": 0,
+    "rejections": [],
+    "failure_kind": "no-events",
+    "ok": true
+  },
+  "context_game_requests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879284",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879285",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879283",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879281",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879279",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882881",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882882",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874991",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874941",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401876458",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880267",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880265",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880258",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880268",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880266",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880264",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880263",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880261",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880260",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880259",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880851",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880860",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880854",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880853",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880852",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880862",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880861",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880859",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880858",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880857",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880855",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881382",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881380",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881384",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881383",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881381",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881379",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881378",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881377",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401881376"
+  ],
+  "context_id_forms": {
+    "espn_prefixed": 43
+  },
+  "v2_games_requests": 62,
+  "visible_samples": [
+    {
+      "id": "espn:401879284",
+      "label": "Nottingham Forest @ Aston Villa",
+      "hidden": false,
+      "text": "Home moneyline +125 (44% implied), unchanged from open"
+    },
+    {
+      "id": "espn:401879285",
+      "label": "Brentford @ AFC Bournemouth",
+      "hidden": false,
+      "text": "Home moneyline +145 (41% implied), unchanged from open"
+    },
+    {
+      "id": "espn:401879283",
+      "label": "Hull City @ Chelsea",
+      "hidden": false,
+      "text": "Home moneyline -450 → -475, 0.8 pts toward home"
+    },
+    {
+      "id": "espn:401879279",
+      "label": "Fulham @ Liverpool",
+      "hidden": false,
+      "text": "Home moneyline -200 (67% implied), unchanged from open"
+    },
+    {
+      "id": "espn:401874991",
+      "label": "Frosinone @ Genoa",
+      "hidden": false,
+      "text": "Home moneyline +120 (45% implied), unchanged from open"
+    }
+  ],
+  "error": null,
+  "slate_cards": 129,
+  "debrief_injected": 43,
+  "debrief_visible": 43,
+  "existing_odds_layers": 5,
+  "debrief_cards": [
+    {
+      "gameid": "espn:401879284",
+      "sport": "Premier League",
+      "home": "Aston Villa",
+      "away": "Nottingham Forest",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401879285",
+      "sport": "Premier League",
+      "home": "AFC Bournemouth",
+      "away": "Brentford",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401879283",
+      "sport": "Premier League",
+      "home": "Chelsea",
+      "away": "Hull City",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401879281",
+      "sport": "Premier League",
+      "home": "Crystal Palace",
+      "away": "Ipswich Town",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401879279",
+      "sport": "Premier League",
+      "home": "Liverpool",
+      "away": "Fulham",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401882881",
+      "sport": "La Liga",
+      "home": "Racing Santander",
+      "away": "Alavés",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401882882",
+      "sport": "La Liga",
+      "home": "Osasuna",
+      "away": "Espanyol",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401874991",
+      "sport": "Serie A",
+      "home": "Genoa",
+      "away": "Frosinone",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401874941",
+      "sport": "Serie A",
+      "home": "Lazio",
+      "away": "AC Milan",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401876458",
+      "sport": "Ligue 1",
+      "home": "Strasbourg",
+      "away": "AS Monaco",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880267",
+      "sport": "EFL Championship",
+      "home": "Bolton Wanderers",
+      "away": "Cardiff City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880265",
+      "sport": "EFL Championship",
+      "home": "Derby County",
+      "away": "Birmingham City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880258",
+      "sport": "EFL Championship",
+      "home": "West Bromwich Albion",
+      "away": "Queens Park Rangers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880268",
+      "sport": "EFL Championship",
+      "home": "Blackburn Rovers",
+      "away": "Millwall",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880266",
+      "sport": "EFL Championship",
+      "home": "Charlton Athletic",
+      "away": "Portsmouth",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880264",
+      "sport": "EFL Championship",
+      "home": "Middlesbrough",
+      "away": "Norwich City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880263",
+      "sport": "EFL Championship",
+      "home": "Preston North End",
+      "away": "Lincoln City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880261",
+      "sport": "EFL Championship",
+      "home": "Southampton",
+      "away": "Bristol City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880260",
+      "sport": "EFL Championship",
+      "home": "Swansea City",
+      "away": "Burnley",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880259",
+      "sport": "EFL Championship",
+      "home": "Watford",
+      "away": "Stoke City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880851",
+      "sport": "EFL League One",
+      "home": "Leyton Orient",
+      "away": "Wycombe Wanderers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880860",
+      "sport": "EFL League One",
+      "home": "Notts County",
+      "away": "Bradford City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880854",
+      "sport": "EFL League One",
+      "home": "AFC Wimbledon",
+      "away": "Doncaster Rovers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880853",
+      "sport": "EFL League One",
+      "home": "Blackpool",
+      "away": "Bromley",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880852",
+      "sport": "EFL League One",
+      "home": "Cambridge United",
+      "away": "Reading",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880862",
+      "sport": "EFL League One",
+      "home": "Mansfield Town",
+      "away": "Huddersfield Town",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880861",
+      "sport": "EFL League One",
+      "home": "Milton Keynes Dons",
+      "away": "Peterborough United",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880859",
+      "sport": "EFL League One",
+      "home": "Oxford United",
+      "away": "Burton Albion",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880858",
+      "sport": "EFL League One",
+      "home": "Plymouth Argyle",
+      "away": "Barnsley",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880857",
+      "sport": "EFL League One",
+      "home": "Sheffield Wednesday",
+      "away": "Wigan Athletic",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401880855",
+      "sport": "EFL League One",
+      "home": "Stockport County",
+      "away": "Leicester City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881382",
+      "sport": "EFL League Two",
+      "home": "Crawley Town",
+      "away": "Cheltenham Town",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881380",
+      "sport": "EFL League Two",
+      "home": "Grimsby Town",
+      "away": "Bristol Rovers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881384",
+      "sport": "EFL League Two",
+      "home": "Barnet",
+      "away": "Accrington Stanley",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881383",
+      "sport": "EFL League Two",
+      "home": "Colchester United",
+      "away": "Crewe Alexandra",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881381",
+      "sport": "EFL League Two",
+      "home": "Gillingham",
+      "away": "Tranmere Rovers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881379",
+      "sport": "EFL League Two",
+      "home": "Newport County",
+      "away": "Fleetwood Town",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881378",
+      "sport": "EFL League Two",
+      "home": "Oldham Athletic",
+      "away": "Chesterfield",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881377",
+      "sport": "EFL League Two",
+      "home": "Port Vale",
+      "away": "Exeter City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881376",
+      "sport": "EFL League Two",
+      "home": "Rotherham United",
+      "away": "Salford City",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881375",
+      "sport": "EFL League Two",
+      "home": "Shrewsbury Town",
+      "away": "Northampton Town",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881374",
+      "sport": "EFL League Two",
+      "home": "Walsall",
+      "away": "Rochdale",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401881373",
+      "sport": "EFL League Two",
+      "home": "York City",
+      "away": "Swindon Town",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    }
+  ],
+  "odds_layer_present_in_dom": true
+}
