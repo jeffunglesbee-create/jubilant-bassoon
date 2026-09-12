@@ -38,6 +38,10 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     await page.waitForTimeout(12000);
 
     const out = await page.evaluate(() => {
+      // The main slate is innerHTML-built `.game-card[data-gameid]`; the
+      // data-slot template is a Phase-2/3 path. Counting only slot-template
+      // cards reported cards_seen: 0 and could not distinguish "no games",
+      // "wrong selector" and "not rendered yet" — one number, three realities.
       const cards = Array.from(document.querySelectorAll('[data-slot="odds"]'));
       const rows = cards.map(el => {
         const card = el.closest('[data-game-id],[data-id],article,.game-card') || el.parentElement;
@@ -48,11 +52,21 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
                  hidden: el.hidden, text: (el.textContent || '').trim() };
       });
       return { rows, sw: window.SW_VERSION || null,
-               cardCount: document.querySelectorAll('[data-slot="home-name"]').length };
+               cardCount: document.querySelectorAll('[data-slot="home-name"]').length,
+               slateCards: document.querySelectorAll('.game-card[data-gameid]').length,
+               debriefInjected: document.querySelectorAll('.game-card[data-debrief-injected]').length,
+               debriefVisible: Array.from(document.querySelectorAll('.card-debrief'))
+                                    .filter(el => !el.hidden && (el.textContent || '').trim()).length,
+               oddsLayers: document.querySelectorAll('.debrief-odds').length };
     });
 
     m.sw_version = out.sw;
     m.cards_seen = out.cardCount;
+    // Each of these separates a reality the single count collapsed.
+    m.slate_cards = out.slateCards;
+    m.debrief_injected = out.debriefInjected;
+    m.debrief_visible = out.debriefVisible;
+    m.existing_odds_layers = out.oddsLayers;
     m.odds_slot_present_in_dom = out.rows.length > 0;
     m.slots_hidden  = out.rows.filter(r => r.hidden || !r.text).length;
     m.slots_visible = out.rows.filter(r => !r.hidden && r.text).length;
@@ -85,8 +99,17 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // the slot being absent from every card means the render path never ran, which
   // is the failure this probe exists for.
   if (m.error) { console.error(`PROBE ERROR: ${m.error}`); process.exit(1); }
-  if (!m.odds_slot_present_in_dom) {
-    console.error('FAIL — no [data-slot="odds"] in the DOM. The render path did not run.');
+  console.log(`slate cards ${m.slate_cards}, debrief-injected ${m.debrief_injected}, `
+            + `debrief visible ${m.debrief_visible}, existing .debrief-odds layers ${m.existing_odds_layers}`);
+
+  // MEASURED 2026-09-12: the odds slot lives in renderCard's template, and
+  // renderCard has exactly two callers, both in the NightOwl path. The main
+  // slate is a different builder, and the odds DATA only reaches
+  // injectDebriefCards, which is gated on isGameOver(). So a zero here is
+  // expected until the movement line moves into buildDebrief's layer stack —
+  // tracked by CC-CMD-2026-09-12-odds-line-wrong-render-path.
+  if (!m.slate_cards) {
+    console.error('FAIL — no .game-card[data-gameid] at all. The page rendered no slate.');
     process.exit(1);
   }
   console.log('\nPASS — the slot is in the live DOM; per-state observation is above.');
