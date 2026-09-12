@@ -15046,7 +15046,32 @@ let espnScores    = {}; // { "Home|Away": scoreObj }
 // census against it and reported null, which was honest (null, not {}) but
 // measured nothing. The object identity never changes here; every write is a
 // property assignment on it, so one alias stays correct for the session.
-if (typeof window !== 'undefined') window.espnScores = espnScores;
+if (typeof window !== 'undefined') {
+  window.espnScores = espnScores;
+  // allData gets a FUNCTION, not an alias. It is REASSIGNED at five sites
+  // (field.js:5138, 5273, 21490, 21570, 42515), so the espnScores pattern above
+  // does not transfer: an alias captured here would pin whichever object
+  // existed at boot and report it forever. Checked before copying the pattern,
+  // not after — `let espnScores` is written once, at its declaration, which is
+  // the precondition that makes the alias correct there and wrong here.
+  //
+  // Task 0 of CC-CMD-2026-09-12-v2-sections-never-injected: injectV2SportSection
+  // pushes into allData.sports and silently does nothing when that is falsy, so
+  // its shape at read time is the measurement. _v2SectionInjected is the
+  // injector's own memo — a `true` there against a missing section is a
+  // different defect from a `false`.
+  window.__fieldSlateState = () => ({
+    // null means no allData at all; an object with sportsIsArray false means
+    // allData exists and .sports does not. Different states, never merged.
+    allData: allData == null ? null : {
+      sportsIsArray: Array.isArray(allData.sports),
+      sportsLength:  Array.isArray(allData.sports) ? allData.sports.length : null,
+      sportsLabels:  Array.isArray(allData.sports)
+        ? allData.sports.map(x => (x && (x.section || x.sport)) || '(unnamed)') : null,
+    },
+    v2SectionInjected: { ..._v2SectionInjected },
+  });
+}
 // Expose on window in debug mode so diagnostic probes can read it
 if (typeof window !== 'undefined' && localStorage.getItem('FIELD_DEBUG') === '1') {
   Object.defineProperty(window, 'espnScores', { get: () => espnScores, configurable: true });
@@ -15761,6 +15786,24 @@ function injectV2SportSection(sportKey, sectionLabel) {
       allData.sports.push({ sport: sectionLabel, section: sectionLabel, games });
       buildFilters(allData.sports);
       _v2SectionInjected[sportKey] = true;
+    } else {
+      // Until 2026-09-12 there was no else. With allData.sports falsy both
+      // branches above are skipped, _v2SectionInjected[sportKey] stays false,
+      // the next poll repeats it, and NOTHING is reported: the catch below only
+      // fires on a throw, and a statement that does not execute is not a throw.
+      //
+      // Measured that day (CC-CMD-2026-09-12-v2-sections-never-injected):
+      // espnScores held cfb 80, nfl 13, mls 15 and eight more sports with the
+      // correct _sport, the slate showed five sections from OTHER builders and
+      // none from this function, and captureFieldError, page.on('pageerror')
+      // and the network census all read clean. Eleven sports lost in silence.
+      //
+      // The capture is unconditional on WHY: this branch means the games were
+      // ready and had nowhere to go, which is worth reporting whatever the
+      // cause turns out to be.
+      captureFieldError(`v2-section-inject:no-target:${sportKey}`,
+        new Error(`${games.length} game(s) ready, allData=${allData === null ? 'null' : typeof allData}`
+                + `, sports=${Array.isArray(allData?.sports) ? 'array' : typeof allData?.sports}`), true);
     }
   } catch (_e) { captureFieldError(`v2-section-inject:${sportKey}`, _e, true); }
 }
@@ -22950,7 +22993,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12n';
+  const SW_VERSION = '2026-09-12o';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

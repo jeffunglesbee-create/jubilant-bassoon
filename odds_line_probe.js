@@ -87,6 +87,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     date_nav_check: null,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     v2_games_by_sport: null, v2_games_dates: null, espn_scores_by_sport: null,
+    slate_state: null,   // window.__fieldSlateState(): allData shape + the injector's memo
     // The app's OWN swallowed-failure store. page.on('pageerror') sees uncaught
     // throws and the init-script hook sees unhandled rejections; neither sees a
     // failure the app caught on purpose. injectV2SportSection wraps its whole
@@ -328,6 +329,15 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // espnScores holds no entry with that _sport, so whether the entries EXIST
     // separates "the poll dropped them" from "the injector dropped them" —
     // two different defects that the DOM alone cannot tell apart.
+    // Task 0 of CC-CMD-2026-09-12-v2-sections-never-injected. A function, not a
+    // property read: allData is reassigned five times in field.js, so a value
+    // captured at boot would be a different object than the one the injector
+    // pushes into. null here means the app never defined it (an old build);
+    // slate_state.allData null means the app HAS no allData. Two different
+    // absences, neither collapsed into the other.
+    m.slate_state = await page.evaluate(
+      () => (typeof window.__fieldSlateState === 'function' ? window.__fieldSlateState() : null));
+
     m.espn_scores_by_sport = await page.evaluate(() => {
       const es = window.espnScores;
       if (!es) return null;   // null, not {} — absent and empty are different
@@ -530,6 +540,8 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   console.log(`window._fieldErrors: ${m.field_error_count} captured, by fn `
             + `${JSON.stringify(m.field_errors_by_fn)}`);
   console.log(`espnScores by _sport: ${JSON.stringify(m.espn_scores_by_sport)}`);
+  console.log(`allData shape: ${JSON.stringify(m.slate_state && m.slate_state.allData)}`);
+  console.log(`_v2SectionInjected: ${JSON.stringify(m.slate_state && m.slate_state.v2SectionInjected)}`);
   console.log(`/v2/games asked for: ${JSON.stringify(m.v2_games_by_sport)}`);
   console.log(`/v2/games dates: ${JSON.stringify(m.v2_games_dates)}`);
   {
