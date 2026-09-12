@@ -5184,8 +5184,14 @@ mvSyncMvPanel(); // Set initial empty state
     </div>`);
   }, _spinnerBudgetMs);
 
-  // Try ESPN first — free, no tokens, covers NBA/NHL/MLB + 9 soccer leagues
-  const espnSections = await fetchESPNFixturesForDate(iso);
+  // PAST dates come from the relay; ESPN's scoreboard serves them nothing (200
+  // with an empty events array, measured 2026-09-12) and the resulting "No
+  // major events" was false. Future dates keep the ESPN sweep — nothing
+  // measured says it fails for those. Two levels either way, so the fallback
+  // chain does not deepen (Rule 76).
+  const espnSections = iso < TODAY_ISO
+    ? await fetchRelayDateSections(iso)
+    : await fetchESPNFixturesForDate(iso);
 
   // Forward window enrichment (schema 2.1). ESPN's fixture sweep is the base and
   // stays the base: it covers 16 leagues, where field-data windows only MLB,
@@ -15658,6 +15664,53 @@ async function renderWCBracketImpact(gameId, home, away, relayBase) {
 // dedup against (confirmed via grep -- no sections.push for CFB anywhere),
 // so this is simpler: first sighting always creates a fresh section.
 const _v2SectionInjected = {}; // sportKey -> true once its section exists in allData.sports
+// V2 sport key → the section label the rest of the app renders and filters on.
+//
+// Copied VERBATIM from the nineteen injectV2SportSection() call sites below,
+// which were the only place these strings existed. Extracted so a second caller
+// (fetchRelayDateSections, for past-date navigation) cannot drift from them.
+//
+// nba / nhl / mlb have no V2 injector — their sections come from the ESPN
+// fixture sweep — so their labels are taken from FETCH_LEAGUES' own `section`
+// fields instead.
+//
+// KNOWN INCONSISTENCY, not resolved here: FETCH_LEAGUES labels college football
+// 'CFB' and 'NCAA Football' while the V2 injector uses 'College Football'. This
+// map follows the V2 injector because it IS the V2 path. Filed rather than
+// quietly picked — see CC-CMD-2026-09-12-past-date-slate-from-relay.
+const V2_SECTION_LABEL = {
+  wnba: 'WNBA', nfl: 'NFL', cfb: 'College Football', mls: 'MLS Soccer',
+  epl: 'Premier League', laliga: 'La Liga', seriea: 'Serie A', ligue1: 'Ligue 1',
+  eflchamp: 'EFL Championship', eflone: 'EFL League One', efltwo: 'EFL League Two',
+  ucl: 'UEFA Champions League', europa: 'UEFA Europa League',
+  conference: 'UEFA Conference League',
+  uclqual: 'UEFA Champions League Qualifying',
+  europaqual: 'UEFA Europa League Qualifying',
+  conferencequal: 'UEFA Conference League Qualifying',
+  nba: 'NBA', nhl: 'NHL', mlb: 'Baseball (MLB)',
+};
+
+// One game object, built the same way whether it came from the live V2 poll
+// (espnScores) or from a dated /v2/games fetch. Extracted so the two callers
+// cannot drift: a field added for one is added for both.
+//
+// No `streams`: injected sections have never carried them, for CFB, NFL, WNBA,
+// MLS and eleven more. Keeping it that way means no resolveBundle mapping has
+// to be invented here, which is what made /context/date the wrong source.
+function _v2SectionGame({ home, away, id, sectionLabel, start_time, state, round,
+                          homeCuratedRank, awayCuratedRank }) {
+  return {
+    home, away, _id: id,
+    league: sectionLabel, _sport: sectionLabel, _section: sectionLabel,
+    start_time: start_time || '',
+    state: state || 'pre',
+    confirmed: true,
+    round: round || '',
+    homeCuratedRank: homeCuratedRank ?? null,
+    awayCuratedRank: awayCuratedRank ?? null,
+  };
+}
+
 function injectV2SportSection(sportKey, sectionLabel) {
   try {
     const keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey);
@@ -15665,20 +15718,15 @@ function injectV2SportSection(sportKey, sectionLabel) {
     const games = keys.map(k => {
       const e = espnScores[k];
       const [home, away] = k.split('|');
-      return {
-        home, away, _id: e._gameId || e.espnEventId || k,
-        league: sectionLabel, _sport: sectionLabel, _section: sectionLabel,
-        start_time: e.start_time || '',
-        state: e.state || 'pre',
-        confirmed: true,
-        round: e.round || '',
-        // Threaded from mapV2ToESPN (CC-CMD-2026-07-15-cfb-section-
-        // injection); real values arrive once the relay's companion fix
-        // (CC-CMD-2026-07-15-cfb-curatedrank-relay) lands. isFeaturedTierGame
-        // (CC-CMD-2026-07-15-featured-tier-overflow) reads these directly.
-        homeCuratedRank: e.homeCuratedRank ?? null,
-        awayCuratedRank: e.awayCuratedRank ?? null,
-      };
+      // Threaded from mapV2ToESPN (CC-CMD-2026-07-15-cfb-section-injection);
+      // real values arrive once the relay's companion fix
+      // (CC-CMD-2026-07-15-cfb-curatedrank-relay) lands. isFeaturedTierGame
+      // (CC-CMD-2026-07-15-featured-tier-overflow) reads these directly.
+      return _v2SectionGame({
+        home, away, id: e._gameId || e.espnEventId || k, sectionLabel,
+        start_time: e.start_time, state: e.state, round: e.round,
+        homeCuratedRank: e.homeCuratedRank, awayCuratedRank: e.awayCuratedRank,
+      });
     });
     const existing = allData?.sports?.find(s => s.section === sectionLabel || s.sport === sectionLabel);
     if (existing) {
@@ -15699,6 +15747,46 @@ function injectV2SportSection(sportKey, sectionLabel) {
       _v2SectionInjected[sportKey] = true;
     }
   } catch (_e) { captureFieldError(`v2-section-inject:${sportKey}`, _e, true); }
+}
+
+// Past-date slate, sourced from the relay instead of ESPN.
+//
+// WHY (CC-CMD-2026-09-12-no-events-is-false, measured 2026-09-12 from the live
+// page): ESPN's scoreboard answers HTTP 200 with `events: []` for a past date —
+// /baseball/mlb/scoreboard?dates=20260911 returns nothing — so
+// fetchESPNFixturesForDate correctly reports no data, and goToDate then told the
+// reader "No major events on Yesterday". That day had 15 completed MLB games.
+//
+// The relay serves the same day: /v2/games?sport=mlb&date=2026-09-11 returns 15
+// games, source "espn-wc". Same ESPN data, fetched server-side, through a route
+// this client already calls every poll.
+//
+// Returns null when every enabled sport is empty, so the caller's existing
+// no-events branch still handles a genuinely empty day.
+async function fetchRelayDateSections(iso) {
+  const enabled = Object.entries(FIELD_V2_SOURCES).filter(([, v]) => v).map(([k]) => k);
+  const settled = await Promise.all(enabled.map(async key => {
+    const label = V2_SECTION_LABEL[key];
+    // A sport with no label would silently vanish; say so rather than drop it.
+    if (!label) { captureFieldError('relay-date-sections:no-label', new Error(key), false); return null; }
+    // fetchV2Games already carries the timeout, the !r.ok path and the error
+    // capture (CC-CMD-2026-07-16-frozen-card-duplicate-status). Reusing it
+    // rather than writing a second fetch is the point.
+    const games = await fetchV2Games(key, iso);
+    if (!games || !games.length) return null;
+    return {
+      sport: label, section: label,
+      games: games.filter(fg => fg?.home?.name && fg?.away?.name).map(fg => _v2SectionGame({
+        home: fg.home.name, away: fg.away.name,
+        id: fg.id || fg.espnEventId || `${fg.home.name}|${fg.away.name}`,
+        sectionLabel: label,
+        start_time: fg.start, state: fg.state, round: fg.round,
+        homeCuratedRank: fg.home?.curatedRank, awayCuratedRank: fg.away?.curatedRank,
+      })),
+    };
+  }));
+  const sections = settled.filter(s => s && s.games.length);
+  return sections.length ? sections : null;
 }
 
 async function fetchV2AllScores() {
@@ -22819,7 +22907,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12i';
+  const SW_VERSION = '2026-09-12j';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

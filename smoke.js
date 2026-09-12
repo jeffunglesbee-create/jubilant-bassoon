@@ -7657,6 +7657,18 @@ assert('A-TDRAW-12 — the section and its render target exist in the markup',
   /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
   'renderTennisBracket writes into #tennis-draw and returns silently if it is absent');
 
+assert('A-DATENAV-4 — a past date is sourced from the relay, not from ESPN',
+  // ESPN's scoreboard answers 200 with an empty events array for a past date
+  // (measured 2026-09-12 from the live page), so fetchESPNFixturesForDate
+  // correctly finds nothing and goToDate told the reader "No major events" for
+  // a day with 15 completed MLB games. The relay serves the same day.
+  /const espnSections = iso < TODAY_ISO\s*\n\s*\? await fetchRelayDateSections\(iso\)\s*\n\s*: await fetchESPNFixturesForDate\(iso\);/.test(html) &&
+  /async function fetchRelayDateSections\(iso\) \{/.test(html) &&
+  /const V2_SECTION_LABEL = \{/.test(html) &&
+  // the fetcher must reuse fetchV2Games, not open a second hand-rolled fetch
+  /const games = await fetchV2Games\(key, iso\);/.test(html),
+  'a past date must come from /v2/games, and through the existing fetchV2Games so the timeout and error capture are not rewritten');
+
 assert('A-DATENAV-3 — the zero-change fast path requires that a card was compared',
   // The four original conditions are ALL TRUE when neither side has a
   // .game-card: anyCardChanged stays false, no anchor exists, and
