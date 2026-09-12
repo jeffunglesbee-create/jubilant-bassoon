@@ -1,0 +1,54 @@
+name: Odds story wire probe
+
+# TASK 0 of CC-CMD-2026-09-11-client-odds-story. The CC-CMD names the producing
+# FUNCTION and explicitly says not to assume it matches the wire format. Reading
+# the relay says they do not match; this settles it against the live service.
+# Read-only, no key, no quota.
+on:
+  workflow_dispatch:
+    inputs:
+      dates:
+        description: 'Comma-separated YYYY-MM-DD. Blank = the three from the CC-CMD.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: odds-story-wire-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe the wire
+        env:
+          PROBE_DATES: ${{ inputs.dates }}
+        run: node scripts/probe-odds-story-wire.mjs
+
+      - name: Commit manifest
+        if: always()
+        run: |
+          git config user.name "FIELD CI"
+          git config user.email "claude@field.dev"
+          git add outbox/odds-story-wire-*.json || { echo "no manifest"; exit 0; }
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "chore: odds story wire probe [skip ci]"
+          LOG=/tmp/push.log; : > "$LOG"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash origin main >>"$LOG" 2>&1 \
+               && git push origin main >>"$LOG" 2>&1; then
+              echo "Pushed on attempt $i."; exit 0
+            fi
+            echo "Attempt $i lost the race; retrying."; sleep $((i * 5))
+          done
+          echo "::group::push log"; cat "$LOG"; echo "::endgroup::"
+          if grep -qiE 'denied|403|permission|forbidden|authentication' "$LOG"; then
+            echo "Push failed on PERMISSIONS."; exit 1
+          fi
+          echo "Race contention; see log."; exit 0
