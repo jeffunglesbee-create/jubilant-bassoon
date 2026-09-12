@@ -15,6 +15,7 @@
 
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
+const { settleScan } = require('./scripts/slate-settle.cjs');
 
 const URL = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
@@ -65,6 +66,22 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     setup_overlay_dismissed: false, date_nav_error: null,
     slate_by_step: [],
     slate_settle_series: [],
+    // CC-CMD-2026-09-12-slate-size-variance. The same page read 129 cards and
+    // then 45, 23 minutes apart, zero page errors on both. A total cannot say
+    // WHICH section moved, and every reading so far has been a total taken at a
+    // fixed wall-clock offset — an assumption about the page's timing that
+    // nobody had measured.
+    slate_settle_series_step0: [],
+    slate_by_sport: null,          // section label -> card count, at the read
+    slate_sections_present: null,  // every .sport-section's label, incl. empty ones
+    slate_read_at_ms: null,        // performance.now() at the read, since navigation
+    slate_settled_at_s: null,      // when three consecutive equal readings landed
+    slate_settle_reached: false,   // false => the counts below are mid-cycle
+    // `slate_cards` means "cards on whatever date the probe ended on". Six
+    // manifests reading 0 were STEP_BACK_DAYS=1 runs describing Yesterday, and
+    // read as a 90-minute site outage. The date travels with the number now.
+    slate_cards_date_label: null,
+    slate_cards_after_steps: null,
     empty_note: null,
     main_state: null, page_errors: [], page_error_count: 0,
     date_nav_check: null,
@@ -105,7 +122,52 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     }
     // The odds line depends on debrief.oddsOutcome, which arrives with the
     // per-game context fetch, not with the first paint.
-    await page.waitForTimeout(12000);
+    //
+    // This WAS a flat 12s wait. CC-CMD-2026-09-12-slate-size-variance: a fixed
+    // offset reports whatever the page happened to hold at 12s and calls it the
+    // slate. Sample instead, and stop on a criterion rather than a clock —
+    // three consecutive equal non-zero readings. A run that never settles says
+    // so in its own manifest (slate_settle_reached false) instead of reporting
+    // a mid-cycle number as if it were final.
+    const slateCensus = () => page.evaluate(() => {
+      const by = {};
+      document.querySelectorAll('.game-card[data-gameid]').forEach(c => {
+        const k = c.getAttribute('data-sport') || '(no data-sport)';
+        by[k] = (by[k] || 0) + 1;
+      });
+      // A section present with zero cards and a section absent are different
+      // states (Rule 99). The totals alone cannot tell them apart.
+      const sections = Array.from(document.querySelectorAll('.sport-section'))
+        .map(el => el.getAttribute('data-sport') || '(no data-sport)');
+      return { total: document.querySelectorAll('.game-card[data-gameid]').length,
+               by_sport: by, sections,
+               since_nav_ms: Math.round(performance.now()) };
+    });
+
+    const SETTLE_MAX_S = Number(process.env.SLATE_SETTLE_MAX_S || 60);
+    {
+      let census = null;
+      const totals = [];
+      for (let t = 5; t <= SETTLE_MAX_S; t += 5) {
+        await page.waitForTimeout(5000);
+        census = await slateCensus();
+        totals.push(census.total);
+        m.slate_settle_series_step0.push({
+          at_s: t, total: census.total, since_nav_ms: census.since_nav_ms,
+          by_sport: census.by_sport });
+        // settleScan lives in its own module and is enumerated in
+        // scripts/check-slate-settle.mjs. Deciding settledness inline here as
+        // well would be a second definition of the same rule, which is the
+        // drift that put three enabled sports through a no-label branch earlier
+        // today. One definition, two callers.
+        if (settleScan(totals).reached) {
+          m.slate_settled_at_s = t; m.slate_settle_reached = true; break;
+        }
+      }
+      m.slate_by_sport = census ? census.by_sport : null;
+      m.slate_sections_present = census ? census.sections : null;
+      m.slate_read_at_ms = census ? census.since_nav_ms : null;
+    }
 
     // The debrief only renders for games isGameOver() calls final, so a slate
     // with nothing finished reads a zero identical to a broken render path.
@@ -199,6 +261,8 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.cards_seen = out.cardCount;
     // Each of these separates a reality the single count collapsed.
     m.slate_cards = out.slateCards;
+    m.slate_cards_date_label = m.date_label;
+    m.slate_cards_after_steps = m.stepped_back_days;
     m.debrief_injected = out.debriefInjected;
     m.debrief_visible = out.debriefVisible;
     m.existing_odds_layers = out.oddsLayers;
@@ -383,8 +447,30 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   console.log(`date read: ${m.date_label} (stepped back ${m.stepped_back_days} day(s)), `
             + `/v2/games requests ${m.v2_games_requests}`);
   console.log(`/context/game id forms: ${JSON.stringify(m.context_id_forms)}`);
-  console.log(`slate cards ${m.slate_cards}, debrief-injected ${m.debrief_injected}, `
+  console.log(`slate cards ${m.slate_cards} on ${m.slate_cards_date_label} `
+            + `(after ${m.slate_cards_after_steps} step(s) back), `
+            + `debrief-injected ${m.debrief_injected}, `
             + `debrief visible ${m.debrief_visible}, existing .debrief-odds layers ${m.existing_odds_layers}`);
+
+  // CC-CMD-2026-09-12-slate-size-variance Task 2: say WHICH cycle was read, in
+  // the same breath as the number. A count whose settle state is invisible is a
+  // count every reader will take as final — the 129-then-45 pair was read that
+  // way for hours.
+  if (m.slate_settle_reached) {
+    console.log(`slate settled at ${m.slate_settled_at_s}s `
+              + `(${m.slate_read_at_ms}ms since navigation), three equal readings; `
+              + `series ${JSON.stringify(m.slate_settle_series_step0.map(x => x.total))}`);
+  } else {
+    console.log(`slate NEVER SETTLED within ${process.env.SLATE_SETTLE_MAX_S || 60}s — `
+              + `the counts above are MID-CYCLE, not final; `
+              + `series ${JSON.stringify(m.slate_settle_series_step0.map(x => x.total))}`);
+  }
+  console.log(`slate by sport: ${JSON.stringify(m.slate_by_sport)}`);
+  {
+    const withCards = new Set(Object.keys(m.slate_by_sport || {}));
+    const empty = (m.slate_sections_present || []).filter(x => !withCards.has(x));
+    console.log(`sections rendered with ZERO cards: ${empty.length ? JSON.stringify(empty) : '(none)'}`);
+  }
 
   // MEASURED 2026-09-12: the odds slot lives in renderCard's template, and
   // renderCard has exactly two callers, both in the NightOwl path. The main

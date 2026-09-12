@@ -68,6 +68,17 @@ jobs:
           SLATE_IDS: ${{ inputs.slate_ids }}
         continue-on-error: true
 
+      # The probe now decides when the slate has settled instead of waiting a
+      # flat 12s (CC-CMD-2026-09-12-slate-size-variance). That criterion is one
+      # function shared with these checks, so it cannot drift from what is
+      # tested. Twelve enumerated series; four mutations prove the cases can
+      # fail. Runs before the browser so a broken criterion fails in seconds
+      # rather than after a two-minute page load.
+      - name: The slate settle criterion holds, and can fail
+        run: |
+          node scripts/check-slate-settle.mjs
+          node scripts/mutate-slate-settle.mjs
+
       - name: Run odds line probe
         run: node odds_line_probe.js
         env:
