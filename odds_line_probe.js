@@ -41,12 +41,23 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     slots_hidden: 0, slots_visible: 0,
     states: { no_odds: null, opened_only: null, unchanged: null, moved: null },
     date_label: null, stepped_back_days: 0,
+    setup_overlay_dismissed: false, date_nav_error: null,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
 
   try {
     await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
+
+    // A fresh browser profile gets the My Services setup modal. It is
+    // aria-modal and intercepts every pointer event: run 34697166194 spent
+    // thirty seconds retrying #date-prev against it, threw, and committed no
+    // manifest at all. Dismiss it the way a first-time user does.
+    const _skip = page.locator('#setup-skip');
+    if (await _skip.isVisible().catch(() => false)) {
+      await _skip.click().catch(() => {});
+      m.setup_overlay_dismissed = true;
+    }
     // The odds line depends on debrief.oddsOutcome, which arrives with the
     // per-game context fetch, not with the first paint.
     await page.waitForTimeout(12000);
@@ -60,9 +71,13 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       const injected = await page.evaluate(
         () => document.querySelectorAll('.game-card[data-debrief-injected]').length);
       if (injected > 0) break;
-      await page.click('#date-prev');
-      m.stepped_back_days++;
-      await page.waitForTimeout(12000);
+      // A failure here is reported, not thrown. A probe that dies produces no
+      // evidence at all, which reads the same as evidence of nothing.
+      try {
+        await page.click('#date-prev', { timeout: 8000 });
+        m.stepped_back_days++;
+        await page.waitForTimeout(12000);
+      } catch (navErr) { m.date_nav_error = String(navErr.message || navErr).split('\n')[0]; break; }
     }
     m.date_label = await page.evaluate(
       () => { const el = document.getElementById('date-label'); return el ? el.textContent.trim() : null; });
