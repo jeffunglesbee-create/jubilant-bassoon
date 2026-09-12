@@ -16001,6 +16001,23 @@ async function fetchV2AllScores() {
       if (FIELD_DEBUG && games.length)
         console.debug(`[V2] ${sport}/${queryDate}: ${games.length} games, ${games.filter(g=>g.state==='live').length} live`);
     } catch(e) {
+      // This catch swallowed silently until 2026-09-12. It wraps the whole
+      // per-sport forEach, so ANY throw while mapping one sport's games — a
+      // null from mapV2ToESPN dereferenced, a bad shape from one row — loses
+      // that entire sport for that poll, with no trace anywhere: the fetch
+      // succeeded so the network census is clean, the throw is caught so
+      // page.on('pageerror') never fires, and nothing reached _fieldErrors.
+      //
+      // Measured that day (CC-CMD-2026-09-12-slate-size-variance): cfb
+      // requested 12 times, every response HTTP 200, the relay serving a full
+      // live NCAAF slate, and no College Football section for sixty seconds —
+      // with 3 captured errors, none of them about cfb, and page_error_count 0.
+      // The investigation that found this took a day of probe work because the
+      // one place that knew was a console.warn behind FIELD_DEBUG.
+      //
+      // captureFieldError is what every other swallow in this file uses
+      // (Rule 62). silent=true: this is diagnostics, not a user-facing state.
+      captureFieldError(`v2-poll:${sport}`, e, true);
       if (FIELD_DEBUG) console.warn('[V2] poll error:', sport, queryDate, e.message);
     }
   })));
@@ -22926,7 +22943,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12l';
+  const SW_VERSION = '2026-09-12m';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

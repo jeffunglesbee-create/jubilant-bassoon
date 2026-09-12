@@ -86,7 +86,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     main_state: null, page_errors: [], page_error_count: 0,
     date_nav_check: null,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
-    v2_games_by_sport: null, v2_games_dates: null,
+    v2_games_by_sport: null, v2_games_dates: null, espn_scores_by_sport: null,
     // The app's OWN swallowed-failure store. page.on('pageerror') sees uncaught
     // throws and the init-script hook sees unhandled rejections; neither sees a
     // failure the app caught on purpose. injectV2SportSection wraps its whole
@@ -322,6 +322,23 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // defects depending on which. Count by sport key AND by date, because
     // fieldDatesToQuery sends two dates per cycle and a section could be
     // missing for only one of them.
+    // The decisive census for CC-CMD-2026-09-12-slate-size-variance: the client
+    // requested cfb 12 times and got HTTP 200 every time, yet rendered no
+    // College Football section. injectV2SportSection returns early when
+    // espnScores holds no entry with that _sport, so whether the entries EXIST
+    // separates "the poll dropped them" from "the injector dropped them" —
+    // two different defects that the DOM alone cannot tell apart.
+    m.espn_scores_by_sport = await page.evaluate(() => {
+      const es = window.espnScores;
+      if (!es) return null;   // null, not {} — absent and empty are different
+      const by = {};
+      for (const k of Object.keys(es)) {
+        const sp = es[k] && es[k]._sport ? es[k]._sport : '(no _sport)';
+        by[sp] = (by[sp] || 0) + 1;
+      }
+      return by;
+    });
+
     const _fe = await page.evaluate(() => (window._fieldErrors || []).map(
       e => ({ fn: e.fn, err: String(e.err || '').slice(0, 200), ts: e.ts })));
     m.field_error_count = _fe.length;
@@ -512,6 +529,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   console.log(`slate by sport: ${JSON.stringify(m.slate_by_sport)}`);
   console.log(`window._fieldErrors: ${m.field_error_count} captured, by fn `
             + `${JSON.stringify(m.field_errors_by_fn)}`);
+  console.log(`espnScores by _sport: ${JSON.stringify(m.espn_scores_by_sport)}`);
   console.log(`/v2/games asked for: ${JSON.stringify(m.v2_games_by_sport)}`);
   console.log(`/v2/games dates: ${JSON.stringify(m.v2_games_dates)}`);
   {
