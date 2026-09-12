@@ -318,6 +318,23 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
           const rows = (j?.games?.regular?.length || 0) + (j?.games?.postseason?.length || 0);
           nav.archive_rows_for_claimed_empty_date = rows;
           nav.archive_date_checked = d;
+          // Task 0/1 of CC-CMD-2026-09-12-no-events-is-false. goToDate reaches
+          // its !sections.length branch, so the sweep handed it []. Two very
+          // different causes produce that and need different fixes:
+          // every league returned zero events, or every league FAILED (the
+          // per-league try swallows each one into a counter). Ask ESPN the same
+          // question the client asks, from the same browser, and report the
+          // status and the event count rather than reasoning about it.
+          const espn = await page.evaluate(async (ds) => {
+            const u = `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${ds}&limit=50`;
+            try {
+              const r = await fetch(u, { signal: AbortSignal.timeout(15000) });
+              if (!r.ok) return { status: r.status, events: null };
+              const j = await r.json();
+              return { status: r.status, events: (j.events || []).length };
+            } catch (e) { return { status: null, error: String(e.message || e).slice(0, 120) }; }
+          }, d.replace(/-/g, ''));
+          nav.espn_mlb_probe = espn;
           if (rows > 0) {
             nav.ok = false;
             nav.no_events_is_false = true;
@@ -391,6 +408,14 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     if (nav && nav.no_events_is_false) {
       console.error(`  "no-events" claimed for ${nav.archive_date_checked}, but the relay archive`);
       console.error(`  holds ${nav.archive_rows_for_claimed_empty_date} row(s) for that date. The message is false.`);
+      if (nav.espn_mlb_probe) {
+        const e = nav.espn_mlb_probe;
+        console.error(`  ESPN mlb scoreboard for that date: HTTP ${e.status}, events ${e.events}`
+                    + (e.error ? ` (${e.error})` : ''));
+        console.error(e.events > 0
+          ? '  ESPN HAS the games — the sweep discarded them, this is not an empty day.'
+          : '  ESPN returned none either — the false claim starts upstream of the client.');
+      }
       console.error('  CC-CMD-2026-09-12-no-events-is-false.');
     } else if (nav && nav.failure_kind === 'render-incomplete') {
       console.error('  render-incomplete: sections resolved, renderAll() left the spinner up.');
