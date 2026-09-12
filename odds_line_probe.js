@@ -51,6 +51,12 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   });
   const m = {
     probed_at: new Date().toISOString(), url: URL,
+    // Which trigger produced this run. The 16:10 UTC cron added on 2026-09-12
+    // did not fire on its first slot — every run that day was a
+    // workflow_dispatch — and nothing in the artifacts said so. A committed
+    // manifest that records its own trigger answers "are the scheduled runs
+    // actually happening" without anyone having to go and look.
+    triggered_by: process.env.PROBE_TRIGGER || '(unset)',
     sw_version: null, cards_seen: 0,
     odds_slot_present_in_dom: false,
     slots_hidden: 0, slots_visible: 0,
@@ -319,6 +325,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   if (m.main_state) console.log(`main on an empty slate: ${JSON.stringify(m.main_state).slice(0, 700)}`);
   if (m.page_errors.length) console.log(`page errors: ${JSON.stringify(m.page_errors)}`);
   if (m.empty_note) console.log(`empty-note on this date: "${m.empty_note}"`);
+  console.log(`triggered by: ${m.triggered_by}`);
   console.log(`date read: ${m.date_label} (stepped back ${m.stepped_back_days} day(s)), `
             + `/v2/games requests ${m.v2_games_requests}`);
   console.log(`/context/game id forms: ${JSON.stringify(m.context_id_forms)}`);

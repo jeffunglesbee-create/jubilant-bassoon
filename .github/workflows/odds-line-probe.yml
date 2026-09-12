@@ -73,6 +73,7 @@ jobs:
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
           STEP_BACK_DAYS: ${{ inputs.step_back_days || '0' }}
+          PROBE_TRIGGER: ${{ github.event_name }}
 
       # always(): the manifest is written to disk before the probe exits, and a
       # FAILING probe is exactly when its evidence matters. Runs 7, 8 and 9 all
