@@ -1,8 +1,8 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "34614538799",
-  "commit": "0832c87329d3909383dbb1b45f41c41e41c53243",
-  "timestamp": "2026-09-11T15:11:20.272Z",
+  "runId": "34699008617",
+  "commit": "eb68c47cd32b24c6aa1dc48bc2e18293a43b61d8",
+  "timestamp": "2026-09-12T14:21:45.377Z",
   "historySamples": 6,
   "peakSeeded": 88,
   "testApiReady": true,
@@ -16,7 +16,18 @@
   "liveBsContentChildCount": 7,
   "postBsContentChildCount": 8,
   "screenshot": null,
-  "consoleErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-09-12&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-09-12&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
   "liveError": null,
   "postError": null
 }
