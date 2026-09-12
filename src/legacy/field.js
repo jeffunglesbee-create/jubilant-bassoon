@@ -7654,6 +7654,10 @@ function applyMainHTML(html){
   // place that decides whether a card is reused, never two copies that
   // could drift out of sync.
   let anyCardChanged = false;
+  // Did the reconciliation below actually COMPARE anything? The fast path's
+  // premise is "every card was just proven identical", and with no cards on
+  // either side that proof is vacuous — see the fast path's own comment.
+  let comparedAnyCard = false;
   try {
     const existingCards = new Map();
     // .game-card[data-gameid], not the bare [data-gameid] attribute selector:
@@ -7712,6 +7716,7 @@ function applyMainHTML(html){
         anyCardChanged = true;
       }
     });
+    comparedAnyCard = existingCards.size > 0 || newCardIds.size > 0;
     // A card existed before and is now gone entirely -- also counts as a real change.
     if (!anyCardChanged) {
       for (const gid of existingCards.keys()) {
@@ -7727,6 +7732,7 @@ function applyMainHTML(html){
     // through -- force it true so the fast path below is never taken on
     // an error, never silently skipping a DOM update the caller expects.
     anyCardChanged = true;
+    comparedAnyCard = true;
   }
   // Zero-change fast path (CC-CMD-2026-07-06-zero-change-render-fast-path):
   // every card was just proven identical and reused above, and section
@@ -7741,7 +7747,26 @@ function applyMainHTML(html){
   // AFTER the morph above has already moved the anchor out of main (see
   // anchorMorphWillRun's own comment), so it alone cannot detect that main
   // has already been mutated and a commit is required to reattach it.
+  //
+  // comparedAnyCard (2026-09-12): the four conditions above are ALL TRUE when
+  // neither side has a single .game-card, and then this returns without
+  // committing anything. That is not a no-op — it silently discards the render.
+  //
+  // Measured live: every card-less render on a past date was dropped this way.
+  // goToDate writes a .loading-wrap spinner, then one of four branches calls
+  // this with an .empty-note. main is [div.loading-wrap] (length 1), tmp is
+  // [div.empty-note] (length 1), no card exists in either, so anyCardChanged
+  // stays false and the counts match — return, spinner intact, message gone.
+  // Five probe runs read main as [#field-newspaper, div.loading-wrap] with zero
+  // .empty-note, zero page errors and zero unhandled rejections, stable to 60s:
+  // nothing threw, the commit was skipped.
+  //
+  // It is the sibling of the [data-lcp-anchor] hazard this comment already
+  // warns about. That one was found because the anchor MOVED; this one leaves
+  // no trace at all. "Every card was proven identical" is vacuous when there
+  // were no cards to prove anything about.
   if (!anyCardChanged
+      && comparedAnyCard
       && !anchorMorphWillRun
       && !(main.querySelector('[data-lcp-anchor]') && !tmp.querySelector('[data-lcp-anchor]'))
       && main.children.length === tmp.children.length) {
@@ -22794,7 +22819,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12h';
+  const SW_VERSION = '2026-09-12i';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

@@ -7657,6 +7657,20 @@ assert('A-TDRAW-12 — the section and its render target exist in the markup',
   /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
   'renderTennisBracket writes into #tennis-draw and returns silently if it is absent');
 
+assert('A-DATENAV-3 — the zero-change fast path requires that a card was compared',
+  // The four original conditions are ALL TRUE when neither side has a
+  // .game-card: anyCardChanged stays false, no anchor exists, and
+  // [div.loading-wrap] and [div.empty-note] are both length 1. It returned
+  // without committing, silently discarding every card-less render — which is
+  // why NO .empty-note has ever appeared on a past date, including the three
+  // that predate this session.
+  /let comparedAnyCard = false;/.test(html) &&
+  /comparedAnyCard = existingCards\.size > 0 \|\| newCardIds\.size > 0;/.test(html) &&
+  /if \(!anyCardChanged\s*\n\s*&& comparedAnyCard\s*\n\s*&& !anchorMorphWillRun/.test(html) &&
+  // the catch must force it too, or a mid-loop throw re-opens the same hole
+  /anyCardChanged = true;\s*\n\s*comparedAnyCard = true;\s*\n\s*\}/.test(html),
+  'a fast path whose premise is "every card was proven identical" must not fire when there were no cards to prove anything about');
+
 assert('A-DATENAV-2 — each failure note says WHICH failure it is',
   ['budget-exhausted', 'fetch-error', 'no-events', 'render-incomplete']
     .every(k => html.includes(`data-failure="${k}"`)),
