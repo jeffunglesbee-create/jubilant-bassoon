@@ -87,6 +87,15 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     date_nav_check: null,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     v2_games_by_sport: null, v2_games_dates: null,
+    // The app's OWN swallowed-failure store. page.on('pageerror') sees uncaught
+    // throws and the init-script hook sees unhandled rejections; neither sees a
+    // failure the app caught on purpose. injectV2SportSection wraps its whole
+    // body in try/catch and reports through captureFieldError, so a section
+    // that fails to inject leaves no trace in anything this probe read before
+    // — which is the state measured at 20:05: cfb requested 12 times, the
+    // relay serving a full live NCAAF slate, and no College Football section
+    // for sixty seconds, with page_error_count 0.
+    field_errors: null, field_error_count: null, field_errors_by_fn: null,
     visible_samples: [], error: null,
   };
 
@@ -313,6 +322,15 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // defects depending on which. Count by sport key AND by date, because
     // fieldDatesToQuery sends two dates per cycle and a section could be
     // missing for only one of them.
+    const _fe = await page.evaluate(() => (window._fieldErrors || []).map(
+      e => ({ fn: e.fn, err: String(e.err || '').slice(0, 200), ts: e.ts })));
+    m.field_error_count = _fe.length;
+    m.field_errors_by_fn = {};
+    for (const e of _fe) m.field_errors_by_fn[e.fn] = (m.field_errors_by_fn[e.fn] || 0) + 1;
+    // The whole list would dwarf the manifest on a bad run; the per-fn census is
+    // the index and these are the samples.
+    m.field_errors = _fe.slice(0, 40);
+
     m.v2_games_by_sport = {};
     m.v2_games_dates = {};
     for (const u of _v2Reqs) {
@@ -492,6 +510,8 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   console.log(`slate sampled to ${m.slate_settle_series_step0.length * 5}s `
             + `(floor ${process.env.SLATE_SETTLE_MIN_S || 0}s, cap ${process.env.SLATE_SETTLE_MAX_S || 60}s)`);
   console.log(`slate by sport: ${JSON.stringify(m.slate_by_sport)}`);
+  console.log(`window._fieldErrors: ${m.field_error_count} captured, by fn `
+            + `${JSON.stringify(m.field_errors_by_fn)}`);
   console.log(`/v2/games asked for: ${JSON.stringify(m.v2_games_by_sport)}`);
   console.log(`/v2/games dates: ${JSON.stringify(m.v2_games_dates)}`);
   {
