@@ -60,6 +60,21 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
                debriefInjected: document.querySelectorAll('.game-card[data-debrief-injected]').length,
                debriefVisible: Array.from(document.querySelectorAll('.card-debrief'))
                                     .filter(el => !el.hidden && (el.textContent || '').trim()).length,
+               // WHICH games got a debrief. Without this the DOM result and the
+               // /context/game result cannot be joined, and "0 odds layers" stays
+               // ambiguous between "these games have no odds" and "the layer is
+               // broken" — the counts alone cannot separate them.
+               debriefCards: Array.from(document.querySelectorAll('.card-debrief'))
+                 .filter(el => !el.hidden && (el.textContent || '').trim())
+                 .map(el => {
+                   const c = el.closest('.game-card[data-gameid]');
+                   return { gameid: c ? c.getAttribute('data-gameid') : null,
+                            sport: c ? c.getAttribute('data-sport') : null,
+                            home: c ? c.getAttribute('data-home') : null,
+                            away: c ? c.getAttribute('data-away') : null,
+                            layers: Array.from(el.querySelectorAll('[class^="debrief-"]'))
+                                         .map(x => x.className) };
+                 }),
                oddsLayers: document.querySelectorAll('.debrief-odds').length };
     });
 
@@ -70,6 +85,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.debrief_injected = out.debriefInjected;
     m.debrief_visible = out.debriefVisible;
     m.existing_odds_layers = out.oddsLayers;
+    m.debrief_cards = out.debriefCards;
     m.odds_layer_present_in_dom = out.rows.length > 0;
     m.odds_slot_present_in_dom = out.rows.length > 0;
     m.slots_hidden  = out.rows.filter(r => r.hidden || !r.text).length;
