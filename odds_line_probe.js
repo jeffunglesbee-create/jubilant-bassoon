@@ -43,6 +43,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     date_label: null, stepped_back_days: 0,
     setup_overlay_dismissed: false, date_nav_error: null,
     slate_by_step: [],
+    slate_settle_series: [],
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
@@ -82,7 +83,19 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       try {
         await page.click('#date-prev', { timeout: 8000 });
         m.stepped_back_days++;
-        await page.waitForTimeout(25000);
+        // Sample rather than pick a timeout. A single 25s read cannot separate
+        // "this date renders nothing" from "this date renders slowly", and run
+        // 34697542148 reported 0 cards on Yesterday without saying which.
+        // buildDateSchedule returns null for an unknown date and triggers a
+        // fixture fetch across ~12 leagues, so the series is the answer.
+        const series = [];
+        for (let t = 5; t <= 60; t += 5) {
+          await page.waitForTimeout(5000);
+          const n = await slateNow();
+          series.push({ at_s: t, cards: n });
+          if (n > 0 && t >= 20) break;   // rendered, and settled past the debrief inject
+        }
+        m.slate_settle_series.push({ step: m.stepped_back_days, label: await dateLabel(), series });
         m.slate_by_step.push({ step: m.stepped_back_days, label: await dateLabel(),
                                cards: await slateNow() });
       } catch (navErr) { m.date_nav_error = String(navErr.message || navErr).split('\n')[0]; break; }
