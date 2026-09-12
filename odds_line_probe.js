@@ -42,13 +42,16 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       // data-slot template is a Phase-2/3 path. Counting only slot-template
       // cards reported cards_seen: 0 and could not distinguish "no games",
       // "wrong selector" and "not rendered yet" — one number, three realities.
-      const cards = Array.from(document.querySelectorAll('[data-slot="odds"]'));
+      // The layer is now .debrief-odds-movement, injected by buildDebrief inside
+      // .card-debrief. The old [data-slot="odds"] markup was removed with the
+      // dead renderCard wiring — querying it would report a permanent zero.
+      const cards = Array.from(document.querySelectorAll('.debrief-odds-movement'));
       const rows = cards.map(el => {
-        const card = el.closest('[data-game-id],[data-id],article,.game-card') || el.parentElement;
-        const id = (card && (card.getAttribute('data-game-id') || card.getAttribute('data-id'))) || null;
-        const label = card ? (card.querySelector('[data-slot="home-name"]')?.textContent || '').trim() : '';
-        const away = card ? (card.querySelector('[data-slot="away-name"]')?.textContent || '').trim() : '';
-        return { id, label: away && label ? `${away} @ ${label}` : label,
+        const card = el.closest('.game-card[data-gameid]');
+        const id = card ? card.getAttribute('data-gameid') : null;
+        const home = card ? (card.getAttribute('data-home') || '') : '';
+        const away = card ? (card.getAttribute('data-away') || '') : '';
+        return { id, label: away && home ? `${away} @ ${home}` : (id || ''),
                  hidden: el.hidden, text: (el.textContent || '').trim() };
       });
       return { rows, sw: window.SW_VERSION || null,
@@ -67,6 +70,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.debrief_injected = out.debriefInjected;
     m.debrief_visible = out.debriefVisible;
     m.existing_odds_layers = out.oddsLayers;
+    m.odds_layer_present_in_dom = out.rows.length > 0;
     m.odds_slot_present_in_dom = out.rows.length > 0;
     m.slots_hidden  = out.rows.filter(r => r.hidden || !r.text).length;
     m.slots_visible = out.rows.filter(r => !r.hidden && r.text).length;
