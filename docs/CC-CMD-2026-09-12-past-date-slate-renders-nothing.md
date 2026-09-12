@@ -1,5 +1,41 @@
 # CC-CMD-2026-09-12 — stepping back one day renders neither cards nor a message
 
+**STATUS: CLOSED 2026-09-12. Root cause found, fixed, verified live.**
+
+Not `goToDate`. `applyMainHTML`'s zero-change fast path
+(`CC-CMD-2026-07-06-zero-change-render-fast-path`) silently discarded EVERY
+card-less render. Rendering an `.empty-note` over the spinner, all four of its
+conditions hold — no `.game-card` on either side so `anyCardChanged` never
+flips, no `[data-lcp-anchor]` anywhere, and `[div.loading-wrap]` and
+`[div.empty-note]` are both length 1 — so it returned without committing.
+
+`comparedAnyCard` now gates it on the reconciliation having actually compared
+something (`5f171c06`, SW `2026-09-12i`, A-DATENAV-3, mutation-proven).
+
+Verified live, `outbox/odds-line-probe-manifest-20260912T180809Z.json`:
+
+```
+before   main_children: [section#field-newspaper, div.loading-wrap]
+         failure_kind: null   loading_wrap_in_main: 1   ok: false
+
+after    main_children: [section#field-newspaper, div.empty-note]
+         failure_kind: "no-events"   loading_wrap_in_main: 0   ok: true
+         note: "No major events on Yesterday Try a different date with the ‹ › arrows"
+```
+
+**The branch that finally rendered is `no-events` — one of the three that
+predate this session.** It had been firing correctly and being thrown away the
+whole time. The defect was older and wider than the symptom that surfaced it:
+every card-less render in the app was affected, not only past dates.
+
+Both guards I added while hunting this (the end-of-function check, then the
+watchdog) were correct and were being eaten by the same renderer. The watchdog
+stays — it is the thing that would have caught this in one run instead of nine.
+
+**Succeeded by `CC-CMD-2026-09-12-no-events-is-false.md`:** the message now
+shown is itself untrue. 2026-09-11 had 15 completed MLB games with full odds.
+
+
 Found while verifying `CC-CMD-2026-09-12-context-game-slate-id`'s done
 condition. **Pre-existing, and it blocks any live verification of a debrief
 layer**, because every debrief layer needs a completed game and the only dates
