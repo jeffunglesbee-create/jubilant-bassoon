@@ -1,5 +1,27 @@
 # CC-CMD-2026-09-12 — the client's movement line will claim "unchanged" with no sequence evidence
 
+**STATUS: EXECUTED 2026-09-12.** Client `bd8752fa` (deploy-gate run 946,
+SUCCESS, SW_VERSION `2026-09-12c`); relay census `b03199d`.
+
+**Task 0's answer, measured rather than assumed:** across the two dates the
+daily census reads, **24 closing snapshots — 23 a verified sequence, 0
+unverifiable, 1 out of order.** The out-of-order row is CFL on 2026-09-06, its
+only closing snapshot. So the case is not hypothetical and not historical: it is
+in the archive right now, and before this commit that card would have claimed
+"unchanged from open" or a points shift from a pair that is not a sequence.
+
+`outbox/odds-coverage-census.log` in field-relay-nba carries the per-sport
+counts and is regenerated daily, so the number stays current without anyone
+asking for it again.
+
+Tasks 1-3 done: `_isSequence` in `src/debrief/index.ts`, and
+`scripts/check-odds-movement-sequence.mjs` — 10 enumerated fixtures against the
+REAL exported function, blocking in `deploy-gate.yml`, four proven mutations
+including a revert to the equal-timestamps-only guard that shipped that morning.
+`A-ODDS-2` repointed. Smoke 1044/0.
+
+---
+
 Found by comparing `buildOddsMovement` (shipped today, `2403a9c8`) against
 field-laboratory's `OddsStory`. **The laboratory is ahead, and this is a real
 defect in the client code I shipped.**
