@@ -44,6 +44,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     setup_overlay_dismissed: false, date_nav_error: null,
     slate_by_step: [],
     slate_settle_series: [],
+    empty_note: null,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
@@ -101,6 +102,14 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       } catch (navErr) { m.date_nav_error = String(navErr.message || navErr).split('\n')[0]; break; }
     }
     m.date_label = await dateLabel();
+    // Zero cards is THREE realities, not one: goToDate renders "No major events
+    // on <date>", "Today's AI schedule lookups are used up", or "Couldn't load
+    // <date>'s schedule" — all as .empty-note, none as .game-card. Reading the
+    // count alone repeats the collapse this whole CC-CMD is about.
+    m.empty_note = await page.evaluate(() => {
+      const el = document.querySelector('.empty-note');
+      return el ? el.textContent.replace(/\s+/g, ' ').trim().slice(0, 240) : null;
+    });
 
     const out = await page.evaluate(() => {
       // The main slate is innerHTML-built `.game-card[data-gameid]`; the
@@ -198,6 +207,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // the slot being absent from every card means the render path never ran, which
   // is the failure this probe exists for.
   if (m.error) { console.error(`PROBE ERROR: ${m.error}`); process.exit(1); }
+  if (m.empty_note) console.log(`empty-note on this date: "${m.empty_note}"`);
   console.log(`date read: ${m.date_label} (stepped back ${m.stepped_back_days} day(s)), `
             + `/v2/games requests ${m.v2_games_requests}`);
   console.log(`/context/game id forms: ${JSON.stringify(m.context_id_forms)}`);
