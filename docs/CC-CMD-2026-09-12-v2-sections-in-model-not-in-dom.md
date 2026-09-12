@@ -4,7 +4,35 @@ Continues `CC-CMD-2026-09-12-v2-sections-never-injected.md`, whose diagnosis
 Task 0 disproved. Third CC-CMD in this chain; each one narrowed the boundary by
 one link and the first two were wrong about which link.
 
-## Measured, SW `2026-09-12o`, manifest `odds-line-probe-manifest-20260912T2*.json`
+## THE DEFECT IS INTERMITTENT — measured both ways, 12 minutes apart
+
+Run 34717864709 at 20:43 UTC, same SW `2026-09-12o`, same inputs:
+
+```
+slate_cards         134
+slate_by_sport      MLB 15, College Football 20, NFL 13, MLS Soccer 15,
+                    Premier League 9, EFL League Two 12, EFL Championship 11,
+                    EFL League One 11, La Liga 8, Ligue 1 8, Serie A 6,
+                    CFL 4, AFL 1, Golf 1
+allData.sportsLength      14
+sections_model_not_in_dom []   — model and DOM agree exactly
+settle series       [134, 134, 134, 134]
+```
+
+**The same build renders all fourteen sections.** So this is not "the render
+never emits injected sections" — it does, reliably, in this run, stable across
+four samples. It is a race or a state-dependent skip that this probe has now
+caught on both sides, twelve minutes apart, with identical inputs.
+
+That also retroactively explains the 129-vs-45 oscillation
+(`CC-CMD-2026-09-12-slate-size-variance`): 134 here, 45 in the 20:14 run, and
+129/128/45/129 earlier in the day. Same defect, and the difference between a
+good and a bad run is what Task 0 below must capture.
+
+**Do not treat a passing run as the fix.** Two consecutive greens prove nothing
+against a defect that alternated four times today.
+
+## Measured on the BAD side, SW `2026-09-12o`, manifest `odds-line-probe-manifest-20260912T2*.json`
 
 ```
 espn_scores_by_sport  cfb 80, nfl 13, mls 15, eflchamp 11, efltwo 11,
@@ -69,12 +97,17 @@ a `injectV2SportSection` push, and every instrument reads clean.
    after the last render must be detectable; a section pushed and rendered must
    not be flagged; a model and DOM that agree must pass.
 
-3. **Done condition.** A committed manifest where `sections_model_not_in_dom` is
-   `[]`. That field already exists and already fails the probe — added
-   2026-09-12, it compares `allData.sportsLabels` against
-   `slate_sections_present` and exits non-zero on any gap. Today it reports ten.
+3. **Done condition.** `sections_model_not_in_dom` is `[]` on **five
+   consecutive scheduled runs**, not one. A single green proves nothing here:
+   the field read `[]` on its very first live run at 20:43 while the same build
+   had reported a ten-section gap twelve minutes earlier. One green is a sample
+   of a coin that landed heads.
 
-   **The probe is RED until this is fixed, deliberately.** A probe that passes
+   The field compares `allData.sportsLabels` against `slate_sections_present`
+   and exits non-zero on any gap.
+
+   **The probe goes RED whenever a run lands on the bad side, deliberately.**
+   A probe that passes
    while ten sections are missing is the thing that let this run unnoticed;
    `slate_by_sport` alone reads as a quiet sports day, and `_v2SectionInjected`
    reads as success. Only the two together say otherwise, and now they do, on

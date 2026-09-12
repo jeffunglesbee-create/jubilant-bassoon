@@ -499,6 +499,19 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   } catch (e) { m.error = String(e.message || e); }
 
   await browser.close();
+  // Computed BEFORE the manifest is serialised. The first version of this
+  // computed it in the summary block below, which runs after this write — so
+  // the committed artifact carried the initial null on every run, healthy or
+  // not, and said "comparison not run" while the console said otherwise. The
+  // artifact is what anyone reads later; a field only the console knows is not
+  // an artifact (Rule 90).
+  {
+    const model = (m.slate_state && m.slate_state.allData && m.slate_state.allData.sportsLabels) || null;
+    const dom = m.slate_sections_present || null;
+    m.sections_model_not_in_dom =
+      (model === null || dom === null) ? null : model.filter(x => !dom.includes(x));
+  }
+
   fs.writeFileSync(`outbox/odds-line-probe-manifest-${stamp}.json`, JSON.stringify(m, null, 2) + '\n');
   console.log(JSON.stringify(m, null, 2));
 
@@ -598,28 +611,20 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // Nothing else in this probe can see that. The DOM census alone reads a
   // short slate, which is indistinguishable from a quiet sports day; the
   // injector's own memo reads success. Only the two together say otherwise.
-  {
-    const model = (m.slate_state && m.slate_state.allData && m.slate_state.allData.sportsLabels) || null;
-    const dom = m.slate_sections_present || null;
-    if (model === null || dom === null) {
-      // Not a pass and not a failure — the comparison could not be made. Say
-      // which half was missing rather than letting an absent input read green.
-      console.log(`model-vs-DOM section check NOT RUN: `
-                + `${model === null ? 'no allData.sportsLabels' : ''}`
-                + `${model === null && dom === null ? ' and ' : ''}`
-                + `${dom === null ? 'no slate_sections_present' : ''}`);
-      m.sections_model_not_in_dom = null;
-    } else {
-      const inDom = new Set(dom);
-      m.sections_model_not_in_dom = model.filter(x => !inDom.has(x));
-      console.log(`sections in allData.sports but NOT in the DOM `
-                + `(${m.sections_model_not_in_dom.length} of ${model.length}): `
-                + `${JSON.stringify(m.sections_model_not_in_dom)}`);
-      if (m.sections_model_not_in_dom.length) {
-        failed++;
-        console.error(`FAIL — ${m.sections_model_not_in_dom.length} section(s) are in the model and not on `
-                    + `the page. injectV2SportSection pushed them and nothing rendered them.`);
-      }
+  if (m.sections_model_not_in_dom === null) {
+    // Not a pass and not a failure — the comparison could not be made. Say so
+    // rather than letting an absent input read green.
+    console.log(`model-vs-DOM section check NOT RUN — `
+              + `${m.slate_state ? 'no allData.sportsLabels' : 'no slate_state (old build?)'}`);
+  } else {
+    const total = m.slate_state.allData.sportsLabels.length;
+    console.log(`sections in allData.sports but NOT in the DOM `
+              + `(${m.sections_model_not_in_dom.length} of ${total}): `
+              + `${JSON.stringify(m.sections_model_not_in_dom)}`);
+    if (m.sections_model_not_in_dom.length) {
+      failed++;
+      console.error(`FAIL — ${m.sections_model_not_in_dom.length} section(s) are in the model and not on `
+                  + `the page. injectV2SportSection pushed them and nothing rendered them.`);
     }
   }
 
