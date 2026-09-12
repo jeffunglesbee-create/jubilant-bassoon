@@ -8168,8 +8168,13 @@ function renderAll(skipUnchanged){
     // sort order already applied above within each sub-group -- a stable
     // partition, not a fresh sort.
     const _overThreshold = games.length > FEATURED_TIER_OVERFLOW_THRESHOLD;
-    const cardGames = _overThreshold ? games.filter(isFeaturedTierGame) : games;
-    const overflowGames = _overThreshold ? games.filter(g => !isFeaturedTierGame(g)) : [];
+    // MY_TEAMS is passed, not read as a global: tier-game.js is an esbuild
+    // module with its own scope and cannot see this IIFE's `let`. Passing the
+    // predicate bare to .filter also handed it the index and the array as its
+    // 2nd and 3rd arguments, which is how the old one-parameter signature hid
+    // the bug — the second argument was always a number, never a Set.
+    const cardGames = _overThreshold ? games.filter(g => isFeaturedTierGame(g, MY_TEAMS)) : games;
+    const overflowGames = _overThreshold ? games.filter(g => !isFeaturedTierGame(g, MY_TEAMS)) : [];
     const cards=cardGames.map((g,gi)=>{
       if(!g._id) g._id="g"+(++_gid);
       // Per-card string computation cache (CC-CMD-2026-07-04-card-dom-
@@ -22757,7 +22762,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12c';
+  const SW_VERSION = '2026-09-12d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

@@ -7114,7 +7114,7 @@ assert('A-FTO-2 — isFeaturedTierGame() checks all three promotion signals (ran
     const tierGame = (() => { try { return require('fs').readFileSync('./src/utils/tier-game.js', 'utf8'); } catch(_) { return ''; } })();
     const bodyOk = /Math\.min\(g\.homeCuratedRank \?\? 99, g\.awayCuratedRank \?\? 99\)/.test(tierGame) &&
       /rank <= 25/.test(tierGame) &&
-      /MY_TEAMS\.has\(g\.home\) \|\| MY_TEAMS\.has\(g\.away\)/.test(tierGame) &&
+      /myTeams\.has\(g\.home\) \|\| myTeams\.has\(g\.away\)/.test(tierGame) &&
       tierGame.includes('isScoutsPick(g)');
     const presentInHtml = html.includes('function isFeaturedTierGame(g)') ||
       /import\s*\{[^}]*\bisFeaturedTierGame\b/.test(html);
@@ -7122,10 +7122,20 @@ assert('A-FTO-2 — isFeaturedTierGame() checks all three promotion signals (ran
   })(),
   'isFeaturedTierGame must check homeCuratedRank/awayCuratedRank <= 25, MY_TEAMS, and isScoutsPick — ranking is one promotion signal, not a hard filter');
 
+assert('A-FTO-2b — tier-game.js reads MY_TEAMS as a parameter, never as a global',
+  (() => {
+    const m = (() => { try { return require('fs').readFileSync('./src/utils/tier-game.js', 'utf8'); } catch(_) { return ''; } })();
+    return /export function isFeaturedTierGame\(g, myTeams\)/.test(m) && !/\bMY_TEAMS\b(?![^\n]*\/\/)/.test(m.replace(/\/\/[^\n]*/g, ''));
+  })(),
+  'esbuild gives this module its own scope; MY_TEAMS is a `let` inside field.js\'s IIFE and is not reachable. Measured 2026-09-12: 12 uncaught ReferenceErrors at boot, slate 16 cards where the same page rendered 44');
+
 assert('A-FTO-3 — renderAll() split is inert below threshold (cardGames falls back to the full games array unchanged)',
   /const _overThreshold = games\.length > FEATURED_TIER_OVERFLOW_THRESHOLD/.test(html) &&
-  /const cardGames = _overThreshold \? games\.filter\(isFeaturedTierGame\) : games/.test(html) &&
-  /const overflowGames = _overThreshold \? games\.filter\(g => !isFeaturedTierGame\(g\)\) : \[\]/.test(html),
+  /const cardGames = _overThreshold \? games\.filter\(g => isFeaturedTierGame\(g, MY_TEAMS\)\) : games/.test(html) &&
+  /const overflowGames = _overThreshold \? games\.filter\(g => !isFeaturedTierGame\(g, MY_TEAMS\)\) : \[\]/.test(html) &&
+  // MY_TEAMS must be PASSED. tier-game.js is an esbuild module and cannot see
+  // field.js's IIFE `let`; the bare form threw 12 times at boot on 2026-09-12.
+  !/games\.filter\(isFeaturedTierGame\)/.test(html),
   'renderAll must only apply the featured/overflow split when a section\'s real game count exceeds the threshold — existing low-volume sports must render every game as a full card, unchanged');
 
 assert('A-FTO-4 — buildOverflowStrip() reuses the existing bottom sheet (data-open), not a new detail UI',
