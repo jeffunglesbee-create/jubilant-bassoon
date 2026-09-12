@@ -15040,6 +15040,13 @@ const SOCCER_LEAGUES = [
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
+// Exposed for the Health Panel and CI probes, the same way SW_VERSION is
+// (field.js:22947). espnScores is an IIFE-scope binding, so a probe reading
+// window.espnScores got undefined — CC-CMD-2026-09-12-slate-size-variance ran a
+// census against it and reported null, which was honest (null, not {}) but
+// measured nothing. The object identity never changes here; every write is a
+// property assignment on it, so one alias stays correct for the session.
+if (typeof window !== 'undefined') window.espnScores = espnScores;
 // Expose on window in debug mode so diagnostic probes can read it
 if (typeof window !== 'undefined' && localStorage.getItem('FIELD_DEBUG') === '1') {
   Object.defineProperty(window, 'espnScores', { get: () => espnScores, configurable: true });
@@ -22943,7 +22950,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12m';
+  const SW_VERSION = '2026-09-12n';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
