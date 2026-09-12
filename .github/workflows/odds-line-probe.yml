@@ -14,6 +14,10 @@ on:
         description: 'Comma-separated client slate ids (e.g. g16,g17) to ask /context/game for.'
         required: false
         default: ''
+      settle_min_s:
+        description: 'Keep sampling the slate to at least this many seconds even after it settles. Default 0 (stop on the criterion). Set to 60 when the question is whether a late-injecting section ever arrives — three equal samples can land at 15s, which is not evidence about 40s.'
+        required: false
+        default: '0'
       step_back_days:
         description: 'Days to step the slate back before reading the DOM. Default 0. Since 2026-09-12 a past date renders a real slate sourced from the relay (CC-CMD-2026-09-12-past-date-slate-from-relay); before that it rendered neither cards nor a message, so manifests from earlier runs with this set above 0 are measuring that defect, not odds.'
         required: false
@@ -83,6 +87,7 @@ jobs:
         run: node odds_line_probe.js
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+          SLATE_SETTLE_MIN_S: ${{ github.event.inputs.settle_min_s || '0' }}
           STEP_BACK_DAYS: ${{ inputs.step_back_days || '0' }}
           PROBE_TRIGGER: ${{ github.event_name }}
 

@@ -86,6 +86,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     main_state: null, page_errors: [], page_error_count: 0,
     date_nav_check: null,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
+    v2_games_by_sport: null, v2_games_dates: null,
     visible_samples: [], error: null,
   };
 
@@ -145,6 +146,12 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     });
 
     const SETTLE_MAX_S = Number(process.env.SLATE_SETTLE_MAX_S || 60);
+    // Three equal samples can land at 15s, which is not evidence that a section
+    // injected at 40s is absent — it is evidence that nobody looked at 40s. The
+    // floor makes the observation window explicit instead of a side effect of
+    // how fast the criterion happened to converge. Default 0 (criterion alone);
+    // set it to sweep the full window when the question is "does X ever arrive".
+    const SETTLE_MIN_S = Number(process.env.SLATE_SETTLE_MIN_S || 0);
     {
       let census = null;
       const totals = [];
@@ -160,9 +167,12 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
         // well would be a second definition of the same rule, which is the
         // drift that put three enabled sports through a no-label branch earlier
         // today. One definition, two callers.
-        if (settleScan(totals).reached) {
-          m.slate_settled_at_s = t; m.slate_settle_reached = true; break;
+        const sc = settleScan(totals);
+        if (sc.reached && m.slate_settled_at_s === null) {
+          // Record WHEN it settled even if the floor keeps sampling past it.
+          m.slate_settled_at_s = t; m.slate_settle_reached = true;
         }
+        if (m.slate_settle_reached && t >= SETTLE_MIN_S) break;
       }
       m.slate_by_sport = census ? census.by_sport : null;
       m.slate_sections_present = census ? census.sections : null;
@@ -297,6 +307,20 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.page_error_count = _pageErrors.length;
     m.context_game_requests = Array.from(new Set(_ctxReqs)).slice(0, 40);
     m.v2_games_requests = _v2Reqs.length;
+    // CC-CMD-2026-09-12-slate-size-variance. A total request count cannot say
+    // whether a MISSING section was never asked for or was asked for and
+    // dropped. 246 requests and no College Football section is two different
+    // defects depending on which. Count by sport key AND by date, because
+    // fieldDatesToQuery sends two dates per cycle and a section could be
+    // missing for only one of them.
+    m.v2_games_by_sport = {};
+    m.v2_games_dates = {};
+    for (const u of _v2Reqs) {
+      const sp = (u.match(/[?&]sport=([^&]+)/) || [])[1] || '(none)';
+      const dt = (u.match(/[?&]date=([^&]+)/) || [])[1] || '(none)';
+      m.v2_games_by_sport[sp] = (m.v2_games_by_sport[sp] || 0) + 1;
+      m.v2_games_dates[dt] = (m.v2_games_dates[dt] || 0) + 1;
+    }
     // Three named forms plus 'other' — a bare count would collapse exactly the
     // distinction being measured.
     const formOf = (u) => {
@@ -465,7 +489,20 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
               + `the counts above are MID-CYCLE, not final; `
               + `series ${JSON.stringify(m.slate_settle_series_step0.map(x => x.total))}`);
   }
+  console.log(`slate sampled to ${m.slate_settle_series_step0.length * 5}s `
+            + `(floor ${process.env.SLATE_SETTLE_MIN_S || 0}s, cap ${process.env.SLATE_SETTLE_MAX_S || 60}s)`);
   console.log(`slate by sport: ${JSON.stringify(m.slate_by_sport)}`);
+  console.log(`/v2/games asked for: ${JSON.stringify(m.v2_games_by_sport)}`);
+  console.log(`/v2/games dates: ${JSON.stringify(m.v2_games_dates)}`);
+  {
+    // Asked for and not rendered is a different defect from never asked for.
+    const rendered = new Set(Object.keys(m.slate_by_sport || {}));
+    const asked = Object.keys(m.v2_games_by_sport || {});
+    console.log(`sport keys REQUESTED but contributing no section: `
+              + `${JSON.stringify(asked.filter(k => !rendered.has(k)))} `
+              + `(a key maps to a section LABEL, so this list is not a defect by itself — `
+              + `it is the set to check against V2_SECTION_LABEL)`);
+  }
   {
     const withCards = new Set(Object.keys(m.slate_by_sport || {}));
     const empty = (m.slate_sections_present || []).filter(x => !withCards.has(x));
