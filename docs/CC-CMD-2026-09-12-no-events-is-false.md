@@ -87,6 +87,57 @@ not touch today's path, which works and is the hot path.
    renders cards, or renders `fetch-error`, for a date the relay census shows
    has rows. `no-events` on such a date is the failure being fixed.
 
+## Task 2 — the two candidate sources, measured 2026-09-12
+
+Both relay routes serve past dates. They differ in shape, and the difference is
+the whole decision.
+
+### A. `/context/date/{iso}` — one call, every sport
+
+`/context/date/2026-09-11` → **24 rows** across `games.regular` +
+`games.postseason`. Row shape:
+
+```jsonc
+{ "id": "MLB_2026-09-11_e401816899", "sport": "MLB", "league": "MLB",
+  "date": "2026-09-11", "home": "Cubs", "away": "Pirates",
+  "home_score": 12, "away_score": 2, "venue": "Wrigley Field",
+  "streams": "MLB.TV, Marquee Sports Net",     // ← a STRING
+  "espn_event_id": "401816899", "start_time": "2026-09-11T18:20Z" }
+```
+
+### B. `/v2/games?sport={s}&date={iso}` — one call per sport
+
+`sport=mlb&date=2026-09-11` → **15 games**, `source: "espn-wc"`.
+`sport=epl&date=2026-09-11` → **0 games** (no EPL fixtures that Friday).
+This is the shape `mapV2ToESPN` already consumes, and `fetchV2Games`
+(`field.js:15188`) already calls it.
+
+### The decision, and why it is not mine to improvise
+
+`goToDate` needs `allData.sports` sections:
+`{ sport: <label>, games: [{ _id, _sport, home, away, league, start_time, venue, streams }] }`
+
+Against **A**, two fields do not line up: `streams` arrives as a comma-joined
+STRING where the client expects `resolveBundle`'s array, and `sport` is `"MLB"`
+where the client's section label is `"Baseball (MLB)"`. Mapping those in the
+client is exactly what **Rule 64** calls a band-aid and **Rule 60** says means
+the relay is wrong.
+
+Against **B**, the shape already fits, but it is N calls per date navigation and
+the sport list has to come from somewhere.
+
+**This is a cross-repo shape decision, so Rule 70 applies: both halves get
+planned in one prompt, not improvised client-side at the end of a session.**
+Either the relay grows a date endpoint that returns the client's section shape
+(Rule 60, relay owns the contract), or the client fans out over `/v2/games` with
+the sport list it already has in `FIELD_V2_SOURCES`.
+
+Recommendation: **B**, fanned out over the `FIELD_V2_SOURCES` keys already
+enabled. No new relay surface, no client-side renaming, and it reuses the exact
+path today's slate uses — which is the convention (Rule 62). Its cost is N
+parallel requests on a date change, which is what `fetchV2AllScores` already
+does every poll.
+
 ## Automated follow-up
 
 `odds_line_probe.js` now cross-checks the claim against the relay: when
