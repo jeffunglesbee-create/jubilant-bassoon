@@ -7637,8 +7637,22 @@ async function injectDebriefCards() {
     //
     // The rule is every sport, not MLB: when no durable id resolves, ask for
     // nothing. An absent identity is a state of its own, never a lookup key.
-    const _v2Entry  = typeof findEspnEntry === 'function' ? findEspnEntry(rawGame) : null;
-    const contextId = rawGame._gameId || _v2Entry?._gameId ||
+    // espnScores is keyed by team name alone, so a rematch resolves the WRONG
+    // day: a card for yesterday's Cubs/Pirates would take today's espn: id and
+    // fetch today's archive row. findEspnEntry's own stale-final guard covers
+    // the opposite direction only (a final score landing on a future card), so
+    // the date is checked here. Same game → same start instant, so UTC-date
+    // equality is the right granularity and a late ET start cannot split it.
+    const _sameUTCDay = (a, b) => {
+      if (!a || !b) return false;
+      const da = new Date(a), db = new Date(b);
+      if (!Number.isFinite(+da) || !Number.isFinite(+db)) return false;
+      return da.toISOString().slice(0, 10) === db.toISOString().slice(0, 10);
+    };
+    const _v2Entry = typeof findEspnEntry === 'function' ? findEspnEntry(rawGame) : null;
+    const _v2Id    = _sameUTCDay(_v2Entry?.start_time, rawGame.start_time)
+      ? _v2Entry._gameId : null;
+    const contextId = rawGame._gameId || _v2Id ||
                       (/^g\d+$/.test(gameId) ? null : gameId);
     if (!contextId) return;
     try {
@@ -27809,7 +27823,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12a';
+  const SW_VERSION = '2026-09-12b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
