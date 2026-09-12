@@ -5263,7 +5263,6 @@ mvSyncMvPanel(); // Set initial empty state
     captureFieldError('goToDate:spinner-survived-render',
       new Error(`${iso}: ${sections.length} section(s) resolved, renderAll() left the spinner up`), false);
     applyMainHTML(`<div class="empty-note" data-failure="render-incomplete" style="padding:3rem 2rem">
-      <div style="font-size:1.5rem;margin-bottom:.75rem">⚠️</div>
       <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
       <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
       <button class="refresh-btn" onclick="goToDate('${iso}')" style="font-size:.7rem">↺ Retry</button>
@@ -22795,7 +22794,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12f';
+  const SW_VERSION = '2026-09-12g';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
