@@ -4,9 +4,14 @@ name: Odds Line Probe
 # Trigger: push to outbox/.trigger-odds-line-probe OR workflow_dispatch
 
 on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'YYYY-MM-DD for the context-game check. Blank = today UTC.'
+        required: false
+        default: ''
   push:
     paths: ['outbox/.trigger-odds-line-probe']
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -33,6 +38,12 @@ jobs:
           npm install @playwright/test
           npx playwright install chromium --with-deps
 
+      - name: Does the odds data even reach /context/game?
+        run: node scripts/probe-context-game-odds.mjs
+        env:
+          PROBE_DATE: ${{ inputs.date }}
+        continue-on-error: true
+
       - name: Run odds line probe
         run: node odds_line_probe.js
         env:
@@ -42,7 +53,7 @@ jobs:
         run: |
           git config user.email "probe@field"
           git config user.name "Odds Line Probe"
-          git add outbox/odds-line-probe-*.png outbox/odds-line-probe-manifest-*.json
+          git add outbox/odds-line-probe-*.png outbox/odds-line-probe-manifest-*.json outbox/context-game-odds-*.json
           git status --short
           if git diff --cached --quiet; then
             echo "Nothing to commit"
