@@ -7619,7 +7619,28 @@ async function injectDebriefCards() {
       if (g) { rawGame = g; sport = s.sport; break; }
     }
     if (!rawGame || (typeof isGameOver === 'function' && !isGameOver(rawGame))) return;
-    const contextId = rawGame._gameId || gameId;
+    // `g19` is a per-day render position, not a game identity. The relay cannot
+    // resolve it, and findBriefs' LIKE '%id%' then returns whatever else has
+    // ever occupied position 19 — probed 2026-09-12, /context/game/g19 answered
+    // with five mlb_game briefs from five different games on five different
+    // dates. A card asking with its slate position gets another game's prose.
+    //
+    // _gameId is propagated onto allData.sports by the V2 poll (see the
+    // Round/Series/_gameId block in fetchV2AllScores), but that annotation is
+    // written onto whatever object graph allData holds at that instant and
+    // measurably does not survive to the cards: 1 of 1 /context/game requests
+    // in a full live run went out as a bare slate id, across 62 /v2/games polls
+    // (outbox/odds-line-probe-manifest-20260912T133431Z.json). So resolve at
+    // the point of use rather than depending on the annotation having landed.
+    // espnScores is keyed by team name, carries _gameId from mapV2ToESPN, and
+    // is not rebuilt by a re-render — findEspnEntry is the established reader.
+    //
+    // The rule is every sport, not MLB: when no durable id resolves, ask for
+    // nothing. An absent identity is a state of its own, never a lookup key.
+    const _v2Entry  = typeof findEspnEntry === 'function' ? findEspnEntry(rawGame) : null;
+    const contextId = rawGame._gameId || _v2Entry?._gameId ||
+                      (/^g\d+$/.test(gameId) ? null : gameId);
+    if (!contextId) return;
     try {
       let ctx = _debriefContextCache.get(contextId);
       if (!ctx) {
@@ -27788,7 +27809,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-11a';
+  const SW_VERSION = '2026-09-12a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
