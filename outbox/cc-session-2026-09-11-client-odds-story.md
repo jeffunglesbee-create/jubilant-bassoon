@@ -117,13 +117,44 @@ pull-only); `CC-CMD-2026-09-12-debrief-odds-scenario-chip` makes reading
   inside the harness. Re-run against the artifact the assertions read: all six
   caught.
 
+## TASK 3 CLOSED — measured, and the cause is upstream
+
+The layer moved to `buildDebrief`'s stack (`2403a9c8`) after the confidence gate
+was resolved. Two of its four blockers dissolved on inspection: I had not read
+the layer contract (90 seconds), and my claim that assertions would be stranded
+was wrong about its reason — `build-bundle.mjs` injects the TS into `index.html`
+at deploy, after smoke, so the fix was simply to read the TS file.
+
+The real blocker is now built: `scripts/check-render-reaches-dom.mjs` walks the
+call chain and **self-tests against the two chains that actually shipped**,
+`updateCard` (0 callers) and `renderCard` (NightOwl only). Both go red.
+
+**Live result: the layer is correct and blocked upstream.**
+
+| id form | HTTP | `game` | `opening_odds_parsed` |
+|---|---|---|---|
+| `espn:401816899` +7 | 200 | present | **8 of 8** |
+| `g16` / `g19` / `g25` | 200 | **null** | false |
+
+10 debriefs rendered, each carrying only `debrief-prediction` — Layer 2 reads
+briefs, which the slate-id response has; Layers 1, 3 and 6 read the `game`
+object, which it does not. `buildOddsStory`, months older than my layer, is
+blocked identically. Filed as
+`docs/CC-CMD-2026-09-12-context-game-slate-id.md`.
+
 ## Done condition
 
 | requirement | state |
 |---|---|
 | real wire format recorded | **yes** |
-| three states rendered, evidenced with game ids | **NO — renders nowhere; reported, not inferred** |
+| three states rendered, evidenced with game ids | **NO — and the cause is now measured, not guessed: `/context/game/g16` returns 200 with `game: null`, so no odds layer can render for any of the 10 named cards** |
 | smoke green, count recorded | **yes — 1044, 0 failed** |
 | explicit no-push statement | **yes — none added; `A-ODDS-6` enforces it** |
 
-**The CC-CMD is not done.** Its successor carries the remaining work.
+**The CC-CMD is not done.** Three successors carry the rest:
+
+| doc | what |
+|---|---|
+| `CC-CMD-2026-09-12-context-game-slate-id` | the blocker — client `_gameId`, relay 200-with-null |
+| `CC-CMD-2026-09-12-debrief-odds-scenario-chip` | the MUST/HOT/QUIET chip in the same layer stack |
+| `CC-CMD-2026-09-12-odds-line-wrong-render-path` | superseded by `2403a9c8`; kept for the evidence chain |
