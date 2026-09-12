@@ -30,6 +30,9 @@ export function initDebriefModule(deps: { fieldChip: FieldChipFn }): void {
 /** Opening/closing moneyline odds from the Odds API. */
 export interface MoneylineOdds {
   moneyline?: { home?: number; away?: number };
+  /** Named explicitly: the identical-timestamp guard in buildOddsMovement
+      depends on it, and the index signature alone left it untyped. */
+  captured_at?: string;
   [key: string]: unknown;
 }
 
@@ -221,7 +224,84 @@ export function buildBracketDeltaLayer(debrief: DebriefData): HTMLElement | null
   return wrap;
 }
 
-/** Assembles Layers 1-5 into the card-debrief container Element. */
+/**
+ * Layer 6: Odds movement — what the home moneyline did between open and close.
+ *
+ * MEASURED 2026-09-12, 116 rows across four dates, and this is shaped around the
+ * states that actually occur rather than the interesting one:
+ *
+ *   no odds            54   46.6%   -> returns null, renders nothing
+ *   both, ML identical 31   26.7%   -> "unchanged from open"
+ *   opening only       20   17.2%   -> a price, no movement claim
+ *   both, ML moved     11    9.5%   -> the implied-pp shift
+ *
+ * Distinct from Layer 3: buildOddsStory reads `opening` and never destructures
+ * `closing`, so it cannot say anything about movement. These do not overlap.
+ *
+ * NOT built from the relay's computeOddsStory(): that returns '' for BOTH "no
+ * odds" and "moved under threshold", collapsing the dominant state into the
+ * second one. It is also not on the wire — `odds_story` exists once in the
+ * relay, as a journalism prompt-block id.
+ *
+ * ADR-002 / Rule F: a bookmaker's price and its implied probability are what a
+ * neutral data vendor publishes. No composite, no threshold, no tier, no
+ * recommendation. PULL ONLY — plain text, no chip, no colour by magnitude, not
+ * sortable, not wired to any notification. Rule F clears display and does not
+ * carry Rule A.
+ */
+function _impliedPct(american: unknown): number | null {
+  if (typeof american !== 'number' || !Number.isFinite(american)) return null;
+  return american < 0
+    ? (-american) / (-american + 100) * 100
+    : 100 / (american + 100) * 100;
+}
+
+function _fmtAmerican(n: number): string { return n > 0 ? `+${n}` : `${n}`; }
+
+export function buildOddsMovement(debrief: DebriefData): HTMLElement | null {
+  const odds = debrief?.oddsOutcome;
+  if (!odds?.opening) return null;
+  const open = odds.opening, close = odds.closing;
+  const oh = open.moneyline ? open.moneyline.home : undefined;
+  const oPct = _impliedPct(oh);
+  if (oPct == null || typeof oh !== 'number') return null;
+  const opened = `${_fmtAmerican(oh)} (${oPct.toFixed(0)}% implied)`;
+
+  let text: string;
+  if (!close) {
+    text = `Home line opened ${opened}`;
+  } else if (open.captured_at && close.captured_at && open.captured_at === close.captured_at) {
+    // ODDS-PROOF.md: closing_odds was once the same snapshot as opening_odds,
+    // captured ~22s BEFORE it, which would have rendered "unchanged" on every
+    // card — "worse than rendering nothing, because it invents a finding".
+    // Identical timestamps mean ONE observation, and one observation cannot
+    // support a claim about change.
+    text = `Home line opened ${opened}`;
+  } else {
+    const ch = close.moneyline ? close.moneyline.home : undefined;
+    const cPct = _impliedPct(ch);
+    if (cPct == null || typeof ch !== 'number') {
+      text = `Home line opened ${opened}`;
+    } else if (ch === oh) {
+      // "the home moneyline", not "the line": the sample this was built from
+      // (MLB_2026-09-11_e401816899) has an identical ML while the spread PRICES
+      // moved, 113 -> 109 and -136 -> -132. Scoping the claim to what was
+      // actually compared keeps it true.
+      text = `Home moneyline ${opened}, unchanged from open`;
+    } else {
+      const delta = cPct - oPct;
+      text = `Home moneyline ${_fmtAmerican(oh)} \u2192 ${_fmtAmerican(ch)}, `
+           + `${Math.abs(delta).toFixed(1)} pts ${delta > 0 ? 'toward home' : 'toward away'}`;
+    }
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'debrief-odds-movement';
+  wrap.textContent = text;
+  return wrap;
+}
+
+/** Assembles Layers 1-6 into the card-debrief container Element. */
 export function buildDebrief(enrichedGame: EnrichedGameForDebrief): HTMLElement | null {
   const debrief = enrichedGame?.debrief;
   if (!debrief) return null;
@@ -230,7 +310,8 @@ export function buildDebrief(enrichedGame: EnrichedGameForDebrief): HTMLElement 
   const l3 = buildOddsStory(debrief);
   const l4 = buildSeriesArc(debrief);
   const l5 = buildBracketDeltaLayer(debrief);
-  if (!l1 && !l2 && !l3 && !l4 && !l5) return null;
+  const l6 = buildOddsMovement(debrief);
+  if (!l1 && !l2 && !l3 && !l4 && !l5 && !l6) return null;
   const wrap = document.createElement('div');
   wrap.className = 'card-debrief-inner';
   if (l1) wrap.appendChild(l1);
@@ -238,5 +319,6 @@ export function buildDebrief(enrichedGame: EnrichedGameForDebrief): HTMLElement 
   if (l3) wrap.appendChild(l3);
   if (l4) wrap.appendChild(l4);
   if (l5) wrap.appendChild(l5);
+  if (l6) wrap.appendChild(l6);
   return wrap;
 }

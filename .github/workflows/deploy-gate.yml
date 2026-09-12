@@ -176,6 +176,14 @@ jobs:
           node scripts/check-absence-collapse.mjs --self-test
           node scripts/check-absence-collapse.mjs . --require=src/legacy/field.js
 
+      # Two wiring attempts on one feature shipped green in a single session:
+      # updateCard (0 callers) and renderCard (2, both NightOwl). Structural
+      # smoke could not catch either, because the text was present both times.
+      # This walks the chain instead, and self-tests against those two real
+      # chains rather than invented ones.
+      - name: Every declared render target reaches a caller that runs
+        run: node scripts/check-render-reaches-dom.mjs
+
       - name: Fast smoke (smoke.js only)
         run: |
           echo "Running smoke.js structural assertions..."

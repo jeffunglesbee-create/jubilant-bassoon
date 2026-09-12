@@ -7647,38 +7647,45 @@ assert('A-TDRAW-12 — the section and its render target exist in the markup',
   /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
   'renderTennisBracket writes into #tennis-draw and returns silently if it is absent');
 
-// ── Odds line (CC-CMD-2026-09-11-client-odds-story) ────────────────────────
-// Shaped by the measured distribution, not the interesting case: across 116
-// rows on four dates (2026-09-12), no-odds is 46.6% and both-prices-unchanged
-// is 26.7%. A line-moved rendering covers 9.5%.
+// ── Odds movement layer (CC-CMD-2026-09-11-client-odds-story) ──────────────
+// These read src/debrief/index.ts, NOT index.html. The layer is TypeScript,
+// bundled by esbuild at deploy time, so it is absent from the source index.html
+// that smoke inspects. Six earlier assertions passed against index.html while
+// the code they described never ran (327678bc, d207c191) — assertions must
+// inspect the file the code is in.
+const ts = fs.readFileSync('src/debrief/index.ts', 'utf8');
 
-assert('A-ODDS-1 — the slot exists and starts hidden',
-  /<div class="card-odds" data-slot="odds" hidden><\/div>/.test(html),
-  'fillSlot only unhides on a non-empty string, so the dominant no-odds state must start hidden');
+assert('A-ODDS-1 — the dominant state renders nothing',
+  /export function buildOddsMovement\(debrief: DebriefData\): HTMLElement \| null \{\s*\n\s*const odds = debrief\?\.oddsOutcome;\s*\n\s*if \(!odds\?\.opening\) return null;/.test(ts),
+  'no odds is 46.6% of 116 measured rows and must render NOTHING — not a dash, not N/A');
 
-assert('A-ODDS-2 — oddsLine returns null for the dominant state, so nothing renders',
-  /function oddsLine\(o\) \{\s*\n\s*if \(!o \|\| !o\.opening\) return null;/.test(html),
-  'no odds must render NOTHING — not a dash, not N/A, not an empty slot');
+assert('A-ODDS-2 — one observation recorded twice cannot claim a change',
+  /open\.captured_at === close\.captured_at\)/.test(ts) &&
+  /captured_at\?: string;/.test(ts),
+  'ODDS-PROOF.md: identical captured_at means ONE observation; "unchanged" there invents a finding');
 
-assert('A-ODDS-3 — one observation recorded twice cannot claim a change',
-  /open\.captured_at === close\.captured_at\)\s*\n\s*return `Home line opened/.test(html),
-  'ODDS-PROOF.md: identical captured_at means one observation; rendering "unchanged" there invents a finding');
+assert('A-ODDS-3 — the unchanged claim is scoped to the moneyline it compared',
+  /Home moneyline \$\{opened\}, unchanged from open/.test(ts),
+  'the sample it was built from has an identical ML while the spread prices moved, so "the line is unchanged" would be false');
 
-assert('A-ODDS-4 — the unchanged claim is scoped to the moneyline it compared',
-  /unchanged from open/.test(html) && /Home moneyline \$\{opened\}, unchanged from open/.test(html),
-  'the motivating sample had an identical ML while the spread prices moved, so "the line is unchanged" would be false');
-
-assert('A-ODDS-5 — an absent price cannot arrive as 0%',
-  /if \(typeof american !== 'number' \|\| !Number\.isFinite\(american\)\) return null;/.test(html),
+assert('A-ODDS-4 — an absent price cannot arrive as 0%',
+  /if \(typeof american !== 'number' \|\| !Number\.isFinite\(american\)\) return null;/.test(ts),
   'Rule 99: _impliedPct returns null, never 0, for a missing price');
 
-assert('A-ODDS-7 — the odds line is wired into renderCard, the path that runs',
-  /fillSlot\(card, 'odds', oddsLine\(/.test(html),
-  'updateCard is STAGED and has no caller; wiring the slot only there renders nothing');
+assert('A-ODDS-5 — the layer is in buildDebrief and can actually show',
+  /const l6 = buildOddsMovement\(debrief\);/.test(ts) &&
+  /if \(!l1 && !l2 && !l3 && !l4 && !l5 && !l6\) return null;/.test(ts) &&
+  /if \(l6\) wrap\.appendChild\(l6\);/.test(ts),
+  'a layer computed but missing from the null-collapse or never appended renders nothing');
 
-assert('A-ODDS-6 — the odds slot carries no push affordance',
-  !/card-odds[^}]*animation|card-odds[^}]*var\(--accent|\.card-odds[^}]*font-weight:\s*(6|7|8|9)00/.test(html),
-  'Rule A: Rule F clears DISPLAY of a price and does not carry a badge, colour-by-magnitude or attention cue');
+assert('A-ODDS-6 — the movement line carries no push affordance',
+  /wrap\.className = 'debrief-odds-movement';/.test(ts) &&
+  !/debrief-odds-movement[^\n]*_fieldChip/.test(ts),
+  'Rule A: Rule F clears DISPLAY of a price and does not carry a chip, tier or attention cue');
+
+assert('A-ODDS-7 — the dead field.js wiring is gone',
+  !/data-slot="odds"/.test(html) && !/function oddsLine\(/.test(html),
+  'renderCard and updateCard are not paths the slate uses; leaving both would be two surfaces for one feature');
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
