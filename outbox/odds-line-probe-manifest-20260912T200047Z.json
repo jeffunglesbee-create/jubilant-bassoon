@@ -1,0 +1,138 @@
+{
+  "probed_at": "2026-09-12T20:00:47.303Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
+  "triggered_by": "workflow_dispatch",
+  "sw_version": "2026-09-12l",
+  "cards_seen": 0,
+  "odds_slot_present_in_dom": false,
+  "slots_hidden": 0,
+  "slots_visible": 0,
+  "states": {
+    "no_odds": null,
+    "opened_only": null,
+    "unchanged": null,
+    "moved": null
+  },
+  "date_label": "Today",
+  "stepped_back_days": 0,
+  "setup_overlay_dismissed": true,
+  "date_nav_error": null,
+  "slate_by_step": [
+    {
+      "step": 0,
+      "label": "Today",
+      "cards": 45
+    }
+  ],
+  "slate_settle_series": [],
+  "slate_settle_series_step0": [
+    {
+      "at_s": 5,
+      "total": 45,
+      "since_nav_ms": 23179,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 10,
+      "total": 45,
+      "since_nav_ms": 28183,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    },
+    {
+      "at_s": 15,
+      "total": 45,
+      "since_nav_ms": 33186,
+      "by_sport": {
+        "Baseball (MLB)": 15,
+        "Australian Football (AFL)": 1,
+        "Tennis": 24,
+        "Golf": 1,
+        "Canadian Football (CFL)": 4
+      }
+    }
+  ],
+  "slate_by_sport": {
+    "Baseball (MLB)": 15,
+    "Australian Football (AFL)": 1,
+    "Tennis": 24,
+    "Golf": 1,
+    "Canadian Football (CFL)": 4
+  },
+  "slate_sections_present": [
+    "Baseball (MLB)",
+    "Australian Football (AFL)",
+    "Tennis",
+    "Golf",
+    "Canadian Football (CFL)"
+  ],
+  "slate_read_at_ms": 33186,
+  "slate_settled_at_s": 15,
+  "slate_settle_reached": true,
+  "slate_cards_date_label": "Today",
+  "slate_cards_after_steps": 0,
+  "empty_note": null,
+  "main_state": null,
+  "page_errors": [],
+  "page_error_count": 0,
+  "date_nav_check": {
+    "label": "Yesterday",
+    "cards": 26,
+    "empty_note": null,
+    "loading_wraps": 0,
+    "loading_wrap_in_main": 0,
+    "main_children": [
+      "section#field-newspaper.field-newspaper.np-minimal",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section"
+    ],
+    "lcp_anchor_anywhere": 0,
+    "lcp_anchor_in_main": 0,
+    "rejections": [],
+    "failure_kind": null,
+    "ok": true
+  },
+  "context_game_requests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/cfl_13419728"
+  ],
+  "context_id_forms": {
+    "other": 1
+  },
+  "v2_games_requests": 246,
+  "visible_samples": [],
+  "error": null,
+  "slate_cards": 45,
+  "debrief_injected": 1,
+  "debrief_visible": 1,
+  "existing_odds_layers": 0,
+  "debrief_cards": [
+    {
+      "gameid": "cfl_13419728",
+      "sport": "Canadian Football (CFL)",
+      "home": "Toronto Argonauts",
+      "away": "Ottawa RedBlacks",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    }
+  ],
+  "odds_layer_present_in_dom": false
+}
