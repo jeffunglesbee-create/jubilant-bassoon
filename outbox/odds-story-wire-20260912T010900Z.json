@@ -1,0 +1,249 @@
+{
+  "probed_at": "2026-09-12T01:09:00.616Z",
+  "dates": [
+    "2026-09-11",
+    "2026-09-10",
+    "2026-09-08",
+    "2026-09-06"
+  ],
+  "wire": {
+    "game_keys": [
+      "away",
+      "away_score",
+      "closing_odds",
+      "created_at",
+      "crew",
+      "date",
+      "drama_arc",
+      "drama_peak",
+      "espn_event_id",
+      "finalized_at",
+      "home",
+      "home_score",
+      "id",
+      "importance",
+      "league",
+      "local_note",
+      "note",
+      "opening_odds",
+      "sport",
+      "start_time",
+      "streams",
+      "tags",
+      "venue",
+      "went_to_ot"
+    ],
+    "odds_story_on_game": [],
+    "top_level_keys": [
+      "briefs",
+      "date",
+      "games",
+      "ok",
+      "series",
+      "standings"
+    ]
+  },
+  "coverage": [
+    {
+      "date": "2026-09-11",
+      "rows": 24,
+      "both": 4,
+      "identicalML": 4,
+      "differentML": 0,
+      "openingOnly": 13,
+      "none": 7,
+      "same_captured_at": 0,
+      "per_sport": {
+        "MLB": {
+          "rows": 15,
+          "both": 1
+        },
+        "La Liga": {
+          "rows": 1,
+          "both": 1
+        },
+        "Serie A": {
+          "rows": 1,
+          "both": 1
+        },
+        "Bundesliga": {
+          "rows": 1,
+          "both": 0
+        },
+        "Ligue 1": {
+          "rows": 1,
+          "both": 1
+        },
+        "CFB": {
+          "rows": 5,
+          "both": 0
+        }
+      }
+    },
+    {
+      "date": "2026-09-10",
+      "rows": 22,
+      "both": 5,
+      "identicalML": 3,
+      "differentML": 2,
+      "openingOnly": 0,
+      "none": 17,
+      "same_captured_at": 0,
+      "per_sport": {
+        "MLS": {
+          "rows": 9,
+          "both": 0
+        },
+        "MLB": {
+          "rows": 5,
+          "both": 5
+        },
+        "UEFA Champions League": {
+          "rows": 6,
+          "both": 0
+        },
+        "NFL": {
+          "rows": 1,
+          "both": 0
+        },
+        "CFB": {
+          "rows": 1,
+          "both": 0
+        }
+      }
+    },
+    {
+      "date": "2026-09-08",
+      "rows": 28,
+      "both": 14,
+      "identicalML": 10,
+      "differentML": 4,
+      "openingOnly": 0,
+      "none": 14,
+      "same_captured_at": 0,
+      "per_sport": {
+        "MLB": {
+          "rows": 15,
+          "both": 14
+        },
+        "EFL Cup": {
+          "rows": 5,
+          "both": 0
+        },
+        "EFL Trophy": {
+          "rows": 2,
+          "both": 0
+        },
+        "UEFA Champions League": {
+          "rows": 6,
+          "both": 0
+        }
+      }
+    },
+    {
+      "date": "2026-09-06",
+      "rows": 42,
+      "both": 19,
+      "identicalML": 14,
+      "differentML": 5,
+      "openingOnly": 7,
+      "none": 16,
+      "same_captured_at": 0,
+      "per_sport": {
+        "MLS": {
+          "rows": 8,
+          "both": 0
+        },
+        "MLB": {
+          "rows": 15,
+          "both": 8
+        },
+        "EPL": {
+          "rows": 2,
+          "both": 2
+        },
+        "La Liga": {
+          "rows": 4,
+          "both": 2
+        },
+        "Serie A": {
+          "rows": 4,
+          "both": 3
+        },
+        "Bundesliga": {
+          "rows": 2,
+          "both": 0
+        },
+        "Ligue 1": {
+          "rows": 3,
+          "both": 3
+        },
+        "CFB": {
+          "rows": 3,
+          "both": 0
+        },
+        "CFL": {
+          "rows": 1,
+          "both": 1
+        }
+      }
+    }
+  ],
+  "sample_odds_value": {
+    "id": "MLB_2026-09-11_e401816899",
+    "opening_keys": [
+      "_oddsProof",
+      "captured_at",
+      "moneyline",
+      "source",
+      "spread",
+      "total"
+    ],
+    "opening": {
+      "source": "draftkings",
+      "captured_at": "2026-09-11T10:01:39.754Z",
+      "_oddsProof": {
+        "adapterId": "odds-api",
+        "sourceId": "odds-api-the-odds-api"
+      },
+      "moneyline": {
+        "home": -199,
+        "away": 163
+      },
+      "spread": {
+        "home": -1.5,
+        "away": 1.5,
+        "homePrice": 113,
+        "awayPrice": -136
+      },
+      "total": {
+        "over": 8,
+        "under": 8
+      }
+    },
+    "closing": {
+      "source": "draftkings",
+      "captured_at": "2026-09-11T11:55:36Z",
+      "_oddsProof": {
+        "adapterId": "odds-api",
+        "sourceId": "odds-api-the-odds-api"
+      },
+      "moneyline": {
+        "home": -199,
+        "away": 163
+      },
+      "spread": {
+        "home": -1.5,
+        "away": 1.5,
+        "homePrice": 109,
+        "awayPrice": -132
+      },
+      "total": {
+        "over": 8,
+        "under": 8
+      }
+    }
+  },
+  "odds_story_key_present_anywhere": false,
+  "error": null
+}
