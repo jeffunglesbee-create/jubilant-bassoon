@@ -10219,6 +10219,37 @@ mvSyncMvPanel(); // Set initial empty state
   const main = document.getElementById("main");
   applyMainHTML(`<div class="loading-wrap"><div class="loading-ring"></div><div class="loading-txt">Loading ${label}'s schedule…</div></div>`);
 
+  // The spinner is not a state. It is the ABSENCE of one, and it must never be
+  // what a reader is left looking at.
+  //
+  // Measured live on Yesterday, five runs on 2026-09-12
+  // (outbox/odds-line-probe-manifest-20260912T16*.json): main held exactly
+  // [section#field-newspaper, div.loading-wrap] — zero .game-card, zero
+  // .empty-note, zero [data-lcp-anchor], zero page errors, zero unhandled
+  // rejections, stable from 20s to 60s. Every branch below renders cards or a
+  // message, so that is a state none of them can produce.
+  //
+  // MY FIRST ATTEMPT AT THIS PUT THE CHECK AT THE END OF THIS FUNCTION, which
+  // only runs if everything before it completed — the one thing the evidence
+  // already said was not happening. It shipped (SW 2026-09-12e..g) and did not
+  // fire: the next probe read failure_kind null with the spinner still up.
+  //
+  // A watchdog does not depend on this function finishing. It is deliberately
+  // never cleared: it acts ONLY if the spinner is still present, which is only
+  // true when no branch rendered, so a normal load makes it a no-op.
+  const _spinnerBudgetMs = 25000;   // 8s ESPN sweep + 15s AI fallback + margin
+  setTimeout(() => {
+    const _m = document.getElementById('main');
+    if (!_m || !_m.querySelector('.loading-wrap')) return;   // a branch rendered
+    captureFieldError('goToDate:spinner-survived',
+      new Error(`${iso}: no branch rendered within ${_spinnerBudgetMs}ms`), false);
+    applyMainHTML(`<div class="empty-note" data-failure="render-incomplete" style="padding:3rem 2rem">
+      <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
+      <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
+      <button class="refresh-btn" onclick="goToDate('${iso}')" style="font-size:.7rem">↺ Retry</button>
+    </div>`);
+  }, _spinnerBudgetMs);
+
   // Try ESPN first — free, no tokens, covers NBA/NHL/MLB + 9 soccer leagues
   const espnSections = await fetchESPNFixturesForDate(iso);
 
@@ -10303,37 +10334,6 @@ mvSyncMvPanel(); // Set initial empty state
   buildFilters(allData.sports);
   renderAll();
 
-  // The spinner is not a state. It is the ABSENCE of one, and it must never be
-  // what a reader is left looking at.
-  //
-  // Measured live 2026-09-12 on Yesterday, four separate runs
-  // (outbox/odds-line-probe-manifest-20260912T16*.json): main held exactly
-  // [section#field-newspaper, div.loading-wrap] — zero .game-card, zero
-  // .empty-note, zero [data-lcp-anchor], zero page errors, zero unhandled
-  // rejections, stable from 20s to 60s. Every branch above renders either cards
-  // or one of three messages, so that state is one none of them can produce and
-  // nothing available to the page reported why.
-  //
-  // Rather than keep guessing at the cause, make the silence impossible: if the
-  // spinner survived this function, the render did not happen, and the reader
-  // gets the same failure message a thrown error would have produced. Unlike
-  // the spinner, it says the load is over and offers Retry.
-  // data-failure marks WHICH failure this is. The message a reader sees is the
-  // same as a genuine fetch error's, deliberately — there is nothing useful to
-  // tell them apart at their level — but a probe that cannot distinguish
-  // "the fetch failed" from "sections resolved and the render did not happen"
-  // would report this defect as fixed the moment the message appeared. That is
-  // the collapse this whole line of work exists to stop (Rule 99), and adding
-  // the message without the marker would have introduced it.
-  if (document.getElementById('main')?.querySelector('.loading-wrap')) {
-    captureFieldError('goToDate:spinner-survived-render',
-      new Error(`${iso}: ${sections.length} section(s) resolved, renderAll() left the spinner up`), false);
-    applyMainHTML(`<div class="empty-note" data-failure="render-incomplete" style="padding:3rem 2rem">
-      <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
-      <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
-      <button class="refresh-btn" onclick="goToDate('${iso}')" style="font-size:.7rem">↺ Retry</button>
-    </div>`);
-  }
   // Note: media is today-specific — skipped for other dates
 }
 
@@ -27860,7 +27860,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12g';
+  const SW_VERSION = '2026-09-12h';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

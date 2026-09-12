@@ -7663,8 +7663,14 @@ assert('A-DATENAV-2 — each failure note says WHICH failure it is',
   'render-incomplete and fetch-error show the reader the same words on purpose, but a probe that cannot tell them apart would report the open defect as fixed the moment a message appeared — Rule 99');
 
 assert('A-DATENAV-1 — a surviving spinner becomes a message, never a blank page',
-  /if \(document\.getElementById\('main'\)\?\.querySelector\('\.loading-wrap'\)\) \{/.test(html) &&
-  /goToDate:spinner-survived-render/.test(html),
+  // A WATCHDOG, not an end-of-function check. The first version sat after
+  // renderAll() and so could only run if everything before it completed —
+  // the one thing the evidence said was not happening. It shipped and never
+  // fired. This asserts the timer form, which does not depend on that.
+  /const _spinnerBudgetMs = \d+;/.test(html) &&
+  /setTimeout\(\(\) => \{\s*\n\s*const _m = document\.getElementById\('main'\);/.test(html) &&
+  /goToDate:spinner-survived/.test(html) &&
+  !/querySelector\('\.loading-wrap'\)\) \{\s*\n\s*captureFieldError/.test(html),
   'measured 2026-09-12: stepping back one day left main as [#field-newspaper, .loading-wrap] with zero cards, zero .empty-note, zero page errors and zero unhandled rejections — a state no branch in goToDate can produce. The spinner is the absence of a state and must never be the final one');
 
 // ── Odds movement layer (CC-CMD-2026-09-11-client-odds-story) ──────────────
