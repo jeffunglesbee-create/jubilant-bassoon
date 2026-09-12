@@ -59,7 +59,12 @@ jobs:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
           STEP_BACK_DAYS: ${{ inputs.step_back_days || '1' }}
 
+      # always(): the manifest is written to disk before the probe exits, and a
+      # FAILING probe is exactly when its evidence matters. Runs 7, 8 and 9 all
+      # failed and committed nothing, so three diagnoses had to be read out of
+      # job logs that expire. The artifact is the point (Rule 90).
       - name: Commit results
+        if: always()
         run: |
           git config user.email "probe@field"
           git config user.name "Odds Line Probe"
