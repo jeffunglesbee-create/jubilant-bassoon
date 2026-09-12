@@ -5236,6 +5236,32 @@ mvSyncMvPanel(); // Set initial empty state
   allData = {sports: sections};
   buildFilters(allData.sports);
   renderAll();
+
+  // The spinner is not a state. It is the ABSENCE of one, and it must never be
+  // what a reader is left looking at.
+  //
+  // Measured live 2026-09-12 on Yesterday, four separate runs
+  // (outbox/odds-line-probe-manifest-20260912T16*.json): main held exactly
+  // [section#field-newspaper, div.loading-wrap] — zero .game-card, zero
+  // .empty-note, zero [data-lcp-anchor], zero page errors, zero unhandled
+  // rejections, stable from 20s to 60s. Every branch above renders either cards
+  // or one of three messages, so that state is one none of them can produce and
+  // nothing available to the page reported why.
+  //
+  // Rather than keep guessing at the cause, make the silence impossible: if the
+  // spinner survived this function, the render did not happen, and the reader
+  // gets the same failure message a thrown error would have produced. Unlike
+  // the spinner, it says the load is over and offers Retry.
+  if (document.getElementById('main')?.querySelector('.loading-wrap')) {
+    captureFieldError('goToDate:spinner-survived-render',
+      new Error(`${iso}: ${sections.length} section(s) resolved, renderAll() left the spinner up`), false);
+    applyMainHTML(`<div class="empty-note" style="padding:3rem 2rem">
+      <div style="font-size:1.5rem;margin-bottom:.75rem">⚠️</div>
+      <div style="color:var(--white);margin-bottom:.5rem">Couldn't load ${label}'s schedule</div>
+      <div style="font-size:.72rem;color:var(--smoke);margin-bottom:1.2rem">Check the browser console for details</div>
+      <button class="refresh-btn" onclick="goToDate('${iso}')" style="font-size:.7rem">↺ Retry</button>
+    </div>`);
+  }
   // Note: media is today-specific — skipped for other dates
 }
 
@@ -22762,7 +22788,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12d';
+  const SW_VERSION = '2026-09-12e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

@@ -7657,6 +7657,11 @@ assert('A-TDRAW-12 — the section and its render target exist in the markup',
   /body\.tennis-mode #tennis-section\{display:block\}/.test(html),
   'renderTennisBracket writes into #tennis-draw and returns silently if it is absent');
 
+assert('A-DATENAV-1 — a surviving spinner becomes a message, never a blank page',
+  /if \(document\.getElementById\('main'\)\?\.querySelector\('\.loading-wrap'\)\) \{/.test(html) &&
+  /goToDate:spinner-survived-render/.test(html),
+  'measured 2026-09-12: stepping back one day left main as [#field-newspaper, .loading-wrap] with zero cards, zero .empty-note, zero page errors and zero unhandled rejections — a state no branch in goToDate can produce. The spinner is the absence of a state and must never be the final one');
+
 // ── Odds movement layer (CC-CMD-2026-09-11-client-odds-story) ──────────────
 // These read src/debrief/index.ts, NOT index.html. The layer is TypeScript,
 // bundled by esbuild at deploy time, so it is absent from the source index.html
