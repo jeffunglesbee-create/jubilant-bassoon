@@ -29,8 +29,18 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // reached the card, /context/game/g19 means it did not.
   // An uncaught throw inside goToDate would leave main holding whatever it wrote
   // last and no branch would ever render. Playwright sees it; the DOM does not.
+  // A bare message cannot say WHERE or WHEN. "MY_TEAMS is not defined" appeared
+  // in run 34701718817 and could equally be a boot-time throw that truncated the
+  // slate (16 cards where 90 minutes earlier there were 44) or a date-change
+  // throw that stranded the spinner. The stack names the function; the phase
+  // says which side of the date click it landed on.
   const _pageErrors = [];
-  page.on('pageerror', e => _pageErrors.push(String(e.message || e).slice(0, 200)));
+  let _phase = 'boot';
+  page.on('pageerror', e => _pageErrors.push({
+    phase: _phase,
+    message: String(e.message || e).slice(0, 160),
+    stack: String(e.stack || '').split('\n').slice(0, 4).join(' | ').slice(0, 400),
+  }));
 
   const _ctxReqs = [];
   const _v2Reqs  = [];
@@ -50,7 +60,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     slate_by_step: [],
     slate_settle_series: [],
     empty_note: null,
-    main_state: null, page_errors: [],
+    main_state: null, page_errors: [], page_error_count: 0,
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
@@ -88,6 +98,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.slate_by_step.push({ step: 0, label: await dateLabel(), cards: await slateNow() });
     for (let i = 0; i < STEP_BACK; i++) {
       try {
+        _phase = 'after-date-click';
         await page.click('#date-prev', { timeout: 8000 });
         m.stepped_back_days++;
         // Sample rather than pick a timeout. A single 25s read cannot separate
@@ -185,7 +196,14 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       });
     }
 
-    m.page_errors = Array.from(new Set(_pageErrors)).slice(0, 10);
+    // Deduplicate on phase+message; the same throw can fire once per render pass.
+    const _seen = new Set();
+    m.page_errors = _pageErrors.filter(e => {
+      const k = `${e.phase}|${e.message}`;
+      if (_seen.has(k)) return false;
+      _seen.add(k); return true;
+    }).slice(0, 10);
+    m.page_error_count = _pageErrors.length;
     m.context_game_requests = Array.from(new Set(_ctxReqs)).slice(0, 40);
     m.v2_games_requests = _v2Reqs.length;
     // Three named forms plus 'other' — a bare count would collapse exactly the
