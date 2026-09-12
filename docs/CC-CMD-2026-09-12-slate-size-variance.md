@@ -1,5 +1,37 @@
 # CC-CMD-2026-09-12 — the same page rendered 129 cards and then 45, 23 minutes apart
 
+**STATUS: CLOSED 2026-09-12. Tasks 0-3 done; the leading hypothesis below is
+DISPROVED, and the answer is a defect with its own CC-CMD** —
+`CC-CMD-2026-09-12-v2-sections-never-injected.md`.
+
+The hypothesis was that a probe reading before the V2 poll cycle completed
+would see a slate without CFB. Measured against SW `2026-09-12l` and `n`:
+
+```
+settle series         45 across TWELVE samples over 60s — flat, not climbing
+v2_games_by_sport     cfb 12, nfl 12, every soccer league 12, all HTTP 200
+espn_scores_by_sport  cfb 80, nfl 13, mls 15, eflchamp 11, ... (11 sports)
+slate_by_sport        MLB 15, Tennis 24, CFL 4, AFL 1, Golf 1 — and no others
+field_errors_by_fn    no v2-poll:*, no v2-section-inject:*
+page_error_count      0
+```
+
+The client asks, the relay answers, `mapV2ToESPN` writes 80 cfb entries with
+the correct `_sport`, sixty seconds pass, and no College Football section
+exists. Not a timing artifact and not a measurement error: `injectV2SportSection`
+has a branch that declines to act and reports nothing. The 129 readings are the
+correct slate; 45 is a broken one.
+
+**Task 3's done condition is met by its first branch** — three consecutive runs
+(20:00, 20:05, 20:09) read exactly 45 with byte-identical `slate_by_sport`, 0%
+apart. That is the probe now reporting a broken slate stably instead of
+smoothing over it, which is the point: the denominator stopped moving, and what
+it stopped at is a defect.
+
+Session doc: `outbox/cc-session-2026-09-12-slate-size-variance.md`.
+
+---
+
 Found while verifying the odds layer. **Not a regression from any commit today** —
 zero page errors on both readings — but a number that moves by a factor of three
 with no stated cause, and the odds layer's own evidence rests on it.
