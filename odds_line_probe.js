@@ -27,6 +27,11 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // so the propagation state cannot be read directly. The request URL is the
   // same fact at the boundary: /context/game/espn:401816899 means _gameId
   // reached the card, /context/game/g19 means it did not.
+  // An uncaught throw inside goToDate would leave main holding whatever it wrote
+  // last and no branch would ever render. Playwright sees it; the DOM does not.
+  const _pageErrors = [];
+  page.on('pageerror', e => _pageErrors.push(String(e.message || e).slice(0, 200)));
+
   const _ctxReqs = [];
   const _v2Reqs  = [];
   page.on('request', r => {
@@ -45,6 +50,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     slate_by_step: [],
     slate_settle_series: [],
     empty_note: null,
+    main_state: null, page_errors: [],
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
@@ -110,6 +116,25 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       const el = document.querySelector('.empty-note');
       return el ? el.textContent.replace(/\s+/g, ' ').trim().slice(0, 240) : null;
     });
+    // Task 0 of CC-CMD-2026-09-12-past-date-slate-renders-nothing. Zero cards
+    // AND a null empty-note is none of goToDate's three known branches, so the
+    // count and the note between them still cannot say what the page IS. Read
+    // what main actually holds. goToDate's unknown-date path writes a
+    // .loading-wrap spinner BEFORE awaiting fetchESPNFixturesForDate, and a
+    // spinner that never resolves is neither a card nor a message.
+    if (!out.slateCards) {
+      m.main_state = await page.evaluate(() => {
+        const main = document.getElementById('main');
+        return {
+          exists: !!main,
+          loading_wraps: document.querySelectorAll('.loading-wrap').length,
+          empty_notes: document.querySelectorAll('.empty-note').length,
+          game_cards: document.querySelectorAll('.game-card').length,
+          child_count: main ? main.children.length : null,
+          html_head: main ? main.innerHTML.replace(/\s+/g, ' ').trim().slice(0, 800) : null,
+        };
+      });
+    }
 
     const out = await page.evaluate(() => {
       // The main slate is innerHTML-built `.game-card[data-gameid]`; the
@@ -160,6 +185,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.debrief_visible = out.debriefVisible;
     m.existing_odds_layers = out.oddsLayers;
     m.debrief_cards = out.debriefCards;
+    m.page_errors = Array.from(new Set(_pageErrors)).slice(0, 10);
     m.context_game_requests = Array.from(new Set(_ctxReqs)).slice(0, 40);
     m.v2_games_requests = _v2Reqs.length;
     // Three named forms plus 'other' — a bare count would collapse exactly the
@@ -207,6 +233,8 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // the slot being absent from every card means the render path never ran, which
   // is the failure this probe exists for.
   if (m.error) { console.error(`PROBE ERROR: ${m.error}`); process.exit(1); }
+  if (m.main_state) console.log(`main on an empty slate: ${JSON.stringify(m.main_state).slice(0, 700)}`);
+  if (m.page_errors.length) console.log(`page errors: ${JSON.stringify(m.page_errors)}`);
   if (m.empty_note) console.log(`empty-note on this date: "${m.empty_note}"`);
   console.log(`date read: ${m.date_label} (stepped back ${m.stepped_back_days} day(s)), `
             + `/v2/games requests ${m.v2_games_requests}`);
