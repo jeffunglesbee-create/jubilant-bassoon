@@ -24,6 +24,14 @@ on:
   # date (CC-CMD-2026-09-12-past-date-slate-renders-nothing). The 03:46 run on
   # 2026-09-12 saw 38 cards and 10 injected debriefs at exactly this hour.
   schedule:
+    # 16:10 UTC — European league matches kick off at 14:00 UTC and go final
+    # around 15:50, while the client's ET date is still the same day. Probed
+    # 2026-09-12: EPL_2026-09-12_e401879285 carries espn_event_id 401879285 and
+    # an opening_odds moneyline, so a finished EPL card has everything the
+    # movement layer needs. This is the earliest daily window, not the only one.
+    - cron: '10 16 * * *'
+    # 03:45 UTC = 23:45 ET, the US window: the day's MLB/NFL/NBA games are final
+    # and the ET date has not rolled over.
     - cron: '45 3 * * *'
   push:
     paths: ['outbox/.trigger-odds-line-probe']
