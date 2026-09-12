@@ -10,6 +10,10 @@ on:
         description: 'YYYY-MM-DD for the context-game check. Blank = today UTC.'
         required: false
         default: ''
+      slate_ids:
+        description: 'Comma-separated client slate ids (e.g. g16,g17) to ask /context/game for.'
+        required: false
+        default: ''
   push:
     paths: ['outbox/.trigger-odds-line-probe']
 
@@ -42,6 +46,7 @@ jobs:
         run: node scripts/probe-context-game-odds.mjs
         env:
           PROBE_DATE: ${{ inputs.date }}
+          SLATE_IDS: ${{ inputs.slate_ids }}
         continue-on-error: true
 
       - name: Run odds line probe

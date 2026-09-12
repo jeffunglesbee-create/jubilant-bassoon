@@ -38,6 +38,10 @@ try {
   const finals = rows.filter(g => g.home_score != null && g.opening_odds);
   m.finals_with_opening_odds_on_date = finals.length;
 
+  // The DOM join showed the client fetches /context/game/g18, not
+  // /context/game/espn:401816164 — field.js:15709 documents that exact failure.
+  // So ask BOTH forms and report the difference, rather than only the form the
+  // client is supposed to use.
   for (const g of finals.slice(0, LIMIT)) {
     const id = g.espn_event_id ? `espn:${g.espn_event_id}` : g.id;
     const ctx = await get(`/context/game/${encodeURIComponent(id)}`);
@@ -49,9 +53,34 @@ try {
       closing_odds_parsed_present: !!(gameObj && gameObj.closing_odds_parsed),
       keys_sample: gameObj ? Object.keys(gameObj).filter(k => /odds/i.test(k)).sort() : [],
     });
+
     m.checked++;
   }
 } catch (e) { m.error = String(e.message || e); }
+
+// The DOM probe reported the client's cards carry data-gameid="g16".."g25" and
+// injectDebriefCards does `contextId = rawGame._gameId || gameId`, so when
+// _gameId is unset it asks the relay for the SLATE id. field.js:15709 documents
+// that exact failure. Ask for those ids and show what comes back.
+const SLATE_IDS = (process.env.SLATE_IDS || '').split(',').map(x => x.trim()).filter(Boolean);
+m.slate_id_probe = [];
+for (const sid of SLATE_IDS) {
+    try {
+        const r = await get(`/context/game/${encodeURIComponent(sid)}`);
+        const g = r.json?.game ?? null;
+        m.slate_id_probe.push({
+            id: sid, http: r.http,
+            has_game_object: !!g,
+            opening_odds_parsed_present: !!(g && g.opening_odds_parsed),
+            has_briefs: !!(r.json?.archive?.gameBriefs?.length),
+            top_keys: r.json ? Object.keys(r.json).sort() : null,
+        });
+    } catch (e) { m.slate_id_probe.push({ id: sid, error: String(e.message || e) }); }
+}
+if (SLATE_IDS.length) {
+    const withGame = m.slate_id_probe.filter(x => x.has_game_object).length;
+    console.log(`\nslate-id form: game object present on ${withGame} of ${SLATE_IDS.length}`);
+}
 
 const stamp = m.probed_at.replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
 const out = `outbox/context-game-odds-${stamp}.json`;
