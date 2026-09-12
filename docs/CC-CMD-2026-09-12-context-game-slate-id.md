@@ -1,5 +1,33 @@
 # CC-CMD-2026-09-12 — the client asks /context/game for the slate id, and gets a 200 with no game
 
+**STATUS: CLOSED 2026-09-12. Done condition satisfied.**
+
+Probe run 34705060530, `outbox/odds-line-probe-manifest-20260912T162417Z.json`,
+live against SW `2026-09-12d`:
+
+```
+slate 129 cards, 41 debriefs injected, 10 visible
+/context/game id forms: {"espn_prefixed": 41}      ← 41 of 41. zero bare slate ids
+.debrief-odds-movement layers: 5 visible
+page_error_count: 0
+
+states.unchanged  espn:401879284  "Home moneyline +125 (44% implied), unchanged from open"
+states.moved      espn:401879283  "Home moneyline -450 → -475, 0.8 pts toward home"
+```
+
+Two of the four states observed on named game ids. `no_odds` and `opened_only`
+report absent for this run rather than inferred, per the probe's own rule.
+
+Before: 1 of 1 requests went out as `g30`, 0 odds layers, and the briefs that
+came back belonged to other games. The relay half (`cce2cd7`) refuses an
+unresolvable id; the client half (`5931418f`, `41931c5f`) resolves a durable one
+or asks for nothing.
+
+The run's exit code is 1, and correctly so: it fails on `date_nav_check`, the
+separate past-date defect tracked by
+`CC-CMD-2026-09-12-past-date-slate-renders-nothing`.
+
+
 Found closing Task 3 of `CC-CMD-2026-09-11-client-odds-story`. **Pre-existing.**
 It blocks three debrief layers, only one of which is new.
 

@@ -153,7 +153,34 @@ so an absent or reversed `captured_at` still renders "unchanged". field-laborato
 `OddsStory` (`src/Desk.fs:1324`) has the stricter test to port: `ct > ot`, else
 unverifiable.
 
-## Task 4 — done condition, NOT SATISFIED, and now blocked on a named defect
+## Task 4 — SATISFIED 2026-09-12 16:24 UTC
+
+Run 34705060530, manifest `outbox/odds-line-probe-manifest-20260912T162417Z.json`:
+
+| field | value |
+|---|---|
+| slate cards | 129 |
+| debriefs injected | 41 |
+| `/context/game` id forms | `{"espn_prefixed": 41}` — **zero bare slate ids** |
+| `.debrief-odds-movement` layers | 5, all visible |
+| `page_error_count` | 0 |
+
+Named game ids per state:
+
+- **unchanged** — `espn:401879284`, "Home moneyline +125 (44% implied), unchanged from open"
+- **moved** — `espn:401879283`, "Home moneyline -450 → -475, 0.8 pts toward home"
+
+`no_odds` and `opened_only` are reported absent for this run, not inferred.
+
+Three earlier readings in this file are superseded by it, and one prediction in
+it was wrong: I expected the `MY_TEAMS` fix to also clear the past-date blank
+page. It did not — `date_nav_check` still reads
+`{cards: 0, empty_note: null, loading_wraps: 1, ok: false}` with zero page
+errors. The past-date defect is separate and stays open.
+
+### Superseded: what blocked this until 16:24
+
+
 
 No run has observed a `.debrief-odds-movement` layer in the live DOM. Reported
 absent, never inferred.
