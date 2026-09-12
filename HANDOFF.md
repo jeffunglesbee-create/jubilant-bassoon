@@ -1,5 +1,60 @@
 # FIELD HANDOFF
 
+## Session 2026-09-12 — past-date slates come from the relay
+
+HEAD `c43dba2c` -> `08f73b48`. Smoke **1049 passed, 0 failed** (1037 -> 1049).
+Units 69/0. SW_VERSION `2026-09-12i` -> **`2026-09-12l`**.
+
+Session doc: `outbox/cc-session-2026-09-12-past-date-slate-from-relay.md`
+
+Navigating to a past date said "No major events on Yesterday" for a day the
+archive holds 24 rows for. ESPN's scoreboard genuinely answers
+`{status: 200, events: 0}` for past dates — measured from the live page in CI,
+because sandbox egress to `site.api.espn.com` is blocked. The relay serves the
+same day (`/v2/games?sport=mlb&date=2026-09-11` -> 15 games, `source:
+"espn-wc"`), so `goToDate` now sources `iso < TODAY_ISO` from the relay via the
+existing `fetchV2Games`. Today and future dates keep the ESPN sweep.
+
+**Relay half: no change required** (Rule 70 still applies — the route was
+re-probed before any client code was written). No new endpoint, no new field,
+no client-side mapping, so nothing to sync in CONTRACTS.md. This is why Option
+B beat `/context/date`, which would have needed a `streams` mapping invented
+client-side — the Rule 64 band-aid.
+
+Verified live, probe run 34713228042 / SW `2026-09-12l`:
+`slate_by_step [Today 45, Yesterday 26]`, `date_nav_check` on Thu Sep 10
+`cards 14, failure_kind null`, `page_errors []`. The old red
+(`failure_kind "no-events"`, `archive_rows_for_claimed_empty_date 24`) is the
+assertion that flipped, and it runs on every probe invocation — the regression
+check is automated, not a carry-forward.
+
+**Two defects found in this change's own first implementation, neither shipped:**
+
+1. `V2_SECTION_LABEL` was built from the `injectV2SportSection` call sites — a
+   SUBSET of `FIELD_V2_SOURCES`, which is what the new function iterates. `afl`,
+   `bundesliga` and `wc26` are all enabled today and all three had no entry, so
+   all three would have vanished from every past-date slate. The check written
+   to prevent exactly this printed PASS against the wrong denominator, which is
+   the Rule 91 failure committed inside the Rule 91 guard. It now checks both
+   directions and prints both counts.
+2. `Promise.all` made one sport's rejection blank the slate for every sport.
+   `fetchV2Games` catches everything today, so nothing could reach it — but that
+   is a load-bearing property of a function this one does not own. `allSettled`,
+   measured not reasoned: assertion 2b read `got undefined` before the change.
+
+Three gates, all mutation-proven and wired to deploy-gate:
+`check-v2-section-labels.mjs` (both directions, both denominators printed),
+`check-relay-date-sections.mjs` (4 return-value properties, 11 assertions,
+extracted source not a copy), `mutate-relay-date-sections.mjs` (4 mutations,
+4 caught, each on its named assertion; its own anchor/applied guards
+self-tested at 0 hits and 7251 hits).
+
+**Known inconsistency, filed not picked:** `FETCH_LEAGUES` labels CFB `'CFB'` /
+`'NCAA Football'`; the V2 injector uses `'College Football'`. The map follows
+the V2 injector because it IS the V2 path. Resolving it means touching the ESPN
+sweep's labels — out of scope, Rule 69.
+
+
 ## Session 2026-09-11 — Rule 99 (DISTINGUISHABILITY-A)
 
 HEAD `3bfa1a21` -> `3da97fb9`. Smoke **1037 passed, 0 failed** (unchanged; no
