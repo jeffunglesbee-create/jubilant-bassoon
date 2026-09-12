@@ -42,9 +42,13 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     states: { no_odds: null, opened_only: null, unchanged: null, moved: null },
     date_label: null, stepped_back_days: 0,
     setup_overlay_dismissed: false, date_nav_error: null,
+    slate_by_step: [],
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     visible_samples: [], error: null,
   };
+
+  const dateLabel = () => page.evaluate(
+    () => { const el = document.getElementById('date-label'); return el ? el.textContent.trim() : null; });
 
   try {
     await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
@@ -62,25 +66,28 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // per-game context fetch, not with the first paint.
     await page.waitForTimeout(12000);
 
-    // The debrief only renders for games isGameOver() calls final. On a slate
-    // with nothing finished yet the probe reads a legitimate zero that looks
-    // identical to a broken render path — the ambiguity this probe exists to
-    // remove. Step back a day until at least one card is injected, and report
-    // which day was read and how many steps it took.
-    for (let i = 0; i < 2; i++) {
-      const injected = await page.evaluate(
-        () => document.querySelectorAll('.game-card[data-debrief-injected]').length);
-      if (injected > 0) break;
-      // A failure here is reported, not thrown. A probe that dies produces no
-      // evidence at all, which reads the same as evidence of nothing.
+    // The debrief only renders for games isGameOver() calls final, so a slate
+    // with nothing finished reads a zero identical to a broken render path.
+    // Step back a FIXED number of days rather than hunting: run 34697310538
+    // hunted, overshot to Thu Sep 10, and landed on a date the client renders
+    // no slate for at all — which is a third reality the hunt cannot report.
+    // One deterministic step, a settle long enough for the date's fixtures to
+    // fetch and injectDebriefCards to run, and the slate size recorded at each
+    // stop so an empty date is legible rather than indistinguishable.
+    const STEP_BACK = Number(process.env.STEP_BACK_DAYS ?? 1);
+    const slateNow = () => page.evaluate(
+      () => document.querySelectorAll('.game-card[data-gameid]').length);
+    m.slate_by_step.push({ step: 0, label: await dateLabel(), cards: await slateNow() });
+    for (let i = 0; i < STEP_BACK; i++) {
       try {
         await page.click('#date-prev', { timeout: 8000 });
         m.stepped_back_days++;
-        await page.waitForTimeout(12000);
+        await page.waitForTimeout(25000);
+        m.slate_by_step.push({ step: m.stepped_back_days, label: await dateLabel(),
+                               cards: await slateNow() });
       } catch (navErr) { m.date_nav_error = String(navErr.message || navErr).split('\n')[0]; break; }
     }
-    m.date_label = await page.evaluate(
-      () => { const el = document.getElementById('date-label'); return el ? el.textContent.trim() : null; });
+    m.date_label = await dateLabel();
 
     const out = await page.evaluate(() => {
       // The main slate is innerHTML-built `.game-card[data-gameid]`; the

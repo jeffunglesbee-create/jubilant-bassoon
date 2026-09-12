@@ -14,6 +14,10 @@ on:
         description: 'Comma-separated client slate ids (e.g. g16,g17) to ask /context/game for.'
         required: false
         default: ''
+      step_back_days:
+        description: 'Days to step the slate back before reading the DOM. The debrief only renders for final games. Default 1.'
+        required: false
+        default: '1'
   push:
     paths: ['outbox/.trigger-odds-line-probe']
 
@@ -53,6 +57,7 @@ jobs:
         run: node odds_line_probe.js
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+          STEP_BACK_DAYS: ${{ inputs.step_back_days || '1' }}
 
       - name: Commit results
         run: |
