@@ -76,7 +76,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // One deterministic step, a settle long enough for the date's fixtures to
     // fetch and injectDebriefCards to run, and the slate size recorded at each
     // stop so an empty date is legible rather than indistinguishable.
-    const STEP_BACK = Number(process.env.STEP_BACK_DAYS ?? 1);
+    const STEP_BACK = Number(process.env.STEP_BACK_DAYS || 0);
     const slateNow = () => page.evaluate(
       () => document.querySelectorAll('.game-card[data-gameid]').length);
     m.slate_by_step.push({ step: 0, label: await dateLabel(), cards: await slateNow() });

@@ -15,9 +15,16 @@ on:
         required: false
         default: ''
       step_back_days:
-        description: 'Days to step the slate back before reading the DOM. The debrief only renders for final games. Default 1.'
+        description: 'Days to step the slate back before reading the DOM. Default 0 — a past date currently renders neither cards nor a message (CC-CMD-2026-09-12-past-date-slate-renders-nothing), so stepping back measures that defect, not this one.'
         required: false
-        default: '1'
+        default: '0'
+  # 03:45 UTC = 23:45 ET, when the day's games are final and the client's own
+  # ET date has not rolled over yet — so the debrief layers are observable on
+  # "Today" without touching date navigation, which renders nothing for a past
+  # date (CC-CMD-2026-09-12-past-date-slate-renders-nothing). The 03:46 run on
+  # 2026-09-12 saw 38 cards and 10 injected debriefs at exactly this hour.
+  schedule:
+    - cron: '45 3 * * *'
   push:
     paths: ['outbox/.trigger-odds-line-probe']
 
@@ -57,7 +64,7 @@ jobs:
         run: node odds_line_probe.js
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
-          STEP_BACK_DAYS: ${{ inputs.step_back_days || '1' }}
+          STEP_BACK_DAYS: ${{ inputs.step_back_days || '0' }}
 
       # always(): the manifest is written to disk before the probe exits, and a
       # FAILING probe is exactly when its evidence matters. Runs 7, 8 and 9 all

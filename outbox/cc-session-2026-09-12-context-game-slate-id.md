@@ -153,17 +153,51 @@ so an absent or reversed `captured_at` still renders "unchanged". field-laborato
 `OddsStory` (`src/Desk.fs:1324`) has the stricter test to port: `ct > ot`, else
 unverifiable.
 
-## Task 4 — done condition, NOT YET SATISFIED
+## Task 4 — done condition, NOT SATISFIED, and now blocked on a named defect
 
-The CC-CMD's done condition is a named game id carrying a
-`.debrief-odds-movement` or `.debrief-odds` layer in the live DOM. As of this
-write it has **not** been observed. Run 9 (34697542148) is the first run with a
-deterministic one-day step and a 25s settle; its result is appended below when
-it lands, pass or fail.
+No run has observed a `.debrief-odds-movement` layer in the live DOM. Reported
+absent, never inferred.
 
-Reported absent, not inferred working. The three earlier runs each failed for a
-different reason in the probe itself, none of which was evidence about the
-render path:
+**Why, measured:** a debrief layer needs a completed game, and at 13:50 UTC on a
+Saturday the current ET date has nothing final. Stepping back a day — the
+obvious route — lands on a slate that renders **neither cards nor a message**:
+
+| step | date label | `.game-card` | `.empty-note` |
+|---|---|---|---|
+| 0 | Today | 44 | — |
+| 1 | Yesterday | **0** | **null** |
+
+Sampled every 5s to 60s: twelve consecutive zeros, so empty rather than slow.
+Fri 2026-09-11 has 15 completed MLB games and full opening/closing odds, so the
+date is not genuinely empty. Filed as
+`docs/CC-CMD-2026-09-12-past-date-slate-renders-nothing.md`.
+
+**Automated instead of carried forward (Rule 87.3).** `odds-line-probe.yml` now
+runs on `cron: 45 3 * * *` — 23:45 ET, when the day's games are final and the
+client's ET date has not rolled over, so the layers are observable on "Today"
+with no date navigation at all. The 03:46 run this morning saw 38 cards and 10
+injected debriefs at exactly that hour. `STEP_BACK_DAYS` now defaults to 0;
+stepping back measures the other defect, not this one.
+
+### Six defects in the measuring apparatus, one in the product
+
+The product side took two commits. The instrument took six, every one of them a
+false or unreadable signal about the render path:
+
+| # | run | what it reported | what was wrong |
+|---|---|---|---|
+| 1 | — | — | the id-form classifier, self-tested before it was trusted |
+| 2 | 34697166194 | `cards 0`, no manifest | the setup modal intercepted `#date-prev` |
+| 3 | 34697310538 | `slate_cards: 0` | the date hunt overshot to Thu Sep 10 |
+| 4 | 7, 8, 9 | nothing at all | the commit step had no `if: always()` |
+| 5 | 34697542148 | `Yesterday: 0` | one sample cannot separate empty from slow |
+| 6 | 34697…1357 | `0 cards` | zero cards is three `.empty-note` realities, collapsed into one number |
+
+Number 6 is the one worth keeping: I committed the exact collapse this CC-CMD
+exists to fix, into the instrument built to verify the fix.
+
+## Earlier runs, for the record
+
 
 | run | result | cause |
 |---|---|---|
