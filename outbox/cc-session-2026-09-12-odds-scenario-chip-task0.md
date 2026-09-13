@@ -1,7 +1,10 @@
 # CC session — odds scenario chip: Task 0, and two decisions left to a human
 
 **Date:** 2026-09-12 ET · **CC-CMD:** `CC-CMD-2026-09-12-debrief-odds-scenario-chip.md`
-**Status:** Task 0 done. **Tasks 1–3 blocked on a human decision — two of them.**
+**Status: CLOSED.** Decision 1 answered by the user — amnesty covers it — so
+Task 1 applied (citation, no chip change) and Task 3 shipped as
+`check-debrief-postgame-only.mjs`. **Decision 2 (what a draw should render)
+remains open; it is a product call, not a compliance one.**
 One separate defect found during Task 0 and fixed (`fd065473`).
 **HEAD:** `fd919d1a` → `fd065473` · Smoke 1049/0 · Units 69/0 · SW `r` → `s`
 
@@ -88,3 +91,44 @@ behaviour cannot drift while the question is open.
 deploy. If either decision lands, the enumerated rows are where it gets written
 down — the draw rows are labelled `[pinned, not endorsed]` precisely so a future
 session cannot mistake "the test passes" for "the question was answered".
+
+
+---
+
+## Closed out — the citation, and why it does not stand alone
+
+Decision 1: **amnesty covers it.** Task 1 applied — a citation at the call site,
+no change to the chip.
+
+The citation states what the chip *is* rather than arguing it is something
+milder: a composite, a threshold, a tier and a recommendation vocabulary, which
+under Rule F alone would not clear. It clears on Defense 4 / Step 4 instead.
+
+**And it records that the clearance is conditional.** The only live path is
+`injectDebriefCards` gated on `isGameOver`; `renderCard` reaches `buildDebrief`
+ungated at field.js:2510 but has zero callers, because both apparent call sites
+resolve to a local arrow function at field.js:41871 that shadows the global.
+
+That is a fact about code, and facts about code change. The ADR's own
+2026-09-04 case study is a real violation *"missed here because two prior
+documents asserted this section was post-game and neither claim was
+re-verified"* — an unenforced citation would be a third such document.
+
+`scripts/check-debrief-postgame-only.mjs` enforces four invariants, each a way
+the claim could lapse silently:
+
+| invariant | mutation that breaks it |
+|---|---|
+| exactly 2 `buildDebrief` call sites | a third appears |
+| `injectDebriefCards` gates on `isGameOver` | the gate is removed |
+| the local `renderCard` shadow exists | it is renamed — both calls bind to the ungated global |
+| every `renderCard()` sits after the shadow | one appears above it |
+
+All four caught on their named clause. The check is the reason the citation is
+allowed to stand.
+
+## Still open
+
+**Decision 2 — what a draw should render.** Not a compliance question, so it was
+not bundled into the answer that was given. Pinned `[pinned, not endorsed]` so
+the current inconsistency cannot drift while it is outstanding.
