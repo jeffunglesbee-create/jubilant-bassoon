@@ -537,6 +537,9 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   const observed = Object.entries(m.states).filter(([, v]) => v).map(([k]) => k);
   const absent   = Object.entries(m.states).filter(([, v]) => !v).map(([k]) => k);
   console.log(`\nobserved ${observed.length} of 4 states: ${observed.join(', ') || '(none)'}`);
+  console.log(`movement line: ${m.debriefs_with_movement_line} of ${m.debriefs_total} rendered debriefs `
+            + `carry one; ${m.debriefs_no_movement_line} do not (the dominant no-odds state, counted `
+            + `rather than inferred from an absent element)`);
   if (absent.length) console.log(`NOT OBSERVABLE on this run: ${absent.join(', ')} — reported absent, not inferred working`);
   console.log(`cards ${m.cards_seen}, odds slots ${m.slots_hidden + m.slots_visible} (${m.slots_hidden} hidden, ${m.slots_visible} visible)`);
 
