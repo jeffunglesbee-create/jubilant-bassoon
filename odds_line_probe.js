@@ -62,6 +62,9 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     odds_slot_present_in_dom: false,
     slots_hidden: 0, slots_visible: 0,
     states: { no_odds: null, opened_only: null, unchanged: null, moved: null },
+    // The no-odds state renders no element, so it is counted over a denominator
+    // rather than found. null means the census did not run at all.
+    debriefs_total: null, debriefs_with_movement_line: null, debriefs_no_movement_line: null,
     date_label: null, stepped_back_days: 0,
     setup_overlay_dismissed: false, date_nav_error: null,
     slate_by_step: [],
@@ -394,7 +397,29 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       const hit = out.rows.find(pred);
       return hit ? { game: hit.id || hit.label || '(unidentified card)', text: hit.text } : null;
     };
-    m.states.no_odds     = pick(r => r.hidden || !r.text);
+    // no_odds is the DOMINANT state and the one state that cannot be picked
+    // from `rows`. rows comes from querySelectorAll('.debrief-odds-movement'),
+    // and buildOddsMovement returns NULL when there is nothing to say — so no
+    // element exists to find. `pick(r => r.hidden || !r.text)` is left over from
+    // when the line was a data-slot that rendered hidden; against the l6 layer
+    // it can only ever return null, which reads identically to "not observed
+    // today". The dominant state, permanently invisible.
+    //
+    // Counted over a known denominator instead: scan the debriefs that DID
+    // render and ask which lack the layer. Absence as a positive count, not a
+    // null (Rule 99).
+    const _withMove = [], _withoutMove = [];
+    for (const c of (out.debriefCards || [])) {
+      (((c.layers || []).some(x => /\bdebrief-odds-movement\b/.test(x))) ? _withMove : _withoutMove).push(c);
+    }
+    m.debriefs_total              = (out.debriefCards || []).length;
+    m.debriefs_with_movement_line = _withMove.length;
+    m.debriefs_no_movement_line   = _withoutMove.length;
+    m.states.no_odds = _withoutMove.length
+      ? { game: _withoutMove[0].gameid || '(unidentified card)',
+          text: `(no movement line — buildOddsMovement returned null; `
+              + `${_withoutMove.length} of ${m.debriefs_total} rendered debriefs)` }
+      : null;
     m.states.opened_only = pick(r => !r.hidden && /^Home line opened /.test(r.text));
     m.states.unchanged   = pick(r => !r.hidden && /unchanged from open$/.test(r.text));
     m.states.moved       = pick(r => !r.hidden && / pts toward (home|away)$/.test(r.text));
