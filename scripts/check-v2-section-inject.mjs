@@ -33,10 +33,18 @@ const make = (espnScores, allData) => {
   const captureFieldError = (tag, err) => errors.push({ tag, msg: String(err?.message ?? err) });
   const injected = {};
   const buildFilters = () => {};
-  const fn = new Function('espnScores', 'allData', 'captureFieldError', '_v2SectionInjected', 'buildFilters',
+  // _renderLedger was added to the push branch on 2026-09-12 and this stub list
+  // did not know about it: the function threw ReferenceError inside its own
+  // try, which surfaced as `v2-section-inject:cfb | _renderLedger is not
+  // defined` on the HAPPY path. Assertion 1e ("nothing was reported on the
+  // happy path") caught it — a test whose only job was to check the quiet case
+  // was what noticed a new dependency the function had grown.
+  const _renderLedger = { renders: 0, lastRenderAt: null, lastPushAt: null,
+                          lastPushSport: null, pushesSinceLastRender: 0 };
+  const fn = new Function('espnScores', 'allData', 'captureFieldError', '_v2SectionInjected', 'buildFilters', '_renderLedger',
     `${srcGame}\n${srcInject}\nreturn injectV2SportSection;`
-  )(espnScores, allData, captureFieldError, injected, buildFilters);
-  return { fn, errors, injected };
+  )(espnScores, allData, captureFieldError, injected, buildFilters, _renderLedger);
+  return { fn, errors, injected, ledger: _renderLedger };
 };
 
 const scores = (sport, n) => {
@@ -62,6 +70,25 @@ const check = (l, c, d) => { ran++; if (c) console.log(`  ok    ${l}`); else { f
   check('1c all 80 games came with it', allData.sports[1]?.games?.length === 80, `${allData.sports[1]?.games?.length}`);
   check('1d the memo records it', injected.cfb === true);
   check('1e nothing was reported on the happy path', errors.length === 0, JSON.stringify(errors));
+}
+
+// ── 1f the push branch stamps the render ledger ──
+{
+  const allData = { sports: [] };
+  const { fn, ledger } = make(scores('cfb', 3), allData);
+  fn('cfb', 'College Football');
+  check('1f the push stamps lastPushAt and names the sport',
+        typeof ledger.lastPushAt === 'number' && ledger.lastPushSport === 'cfb',
+        JSON.stringify(ledger));
+  check('1g and counts itself as a push since the last render',
+        ledger.pushesSinceLastRender === 1, String(ledger.pushesSinceLastRender));
+}
+{
+  // The no-target branch must NOT stamp a push — it did not push.
+  const { fn, ledger } = make(scores('cfb', 3), null);
+  fn('cfb', 'College Football');
+  check('1h the no-target branch does not stamp a push',
+        ledger.lastPushAt === null && ledger.pushesSinceLastRender === 0, JSON.stringify(ledger));
 }
 
 // ── 2. THE DEFECT: allData.sports falsy — the branch must report, not vanish ──

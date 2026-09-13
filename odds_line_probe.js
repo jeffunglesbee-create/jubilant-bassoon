@@ -558,6 +558,21 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   console.log(`espnScores by _sport: ${JSON.stringify(m.espn_scores_by_sport)}`);
   console.log(`allData shape: ${JSON.stringify(m.slate_state && m.slate_state.allData)}`);
   console.log(`_v2SectionInjected: ${JSON.stringify(m.slate_state && m.slate_state.v2SectionInjected)}`);
+  {
+    const L = m.slate_state && m.slate_state.renderLedger;
+    if (!L) console.log('render ledger: NOT PRESENT (build predates it)');
+    else if (L.lastPushAt === null) console.log(`render ledger: ${L.renders} render(s), NO push ever recorded`);
+    else if (L.lastRenderAt === null) console.log(`render ledger: a push happened and renderAll NEVER ran`);
+    else {
+      // The order is the diagnosis, not either count.
+      const d = L.lastRenderAt - L.lastPushAt;
+      console.log(`render ledger: ${L.renders} render(s); last render ${d >= 0 ? `${d}ms AFTER` : `${-d}ms BEFORE`} `
+                + `the last push (${L.lastPushSport}); ${L.pushesSinceLastRender} push(es) since the last render`);
+      console.log(d >= 0
+        ? '  -> a render DID run after the last push: the renderer is dropping them'
+        : '  -> nothing has rendered since the last push: the sections were never offered to the DOM');
+    }
+  }
   console.log(`/v2/games asked for: ${JSON.stringify(m.v2_games_by_sport)}`);
   console.log(`/v2/games dates: ${JSON.stringify(m.v2_games_dates)}`);
   {
