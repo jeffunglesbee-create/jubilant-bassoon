@@ -95,6 +95,21 @@ jobs:
       # FAILING probe is exactly when its evidence matters. Runs 7, 8 and 9 all
       # failed and committed nothing, so three diagnoses had to be read out of
       # job logs that expire. The artifact is the point (Rule 90).
+      # The done condition of CC-CMD-2026-09-12-v2-sections-in-model-not-in-dom
+      # is five consecutive SCHEDULED greens. The manifests have recorded
+      # `triggered_by` all along and nothing read them, so the count could only
+      # be had by eyeballing a directory — which produced "2 of 5" and "3 of 5"
+      # on 2026-09-13 when the real figure was 1. Every run now says where it
+      # stands, in its own summary.
+      #
+      # Runs BEFORE the commit step and still counts the run that just finished:
+      # odds_line_probe.js writes its manifest to disk before exiting, which is
+      # the same property the commit step's always() relies on.
+      - name: Sections-gap streak
+        if: always()
+        run: |
+          node scripts/check-sections-gap-streak.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Commit results
         if: always()
         run: |
