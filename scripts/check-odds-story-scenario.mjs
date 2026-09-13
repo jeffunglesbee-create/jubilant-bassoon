@@ -38,22 +38,27 @@ const CASES = [
   // Decisive results — the cases the layer exists for.
   ['home favourite wins big',       { opening:homeFavML, homeScore:30, awayScore:20 },             'CHALK/QUIET'],
   ['home favourite loses',          { opening:homeFavML, homeScore:20, awayScore:30 },             'UPSET/MUST'],
-  ['favourite wins by one',         { opening:homeFavML, homeScore:21, awayScore:20 },             'SWEAT/HOT'],
-  ['favourite wins, went to OT',    { opening:homeFavML, homeScore:30, awayScore:20, wentToOT:true }, 'SWEAT/HOT'],
+  ['favourite wins by one',         { opening:homeFavML, homeScore:21, awayScore:20 },             'SWEAT/WATCH'],
+  ['favourite wins, went to OT',    { opening:homeFavML, homeScore:30, awayScore:20, wentToOT:true }, 'SWEAT/WATCH'],
+  ['underdog wins by one',          { opening:homeFavML, homeScore:20, awayScore:21 },             'UPSET/MUST'],
 
-  // DRAWS — current behaviour, PINNED DELIBERATELY AND NOT ENDORSED.
+  // DRAWS — resolved 2026-09-12. These rows were previously pinned as
+  // [not endorsed]: the same 1-1 draw rendered UPSET/MUST when the home side
+  // was favoured and SWEAT/HOT when the away side was, because `homeWon` is
+  // false in any draw and `favWon = homeFav === homeWon` flipped with homeFav.
   //
-  // The same 1-1 draw renders UPSET/MUST when the home side was favoured and
-  // SWEAT/HOT when the away side was, because `homeWon = homeScore > awayScore`
-  // is false in a draw and `favWon = homeFav === homeWon` therefore flips with
-  // homeFav. One real-world outcome, two labels, decided by which team the
-  // bookmaker preferred.
-  //
-  // These two rows exist so that behaviour cannot change silently. They are NOT
-  // a claim that either label is right — what a draw should render is an open
-  // question raised with the user on 2026-09-12 and not answered here.
-  ['1-1 draw, HOME favoured  [pinned, not endorsed]', { opening:homeFavML, homeScore:1, awayScore:1 }, 'UPSET/MUST'],
-  ['1-1 draw, AWAY favoured  [pinned, not endorsed]', { opening:awayFavML, homeScore:1, awayScore:1 }, 'SWEAT/HOT'],
+  // A draw is now its own scenario. The symmetry is the point, and it is what
+  // these two rows exist to hold: the SAME result must render the SAME label
+  // whichever team the bookmaker preferred.
+  ['1-1 draw, HOME favoured',       { opening:homeFavML, homeScore:1, awayScore:1 },               'DRAW/INFO'],
+  ['1-1 draw, AWAY favoured',       { opening:awayFavML, homeScore:1, awayScore:1 },               'DRAW/INFO'],
+  ['0-0 draw',                      { opening:homeFavML, homeScore:0, awayScore:0 },               'DRAW/INFO'],
+  ['high-scoring draw',             { opening:awayFavML, homeScore:3, awayScore:3 },               'DRAW/INFO'],
+
+  // Every tier this function can emit must be a real fieldChip tier with a CSS
+  // rule. 'HOT' was not: `.field-chip--HOT` had ZERO rules in index.html, so
+  // every SWEAT chip rendered with the base class alone while UPSET and CHALK
+  // were styled. check-odds-story-tiers below enforces it against index.html.
 ];
 
 let failed = 0;
@@ -65,9 +70,20 @@ for (const [label, odds, want] of CASES) {
   else { failed++; console.error(`  FAIL  ${label.padEnd(46)} -> ${got}, wanted ${want === null ? 'no render' : want}`); }
 }
 
-console.log(`\nchecked ${CASES.length} enumerated case(s) against the real buildOddsStory. Two rows pin the `
-          + `draw inconsistency as CURRENT behaviour, deliberately, and endorse neither label. `
-          + `Whether MUST/HOT/QUIET is an appropriate vocabulary at all is an ADR-002 question `
-          + `flagged for human review and NOT settled by this file.`);
+// Every tier emitted must exist as a CSS rule. A tier outside fieldChip's
+// vocabulary renders an unstyled chip and nothing else complains — which is
+// exactly how 'HOT' survived.
+const html = (await import('node:fs')).readFileSync('index.html', 'utf8');
+const TIERS = ['MUST', 'WATCH', 'INFO', 'QUIET'];
+for (const t of TIERS) {
+  const has = html.includes(`field-chip--${t}`);
+  if (has) console.log(`  ok    tier ${t} has a .field-chip--${t} rule in index.html`);
+  else { failed++; console.error(`  FAIL  tier ${t} is emitted but .field-chip--${t} has NO rule in index.html`); }
+}
+
+console.log(`\nchecked ${CASES.length} enumerated case(s) against the real buildOddsStory, plus `
+          + `${TIERS.length} emitted tier(s) against index.html's CSS. The ADR-002 clearance for this `
+          + `layer is cited at its call site and enforced by check-debrief-postgame-only.mjs; `
+          + `this file does not re-derive it.`);
 if (failed) { console.error(`FAIL — ${failed} case(s).`); process.exit(1); }
 console.log('PASS');

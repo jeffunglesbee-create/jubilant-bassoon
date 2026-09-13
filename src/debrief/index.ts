@@ -160,7 +160,26 @@ export function buildOddsStory(debrief: DebriefData): HTMLElement | null {
   const homeWon = (homeScore ?? 0) > (awayScore ?? 0);
   const favWon  = homeFav === homeWon;
   const margin  = Math.abs((homeScore ?? 0) - (awayScore ?? 0));
-  const scenario = !favWon ? 'UPSET' : (margin <= 1 || wentToOT) ? 'SWEAT' : 'CHALK';
+  // A draw is its own outcome, not a failed win. The outcome space has FOUR
+  // cases — favourite wins clear, favourite wins narrow, favourite loses, draw —
+  // and forcing four into three is what produced the defect measured on
+  // 2026-09-12: `homeWon = homeScore > awayScore` is false in any draw, so
+  // `favWon = homeFav === homeWon` flipped with homeFav and the SAME 1-1 draw
+  // rendered UPSET when the home side was favoured and SWEAT when the away side
+  // was. One result, two labels, decided by which team the bookmaker preferred.
+  //
+  // DRAW rather than folding it into an existing label, because each of the
+  // three asserts something false about a drawn game: UPSET says the favourite
+  // LOST, CHALK says it WON, SWEAT says it survived and won narrowly. Rule 1 is
+  // DO NOT INVENT, and a scenario is a claim about how the game finished.
+  //
+  // Returning null was the other candidate and is rejected: the CC-CMD notes
+  // this layer "is the only place opening prices for both sides are shown", and
+  // hiding it for every drawn game would take the prices with it.
+  const isDraw = homeScore === awayScore;
+  const scenario = isDraw ? 'DRAW'
+    : !favWon ? 'UPSET'
+    : (margin <= 1 || wentToOT) ? 'SWEAT' : 'CHALK';
   const wrap = document.createElement('div');
   wrap.className = 'debrief-odds';
   const labelRow = document.createElement('div');
@@ -193,9 +212,20 @@ export function buildOddsStory(debrief: DebriefData): HTMLElement | null {
   // If that stops being true, this comment is wrong and the clearance lapses.
   // scripts/check-debrief-postgame-only.mjs enforces every clause of it and is
   // mutation-proven; it is the reason this citation is allowed to stand.
-  labelRow.appendChild(_fieldChip!(scenario,
-    scenario === 'UPSET' ? 'MUST' : scenario === 'SWEAT' ? 'HOT' : 'QUIET',
-    { small: true }));
+  // fieldChip's tier is a CSS class: `field-chip--${tier}`, and the tier
+  // vocabulary is fixed by index.html's rules — MUST, WATCH, INFO, DISCOVERY,
+  // CAUTION, QUIET (field.js:2257). 'HOT' was never one of them: measured
+  // 2026-09-12, `.field-chip--HOT` has ZERO rules in index.html, so every SWEAT
+  // chip has been rendering with the base class alone while UPSET and CHALK
+  // were styled. A tier that is not in the vocabulary is not a design choice.
+  //
+  // UPSET keeps MUST — that is the mapping cleared under ADR-002 amnesty on
+  // 2026-09-12 and this commit does not re-open it. SWEAT moves to WATCH, the
+  // documented middle tier; DRAW takes INFO. Both resolve to the same
+  // --drama-watch token per field.js:2259, which is correct: a one-point finish
+  // and a draw are equally close.
+  const CHIP_TIER = { UPSET: 'MUST', SWEAT: 'WATCH', DRAW: 'INFO', CHALK: 'QUIET' } as const;
+  labelRow.appendChild(_fieldChip!(scenario, CHIP_TIER[scenario], { small: true }));
   wrap.appendChild(labelRow);
   const favTeam = homeFav ? (home || 'Home') : (away || 'Away');
   const favMl   = homeFav ? ml.home : ml.away;

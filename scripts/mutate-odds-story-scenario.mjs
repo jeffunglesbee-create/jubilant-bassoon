@@ -25,9 +25,21 @@ const MUTATIONS = [
     replace: 'if (homeScore == null) return null;',
     expect: 'away score undefined, home real' },
   { name: 'O4  the OT clause is dropped from the SWEAT test',
-    anchor: "const scenario = !favWon ? 'UPSET' : (margin <= 1 || wentToOT) ? 'SWEAT' : 'CHALK';",
-    replace: "const scenario = !favWon ? 'UPSET' : (margin <= 1) ? 'SWEAT' : 'CHALK';",
+    anchor: "    : (margin <= 1 || wentToOT) ? 'SWEAT' : 'CHALK';",
+    replace: "    : (margin <= 1) ? 'SWEAT' : 'CHALK';",
     expect: 'favourite wins, went to OT' },
+  { name: 'O5  the DRAW case is removed — a draw folds back into UPSET/SWEAT',
+    anchor: "  const scenario = isDraw ? 'DRAW'\n",
+    replace: "  const scenario = false ? 'DRAW'\n",
+    expect: '1-1 draw, HOME favoured' },
+  { name: 'O6  isDraw uses > instead of === — every draw becomes CHALK-or-UPSET',
+    anchor: '  const isDraw = homeScore === awayScore;',
+    replace: '  const isDraw = homeScore > awayScore;',
+    expect: '0-0 draw' },
+  { name: 'O7  SWEAT reverts to the HOT tier, which has no CSS rule',
+    anchor: "SWEAT: 'WATCH'",
+    replace: "SWEAT: 'HOT'",
+    expect: 'favourite wins by one' },
 ];
 
 let bad = 0;
