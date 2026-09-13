@@ -201,6 +201,15 @@ jobs:
       # which are a SUBSET of FIELD_V2_SOURCES — afl, bundesliga and wc26 were
       # all enabled and all three were missing. The script checks both
       # directions and prints both denominators.
+      # Rule 67's second half. Eleven session docs existed on 2026-09-12 and
+      # HANDOFF named three; the other eight were findable only by listing
+      # outbox/, which is the failure the rule exists to prevent. A doc that
+      # exists and is unreferenced looks identical, from HANDOFF, to a session
+      # that never wrote one. Windowed to 14 days so a pruned HANDOFF does not
+      # fail permanently and get ignored.
+      - name: Every recent session doc is named in HANDOFF
+        run: node scripts/check-session-docs-indexed.mjs
+
       - name: Every V2 sport key has a section label and an injector
         run: |
           node scripts/check-v2-section-labels.mjs

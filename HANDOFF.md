@@ -1,5 +1,73 @@
 # FIELD HANDOFF
 
+## Session doc index — 2026-09-07 onward
+
+Rule 67 requires the HANDOFF write to name the session doc. Thirteen were
+written in the last fourteen days and only three were named here; the rest were
+findable only by listing `outbox/` — which is the failure Rule 67 exists to
+prevent, since it was written because chat sessions were reverse-engineering
+changes from `git log`. A doc that exists and is unreferenced looks identical,
+from HANDOFF, to a session that never wrote one.
+
+`scripts/check-session-docs-indexed.mjs` now fails when a session doc from the
+last 14 days is not named here. It found the last two rows below, from sessions
+before this one, on its first run.
+
+All of them, newest first:
+
+| arc | session doc |
+|---|---|
+| Bundesliga had no injector; the poll never rendered what it injected | `cc-session-2026-09-12-bundesliga-no-injector.md` |
+| the V2 section chain, render ledger | `cc-session-2026-09-12-v2-sections-render-ledger.md` |
+| slate size variance, 129 vs 45 | `cc-session-2026-09-12-slate-size-variance.md` |
+| past-date slates from the relay | `cc-session-2026-09-12-past-date-slate-from-relay.md` |
+| the zero-change fast path discarded card-less renders | `cc-session-2026-09-12-card-less-render-discarded.md` |
+| `MY_TEAMS` ReferenceError, 16 -> 129 cards | `cc-session-2026-09-12-my-teams-reference-error.md` |
+| `/context/game` durable slate id | `cc-session-2026-09-12-context-game-slate-id.md` |
+| odds movement sequence discipline | `cc-session-2026-09-12-odds-movement-sequence.md` |
+| absence-collapse triage, 263 flagged sites | `cc-session-2026-09-12-absence-collapse-triage.md` |
+| Rule 99 (DISTINGUISHABILITY-A) | `cc-session-2026-09-11-rule99-distinguishability.md` |
+| client odds story | `cc-session-2026-09-11-client-odds-story.md` |
+| EU sections — the gate was necessary, not sufficient (Tasks 0-4, done condition met live; `bundesliga` was nonetheless left without a call site — see the 2026-09-12 entry) | `cc-session-2026-09-10-eu-sections.md` |
+| soccer season gates, auto-rolling helper (Tasks 0-4; Task 3.3 found a second defect and a second CC-CMD was written per Rule 87.4) | `cc-session-2026-09-07-soccer-season-gates-autoroll.md` |
+
+
+## Session 2026-09-12 — Bundesliga, and the render that never ran
+
+HEAD `c0a54d0a` -> `b09a03ee`. Smoke **1049 passed, 0 failed**. Units 69/0.
+SW_VERSION `2026-09-12p` -> **`2026-09-12r`**. Deploys 963, 964 both success.
+
+Session doc: `outbox/cc-session-2026-09-12-bundesliga-no-injector.md`
+
+**Both defects were found by auditing what was still open, not by anything
+surfacing.** Neither produced an error, an empty section, or a red check.
+
+1. **Bundesliga had no `injectV2SportSection` call** — the one key of eight that
+   `CC-CMD-2026-09-10-eu-sections-not-injected` never wired. Eight games a poll
+   reaching `espnScores`, no section, for two days.
+   **The check that existed to prevent this passed:** it printed `6 key(s) have
+   no injector: their sections are built elsewhere` and exited 0. The number was
+   right and asserted nothing. `SECTION_BUILT_ELSEWHERE` now names each
+   uninjected key with the path that builds it; an unlisted one fails.
+2. **The V2 poll never rendered what it injected.** The armed follow-up fired on
+   the first red run after the ledger shipped:
+   `render_after_last_push_ms -31708`, `pushesSinceLastRender 11` — eleven
+   sections pushed, the last 31.7s after the last render, none since. Whether
+   the ESPN poll's `renderAll` landed after the inject block was a race, and
+   that race is the whole 129/128/45/129/45/134/140/21 oscillation.
+   Fix: `if (_renderLedger.pushesSinceLastRender > 0) scheduleRenderAll();` —
+   debounced so eleven injections coalesce into one render, guarded because this
+   fires on the poll cycle (Rule 24). Steady-state cost zero.
+
+Verified live, SW `2026-09-12r`: **144 cards** (highest of the day),
+`sections_model_not_in_dom []`, `render_after_last_push_ms +6036`,
+**Bundesliga 8 cards — first time it has ever rendered.**
+
+**One green run, not proof.** The done condition is five consecutive: the gap
+field read `[]` at 20:43 with no fix in place at all, which was the race landing
+well. The 03:45 and 16:10 UTC runs accumulate the count without a session.
+
+
 ## Session 2026-09-12 — the V2 section chain: three CC-CMDs, two wrong diagnoses
 
 HEAD `ccec80a4` -> `59ade8c7`. Smoke **1049 passed, 0 failed**. Units 69/0.
