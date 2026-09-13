@@ -127,8 +127,49 @@ the claim could lapse silently:
 All four caught on their named clause. The check is the reason the citation is
 allowed to stand.
 
-## Still open
+## Decision 2 — answered, delegated
 
-**Decision 2 — what a draw should render.** Not a compliance question, so it was
-not bundled into the answer that was given. Pinned `[pinned, not endorsed]` so
-the current inconsistency cannot drift while it is outstanding.
+A draw gets its own scenario: **`DRAW`**, tier `INFO`.
+
+**Why a fourth label rather than folding it in.** The outcome space has four
+cases and the vocabulary had three. Each of the three asserts something false
+about a drawn game: UPSET says the favourite *lost*, CHALK says it *won*, SWEAT
+says it survived and won narrowly. Rule 1 is DO NOT INVENT, and a scenario is a
+claim about how the game finished.
+
+**Why not `null`.** The CC-CMD notes this layer *"is the only place opening
+prices for both sides are shown"*. Hiding it for every drawn game would take
+the prices with it — a real product cost to avoid one label.
+
+The two draw rows now assert the **symmetry**: the same result renders the same
+label whichever side the bookmaker preferred. That is the property that was
+broken, and it is the property the rows now hold.
+
+## A third defect, found while choosing the tier
+
+`'HOT'` was never a `fieldChip` tier. The tier is a CSS class —
+`field-chip--${tier}` — and the vocabulary is fixed by index.html's rules:
+MUST, WATCH, INFO, DISCOVERY, CAUTION, QUIET (field.js:2257).
+
+```
+.field-chip--MUST       1 rule
+.field-chip--WATCH      1
+.field-chip--INFO       1
+.field-chip--DISCOVERY  1
+.field-chip--CAUTION    1
+.field-chip--QUIET      1
+.field-chip--HOT        0      <-
+```
+
+Every SWEAT chip has been rendering with the base class alone while UPSET and
+CHALK were styled, and nothing complained — a tier outside the vocabulary
+produces no error, just an unstyled span. That is how it survived.
+
+SWEAT -> `WATCH` (the documented middle tier), DRAW -> `INFO`. Both resolve to
+the same `--drama-watch` token, which is right: a one-point finish and a draw
+are equally close. UPSET keeps `MUST` — that is the mapping cleared under
+amnesty and this did not re-open it.
+
+The check now verifies every emitted tier against index.html's CSS, so the next
+one fails instead of rendering blank. 14 enumerated cases and 7 mutations, all
+caught on their named case.

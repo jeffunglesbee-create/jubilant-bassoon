@@ -5,9 +5,20 @@ it — so Task 1 applied: citation added at the call site, no code change to the
 chip.** Task 3's check is `scripts/check-debrief-postgame-only.mjs`, four
 invariants and four mutations, in deploy-gate.
 
-**Decision 2 (what a draw should render) remains OPEN** and is not a compliance
-question. The inconsistency is pinned in `check-odds-story-scenario.mjs` as
-`[pinned, not endorsed]` so it cannot drift; answering it is a product call.
+**Decision 2 answered 2026-09-12** (delegated): a draw gets its own scenario,
+`DRAW`, with the `INFO` tier. Not folded into an existing label because each of
+the three asserts something false about a drawn game — UPSET says the favourite
+lost, CHALK says it won, SWEAT says it survived and won narrowly. Not `null`
+either: this layer is the only place opening prices for both sides are shown.
+The two draw rows in `check-odds-story-scenario.mjs` now assert the SYMMETRY —
+same result, same label, whichever side the bookmaker preferred.
+
+**A third defect surfaced while choosing the tier:** `'HOT'` was never a
+`fieldChip` tier. The tier is a CSS class and the vocabulary is fixed by
+index.html's rules (MUST, WATCH, INFO, DISCOVERY, CAUTION, QUIET);
+`.field-chip--HOT` has ZERO rules, so every SWEAT chip rendered unstyled while
+UPSET and CHALK were styled. SWEAT -> WATCH, and the check now verifies every
+emitted tier against index.html's CSS.
 
 One separate defect found during Task 0 and fixed (`fd065473`). Session doc:
 `outbox/cc-session-2026-09-12-odds-scenario-chip-task0.md`.
