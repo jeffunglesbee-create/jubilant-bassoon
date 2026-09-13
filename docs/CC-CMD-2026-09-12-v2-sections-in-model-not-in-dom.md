@@ -66,6 +66,50 @@ a `injectV2SportSection` push, and every instrument reads clean.
 | the injector pushes | YES — 15 sections, memo all true | `slate_state` |
 | **the render emits them** | **NO — 5 sections in the DOM** | `slate_by_sport` |
 
+## TASK 0 RESULT ON THE BAD SIDE — ANSWERED. Nothing rendered after the push.
+
+Manifest `odds-line-probe-manifest-20260913T022107Z.json`, SW `2026-09-12q`:
+
+```
+renderLedger               { renders: 5, pushesSinceLastRender: 11,
+                             lastPushSport: "efltwo" }
+render_after_last_push_ms  -31708      <- NEGATIVE
+allData.sportsLength       16
+slate_by_sport             MLB 15, CFL 4, AFL 1, Golf 1   (21 cards)
+sections_model_not_in_dom  College Football, NFL, MLS Soccer, Premier League,
+                           La Liga, Serie A, Bundesliga, Ligue 1,
+                           EFL Championship, EFL League One, EFL League Two
+settle series              [21, 21, 21, 21]
+field_errors_by_fn         nothing about sections
+```
+
+Eleven sections pushed, the last of them **31.7 seconds after the last render**,
+and no render since. Per this document's own decision table, negative means the
+sections were never offered to the DOM at all: **the renderer was not dropping
+them — it never ran.**
+
+The armed follow-up worked as designed. The bad run produced the diagnostic by
+itself, on the first red run after the ledger shipped, with no session going
+looking for it.
+
+### Task 1 — the fix
+
+`scheduleRenderAll()` at the end of the inject block, guarded on
+`_renderLedger.pushesSinceLastRender > 0`.
+
+- **`scheduleRenderAll`, not `renderAll`** — debounced, so eleven injections in
+  one poll coalesce into one render; signature-guarded, so an unchanged poll
+  costs a signature compare rather than a structural rebuild. Twenty existing
+  call sites already use it (Rule 62).
+- **The guard is Rule 24.** This function fires on the V2 poll cycle, so an
+  unguarded call would schedule a render every poll forever.
+  `pushesSinceLastRender` is non-zero only when a section was actually ADDED,
+  which for a given sport happens once per session — `injectV2SportSection`
+  takes its merge branch on every later poll and does not increment.
+  Steady-state cost is zero.
+- **Not a second render call "to be safe"**, which this document explicitly
+  ruled out: there is exactly one, and it is conditional.
+
 ## Task 0 RESULT — the good side, measured; the bad side, armed
 
 Run 34732178465, SW `2026-09-12p`:

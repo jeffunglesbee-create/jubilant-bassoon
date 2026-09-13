@@ -16220,6 +16220,30 @@ async function fetchV2AllScores() {
   if (FIELD_V2_SOURCES.europaqual)     injectV2SportSection('europaqual',     'UEFA Europa League Qualifying');
   if (FIELD_V2_SOURCES.conferencequal) injectV2SportSection('conferencequal', 'UEFA Conference League Qualifying');
 
+  // A section pushed into allData.sports is invisible until something renders.
+  // Nothing here did, and whether the ESPN poll's own renderAll happened to land
+  // after this block was a race — which is exactly why the slate alternated
+  // between 21 and 140 cards all day on 2026-09-12 with identical inputs.
+  //
+  // MEASURED on the bad side (manifest 20260913T022107Z, SW 2026-09-12q):
+  //   renderLedger  renders 5, pushesSinceLastRender 11
+  //   lastPushAt    31,708ms AFTER lastRenderAt
+  //   allData       16 sections; the DOM had 4
+  // Eleven sections pushed after the last render, and no render since. The
+  // renderer was never dropping them; it never ran.
+  //
+  // scheduleRenderAll, not renderAll: it is debounced, so eleven injections in
+  // one poll coalesce into one render, and it is signature-guarded, so a poll
+  // whose visible output is unchanged costs a signature compare rather than a
+  // structural rebuild. Twenty existing call sites already use it (Rule 62).
+  //
+  // Rule 24 — this function fires on the V2 poll cycle, so an unguarded call
+  // here would schedule a render every poll forever. pushesSinceLastRender is
+  // non-zero only when a section was actually ADDED, which for a given sport
+  // happens once per session: injectV2SportSection takes its merge branch on
+  // every later poll and does not increment. Steady-state cost is zero.
+  if (_renderLedger.pushesSinceLastRender > 0) scheduleRenderAll();
+
   // ── Inject FIFA World Cup section into allData.sports ─────────────────────
   // V2 polling fetches wc26 games → espnScores. allData.sports may already
   // contain a FIFA section pushed by maybePushWorldCup() from wc26Raw
@@ -23039,7 +23063,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12q';
+  const SW_VERSION = '2026-09-12r';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
