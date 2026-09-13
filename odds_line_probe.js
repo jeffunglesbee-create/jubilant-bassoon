@@ -88,6 +88,9 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     context_game_requests: [], context_id_forms: {}, v2_games_requests: 0,
     v2_games_by_sport: null, v2_games_dates: null, espn_scores_by_sport: null,
     slate_state: null,   // window.__fieldSlateState(): allData shape + the injector's memo
+    // >0 a render ran after the last push; <0 nothing has rendered since it;
+    // null one of the stamps is missing. Never 0-for-absent (Rule 99).
+    render_after_last_push_ms: null,
     // null when the comparison could not be made at all, [] when model and DOM
     // agree. Not the same thing, never merged (Rule 99).
     sections_model_not_in_dom: null,
@@ -510,6 +513,22 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     const dom = m.slate_sections_present || null;
     m.sections_model_not_in_dom =
       (model === null || dom === null) ? null : model.filter(x => !dom.includes(x));
+
+    // The ordering verdict belongs in the artifact, not only in the console.
+    // sections_model_not_in_dom was computed in the summary block until an hour
+    // before this line was written, and every committed manifest carried null
+    // as a result. Same mistake, same file, same day — so this one is derived
+    // here, above the write, the first time.
+    //
+    // Positive: a render ran AFTER the last push, so the renderer saw the
+    // sections and the question is what it did with them.
+    // Negative: nothing has rendered since the last push — they were never
+    // offered to the DOM at all. Null: one of the two stamps is missing, which
+    // is neither answer.
+    const L = m.slate_state && m.slate_state.renderLedger;
+    m.render_after_last_push_ms =
+      (L && L.lastRenderAt !== null && L.lastPushAt !== null)
+        ? L.lastRenderAt - L.lastPushAt : null;
   }
 
   fs.writeFileSync(`outbox/odds-line-probe-manifest-${stamp}.json`, JSON.stringify(m, null, 2) + '\n');
