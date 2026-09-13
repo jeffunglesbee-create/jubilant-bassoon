@@ -66,6 +66,31 @@ a `injectV2SportSection` push, and every instrument reads clean.
 | the injector pushes | YES — 15 sections, memo all true | `slate_state` |
 | **the render emits them** | **NO — 5 sections in the DOM** | `slate_by_sport` |
 
+## TASK 3 — GREEN RUN 1 OF 5
+
+Manifest `20260913T022634Z`, SW `2026-09-12r`, immediately after the fix:
+
+```
+slate_cards                144        (highest reading of the day)
+sections_model_not_in_dom  []
+render_after_last_push_ms  +6036      (was -31708 one run earlier)
+renderLedger               renders 6, pushesSinceLastRender 0
+Bundesliga                 8 cards    (first time it has ever rendered)
+```
+
+`renders` went 5 -> 6 and `pushesSinceLastRender` 11 -> 0: the extra render is
+the scheduled one, and it consumed the pushes.
+
+**This is one green run, not proof.** The done condition is five consecutive,
+and it is five precisely because earlier greens were the race landing well —
+`sections_model_not_in_dom` read `[]` at 20:43 with no fix in place at all. What
+is different now is a mechanism rather than luck, and a mechanism that reads
+green once is still a mechanism that has been observed once.
+
+The two scheduled runs (03:45 and 16:10 UTC) accumulate the count without a
+session. Any red one turns the probe non-zero and carries the ledger that says
+which side it failed on.
+
 ## TASK 0 RESULT ON THE BAD SIDE — ANSWERED. Nothing rendered after the push.
 
 Manifest `odds-line-probe-manifest-20260913T022107Z.json`, SW `2026-09-12q`:
