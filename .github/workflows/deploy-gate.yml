@@ -194,6 +194,17 @@ jobs:
       - name: The odds movement line never claims change without a sequence
         run: node --experimental-strip-types --no-warnings scripts/check-odds-movement-sequence.mjs
 
+      # buildOddsStory rendered UPSET with the chip variant MUST for a game with
+      # NO SCORE: `?? 0` made both sides 0, `homeWon = 0 > 0` was false, so
+      # `favWon` was false. The strongest label in the vocabulary, built out of
+      # data that was not there. isGameOver returns true for 'postponed', so a
+      # postponed game carrying opening odds reached it. Eleven enumerated
+      # cases; four mutations, the first reproducing the defect as it shipped.
+      - name: The odds scenario never claims an outcome without a score
+        run: |
+          node --experimental-strip-types --no-warnings scripts/check-odds-story-scenario.mjs
+          node scripts/mutate-odds-story-scenario.mjs
+
       # fetchRelayDateSections walks FIELD_V2_SOURCES and looks each key up in
       # V2_SECTION_LABEL. A key with no label takes the no-label branch and its
       # section disappears from every past-date slate, silently. The first

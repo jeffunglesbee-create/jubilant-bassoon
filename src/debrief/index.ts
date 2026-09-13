@@ -143,6 +143,18 @@ export function buildOddsStory(debrief: DebriefData): HTMLElement | null {
   const odds = debrief?.oddsOutcome;
   if (!odds?.opening) return null;
   const { opening, home, away, homeScore, awayScore, wentToOT } = odds;
+  // Absent scores are not a 0-0 game. Measured 2026-09-12 against this exact
+  // function: with homeScore/awayScore null or undefined, `?? 0` made both
+  // sides 0, `homeWon = 0 > 0` false, `favWon` false, and the layer rendered
+  // UPSET with the chip variant MUST — the strongest label in the vocabulary,
+  // built entirely out of data that was not there. `isGameOver` returns true
+  // for `status === 'postponed'`, so a postponed game carrying opening odds
+  // reaches here with no scores at all.
+  //
+  // Rule 99: absence is a sibling of the value, never a member of it. Rule 1:
+  // DO NOT INVENT. A scenario is a claim about how a game finished, and there
+  // is no claim to make about one that has no score.
+  if (homeScore == null || awayScore == null) return null;
   const ml = opening.moneyline || {};
   const homeFav = (ml.home ?? 0) < (ml.away ?? 0);
   const homeWon = (homeScore ?? 0) > (awayScore ?? 0);
