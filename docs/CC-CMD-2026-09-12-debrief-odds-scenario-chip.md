@@ -1,8 +1,15 @@
 # CC-CMD-2026-09-12 — the debrief's odds layer renders a MUST/HOT/QUIET tier
 
-**STATUS: Task 0 done. Tasks 1-3 BLOCKED ON A HUMAN DECISION — two of them,
-both stated below. One separate defect found during Task 0 and fixed
-(`fd065473`).** Session doc:
+**STATUS: CLOSED 2026-09-12. Decision 1 answered by the user — amnesty covers
+it — so Task 1 applied: citation added at the call site, no code change to the
+chip.** Task 3's check is `scripts/check-debrief-postgame-only.mjs`, four
+invariants and four mutations, in deploy-gate.
+
+**Decision 2 (what a draw should render) remains OPEN** and is not a compliance
+question. The inconsistency is pinned in `check-odds-story-scenario.mjs` as
+`[pinned, not endorsed]` so it cannot drift; answering it is a product call.
+
+One separate defect found during Task 0 and fixed (`fd065473`). Session doc:
 `outbox/cc-session-2026-09-12-odds-scenario-chip-task0.md`.
 
 ## Task 0 — the ADR reading, with citations

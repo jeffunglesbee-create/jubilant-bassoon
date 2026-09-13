@@ -200,6 +200,16 @@ jobs:
       # data that was not there. isGameOver returns true for 'postponed', so a
       # postponed game carrying opening odds reached it. Eleven enumerated
       # cases; four mutations, the first reproducing the defect as it shipped.
+      # The ADR-002 clearance cited at src/debrief/index.ts is CONDITIONAL on the
+      # debrief being post-game only. That claim is load-bearing, and it is the
+      # kind the ADR's own 2026-09-04 case study says gets asserted and never
+      # re-verified. Four invariants, four mutations — a citation nobody
+      # enforces is just another unverified document.
+      - name: The debrief's ADR-002 amnesty clearance still holds
+        run: |
+          node scripts/check-debrief-postgame-only.mjs
+          node scripts/mutate-debrief-postgame-only.mjs
+
       - name: The odds scenario never claims an outcome without a score
         run: |
           node --experimental-strip-types --no-warnings scripts/check-odds-story-scenario.mjs

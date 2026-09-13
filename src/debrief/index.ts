@@ -165,6 +165,34 @@ export function buildOddsStory(debrief: DebriefData): HTMLElement | null {
   wrap.className = 'debrief-odds';
   const labelRow = document.createElement('div');
   labelRow.className = 'debrief-odds__scenario';
+  // ADR-002 / RUWT — CLEARED, with the citation, 2026-09-12. Do not re-litigate
+  // this without reading the two paragraphs below; it has been raised once
+  // already (CC-CMD-2026-09-12-debrief-odds-scenario-chip) and an uncited
+  // clearance is how it comes back every six months.
+  //
+  // The chip is a composite (four inputs to one label), a threshold
+  // (`margin <= 1`), a tier (three ranked buckets) and a recommendation
+  // vocabulary (`MUST`). Under Rule F alone it would not clear.
+  //
+  // It clears on the AMNESTY ZONE instead. docs/ADR-002-CONTEXT.md Defense 4:
+  // "Any code that only runs in the post-game context is not subject to
+  // ADR-002", and Step 4 of the evaluation procedure: "Post-game only: NOT
+  // APPLICABLE — amnesty zone."
+  //
+  // THE CLEARANCE IS CONDITIONAL ON ONE FACT, and that fact was traced rather
+  // than read, because the ADR's own 2026-09-04 case study records a real
+  // violation "missed here because two prior documents asserted this section
+  // was post-game and neither claim was re-verified (Rule 72)":
+  //
+  //   the ONLY live path to buildDebrief is injectDebriefCards
+  //   (field.js:2569), which returns early unless isGameOver(rawGame).
+  //   renderCard (field.js:2474) reaches it UNGATED at line 2510, but has zero
+  //   callers: both apparent call sites resolve to a local arrow function
+  //   `const renderCard=(text,loaded)=>` at field.js:41871 that shadows it.
+  //
+  // If that stops being true, this comment is wrong and the clearance lapses.
+  // scripts/check-debrief-postgame-only.mjs enforces every clause of it and is
+  // mutation-proven; it is the reason this citation is allowed to stand.
   labelRow.appendChild(_fieldChip!(scenario,
     scenario === 'UPSET' ? 'MUST' : scenario === 'SWEAT' ? 'HOT' : 'QUIET',
     { small: true }));
