@@ -44,6 +44,7 @@ const v2Block = (src.match(/const FIELD_V2_SOURCES = \{[\s\S]*?\n\};/) || [''])[
 const v2Keys = new Set([...v2Block.matchAll(/(?:^|[{,\s])([a-z0-9]+)\s*:/g)].map(m => m[1]));
 if (v2Keys.size < 10) { console.error(`FAIL — parsed only ${v2Keys.size} FIELD_V2_SOURCES keys; the parse is wrong, nothing was checked.`); process.exit(1); }
 
+const siteKeys = new Set(sites.map(x => x.key));
 let failed = 0;
 for (const { key, label } of sites) {
   if (!map.has(key))               { failed++; console.error(`  MISSING   ${key} is injected but absent from V2_SECTION_LABEL`); }
@@ -56,11 +57,38 @@ for (const key of map.keys()) {
   if (!v2Keys.has(key)) { failed++; console.error(`  UNKNOWN   ${key} is in the map but not a FIELD_V2_SOURCES key`); }
 }
 
+// A FIELD_V2_SOURCES key with no injectV2SportSection call renders no section
+// from the V2 poll. Some legitimately do not need one — their section is built
+// by a different path. That set must be ENUMERATED WITH A REASON, not inferred
+// from a count.
+//
+// This check used to print "6 key(s) have no injector" and PASS. bundesliga was
+// one of those six: eight games per poll reaching espnScores, no call site, no
+// section, for two days, while the other seven European leagues rendered. The
+// number was right and said nothing. An unlisted key now fails.
+const SECTION_BUILT_ELSEWHERE = {
+  nba:   'FETCH_LEAGUES / the ESPN fixture sweep builds the NBA section',
+  nhl:   'FETCH_LEAGUES / the ESPN fixture sweep builds the NHL section',
+  mlb:   'FETCH_LEAGUES / the ESPN fixture sweep builds Baseball (MLB)',
+  afl:   "the sections.push at the Squiggle merge (field.js ~9343) owns 'Australian Football (AFL)'",
+  wc26:  'the dedicated FIFA injection block, which dedups against the hardcoded WC schedule',
+};
+for (const key of v2Keys) {
+  if (siteKeys.has(key)) continue;
+  if (!(key in SECTION_BUILT_ELSEWHERE)) {
+    failed++;
+    console.error(`  NO INJECTOR ${key} is a FIELD_V2_SOURCES key with no injectV2SportSection call `
+                + `and no documented alternative path — its games reach espnScores and render nothing. `
+                + `Add the call, or add ${key} to SECTION_BUILT_ELSEWHERE with the path that builds it.`);
+  }
+}
+
 const uniqueSites = new Set(sites.map(s => s.key));
 console.log(`checked ${sites.length} injector call site(s) across ${uniqueSites.size} distinct key(s), `
           + `and all ${v2Keys.size} FIELD_V2_SOURCES key(s), against ${map.size} map entries `
-          + `(${v2Keys.size - uniqueSites.size} key(s) have no injector: their sections are built elsewhere, `
-          + `but fetchRelayDateSections still asks the relay for them)`);
+          + `(${v2Keys.size - uniqueSites.size} key(s) have no injector, each named in `
+          + `SECTION_BUILT_ELSEWHERE with the path that builds it: `
+          + `${Object.keys(SECTION_BUILT_ELSEWHERE).join(', ')})`);
 
 if (failed) { console.error(`FAIL — ${failed} mismatch(es).`); process.exit(1); }
 console.log('PASS');

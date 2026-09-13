@@ -1,5 +1,21 @@
 # Claude Code Command — Eight European competitions have an open gate and no section
 
+**STATUS: CLOSED 2026-09-12.** Seven of the eight shipped shortly after filing;
+**bundesliga never got a call site** and rendered nothing for two days. Measured
+across three probe runs on 2026-09-12: `espn_scores_by_sport` bundesliga **8**,
+`slate_by_sport` Bundesliga **absent**, `_v2SectionInjected.bundesliga`
+**undefined** — games reaching the client every poll and rendering nothing.
+
+Found by auditing what was still open, not by the defect surfacing. The check
+written to prevent exactly this (`check-v2-section-labels.mjs`) printed
+"6 key(s) have no injector" and PASSED — the number was right and said nothing.
+It now requires each uninjected key to be enumerated in `SECTION_BUILT_ELSEWHERE`
+with the path that builds it, and a mutation removing the bundesliga call site
+proves the check goes red.
+
+All eight now render. Session doc:
+`outbox/cc-session-2026-09-12-bundesliga-no-injector.md`.
+
 **Date:** 2026-09-10
 **Repo:** jubilant-bassoon
 **Branch:** main — commit directly, no feature branch, no PR

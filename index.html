@@ -21249,6 +21249,14 @@ async function fetchV2AllScores() {
   if (FIELD_V2_SOURCES.epl)      injectV2SportSection('epl',      'Premier League');
   if (FIELD_V2_SOURCES.laliga)   injectV2SportSection('laliga',   'La Liga');
   if (FIELD_V2_SOURCES.seriea)   injectV2SportSection('seriea',   'Serie A');
+  // bundesliga was the one key of the eight European competitions that
+  // CC-CMD-2026-09-10-eu-sections-not-injected never got a call site. Measured
+  // 2026-09-12, three consecutive probe runs: espn_scores_by_sport bundesliga 8,
+  // slate_by_sport Bundesliga absent, _v2SectionInjected.bundesliga undefined.
+  // Eight games a poll reaching the client and rendering nothing, for two days,
+  // while the other seven leagues rendered. Label read from FETCH_LEAGUES'
+  // ger.1 entry, not chosen here.
+  if (FIELD_V2_SOURCES.bundesliga) injectV2SportSection('bundesliga', 'Bundesliga');
   if (FIELD_V2_SOURCES.ligue1)   injectV2SportSection('ligue1',   'Ligue 1');
   if (FIELD_V2_SOURCES.eflchamp) injectV2SportSection('eflchamp', 'EFL Championship');
   if (FIELD_V2_SOURCES.eflone)   injectV2SportSection('eflone',   'EFL League One');
@@ -28097,7 +28105,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12p';
+  const SW_VERSION = '2026-09-12q';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

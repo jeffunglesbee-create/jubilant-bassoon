@@ -1,5 +1,10 @@
 # CC-CMD-2026-09-12 — every injectV2SportSection section is missing from the live slate
 
+**STATUS: CLOSED 2026-09-12 — diagnosis disproved, superseded by**
+`CC-CMD-2026-09-12-v2-sections-in-model-not-in-dom.md`. Task 1 (the missing
+`else`) and Task 3 (four mutations) shipped and stand; the cause did not.
+Session doc: `outbox/cc-session-2026-09-12-v2-sections-render-ledger.md`.
+
 > **CORRECTION, 2026-09-12, after Task 0 ran. The diagnosis below is WRONG and
 > is kept for the record rather than edited away.**
 >
