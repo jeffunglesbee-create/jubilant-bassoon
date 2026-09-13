@@ -1,5 +1,62 @@
 # FIELD HANDOFF
 
+## Session 2026-09-12 — the V2 section chain: three CC-CMDs, two wrong diagnoses
+
+HEAD `ccec80a4` -> `59ade8c7`. Smoke **1049 passed, 0 failed**. Units 69/0.
+SW_VERSION `2026-09-12l` -> **`2026-09-12p`**. Deploys 959-962, all success.
+
+Session doc: `outbox/cc-session-2026-09-12-v2-sections-render-ledger.md`
+
+"The same page rendered 129 cards and then 45." Each CC-CMD narrowed the
+boundary by one link and **the first two were wrong about which link** — both
+corrections are recorded in place rather than edited away.
+
+| CC-CMD | claimed | measurement |
+|---|---|---|
+| `slate-size-variance` | the probe read mid-poll-cycle | flat at 45 across 12 samples / 60s — DISPROVED, CLOSED |
+| `v2-sections-never-injected` | the injector's missing `else` | 15 sections in `allData.sports`, memo all true, no capture — DISPROVED, CLOSED |
+| `v2-sections-in-model-not-in-dom` | the loss is in the render | Task 0 done; bad side armed, OPEN |
+
+**The finding is that it is intermittent.** Same build, identical inputs, one
+afternoon: **129, 128, 45, 129, 45, 134, 140.** Twelve minutes separated a
+five-section run from a fourteen-section one. A race or state-dependent skip,
+not a dead path — which retired both earlier diagnoses at once.
+
+Consequence: the done condition is **five consecutive green runs, not one**.
+`sections_model_not_in_dom` read `[]` on its first live run while the same build
+had shown a ten-section gap twelve minutes earlier.
+
+**Five blind spots closed**, each a place a failure left no trace:
+`window._fieldErrors` never read; the per-sport V2 poll catch swallowing to a
+`console.warn` behind `FIELD_DEBUG`; `injectV2SportSection`'s missing `else`;
+`espnScores` not on `window` (the first census honestly reported `null` and
+measured nothing); and no render/push ORDERING — no count separates "pushed
+after the last render" from "rendered after the push and dropped".
+
+**Three instrumentation defects of my own, caught before being trusted:**
+`sections_model_not_in_dom` computed after `fs.writeFileSync` (every manifest
+would have carried `null` forever, on a field added to be read later); a
+mutation matcher requiring an exact join against prefixed labels, reporting
+WRONG REASON on all four while every check was red on the right assertion; and
+a hardcoded "18 assertions" against 21, now counted.
+
+**Three placement decisions, each because the alternative was wrong:** the
+ledger declared at line 1909 above `renderAll` (TDZ — that exact bug truncated
+the live slate to 16 cards earlier this session); the stamp after
+`_cardStringCache.clear()` (above it broke `A-PHASE2-5`, which pins that clear
+as an exact shape); the stamp before `if(!allData) return;` (a bailed render
+still happened).
+
+**Armed, not carried forward.** Both scheduled probe runs record `renderLedger`
+and `render_after_last_push_ms`; positive means a render ran after the push and
+dropped them, negative means nothing rendered since. The next bad run produces
+the diagnostic by itself.
+
+New gates, all mutation-proven and CI-wired: `check-slate-settle.mjs` (12
+series, 4 mutations), `check-v2-section-inject.mjs` (24 assertions, 4 branches,
+4 mutations), plus `check-relay-date-sections.mjs` from the arc below.
+
+
 ## Session 2026-09-12 — past-date slates come from the relay
 
 HEAD `c43dba2c` -> `08f73b48`. Smoke **1049 passed, 0 failed** (1037 -> 1049).
