@@ -1,5 +1,88 @@
 # CC-CMD-2026-09-12 — the debrief's odds layer renders a MUST/HOT/QUIET tier
 
+**STATUS: Task 0 done. Tasks 1-3 BLOCKED ON A HUMAN DECISION — two of them,
+both stated below. One separate defect found during Task 0 and fixed
+(`fd065473`).** Session doc:
+`outbox/cc-session-2026-09-12-odds-scenario-chip-task0.md`.
+
+## Task 0 — the ADR reading, with citations
+
+`docs/ADR-002-CONTEXT.md` Step 4: *"Post-game only: NOT APPLICABLE — amnesty
+zone."* Defense 4: *"Any code that only runs in the post-game context is not
+subject to ADR-002."*
+
+So the whole question turns on one verifiable fact, and this CC-CMD's own
+mitigation #1 asserted it from reading (*"it reads homeScore/awayScore, so it
+cannot function as a signal"*). **That is the precise trap the ADR's own
+2026-09-04 case study records**: the bottom-sheet Drama Arc was a real
+violation *"missed here because two prior documents asserted this section was
+post-game and neither claim was re-verified (Rule 72)."* So it was traced, not
+read.
+
+**Traced, at HEAD:**
+
+| path to `buildOddsStory` | gate |
+|---|---|
+| `injectDebriefCards` (field.js:2569) -> `buildDebrief` (2640) | `if (!rawGame \|\| !isGameOver(rawGame)) return;` — GATED |
+| `renderCard` (field.js:2474) -> `fillSlot(card,'debrief',buildDebrief(...))` (2510) | **UNGATED** |
+
+`renderCard`'s two apparent call sites (41909, 41915) resolve to a **local
+arrow function** `const renderCard=(text,loaded)=>` at **41871**, which shadows
+the global and renders `night-owl-inner` HTML without touching `buildDebrief`.
+The global `renderCard` at 2474 therefore has **zero callers** — it is STAGED,
+as its own comment says.
+
+**Conclusion on the fact:** today, `buildOddsStory` runs only behind
+`isGameOver`. Post-game only, so ADR Step 4 amnesty applies on its face.
+
+**Two caveats that go with it, not around it:**
+
+1. `isGameOver` is not `isAmnestyState`. It returns true for
+   `status === 'postponed'` and for `_aflComplete >= 100`; the ADR's own remedy
+   for the 09-04 violation was a named predicate returning true only for
+   `'post'` or `'final'`. A postponed game is not a concluded event.
+2. The ungated `renderCard` path is dead, not absent. The 09-04 violation was
+   exactly a section that lacked a gate its neighbour had.
+
+## THE DECISIONS THIS SESSION WILL NOT MAKE
+
+Both are flagged rather than taken, under the session's confidence gate
+(commit only at >= 95) and `field-relay-nba/CLAUDE.md` Rule 45 (*"Do not make
+legal assessments about ... patent compliance. Flag for human review."*).
+
+**Decision 1 — does amnesty clear the MUST/HOT/QUIET chip variant?**
+The ADR says post-game-only code is not subject to ADR-002, which on its face
+clears it. Against that: this CC-CMD's own framing is that `MUST` is a
+recommendation vocabulary rather than a description, and the amnesty zone's
+basis for US10328326B2 is narrower than "the event is over" (it is that a
+rating computed once and never recomputed has no second value to have changed
+from — see the ADR's 2026-07-06 patent-family note). Applying a documented
+procedure is one thing; deciding that the procedure covers a label that reads
+as a watch verdict is not a call to make alone.
+
+**Decision 2 — what should a draw render?**
+Measured: the same 1-1 draw renders `UPSET/MUST` when the home side was
+favoured and `SWEAT/HOT` when the away side was, because `homeWon = homeScore >
+awayScore` is false in any draw and `favWon = homeFav === homeWon` therefore
+flips with `homeFav`. One real-world outcome, two labels, decided by which team
+the bookmaker preferred. That the current behaviour is inconsistent is a fact;
+what a draw *should* say is a product judgement. Both orientations are pinned
+in `check-odds-story-scenario.mjs` and explicitly marked not-endorsed, so the
+behaviour cannot change silently while the question is open.
+
+## Found and fixed during Task 0 — not a judgement call (`fd065473`)
+
+`buildOddsStory` guarded only on `opening`. With scores null or undefined,
+`?? 0` made both sides 0, `homeWon` false, `favWon` false, and it rendered
+`UPSET` / chip `MUST` — the strongest label in the vocabulary, out of data that
+was not there. `isGameOver`'s `'postponed'` branch is a live route to it.
+
+Guarded with `if (homeScore == null || awayScore == null) return null;`
+(Rule 99, Rule 1). Eleven enumerated cases, four mutations, both in
+deploy-gate.
+
+---
+
 Raised while executing `CC-CMD-2026-09-11-client-odds-story`. **Not fixed there
 and not fixed here** — it is pre-existing code outside that task's scope
 (Rule 69), and the judgement it needs is not mine to make alone.

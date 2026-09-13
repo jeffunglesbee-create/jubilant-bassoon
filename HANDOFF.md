@@ -17,6 +17,7 @@ All of them, newest first:
 
 | arc | session doc |
 |---|---|
+| odds scenario chip — Task 0, two decisions left to a human | `cc-session-2026-09-12-odds-scenario-chip-task0.md` |
 | Bundesliga had no injector; the poll never rendered what it injected | `cc-session-2026-09-12-bundesliga-no-injector.md` |
 | the V2 section chain, render ledger | `cc-session-2026-09-12-v2-sections-render-ledger.md` |
 | slate size variance, 129 vs 45 | `cc-session-2026-09-12-slate-size-variance.md` |
