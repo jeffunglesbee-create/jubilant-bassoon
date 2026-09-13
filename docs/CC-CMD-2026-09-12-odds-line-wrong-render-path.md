@@ -1,5 +1,40 @@
 # CC-CMD-2026-09-12 — the odds movement line is wired to a path the slate does not use
 
+**STATUS: CLOSED 2026-09-13.** All five tasks done and verified live.
+
+| task | evidence |
+|---|---|
+| 0 read the module, state the null case | `buildOddsMovement` returns `null` for the dominant state |
+| 1 move to a `buildOddsMovement` layer | `src/debrief/index.ts:351`, wired as `l6` at `:404` |
+| 2 replace the A-ODDS assertions | A-ODDS-5/6 inspect the TS source; A-ODDS-7 asserts the field.js wiring is GONE |
+| 3 remove the dead slot wiring | `data-slot="odds"` count is 0 in both `field.js` and `index.html`, held by A-ODDS-7 |
+| 4 re-run the probe, named game ids | three states named live: `opened_only espn:401878779`, `unchanged espn:761803`, `moved espn:401879283` |
+
+**Task 4's fourth state was unobtainable as specified, and that was a spec
+defect, not an execution one.** `m.states.no_odds` picked an empty
+`.debrief-odds-movement` element — but `buildOddsMovement` returns `null` for
+that state, so no element exists. The predicate was left over from when the line
+was a `data-slot` that rendered hidden; against the `l6` layer it could only ever
+return `null`, which reads identically to "not observed today". The dominant
+state, permanently invisible.
+
+Now counted over a denominator instead (manifest `20260913T025407Z`):
+
+```
+debriefs_total  81   with_movement_line  29   no_movement_line  52
+states.no_odds  { game: "g16", "52 of 81 rendered debriefs" }
+```
+
+**And the count immediately proved to contain two populations:** 0 of the 29
+cards with a movement line have a synthetic `g<N>` id, and all 12 synthetic-id
+cards are in the no-movement set. Filed as
+`CC-CMD-2026-09-13-no-odds-count-hides-two-causes.md` rather than noted and
+dropped.
+
+Session doc: `outbox/cc-session-2026-09-13-odds-line-render-path-closeout.md`.
+
+---
+
 Closes out Task 3 of `CC-CMD-2026-09-11-client-odds-story` by reporting what the
 live DOM showed, rather than claiming the feature works.
 
