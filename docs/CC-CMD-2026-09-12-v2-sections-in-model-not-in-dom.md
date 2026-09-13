@@ -66,9 +66,49 @@ a `injectV2SportSection` push, and every instrument reads clean.
 | the injector pushes | YES — 15 sections, memo all true | `slate_state` |
 | **the render emits them** | **NO — 5 sections in the DOM** | `slate_by_sport` |
 
+## Task 0 RESULT — the good side, measured; the bad side, armed
+
+Run 34732178465, SW `2026-09-12p`:
+
+```
+slate_cards                140
+sections_model_not_in_dom  []
+allData.sportsLength       15
+renderLedger               { renders: 5, lastPushSport: "efltwo",
+                             pushesSinceLastRender: 0 }
+render_after_last_push_ms  +5881   (a render ran AFTER the last push)
+```
+
+On a healthy run the renderer runs after the pushes and picks them up. That
+rules out "the renderer never runs at all" as the standing explanation, and
+leaves the two candidates the ledger was built to separate — but only on a run
+that actually goes wrong.
+
+**The bad side has not been captured and cannot be forced.** The defect
+alternated six times on 2026-09-12 with identical inputs (129, 128, 45, 129,
+45, 134, 140). Nothing in this session reproduced it on demand.
+
+**It is now armed rather than pending.** Both scheduled probe runs record
+`renderLedger` and `render_after_last_push_ms`, and
+`sections_model_not_in_dom` turns the run red on any gap. The next bad run
+produces the diagnostic artifact by itself:
+
+| `render_after_last_push_ms` on a red run | what it means | where the fix goes |
+|---|---|---|
+| positive | a render ran after the push and dropped the sections | the renderer / `buildFilters` |
+| negative | nothing rendered since the push | a render call, and Rule 24 on its frequency |
+| null | a stamp is missing | the ledger itself is wrong |
+
+Incidental: this run had 15 sections present and 14 with cards — Tennis
+rendered as a section with ZERO cards. `slate_sections_present` and
+`slate_by_sport` separate that, and the gap correctly reads `[]` because
+Tennis IS in the DOM. A single section count would have reported a phantom
+one-section discrepancy.
+
 ## Tasks
 
-0. **Probe — what does the renderer see, and when does it last run?** The
+0. ~~**Probe — what does the renderer see, and when does it last run?**~~
+   **DONE** — see above. Original text: The
    measurement is not another census of `allData.sports`; that is settled. It is
    whether a render happens AFTER the injection and what it does with the new
    sections. Record: a monotonic counter incremented at the top of `renderAll`,
