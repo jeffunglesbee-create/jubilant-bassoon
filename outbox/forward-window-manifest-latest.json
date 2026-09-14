@@ -1,36 +1,25 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "34764104870",
-  "commit": "5b6c2fe218700e457c5e39be80125d9d8ec7cb31",
-  "timestamp": "2026-09-13T14:57:16.746Z",
+  "runId": "34871899515",
+  "commit": "a5fdf86e1312b359a0cd24f2b7cc243e0c517347",
+  "timestamp": "2026-09-14T16:59:35.391Z",
   "cacheAccepted": true,
   "testApi": "pl-verify",
   "schema": "2.1",
-  "for_date": "2026-09-13",
+  "for_date": "2026-09-14",
   "window_dates": [
-    "2026-09-13",
     "2026-09-14",
     "2026-09-15",
-    "2026-09-16"
+    "2026-09-16",
+    "2026-09-17"
   ],
   "games_found_by_date": {
-    "2026-09-13": 15,
     "2026-09-14": 10,
     "2026-09-15": 15,
-    "2026-09-16": 15
+    "2026-09-16": 15,
+    "2026-09-17": 14
   },
   "days": [
-    {
-      "iso": "2026-09-14",
-      "windowHasDay": true,
-      "windowMlbCount": 10,
-      "navigated": false,
-      "cardCount": 0,
-      "sectionCount": 0,
-      "mlbEnrichMatched": 0,
-      "mlbEnrichAvailable": 0,
-      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
-    },
     {
       "iso": "2026-09-15",
       "windowHasDay": true,
@@ -40,7 +29,7 @@
       "sectionCount": 0,
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
-      "error": null
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
     },
     {
       "iso": "2026-09-16",
@@ -52,10 +41,21 @@
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
       "error": null
+    },
+    {
+      "iso": "2026-09-17",
+      "windowHasDay": true,
+      "windowMlbCount": 9,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
     }
   ],
   "windowDaysReachingClient": 3,
-  "windowMlbTotal": 40,
+  "windowMlbTotal": 39,
   "renderedCardsTotal": 0,
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
