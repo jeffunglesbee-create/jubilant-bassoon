@@ -137,17 +137,48 @@ Final: **13 of 13 cases, 7 of 7 mutations caught.**
   absent. This run read Yesterday: 16 cards, **16 debriefs**, odds layer
   present.
 
-- **STAGED — the `schedule`-trigger path end-to-end.** `windowReality`'s
-  schedule branch is covered by five real-run cases plus mutation `W2`, but no
-  actual `schedule` event has fired since the change, and the dispatch run above
-  passes `step_back_days` explicitly rather than exercising the
-  `scheduled-default-1` branch. *Unblocked when:* the next 16:10 cron fires
-  (expect a start between 18:20 and 20:20Z given the measured delay).
-  *Verify:* the newest manifest with `triggered_by: "schedule"` must show
-  `window.step_back_source: "scheduled-default-1"` and `step_back_days: 1`.
-  A manifest with `triggered_by: "schedule"` and `step_back_days: 0` means the
-  workflow's empty-input plumbing did not survive, and is the one thing that
-  would make this change a no-op.
+- **VERIFIED (live, `schedule` trigger).** Run `35015077140`, head `7012053`,
+  manifest `outbox/odds-line-probe-manifest-20260915T194200Z.json`. All four
+  staged assertions pass on a real schedule event:
+
+  ```
+  triggered_by          schedule
+  window.cron           16:10Z European window   delay_minutes 212
+  window.step_back_source  "scheduled-default-1"
+  window.step_back_days    1
+  window.reads_complete_slate  true
+  slate_cards_date_label   "Yesterday"
+  slate 16 cards, debriefs_total 16, odds_layer_present_in_dom true
+  ```
+
+  The `scheduled-default-1` branch is the one no dispatch could exercise, and
+  it is now confirmed in the wild. 212 minutes late, inside the measured
+  2h10m–5h30m spread, and the fix makes that irrelevant — which was the point.
+
+## The run is RED, and the fix is why — in a good way
+
+That run's conclusion is `failure`, on `sections_model_not_in_dom`:
+
+| run | date read | debriefs | sections gap |
+|---|---|---:|---|
+| 08:59Z, before the fix | Today | 0 | `[]` |
+| 18:55Z, dispatch step_back=1 | Yesterday | 16 | `["Premier League","La Liga","Serie A","NFL"]` |
+| 19:42Z, after the fix | Yesterday | 16 | `["Premier League","Serie A","NFL"]` |
+
+This is **not a regression from the window change**. It is
+`CC-CMD-2026-09-12-v2-sections-in-model-not-in-dom`, already open, whose done
+condition is five consecutive scheduled greens.
+
+**What the window fix changed is that the check can now fail.** A gap of `[]`
+measured on a slate holding nothing is not a pass — there were no sections to
+be missing. Every scheduled "green" counted toward that CC-CMD's five-run bar
+was taken on a slate the probe could not have found a defect in. The streak
+report now reads `0/5` and that is the honest number; the earlier count was
+measuring the empty window this session's fix removed.
+
+Same shape as Rule 91 and as Rule 99's absence collapse, one layer out: a zero
+whose denominator was zero, read as evidence of health. The gate did not break
+today — it started working.
 
 ## No push affordance was added
 
