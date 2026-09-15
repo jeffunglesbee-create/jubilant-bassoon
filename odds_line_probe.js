@@ -16,6 +16,7 @@
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const { settleScan } = require('./scripts/slate-settle.cjs');
+const { windowReality } = require('./scripts/probe-window.cjs');
 
 const URL = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
@@ -58,6 +59,13 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // manifest that records its own trigger answers "are the scheduled runs
     // actually happening" without anyone having to go and look.
     triggered_by: process.env.PROBE_TRIGGER || '(unset)',
+    // WHICH cron, how late it started, and whether the slate it is about to
+    // read can contain a debrief at all. Measured 2026-09-15: neither cron has
+    // ever run at the hour its comment reasons about — delays run 2h10m to
+    // 5h30m — so the 03:45 "23:45 ET" slot actually executes near 05:00 ET and
+    // its three runs all read a scheduled slate and reported debriefs 0. That 0
+    // was indistinguishable from a broken injector. See scripts/probe-window.cjs.
+    window: null,
     sw_version: null, cards_seen: 0,
     odds_slot_present_in_dom: false,
     slots_hidden: 0, slots_visible: 0,
@@ -210,7 +218,14 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // One deterministic step, a settle long enough for the date's fixtures to
     // fetch and injectDebriefCards to run, and the slate size recorded at each
     // stop so an empty date is legible rather than indistinguishable.
-    const STEP_BACK = Number(process.env.STEP_BACK_DAYS || 0);
+    // A scheduled run cannot choose its hour, so it must not depend on one.
+    // Yesterday is a complete slate at every hour; manifest 20260912T190808Z
+    // read 26 cards, 26 debriefs and the odds layer in the DOM on exactly that
+    // step. An explicit STEP_BACK_DAYS (including 0) still wins.
+    const _explicitStep = process.env.STEP_BACK_DAYS === undefined
+      || process.env.STEP_BACK_DAYS === '' ? null : Number(process.env.STEP_BACK_DAYS);
+    m.window = windowReality(m.probed_at, m.triggered_by, _explicitStep);
+    const STEP_BACK = m.window.step_back_days;
     const slateNow = () => page.evaluate(
       () => document.querySelectorAll('.game-card[data-gameid]').length);
     m.slate_by_step.push({ step: 0, label: await dateLabel(), cards: await slateNow() });

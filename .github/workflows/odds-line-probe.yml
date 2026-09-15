@@ -22,20 +22,34 @@ on:
         description: 'Days to step the slate back before reading the DOM. Default 0. Since 2026-09-12 a past date renders a real slate sourced from the relay (CC-CMD-2026-09-12-past-date-slate-from-relay); before that it rendered neither cards nor a message, so manifests from earlier runs with this set above 0 are measuring that defect, not odds.'
         required: false
         default: '0'
-  # 03:45 UTC = 23:45 ET, when the day's games are final and the client's own
-  # ET date has not rolled over yet — so the debrief layers are observable on
-  # "Today" without touching date navigation, which renders nothing for a past
-  # date (CC-CMD-2026-09-12-past-date-slate-renders-nothing). The 03:46 run on
-  # 2026-09-12 saw 38 cards and 10 injected debriefs at exactly this hour.
+  # NEITHER cron runs at the hour it names. Measured 2026-09-15 across every
+  # scheduled run this workflow has had:
+  #
+  #   34747944004  03:45 cron  started 09-13 08:32Z  +4h47m
+  #   34775630281  16:10 cron  started 09-13 18:45Z  +2h36m
+  #   34826955734  03:45 cron  started 09-14 09:15Z  +5h30m
+  #   34892026130  16:10 cron  started 09-14 20:17Z  +4h07m
+  #   34949877281  03:45 cron  started 09-15 08:58Z  +5h13m
+  #
+  # The delay is 2h10m to 5h30m and not controllable from here. The reasoning
+  # these two times were chosen for (below, kept as the record) was sound about
+  # the game calendar and wrong about one thing only: that the scheduler would
+  # honour the hour. Compensating by moving the cron earlier would be guessing
+  # against a 3h20m spread, so the probe no longer depends on its start hour at
+  # all — scheduled runs read Yesterday, which is a complete slate at every
+  # hour (scripts/probe-window.cjs, and manifest 20260912T190808Z: 26 cards,
+  # 26 debriefs, odds layer in the DOM).
   schedule:
     # 16:10 UTC — European league matches kick off at 14:00 UTC and go final
     # around 15:50, while the client's ET date is still the same day. Probed
     # 2026-09-12: EPL_2026-09-12_e401879285 carries espn_event_id 401879285 and
     # an opening_odds moneyline, so a finished EPL card has everything the
-    # movement layer needs. This is the earliest daily window, not the only one.
+    # movement layer needs. ACTUAL start: 18:20-20:17Z.
     - cron: '10 16 * * *'
     # 03:45 UTC = 23:45 ET, the US window: the day's MLB/NFL/NBA games are final
-    # and the ET date has not rolled over.
+    # and the ET date has not rolled over. ACTUAL start: 08:32-09:15Z = 04:32-
+    # 05:15 ET, by which time the ET date HAS rolled over. All three of its runs
+    # read a scheduled slate and reported debriefs 0.
     - cron: '45 3 * * *'
   push:
     paths: ['outbox/.trigger-odds-line-probe']
@@ -83,12 +97,25 @@ jobs:
           node scripts/check-slate-settle.mjs
           node scripts/mutate-slate-settle.mjs
 
+      # Same pattern, for the window the run actually landed in. Without this a
+      # debrief census of 0 is reported identically whether the injector broke
+      # or the slate simply had no finished games yet — which is how three dead
+      # scheduled runs looked like results (Rule 91).
+      - name: The window reality holds, and can fail
+        run: |
+          node scripts/check-probe-window.mjs
+          node scripts/mutate-probe-window.mjs
+
       - name: Run odds line probe
         run: node odds_line_probe.js
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
           SLATE_SETTLE_MIN_S: ${{ github.event.inputs.settle_min_s || '0' }}
-          STEP_BACK_DAYS: ${{ inputs.step_back_days || '0' }}
+          # Deliberately NOT `|| '0'`. On a schedule event `inputs` is empty, and
+          # an explicit '0' would pin every scheduled run to Today — the exact
+          # behaviour that made the 03:45 cron's three runs useless. Empty means
+          # "unset", and probe-window.cjs then defaults a scheduled run to 1.
+          STEP_BACK_DAYS: ${{ inputs.step_back_days }}
           PROBE_TRIGGER: ${{ github.event_name }}
 
       # always(): the manifest is written to disk before the probe exits, and a
