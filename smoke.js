@@ -29,6 +29,36 @@ function assert(label, condition, detail = '') {
   }
 }
 
+
+// ── Scoping a claim to the code it is about ──────────────────────────────────
+//
+// `html.includes(x)` answers "does this string exist anywhere in 34,000 lines".
+// Three rule-registry assertions (A482, A483, A485) are about WHERE something
+// happens — which key one function reads, whether one function computes a
+// composite, whether the sentinel follows the first render — and presence
+// cannot express any of that.
+//
+// MEASURED 2026-09-15 by scripts/mutate-ruwt-registry-rules.mjs: all three
+// caught a renamed function or a deleted comment, and all three missed their
+// own rule's violation, because the searched text survived elsewhere in the
+// file. The fix is not a cleverer substring; it is a smaller haystack.
+//
+// The idiom already existed here (see the renderESPNScores scoping near A-POLL)
+// — this factors it so the three read the same way.
+function fnBody(source, name) {
+  const start = source.indexOf(`function ${name}(`);
+  if (start < 0) return '';
+  const open = source.indexOf('{', start);
+  if (open < 0) return '';
+  let depth = 0;
+  for (let i = open; i < source.length; i++) {
+    const c = source[i];
+    if (c === '{') depth++;
+    else if (c === '}') { depth--; if (depth === 0) return source.slice(start, i + 1); }
+  }
+  return '';   // unbalanced — callers treat an empty body as a failed assertion
+}
+
 console.log('\n── FIELD Smoke Test (GitHub Actions) ──────────────\n');
 
 // 1. File size sanity (>500KB, <3.0MB)
@@ -3861,24 +3891,48 @@ assert('A481 — Watch Engine: preGameScore WC tier boost (group stage >= 40)',
   'preGameScore must have WC tier boost and WC bundles in nationalKeys');
 
 // RUWT-clean implementation assertions
+// Scoped to the function the rule names. `SCORE_SNAP_KEY` appears at four call
+// sites, so the old file-wide check stayed green when getOTWMomentum itself
+// switched to reading field_drama_history_ — mutation R1, not caught.
+const _otwMomentumBody = fnBody(html, 'getOTWMomentum');
 assert('A482 — RUWT: getOTWMomentum replaced with score-event detector (no drama score read)',
-  html.includes('SCORE_SNAP_KEY') && html.includes('function recordScoreSnapshot(')
+  _otwMomentumBody.includes('SCORE_SNAP_KEY')
+    && !/drama/i.test(_otwMomentumBody)
+    && html.includes('function recordScoreSnapshot(')
     && html.includes('did scoring happen recently'),
-  'getOTWMomentum must use binary scoring-event detection, not composite drama score delta');
+  'getOTWMomentum must read SCORE_SNAP_KEY and nothing drama-derived, not a composite drama score delta');
 
+// The negative clause pinned one historical literal, so a composite returning
+// as `let sel = 60` walked through — mutation R4, not caught. Scoped to the
+// function, and banning the SHAPE rather than the number.
+const _otwWCBody = fnBody(html, '_otwFindWCLiveGame');
 assert('A483 — RUWT: _otwFindWCLiveGame uses categorical tier hierarchy, not composite sel score',
-  html.includes('strict categorical tiers') && html.includes('bestTier')
-    && !html.includes('let sel = 55'),
-  '_otwFindWCLiveGame must use categorical priority tiers, not composite numerical sel score');
+  html.includes('strict categorical tiers')
+    && _otwWCBody.includes('bestTier')
+    && !/\b(?:let|const|var)\s+sel\s*=/.test(_otwWCBody),
+  '_otwFindWCLiveGame must use categorical priority tiers — no composite scalar declared in its body, whatever it is named');
 
 assert('A484 — RUWT: Permutations Engine patent defense comment in field_utils.js',
   fieldUtilsSrc.includes('RUWT PATENT DEFENSE') && fieldUtilsSrc.includes('probabilities of factual outcomes')
     || fieldUtilsSrc.includes('RUWT PATENT DEFENSE') && fieldUtilsSrc.includes('PROBABILITIES OF FACTUAL OUTCOMES'),
   'field_utils.js must have explicit RUWT patent defense comment distinguishing probability from interest level');
 
+// The second clause was implied by the first, and NEITHER checked order — the
+// one thing the label claims. Moving the sentinel above renderAll() resolves
+// every Playwright wait against an empty page and the old assertion stayed
+// green: mutation R6, not caught.
+// ANCHOR TO THE NEAREST PRECEDING CALL, not the first in the file. `renderAll()`
+// is called 40 times and `\n  renderAll();` matches three of them; the first sits
+// ~880,000 characters before the bootstrap one, so "sentinel comes after the
+// first renderAll" was true no matter where the sentinel moved — mutation R6
+// still walked through the rewritten check. The claim is adjacency: the
+// sentinel fires immediately after the render it is reporting.
+const _sentinelAt   = html.indexOf('window._fieldDataReady = Date.now()');
+const _renderBefore = _sentinelAt >= 0 ? html.lastIndexOf('renderAll();', _sentinelAt) : -1;
+const _sentinelGap  = _sentinelAt >= 0 && _renderBefore >= 0 ? _sentinelAt - _renderBefore : Infinity;
 assert('A485 — CI speedup: _fieldDataReady sentinel set after first renderAll',
-  html.includes('window._fieldDataReady = Date.now()') && html.includes('_fieldDataReady'),
-  'sentinel must be set after first renderAll() so Playwright tests use event-based waits not fixed timeouts');
+  _sentinelAt >= 0 && _renderBefore >= 0 && _sentinelGap < 400,
+  `sentinel must follow a renderAll() call immediately (gap ${_sentinelGap} chars) so Playwright waits resolve against a rendered page, not an empty one`);
 
 // ── PM-24: Read-time witness aggregation (June 5 2026) ────────────────────────
 // PM-20 left 'verified' confidence structurally unreachable because ESPN writes
