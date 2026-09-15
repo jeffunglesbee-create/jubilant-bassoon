@@ -147,7 +147,7 @@ blocked identically. Filed as
 | requirement | state |
 |---|---|
 | real wire format recorded | **yes** |
-| three states rendered, evidenced with game ids | **NO — and the cause is now measured, not guessed: `/context/game/g16` returns 200 with `game: null`, so no odds layer can render for any of the 10 named cards** |
+| three states rendered, evidenced with game ids | **NO at the time of writing — cause measured, not guessed: `/context/game/g16` returned 200 with `game: null`, so no odds layer could render for any of the 10 named cards. CLOSED 2026-09-12 by `5931418f` (resolve a durable game id before asking `/context/game`); evidence in `outbox/cc-session-2026-09-12-context-game-slate-id.md`, commit `22e9f735`, probe run 34705060530, SW `2026-09-12d`: 41 of 41 id forms espn-prefixed, zero bare slate ids, `unchanged` on `espn:401879284`, `moved` on `espn:401879283`. Two of four states on named ids; the other two reported absent for that run rather than inferred.** |
 | smoke green, count recorded | **yes — 1044, 0 failed** |
 | explicit no-push statement | **yes — none added; `A-ODDS-6` enforces it** |
 
