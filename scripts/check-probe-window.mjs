@@ -69,6 +69,19 @@ const CASES = [
   ['an explicit 2 is honoured and still reads a complete slate',
    '2026-09-15T08:58:06Z', 'schedule', 2,
    { step_back_days: 2, step_back_source: 'explicit', reads_complete_slate: true }],
+
+  // EST, not EDT. Every case above is in September, where ET is UTC-4, so a
+  // hardcoded -4 offset satisfies all of them and the timezone database earns
+  // nothing — mutation W6 proved exactly that by surviving 11 green cases.
+  // In December ET is UTC-5: 04:30Z is 23:30 ET and Today IS complete, while a
+  // hardcoded -4 reads 00:30 and calls it incomplete.
+  ['December 04:30Z is 23:30 EST — a hardcoded UTC-4 reads 00:30 and gets this wrong',
+   '2026-12-15T04:30:00Z', 'workflow_dispatch', 0,
+   { et_hour: 23, today_likely_complete: true, reads_complete_slate: true }],
+
+  ['June 04:30Z is 00:30 EDT — the same instant is NOT complete in summer',
+   '2026-06-15T04:30:00Z', 'workflow_dispatch', 0,
+   { et_hour: 0, today_likely_complete: false, reads_complete_slate: false }],
 ];
 
 let failed = 0;
