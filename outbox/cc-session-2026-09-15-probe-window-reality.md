@@ -107,20 +107,35 @@ Final: **13 of 13 cases, 7 of 7 mutations caught.**
 - **VERIFIED (unit):** 13/13 cases, 7/7 mutations, against the five real run
   timestamps as the corpus.
 
-- **STAGED — live dispatch run.** Run `35010426536` (`workflow_dispatch`,
-  `step_back_days=1`, head `defd89a0`) was still in progress when this doc was
-  written. *Unblocked when:* that run completes and commits its manifest.
-  *Verify:*
+- **VERIFIED (live).** Run `35010426536`, head `defd89a0`, manifest
+  `outbox/odds-line-probe-manifest-20260915T185536Z.json`. Every staged
+  assertion passed:
+
   ```
-  node -e 'const m=require("./outbox/<newest odds-line-probe-manifest>.json");
-    console.assert(m.window, "no window block");
-    console.assert(m.window.step_back_days === 1, "did not step back");
-    console.assert(m.window.reads_complete_slate === true, "slate not complete");
-    console.log(m.window, "debriefs", m.debriefs_total)'
+  window  { trigger: "workflow_dispatch", et_hour: 14,
+            today_likely_complete: false,
+            step_back_days: 1, step_back_source: "explicit",
+            reads_complete_slate: true, zero_debriefs_is_evidence: true }
+  slate   16 cards, date_label "Yesterday"
+  debriefs_total 16, injected 16, odds_layer_present_in_dom true
+  page_error_count 0
   ```
-  *Expected:* `window.step_back_source: "explicit"`, `reads_complete_slate: true`,
-  `zero_debriefs_is_evidence: true`, and `debriefs_total > 0` — the last being
-  the substantive claim, that a stepped-back slate carries the subject.
+
+  Three of four states on named game ids — one more than the 2026-09-12 run
+  that closed the original Task 3:
+
+  | state | game | text |
+  |---|---|---|
+  | `no_odds` | `espn:401872931` | buildOddsMovement returned null; 1 of 16 rendered debriefs |
+  | `unchanged` | `espn:401816935` | Home moneyline -138 (58% implied), unchanged from open |
+  | `moved` | `espn:401816934` | Home moneyline -156 → -155, 0.2 pts toward away |
+
+  `opened_only` absent for this run, reported absent rather than inferred.
+
+  The before/after is one pair, same day and same deployment — scheduled run
+  `34949877281` at 08:59Z read Today: 22 cards, **0 debriefs**, odds layer
+  absent. This run read Yesterday: 16 cards, **16 debriefs**, odds layer
+  present.
 
 - **STAGED — the `schedule`-trigger path end-to-end.** `windowReality`'s
   schedule branch is covered by five real-run cases plus mutation `W2`, but no
