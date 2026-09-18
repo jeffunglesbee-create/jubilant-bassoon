@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema_version": "2.1",
-    "generated_at": "2026-09-17T12:42:41.835Z",
-    "for_date": "2026-09-17",
+    "generated_at": "2026-09-18T12:19:08.144Z",
+    "for_date": "2026-09-18",
     "source": "field-data workflow (automated)",
     "window_dates": [
-      "2026-09-17",
       "2026-09-18",
       "2026-09-19",
-      "2026-09-20"
+      "2026-09-20",
+      "2026-09-21"
     ],
     "windowed_sports": [
       "mlb",
@@ -20,20 +20,20 @@
       "nba"
     ],
     "notes_for_dates": [
-      "2026-09-17"
+      "2026-09-18"
     ],
     "games_found": {
       "nhl": 0,
       "nba": 0,
-      "mlb": 9,
+      "mlb": 15,
       "mls": 0,
-      "wnba": 5
+      "wnba": 3
     },
     "games_found_by_date": {
-      "2026-09-17": 14,
       "2026-09-18": 18,
       "2026-09-19": 18,
-      "2026-09-20": 20
+      "2026-09-20": 20,
+      "2026-09-21": 5
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -45,24 +45,9 @@
     "mlb": [
       {
         "sport": "MLB",
-        "home": "Pittsburgh Pirates",
-        "away": "Milwaukee Brewers",
-        "start_time": "2026-09-17T16:35:00Z",
-        "venue": "PNC Park",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": null,
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "mlbnShowcase": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
         "home": "Cincinnati Reds",
-        "away": "Los Angeles Dodgers",
-        "start_time": "2026-09-17T16:40:00Z",
+        "away": "Chicago Cubs",
+        "start_time": "2026-09-18T22:40:00Z",
         "venue": "Great American Ball Park",
         "league": "MLB",
         "isPlayoff": false,
@@ -75,40 +60,55 @@
       },
       {
         "sport": "MLB",
-        "home": "Tampa Bay Rays",
-        "away": "Athletics",
-        "start_time": "2026-09-17T17:10:00Z",
-        "venue": "Tropicana Field",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": null,
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "mlbnShowcase": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Colorado Rockies",
-        "away": "San Diego Padres",
-        "start_time": "2026-09-17T19:10:00Z",
-        "venue": "Coors Field",
-        "league": "MLB",
-        "isPlayoff": false,
-        "nationalBundle": null,
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "mlbnShowcase": false,
-        "_postponed": false,
-        "confirmed": true
-      },
-      {
-        "sport": "MLB",
-        "home": "Houston Astros",
+        "home": "Pittsburgh Pirates",
         "away": "Kansas City Royals",
-        "start_time": "2026-09-17T23:15:00Z",
-        "venue": "Daikin Park",
+        "start_time": "2026-09-18T22:40:00Z",
+        "venue": "PNC Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Baltimore Orioles",
+        "away": "Milwaukee Brewers",
+        "start_time": "2026-09-18T23:05:00Z",
+        "venue": "Oriole Park at Camden Yards",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Cleveland Guardians",
+        "away": "Athletics",
+        "start_time": "2026-09-18T23:10:00Z",
+        "venue": "Progressive Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Tampa Bay Rays",
+        "away": "Boston Red Sox",
+        "start_time": "2026-09-18T23:10:00Z",
+        "venue": "Tropicana Field",
         "league": "MLB",
         "isPlayoff": false,
         "nationalBundle": null,
@@ -122,11 +122,11 @@
         "sport": "MLB",
         "home": "New York Mets",
         "away": "Philadelphia Phillies",
-        "start_time": "2026-09-17T23:15:00Z",
+        "start_time": "2026-09-18T23:15:00Z",
         "venue": "Citi Field",
         "league": "MLB",
         "isPlayoff": false,
-        "nationalBundle": null,
+        "nationalBundle": "MLB_APPLE",
         "espnGOTD": false,
         "peacockGOTD": false,
         "mlbnShowcase": false,
@@ -137,7 +137,7 @@
         "sport": "MLB",
         "home": "Chicago White Sox",
         "away": "Detroit Tigers",
-        "start_time": "2026-09-17T23:40:00Z",
+        "start_time": "2026-09-18T23:40:00Z",
         "venue": "Rate Field",
         "league": "MLB",
         "isPlayoff": false,
@@ -151,9 +151,54 @@
       {
         "sport": "MLB",
         "home": "Texas Rangers",
-        "away": "Boston Red Sox",
-        "start_time": "2026-09-18T00:05:00Z",
+        "away": "Toronto Blue Jays",
+        "start_time": "2026-09-19T00:05:00Z",
         "venue": "Globe Life Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Colorado Rockies",
+        "away": "Seattle Mariners",
+        "start_time": "2026-09-19T00:10:00Z",
+        "venue": "Coors Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Houston Astros",
+        "away": "Atlanta Braves",
+        "start_time": "2026-09-19T00:10:00Z",
+        "venue": "Daikin Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "St. Louis Cardinals",
+        "away": "Washington Nationals",
+        "start_time": "2026-09-19T00:15:00Z",
+        "venue": "Busch Stadium",
         "league": "MLB",
         "isPlayoff": false,
         "nationalBundle": null,
@@ -167,11 +212,56 @@
         "sport": "MLB",
         "home": "Los Angeles Angels",
         "away": "Minnesota Twins",
-        "start_time": "2026-09-18T01:38:00Z",
+        "start_time": "2026-09-19T01:38:00Z",
         "venue": "Angel Stadium",
         "league": "MLB",
         "isPlayoff": false,
         "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "San Diego Padres",
+        "away": "Miami Marlins",
+        "start_time": "2026-09-19T01:40:00Z",
+        "venue": "Petco Park",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Arizona Diamondbacks",
+        "away": "New York Yankees",
+        "start_time": "2026-09-19T01:40:00Z",
+        "venue": "Chase Field",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": null,
+        "espnGOTD": false,
+        "peacockGOTD": false,
+        "mlbnShowcase": false,
+        "_postponed": false,
+        "confirmed": true
+      },
+      {
+        "sport": "MLB",
+        "home": "Los Angeles Dodgers",
+        "away": "San Francisco Giants",
+        "start_time": "2026-09-19T02:15:00Z",
+        "venue": "UNIQLO Field at Dodger Stadium",
+        "league": "MLB",
+        "isPlayoff": false,
+        "nationalBundle": "MLB_APPLE",
         "espnGOTD": false,
         "peacockGOTD": false,
         "mlbnShowcase": false,
@@ -183,241 +273,34 @@
     "wnba": [
       {
         "sport": "WNBA",
-        "home": "Atlanta Dream",
-        "away": "Connecticut Sun",
-        "start_time": "2026-09-17T23:30Z",
-        "venue": "Gateway Center",
+        "home": "Toronto Tempo",
+        "away": "Indiana Fever",
+        "start_time": "2026-09-18T23:30Z",
+        "venue": "Coca-Cola Coliseum",
         "league": "WNBA",
         "confirmed": true
       },
       {
         "sport": "WNBA",
-        "home": "Chicago Sky",
-        "away": "Washington Mystics",
-        "start_time": "2026-09-18T00:00Z",
-        "venue": "Wintrust Arena",
+        "home": "Minnesota Lynx",
+        "away": "New York Liberty",
+        "start_time": "2026-09-18T23:30Z",
+        "venue": "Target Center",
         "league": "WNBA",
         "confirmed": true
       },
       {
         "sport": "WNBA",
-        "home": "Dallas Wings",
-        "away": "Los Angeles Sparks",
-        "start_time": "2026-09-18T00:00Z",
-        "venue": "College Park Center",
-        "league": "WNBA",
-        "confirmed": true
-      },
-      {
-        "sport": "WNBA",
-        "home": "Portland Fire",
-        "away": "Phoenix Mercury",
-        "start_time": "2026-09-18T02:00Z",
-        "venue": "Moda Center",
-        "league": "WNBA",
-        "confirmed": true
-      },
-      {
-        "sport": "WNBA",
-        "home": "Seattle Storm",
-        "away": "Las Vegas Aces",
-        "start_time": "2026-09-18T02:00Z",
-        "venue": "Climate Pledge Arena",
+        "home": "Golden State Valkyries",
+        "away": "Portland Fire",
+        "start_time": "2026-09-19T02:00Z",
+        "venue": "Chase Center",
         "league": "WNBA",
         "confirmed": true
       }
     ]
   },
   "schedules_by_date": {
-    "2026-09-17": {
-      "nhl": [],
-      "nba": [],
-      "mlb": [
-        {
-          "sport": "MLB",
-          "home": "Pittsburgh Pirates",
-          "away": "Milwaukee Brewers",
-          "start_time": "2026-09-17T16:35:00Z",
-          "venue": "PNC Park",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "Cincinnati Reds",
-          "away": "Los Angeles Dodgers",
-          "start_time": "2026-09-17T16:40:00Z",
-          "venue": "Great American Ball Park",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "Tampa Bay Rays",
-          "away": "Athletics",
-          "start_time": "2026-09-17T17:10:00Z",
-          "venue": "Tropicana Field",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "Colorado Rockies",
-          "away": "San Diego Padres",
-          "start_time": "2026-09-17T19:10:00Z",
-          "venue": "Coors Field",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "Houston Astros",
-          "away": "Kansas City Royals",
-          "start_time": "2026-09-17T23:15:00Z",
-          "venue": "Daikin Park",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "New York Mets",
-          "away": "Philadelphia Phillies",
-          "start_time": "2026-09-17T23:15:00Z",
-          "venue": "Citi Field",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "Chicago White Sox",
-          "away": "Detroit Tigers",
-          "start_time": "2026-09-17T23:40:00Z",
-          "venue": "Rate Field",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "Texas Rangers",
-          "away": "Boston Red Sox",
-          "start_time": "2026-09-18T00:05:00Z",
-          "venue": "Globe Life Field",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        },
-        {
-          "sport": "MLB",
-          "home": "Los Angeles Angels",
-          "away": "Minnesota Twins",
-          "start_time": "2026-09-18T01:38:00Z",
-          "venue": "Angel Stadium",
-          "league": "MLB",
-          "isPlayoff": false,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        }
-      ],
-      "soccer": [],
-      "wnba": [
-        {
-          "sport": "WNBA",
-          "home": "Atlanta Dream",
-          "away": "Connecticut Sun",
-          "start_time": "2026-09-17T23:30Z",
-          "venue": "Gateway Center",
-          "league": "WNBA",
-          "confirmed": true
-        },
-        {
-          "sport": "WNBA",
-          "home": "Chicago Sky",
-          "away": "Washington Mystics",
-          "start_time": "2026-09-18T00:00Z",
-          "venue": "Wintrust Arena",
-          "league": "WNBA",
-          "confirmed": true
-        },
-        {
-          "sport": "WNBA",
-          "home": "Dallas Wings",
-          "away": "Los Angeles Sparks",
-          "start_time": "2026-09-18T00:00Z",
-          "venue": "College Park Center",
-          "league": "WNBA",
-          "confirmed": true
-        },
-        {
-          "sport": "WNBA",
-          "home": "Portland Fire",
-          "away": "Phoenix Mercury",
-          "start_time": "2026-09-18T02:00Z",
-          "venue": "Moda Center",
-          "league": "WNBA",
-          "confirmed": true
-        },
-        {
-          "sport": "WNBA",
-          "home": "Seattle Storm",
-          "away": "Las Vegas Aces",
-          "start_time": "2026-09-18T02:00Z",
-          "venue": "Climate Pledge Arena",
-          "league": "WNBA",
-          "confirmed": true
-        }
-      ]
-    },
     "2026-09-18": {
       "nhl": [],
       "nba": [],
@@ -1218,7 +1101,88 @@
           "confirmed": true
         }
       ]
+    },
+    "2026-09-21": {
+      "nhl": [],
+      "nba": [],
+      "mlb": [
+        {
+          "sport": "MLB",
+          "home": "Baltimore Orioles",
+          "away": "Toronto Blue Jays",
+          "start_time": "2026-09-21T22:35:00Z",
+          "venue": "Oriole Park at Camden Yards",
+          "league": "MLB",
+          "isPlayoff": false,
+          "nationalBundle": null,
+          "espnGOTD": false,
+          "peacockGOTD": false,
+          "mlbnShowcase": false,
+          "_postponed": false,
+          "confirmed": true
+        },
+        {
+          "sport": "MLB",
+          "home": "Detroit Tigers",
+          "away": "Washington Nationals",
+          "start_time": "2026-09-21T22:40:00Z",
+          "venue": "Comerica Park",
+          "league": "MLB",
+          "isPlayoff": false,
+          "nationalBundle": null,
+          "espnGOTD": false,
+          "peacockGOTD": false,
+          "mlbnShowcase": false,
+          "_postponed": false,
+          "confirmed": true
+        },
+        {
+          "sport": "MLB",
+          "home": "San Francisco Giants",
+          "away": "Minnesota Twins",
+          "start_time": "2026-09-22T01:45:00Z",
+          "venue": "Oracle Park",
+          "league": "MLB",
+          "isPlayoff": false,
+          "nationalBundle": null,
+          "espnGOTD": false,
+          "peacockGOTD": false,
+          "mlbnShowcase": false,
+          "_postponed": false,
+          "confirmed": true
+        }
+      ],
+      "soccer": [],
+      "wnba": [
+        {
+          "sport": "WNBA",
+          "home": "New York Liberty",
+          "away": "Atlanta Dream",
+          "start_time": "2026-09-22T00:00Z",
+          "venue": "Barclays Center",
+          "league": "WNBA",
+          "confirmed": true
+        },
+        {
+          "sport": "WNBA",
+          "home": "Phoenix Mercury",
+          "away": "Dallas Wings",
+          "start_time": "2026-09-22T02:00Z",
+          "venue": "Mortgage Matchup Center",
+          "league": "WNBA",
+          "confirmed": true
+        }
+      ]
     }
   },
-  "game_overlays": []
+  "game_overlays": [
+    {
+      "_match_key": "New York Mets|Philadelphia Phillies",
+      "matchupNote": "The Phillies roll into Queens looking to tighten their grip on the NL East, while the surging Mets aim to prove their wild-card push is built to dismantle division leaders. Expect high-octane tension as these bitter rivals clash with critical postseason positioning hanging in the balance."
+    },
+    {
+      "_match_key": "Los Angeles Dodgers|San Francisco Giants",
+      "matchupNote": "The Giants arrive in Chavez Ravine desperate to salvage their fading postseason hopes against a Dodgers squad looking to tighten their grip on the NL West. With the division race reaching a fever pitch, tonight’s clash serves as a high-stakes litmus test for San Francisco’s fading October aspirations."
+    }
+  ]
 }
