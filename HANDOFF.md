@@ -17,6 +17,8 @@ All of them, newest first:
 
 | arc | session doc |
 |---|---|
+| render-target completeness — STOPPED: no honest enumeration exists | `cc-session-2026-09-19-render-target-completeness.md` |
+| the odds probe reads a complete slate, not whatever hour it woke at | `cc-session-2026-09-15-probe-window-reality.md` |
 | odds-line render path closed; the no-odds count hid two causes | `cc-session-2026-09-13-odds-line-render-path-closeout.md` |
 | odds scenario chip — Task 0, two decisions left to a human | `cc-session-2026-09-12-odds-scenario-chip-task0.md` |
 | Bundesliga had no injector; the poll never rendered what it injected | `cc-session-2026-09-12-bundesliga-no-injector.md` |
