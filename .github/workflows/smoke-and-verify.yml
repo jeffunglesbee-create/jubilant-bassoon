@@ -75,6 +75,29 @@ jobs:
       - name: No workflow installs a credential from a literal
         run: node scripts/check-no-literal-secret-writes.mjs --self-test && node scripts/check-no-literal-secret-writes.mjs
 
+      # 107 push-retry loops across four repos exited 0 when every attempt
+      # failed, because the loop's last command is `sleep` and `set -e` does not
+      # fire on a failing `&&` list -- it is a tested command. 82 of them were
+      # here. A lost artifact reported as a green step, and the evidence of the
+      # failure was the absence of evidence, which is why no run count or commit
+      # census could measure the damage after the fact.
+      #
+      # It checks that a landing verification FOLLOWS each loop, and deliberately
+      # does NOT police the loop's shape: the 2026-09-19 sweep found five shapes
+      # by refusing to guess at a sixth, and enumerating shapes is exactly what
+      # proved incomplete five times. The sixth arrived immediately -- this check
+      # found two loops the sweep's own matcher had missed, both pushing to a
+      # full token URL rather than to `origin`.
+      #
+      # Hosted here rather than in deploy-gate.yml because deploy-gate fires on
+      # index.html/sw.js/field_utils.js/wrangler.jsonc only. A new workflow is
+      # the one change class this exists to catch, and it would never have run.
+      - name: Every push-retry loop verifies the push landed
+        run: |
+          python3 scripts/check-push-lands.py --self-test
+          python3 scripts/mutate-push-lands.py
+          python3 scripts/check-push-lands.py
+
       - name: Summary
         if: always()
         run: |
