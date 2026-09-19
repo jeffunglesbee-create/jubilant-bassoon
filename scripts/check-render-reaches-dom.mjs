@@ -145,10 +145,19 @@ console.log('self-test against the two chains that actually shipped:');
 if (!selfTest()) { console.error('\nthe check does not distinguish a live path from a dead one — it does not go in'); process.exit(1); }
 
 const problems = TARGETS.flatMap(t => checkTarget(src, t, tsSrc));
-console.log(`\nchecked ${TARGETS.length} declared render target(s): chain in ${SRC}, layer in ${TS}`);
+// Rule 91: the coverage is printed where the RESULT is read, not in a comment.
+// This check covers the targets in TARGETS and nothing else. It is one of
+// several per-feature render checks here — check-v2-section-inject,
+// check-relay-date-sections, check-debrief-postgame-only, check-v2-key-has-card-path
+// each cover their own — so a green here is not a statement about the app.
+console.log(`\nCOVERAGE: ${TARGETS.length} declared target(s) — ${TARGETS.map(t => t.name).join(', ')}.`);
+console.log(`chain in ${SRC}, layer in ${TS}. A render target that is not in TARGETS`);
+console.log(`is NOT checked here and this run cannot see it.`);
 if (problems.length) {
     console.error(`\nFAIL — ${problems.length}:`);
     for (const p of problems) console.error(`  ${p}`);
     process.exit(1);
 }
-console.log('PASS — every declared render target reaches a caller that runs');
+// NOT "every render target reaches a caller that runs". That sentence was the
+// one a future session would have believed. TARGETS holds what it holds.
+console.log(`PASS — the ${TARGETS.length} declared target(s) reach a caller that runs`);
