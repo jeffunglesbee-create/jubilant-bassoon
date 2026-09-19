@@ -64,3 +64,9 @@ jobs:
             sleep $((i * 5))
             git pull --rebase --autostash origin main
           done
+          # The loop above exits 0 when EVERY attempt fails — here its last command is
+          # the `git pull`, which succeeds. Verified under bash -e -o pipefail.
+          # is-ancestor, not HEAD equality: another bot pushing after us is routine.
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: push did not land after retries"; exit 1; }
