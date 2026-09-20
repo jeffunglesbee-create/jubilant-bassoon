@@ -1,47 +1,25 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "35359935049",
-  "commit": "0322817bd5af2d3e5df69d0e40823b9bee84b9fa",
-  "timestamp": "2026-09-18T15:03:11.556Z",
+  "runId": "35517364772",
+  "commit": "bcbb0b095ecdf1a2326f85b7b08a1e86ef0706e8",
+  "timestamp": "2026-09-20T14:44:31.837Z",
   "cacheAccepted": true,
   "testApi": "pl-verify",
   "schema": "2.1",
-  "for_date": "2026-09-18",
+  "for_date": "2026-09-20",
   "window_dates": [
-    "2026-09-18",
-    "2026-09-19",
     "2026-09-20",
-    "2026-09-21"
+    "2026-09-21",
+    "2026-09-22",
+    "2026-09-23"
   ],
   "games_found_by_date": {
-    "2026-09-18": 18,
-    "2026-09-19": 18,
-    "2026-09-20": 20,
-    "2026-09-21": 5
+    "2026-09-20": 27,
+    "2026-09-21": 5,
+    "2026-09-22": 21,
+    "2026-09-23": 17
   },
   "days": [
-    {
-      "iso": "2026-09-19",
-      "windowHasDay": true,
-      "windowMlbCount": 15,
-      "navigated": false,
-      "cardCount": 0,
-      "sectionCount": 0,
-      "mlbEnrichMatched": 0,
-      "mlbEnrichAvailable": 0,
-      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
-    },
-    {
-      "iso": "2026-09-20",
-      "windowHasDay": true,
-      "windowMlbCount": 15,
-      "navigated": false,
-      "cardCount": 0,
-      "sectionCount": 0,
-      "mlbEnrichMatched": 0,
-      "mlbEnrichAvailable": 0,
-      "error": null
-    },
     {
       "iso": "2026-09-21",
       "windowHasDay": true,
@@ -51,13 +29,46 @@
       "sectionCount": 0,
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
+    },
+    {
+      "iso": "2026-09-22",
+      "windowHasDay": true,
+      "windowMlbCount": 16,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+    },
+    {
+      "iso": "2026-09-23",
+      "windowHasDay": true,
+      "windowMlbCount": 15,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
       "error": null
     }
   ],
   "windowDaysReachingClient": 3,
-  "windowMlbTotal": 33,
+  "windowMlbTotal": 34,
   "renderedCardsTotal": 0,
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
-  "consoleErrors": []
+  "consoleErrors": [
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=20260921&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20260921&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20260921&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20260921&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard?dates=20260921&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
+  ]
 }
