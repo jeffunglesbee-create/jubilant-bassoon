@@ -53,6 +53,16 @@ jobs:
           npm install @playwright/test
           npx playwright install chromium --with-deps
 
+      # BEFORE the browser, because a boundary reader that names the wrong stage
+      # turns a real reading into a wrong diagnosis, and the browser half costs
+      # a minute to find that out. Its own first run caught `empty` being
+      # counted as a failed feed — the absence collapse this probe exists to
+      # report, rebuilt inside the reader reporting it.
+      - name: The boundary reader is right, and can be shown wrong
+        run: |
+          node scripts/check-tennis-boundary-line.mjs
+          node scripts/mutate-tennis-boundary-line.mjs
+
       - name: Probe the deployed page against the live feed
         id: probe
         continue-on-error: true

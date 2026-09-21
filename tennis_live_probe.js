@@ -26,6 +26,8 @@ const RELAY = process.env.RELAY_BASE || 'https://field-relay-nba.jeffunglesbee.w
 const TS = new Date().toISOString();
 const stamp = TS.replace(/[:.]/g, '-');
 
+const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
+
 (async () => {
   const manifest = {
     ts: TS, fieldUrl: FIELD_URL, relay: RELAY,
@@ -37,6 +39,12 @@ const stamp = TS.replace(/[:.]/g, '-');
     cardsMissingScore: null, cardsMissingOpponent: null, chips: null,
     consoleErrors: null, failedRequests: null, relayCallsFromPage: null,
     renderedTournaments: null, missingTournaments: null,
+    // WHICH BOUNDARY LOST THE ROWS, read from window._fieldTennisDiag. Without
+    // these, a FAIL can only restate the symptom: 42 upstream, 0 on screen. The
+    // page publishes them on every exit path from fetchTennisLive.
+    diagRan: null, feedLiveOutcome: null, feedByDateOutcome: null,
+    rowsBeforeTier: null, rowsAfterTier: null, sectionReturned: null,
+    sectionInAllData: null, producerThrew: null,
     sampleCardText: null, verdict: null, reason: null,
   };
 
@@ -210,6 +218,27 @@ const stamp = TS.replace(/[:.]/g, '-');
           chip: txt(c.querySelector('.leader-chip')) || '(no chip)',
         })),
         sample: cards.length ? txt(cards[0]).slice(0, 220) : null,
+        // THE PRODUCER'S OWN ACCOUNT. Missing entirely means the deployed
+        // bundle predates the instrumentation — which is a different fact from
+        // the producer having run and found nothing, so it is reported as
+        // `absent` rather than folded into the nulls below.
+        diag: (() => {
+          const d = window._fieldTennisDiag;
+          if (!d) return { absent: true };
+          // Spread does not copy an accessor's VALUE for `sectionInAllData` in
+          // every engine the same way, so it is read explicitly.
+          return {
+            absent: false,
+            ran: d.ran === true,
+            feedLiveOutcome: d.feedLiveOutcome ?? null,
+            feedByDateOutcome: d.feedByDateOutcome ?? null,
+            rowsBeforeTier: d.rowsBeforeTier ?? null,
+            rowsAfterTier: d.rowsAfterTier ?? null,
+            sectionReturned: d.sectionReturned ?? null,
+            sectionInAllData: d.sectionInAllData ?? null,
+            threw: d.threw ?? null,
+          };
+        })(),
       };
     });
     manifest.tennisSectionPresent = counts.present;
@@ -222,6 +251,18 @@ const stamp = TS.replace(/[:.]/g, '-');
     manifest.cardsMissingOpponent = counts.cardsMissingOpponent;
     manifest.chips = counts.chips;
     manifest.sampleCardText = counts.sample;
+    const d = counts.diag || { absent: true };
+    // `absent` and `false` are different facts: the first says the deployed
+    // page has no instrumentation, the second says it has it and the producer
+    // never ran. Collapsing them is the defect this whole document is about.
+    manifest.diagRan = d.absent ? 'absent' : d.ran;
+    manifest.feedLiveOutcome = d.feedLiveOutcome ?? null;
+    manifest.feedByDateOutcome = d.feedByDateOutcome ?? null;
+    manifest.rowsBeforeTier = d.rowsBeforeTier ?? null;
+    manifest.rowsAfterTier = d.rowsAfterTier ?? null;
+    manifest.sectionReturned = d.sectionReturned ?? null;
+    manifest.sectionInAllData = d.sectionInAllData ?? null;
+    manifest.producerThrew = d.threw ?? null;
 
     await page.screenshot({ path: `outbox/tennis-live-probe-${stamp}.png`, fullPage: false });
     const sec = await page.$('.sport-section[data-sport="Tennis"]');
@@ -253,8 +294,19 @@ const stamp = TS.replace(/[:.]/g, '-');
   } else if (manifest.tennisCardCount === 0) {
     manifest.verdict = 'FAIL';
     const calls = (manifest.relayCallsFromPage || []);
+    // NO CAUSE IS NAMED HERE ANY MORE.
+    //
+    // This line used to end "— this is the 2026-06..09 regression", which was
+    // an attribution, not a measurement, and this probe's own committed data
+    // contradicts it: that regression was NO TENNIS SECTION BEING CREATED, and
+    // tennisSectionPresent is true in 30 of the 36 manifests on file, including
+    // 24 of the zero-card runs. The section exists and is empty, which is a
+    // different defect. A detector that publishes an unestablished cause puts
+    // it in front of a reader twice a day and it becomes the thing everyone
+    // knows. What follows is only what was read.
     manifest.reason = `relay reports ${manifest.relayLiveMatches} live match(es), page renders `
-      + `0 tennis cards — this is the 2026-06..09 regression`
+      + `0 tennis cards${manifest.tennisSectionPresent ? ' into a section that IS present' : ' and no section is present'}`
+      + `; ${boundaryLine(manifest)}`
       + `; page made ${calls.length} /bsd/tennis/ call(s)${calls.length ? ': ' + calls.join(' | ') : ''}`
       + ((manifest.consoleErrors || []).length ? `; console: ${manifest.consoleErrors[0]}` : '');
   } else if (manifest.startedCards > 0 && manifest.cardsWithSetScore === 0
