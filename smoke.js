@@ -7183,14 +7183,24 @@ assert('A-FTO-2b — tier-game.js reads MY_TEAMS as a parameter, never as a glob
   })(),
   'esbuild gives this module its own scope; MY_TEAMS is a `let` inside field.js\'s IIFE and is not reachable. Measured 2026-09-12: 12 uncaught ReferenceErrors at boot, slate 16 cards where the same page rendered 44');
 
-assert('A-FTO-3 — renderAll() split is inert below threshold (cardGames falls back to the full games array unchanged)',
+assert('A-FTO-3 — renderAll() split is inert below threshold AND when nothing qualifies',
   /const _overThreshold = games\.length > FEATURED_TIER_OVERFLOW_THRESHOLD/.test(html) &&
-  /const cardGames = _overThreshold \? games\.filter\(g => isFeaturedTierGame\(g, MY_TEAMS\)\) : games/.test(html) &&
-  /const overflowGames = _overThreshold \? games\.filter\(g => !isFeaturedTierGame\(g, MY_TEAMS\)\) : \[\]/.test(html) &&
+  // THE SECOND CONDITION, added 2026-09-21. A section above the threshold where
+  // NO game carries a promotion signal used to put every game in the collapsed
+  // strip and render its own header over an empty games-list. Measured on the
+  // live page: Tennis, 42 games, `<span class="s-count">42 matches</span>`,
+  // `<div class="games-list"></div>`, 9085 characters in .overflow-strip.
+  // The predicate promotes on curated rank, a followed team, or a Scout's Pick
+  // — a sport with no ranking source and a visitor following nobody can satisfy
+  // none of them, so the split had nothing to put on the featured side.
+  /const _splitBySignal = _overThreshold && _featured\.length > 0/.test(html) &&
+  /const cardGames = _splitBySignal \? _featured : games/.test(html) &&
+  /const overflowGames = _splitBySignal \? games\.filter\(g => !isFeaturedTierGame\(g, MY_TEAMS\)\) : \[\]/.test(html) &&
+  /const _featured = _overThreshold \? games\.filter\(g => isFeaturedTierGame\(g, MY_TEAMS\)\) : games/.test(html) &&
   // MY_TEAMS must be PASSED. tier-game.js is an esbuild module and cannot see
   // field.js's IIFE `let`; the bare form threw 12 times at boot on 2026-09-12.
   !/games\.filter\(isFeaturedTierGame\)/.test(html),
-  'renderAll must only apply the featured/overflow split when a section\'s real game count exceeds the threshold — existing low-volume sports must render every game as a full card, unchanged');
+  'renderAll applies the featured/overflow split only when a section exceeds the threshold AND at least one game qualifies — otherwise every game renders as a full card, because a split with an empty featured side hides the section instead of managing it');
 
 assert('A-FTO-4 — buildOverflowStrip() reuses the existing bottom sheet (data-open), not a new detail UI',
   html.includes('function buildOverflowStrip(games, sportLabel)') &&

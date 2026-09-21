@@ -8263,8 +8263,31 @@ function renderAll(skipUnchanged){
     // predicate bare to .filter also handed it the index and the array as its
     // 2nd and 3rd arguments, which is how the old one-parameter signature hid
     // the bug — the second argument was always a number, never a Set.
-    const cardGames = _overThreshold ? games.filter(g => isFeaturedTierGame(g, MY_TEAMS)) : games;
-    const overflowGames = _overThreshold ? games.filter(g => !isFeaturedTierGame(g, MY_TEAMS)) : [];
+    const _featured = _overThreshold ? games.filter(g => isFeaturedTierGame(g, MY_TEAMS)) : games;
+    // A SPLIT WITH NOTHING ON THE FEATURED SIDE IS NOT VOLUME MANAGEMENT, IT IS
+    // A HIDDEN SECTION.
+    //
+    // `isFeaturedTierGame` promotes on three signals: a curated rank of 25 or
+    // better, a followed team, or a Scout's Pick. All three are things this
+    // feature was built for CFB to have. A sport with NO ranking source cannot
+    // satisfy the first, a visitor following nobody cannot satisfy the second,
+    // and the third is rare — so every game lands in the collapsed strip and
+    // the section renders its own header saying "42 matches" above an empty
+    // games-list.
+    //
+    // MEASURED, not reasoned. Tennis, 2026-09-21 21:56Z, from the live page
+    // (outbox/tennis-live-probe-manifest-2026-09-21T21-56-36-592Z.json): 42
+    // games in allData, 42 in the section, `<span class="s-count">42
+    // matches</span>`, `<div class="games-list"></div>`, and 9085 characters
+    // sitting in `.overflow-strip.collapsed`. MLB rendered 3 cards and AFL 1 in
+    // the same DOM, so the render was working — for the sports under the
+    // threshold.
+    //
+    // The tennis probe has been red on this since 2026-09-13 and its every PASS
+    // was a day small enough to stay under the threshold.
+    const _splitBySignal = _overThreshold && _featured.length > 0;
+    const cardGames = _splitBySignal ? _featured : games;
+    const overflowGames = _splitBySignal ? games.filter(g => !isFeaturedTierGame(g, MY_TEAMS)) : [];
     const cards=cardGames.map((g,gi)=>{
       if(!g._id) g._id="g"+(++_gid);
       // Per-card string computation cache (CC-CMD-2026-07-04-card-dom-
@@ -23145,7 +23168,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-21b';
+  const SW_VERSION = '2026-09-21c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

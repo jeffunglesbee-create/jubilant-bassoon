@@ -79,6 +79,18 @@ const MUTATIONS = [
    'A-TENNIS-15',
    'without it the manifest cannot tell a tier filter that dropped everything from a feed that returned nothing'],
 
+  ['D7 a section where NOTHING qualifies is split anyway — the shipped defect',
+   '    const _splitBySignal = _overThreshold && _featured.length > 0;',
+   '    const _splitBySignal = _overThreshold;',
+   'A-FTO-3',
+   'THE ONE THIS FIX IS FOR: 42 tennis matches, no curated ranks, nobody followed, so every game went to .overflow-strip.collapsed and the section rendered its own "42 matches" header over an empty games-list'],
+
+  ['D8 the featured set is recomputed instead of reused, so the guard reads a different list',
+   '    const cardGames = _splitBySignal ? _featured : games;',
+   '    const cardGames = _splitBySignal ? games.filter(g => isFeaturedTierGame(g, MY_TEAMS)) : games;',
+   'A-FTO-3',
+   'a guard that tests one list while the render uses another is the vacuous-assertion shape, and the filter would run a third time per section for nothing'],
+
   ['D6 the sectionInAllData getter becomes a value read too early',
    "Object.defineProperty(window._fieldTennisDiag, 'sectionInAllData', {",
    "Object.defineProperty(window._fieldTennisDiag, 'sectionInAllDataSnapshot', {",
