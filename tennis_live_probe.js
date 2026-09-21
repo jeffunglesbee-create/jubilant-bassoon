@@ -40,6 +40,12 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
 (async () => {
   const manifest = {
     ts: TS, fieldUrl: FIELD_URL, relay: RELAY,
+    // WHICH BUILD AND WHICH TRIGGER, both required by the streak counter.
+    // `sw` excludes manifests that measured the defect; `triggered_by`
+    // separates a scheduled reading from a dispatched one, because two
+    // dispatches minutes apart sample one slate state. Same two fields
+    // odds_line_probe.js already records, same env var (Rule 62).
+    sw: null, triggered_by: process.env.PROBE_TRIGGER || '(unset)',
     relayReachable: null, relayLiveMatches: null,
     relayLiveMatchesAllTiers: null, tiersSeen: null, startedCards: null,
     dayFeedCount: null, dayFeedTruncated: null, expectedTournaments: null,
@@ -275,6 +281,7 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
           sport: el.getAttribute('data-sport') || '(none)',
           cards: el.querySelectorAll('.game-card').length,
         })),
+        sw: window.SW_VERSION || null,
         sectionsInDom: [...document.querySelectorAll('.sport-section')]
           .map((el) => el.getAttribute('data-sport') || '(no data-sport)').sort(),
         renderPipeline: (() => {
@@ -313,6 +320,7 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
         })(),
       };
     });
+    manifest.sw = counts.sw ?? null;
     manifest.tennisSectionPresent = counts.present;
     manifest.tennisCardCount = counts.cards;
     manifest.startedCards = counts.startedCards;

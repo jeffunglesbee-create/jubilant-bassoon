@@ -66,6 +66,10 @@ jobs:
       - name: Probe the deployed page against the live feed
         id: probe
         continue-on-error: true
+        env:
+          # The streak counter only credits SCHEDULED runs, so the probe has to
+          # know which it was. Same variable odds-line-probe.yml already sets.
+          PROBE_TRIGGER: ${{ github.event_name }}
         run: node tennis_live_probe.js
         env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
@@ -86,6 +90,17 @@ jobs:
             sleep $((2**i))
           done
           exit 1
+
+      # HOW CLOSE THE CC-CMD IS, printed where the run is read. The document was
+      # closed with the residual written as "the cron produces the second
+      # without a session", which is a carry-forward wearing a reassurance —
+      # nothing was counting. Now something is.
+      - name: Progress toward the tennis done condition
+        if: always()
+        run: |
+          node scripts/check-tennis-pass-streak-logic.mjs
+          node scripts/mutate-tennis-pass-streak.mjs
+          node scripts/check-tennis-pass-streak.mjs | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Surface a FAIL verdict as a red job
         if: always()
