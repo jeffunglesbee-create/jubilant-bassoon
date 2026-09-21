@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "THE RATCHET for scripts/check-probe-wpt.mjs. Green means NO NEW probe",
+    "navigates the deployed page without ?wpt \u2014 not that every probe passes it.",
+    "",
+    "WHY A BASELINE RATHER THAN 17 FIXES. Adding ?wpt to a probe changes what it",
+    "measures: the modal is gone, the first paint differs, and any assertion tuned",
+    "around it moves. Seventeen such edits, to probes this session has not read,",
+    "is the unprompted rewrite Rule 69 prohibits. A check red on seventeen",
+    "pre-existing files every run is also the standing red this repo family keeps",
+    "learning about \u2014 a red nobody can clear is one everybody learns to skip.",
+    "",
+    "WHAT THE COST ACTUALLY IS, measured 2026-09-21: the tennis probe's section",
+    "screenshot showed the My Services modal's streaming chips and read as though",
+    "the Tennis element were streaming chrome. The structured DOM read taken six",
+    "minutes later showed the real section. So the damage lands on SCREENSHOTS and",
+    "on any assertion about first paint, not on a probe that only reads the DOM.",
+    "Each entry below is a probe whose screenshots are suspect until someone looks.",
+    "",
+    "TO CLEAR ONE: add ?wpt, re-run the probe, confirm its own assertions still",
+    "hold, and delete the line. Removing a fixed entry is never punished."
+  ],
+  "measured": {
+    "at": "2026-09-21",
+    "by": "scripts/check-probe-wpt.mjs on 33 navigating probes of 39 *_probe.js"
+  },
+  "known_without_wpt": [
+    "badge_token_sweep_probe.js",
+    "badge_visual_probe.js",
+    "cfl_wire_verify_probe.js",
+    "chart_renderer_probe.js",
+    "cls_probe.js",
+    "drama_arc_amnesty_probe.js",
+    "eu_season_gate_live_probe.js",
+    "forward_window_probe.js",
+    "nav_mode_consolidate_verify_probe.js",
+    "nfl_epa_probe.js",
+    "pickem_surface_verify_probe.js",
+    "skim_probe.js",
+    "sort_order_verify_probe.js",
+    "surface_render_probe.js",
+    "token_resolution_probe.js",
+    "ufl_epa_render_probe.js",
+    "wc_score_probe.js"
+  ]
+}

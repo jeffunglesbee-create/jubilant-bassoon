@@ -18,7 +18,16 @@ const fs = require('fs');
 const { settleScan } = require('./scripts/slate-settle.cjs');
 const { windowReality } = require('./scripts/probe-window.cjs');
 
-const URL = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
+// ?wpt — SKIP THE FIRST-VISIT MY SERVICES MODAL (PM-26-A, Rule 54). Every
+// headless run is a first visit, so without it the modal is on screen for the
+// whole probe. Measured 2026-09-21: the tennis probe's section screenshot at
+// 21:42Z showed streaming-subscription chips and "STREAMING SUBSCRIPTIONS",
+// which read as the Tennis element being streaming chrome. It was the modal on
+// top of it. The DOM anatomy read six minutes later showed the real section —
+// section-head, games-list, overflow-strip — so the picture was the misleading
+// half and the measurement was the reliable one. Ten probes in this repo
+// already pass it; these two did not.
+const URL = (process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev') + '?wpt';
 const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
 
 (async () => {

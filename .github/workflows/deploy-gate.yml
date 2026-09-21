@@ -260,6 +260,18 @@ jobs:
       - name: The tennis diagnostics assertions can be made to fail
         run: node scripts/mutate-tennis-diag.mjs
 
+      # Every headless run is a first visit, so a probe without ?wpt works with
+      # the My Services modal on screen. Measured 2026-09-21: the tennis probe's
+      # section screenshot showed the modal's streaming chips and read as though
+      # the Tennis element were streaming chrome. Ratcheted — seventeen existing
+      # probes are recorded in docs/probe-wpt-baseline.json rather than edited
+      # blind, so green means no NEW one.
+      - name: No new probe loads the page without ?wpt
+        run: |
+          node scripts/check-probe-wpt.mjs --self-test
+          node scripts/check-probe-wpt.mjs
+          node scripts/mutate-probe-wpt.mjs
+
       # smoke.js can see that fetchRelayDateSections exists and that goToDate
       # calls it; it cannot see what it RETURNS. These four properties are all
       # about the return value, so they run the extracted source against stubs.
