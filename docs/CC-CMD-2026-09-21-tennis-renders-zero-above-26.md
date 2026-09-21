@@ -1,6 +1,14 @@
 # CC-CMD 2026-09-21 — tennis renders zero cards above ~26 allowed matches
 
-**Status:** OPEN
+**Status:** CLOSED 2026-09-21 — root cause found, fixed, and verified live.
+The cause was NOT any candidate listed below: `renderAll`'s featured/overflow
+split put all 42 games in a collapsed strip because none carried a promotion
+signal. Fix `6c2f0124`; done condition met by
+`outbox/tennis-live-probe-manifest-2026-09-21T22-02-15-900Z.json` (PASS, 42
+cards at 42 relayLiveMatches). Manifest:
+`outbox/cc-session-2026-09-21-tennis-zero-cards.md`. The candidate table is kept
+as written — each row is a premise that was tested and refuted, which is the
+record worth keeping.
 **Repo:** jubilant-bassoon (client). The relay is not implicated — see Premise 1.
 **Detector:** `.github/workflows/tennis-live-probe.yml`, declared in
 field-relay-nba `docs/declared-detectors.json`. This document is its `tracked_by`.
