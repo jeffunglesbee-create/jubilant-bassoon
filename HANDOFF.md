@@ -17,6 +17,7 @@ All of them, newest first:
 
 | arc | session doc |
 |---|---|
+| tennis rendered 0 cards above the overflow threshold — root cause found, fixed, verified live at 42 cards | `cc-session-2026-09-21-tennis-zero-cards.md` |
 | render-target completeness — STOPPED: no honest enumeration exists | `cc-session-2026-09-19-render-target-completeness.md` |
 | the odds probe reads a complete slate, not whatever hour it woke at | `cc-session-2026-09-15-probe-window-reality.md` |
 | odds-line render path closed; the no-odds count hid two causes | `cc-session-2026-09-13-odds-line-render-path-closeout.md` |
