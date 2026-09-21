@@ -14831,6 +14831,33 @@ const TENNIS_TIERS = new Set([
 ]);
 const TENNIS_NAMED = /^(ATP Finals|WTA Finals|Next Gen Finals|United Cup|Davis Cup|Billie Jean King Cup( Group I)?)$/;
 
+/// WHY THE TENNIS SECTION LOOKS THE WAY IT DOES, readable from a plain page.
+///
+/// NOT `window.__FIELD_PROOF__`, which was the obvious home and is wrong: that
+/// object is created only inside `if (_proofMode)`, so it does not exist on the
+/// deployed URL the probe actually loads. An ungated global, named like the two
+/// this file already publishes (`_fieldDataReady`, `_fieldErrors`).
+///
+/// Tracked by docs/CC-CMD-2026-09-21-tennis-renders-zero-above-26.md.
+window._fieldTennisDiag = { ran: false };
+function _tennisDiag(patch){
+  try { Object.assign(window._fieldTennisDiag, patch); } catch(_e) {}
+}
+// A LIVE GETTER, not a value written once. `fetchTennisLive` returns BEFORE its
+// section is merged into `allData` — the merge is in the caller, two awaits
+// later — so a value captured at return time would report the state of a thing
+// that had not happened yet. Same reason the proof block's `normalizedObjects`
+// is a getter.
+try {
+  Object.defineProperty(window._fieldTennisDiag, 'sectionInAllData', {
+    get(){
+      try { return (allData?.sports || []).some(x => x.sport === 'Tennis'); }
+      catch(_e){ return null; }
+    },
+    enumerable: true, configurable: true,
+  });
+} catch(_e) {}
+
 /// True when a BSD tennis match belongs to a competition FIELD shows.
 function _tennisTierAllowed(m){
   const cat = m?.tournament?.category;
@@ -14856,13 +14883,37 @@ async function fetchTennisLive(){
       fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/live`, {signal:AbortSignal.timeout(5000)}),
       fetch(`${V2_RELAY_BASE}/bsd/tennis/matches/by-date?date=${today}`, {signal:AbortSignal.timeout(5000)}),
     ]);
+    //
+    // FOUR FACTS, ONE `[]`. This returned an empty array for a rejected fetch,
+    // a non-200, a body that would not parse, and a feed that genuinely had no
+    // tennis in it. `fetchTennisLive` then hit `if(!all.length) return []` and
+    // nothing downstream could tell "no tennis today" from "we failed to ask" —
+    // which is why five days of the probe going red carry no diagnostic at all.
+    // The absence collapse scripts/check-absence-collapse.mjs exists for, in
+    // the place it has cost the most.
+    //
+    // The rows are unchanged. What is added is the reason beside them.
     const readRows = async (res) => {
-      if(res.status !== 'fulfilled' || !res.value?.ok) return [];
-      const j = await res.value.json();
-      return Array.isArray(j) ? j : (j?.results ?? []);
+      if(res.status === 'rejected'){
+        // `AbortSignal.timeout` rejects with a TimeoutError DOMException; a
+        // network failure rejects with a TypeError. Different facts, and the
+        // first is the one this document suspects — do not merge them.
+        const n = res.reason?.name || 'Error';
+        return { rows: [], outcome: n === 'TimeoutError' ? 'timeout' : `rejected:${n}` };
+      }
+      if(!res.value?.ok) return { rows: [], outcome: `http:${res.value?.status ?? '?'}` };
+      let j;
+      // A 200 whose body is not JSON is not an empty feed.
+      try { j = await res.value.json(); }
+      catch(_e){ return { rows: [], outcome: 'unparseable' }; }
+      const rows = Array.isArray(j) ? j : (j?.results ?? []);
+      return { rows, outcome: rows.length ? `ok:${rows.length}` : 'empty' };
     };
-    const liveRows = await readRows(liveR);
-    const dayRows  = await readRows(dayR);
+    const liveRead = await readRows(liveR);
+    const dayRead  = await readRows(dayR);
+    const liveRows = liveRead.rows;
+    const dayRows  = dayRead.rows;
+    _tennisDiag({ ran: true, feedLiveOutcome: liveRead.outcome, feedByDateOutcome: dayRead.outcome });
 
     // LIVE WINS ON A COLLISION. A match appears in both feeds while it is being
     // played, and the by-date copy can be the pre-match row with no sets on it.
@@ -14872,6 +14923,7 @@ async function fetchTennisLive(){
     for(const m of dayRows) if(m?.id != null) byId.set(m.id, m);
     for(const m of liveRows) if(m?.id != null) byId.set(m.id, m);
     const all = [...byId.values()];
+    _tennisDiag({ rowsBeforeTier: all.length, rowsAfterTier: null, sectionReturned: null });
     if(!all.length) return [];
     // Tier filter FIRST, so nothing below the bar is even mapped. Measured
     // 2026-09-06: the eight live matches at 05:55 were three Challenger
@@ -14879,6 +14931,7 @@ async function fetchTennisLive(){
     // renders zero cards at that hour. An empty tennis section is the correct
     // output when only lower-tier tennis is being played.
     const rows = all.filter(_tennisTierAllowed);
+    _tennisDiag({ rowsAfterTier: rows.length });
     // The Draw tab appears only when there is a draw to show, and this is the
     // one place that already holds the day's card. Called BEFORE the empty
     // return below, so a day of nothing but Challengers hides the tab rather
@@ -14952,8 +15005,14 @@ async function fetchTennisLive(){
       };
     }).filter(g => g.home && !g.home.startsWith('?'));
 
+    // `games` is `rows` minus the rows whose player names would not resolve, so
+    // a gap between rowsAfterTier and sectionReturned is the map dropping them.
+    _tennisDiag({ sectionReturned: games.length });
     return games.length ? [{sport:"Tennis", games}] : [];
   }catch(e){
+    // A THROW IS NOT AN EMPTY DAY EITHER. This returned [] and said so only
+    // under FIELD_DEBUG, which the headless probe cannot set.
+    _tennisDiag({ ran: true, threw: e?.name ? `${e.name}: ${e.message}` : String(e) });
     if(FIELD_DEBUG) console.warn("FIELD tennis live:", e.message);
     return [];
   }
@@ -28129,7 +28188,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-12u';
+  const SW_VERSION = '2026-09-21a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

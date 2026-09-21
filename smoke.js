@@ -7459,6 +7459,38 @@ assert('A-TENNIS-2 — fetchTennisLive is actually merged into the render path',
 // marking it. What identifies it is that player1_sets + player2_sets counts only
 // COMPLETED sets. Reading the whole array as finished prints 5-5 as a set score,
 // which is not a score a set can end on.
+// ── The four absences that used to be one ──────────────────────────────────
+// `readRows` returned [] for a rejected fetch, a non-200, an unparseable body
+// and a genuinely empty feed alike, so five days of the tennis probe going red
+// carried no diagnostic. These two assertions are what stops the collapse being
+// reintroduced by a future simplification that "tidies" the branches back into
+// one. Tracked by docs/CC-CMD-2026-09-21-tennis-renders-zero-above-26.md.
+assert('A-TENNIS-14 — readRows names WHICH absence it found, not just that there was one',
+  html.includes("outcome: n === 'TimeoutError' ? 'timeout'") &&
+  html.includes("outcome: `http:${res.value?.status ?? '?'}`") &&
+  html.includes("outcome: 'unparseable'") &&
+  html.includes("rows.length ? `ok:${rows.length}` : 'empty'"),
+  'a timeout, a 404, a bad body and an empty feed must not all read as []');
+
+// NOT `__FIELD_PROOF__`: that object is created only inside `if (_proofMode)`,
+// so it does not exist on the deployed URL the probe loads. An assertion
+// naming the wrong global would pass here and report nothing in CI.
+assert('A-TENNIS-15 — the boundary counts reach an UNGATED global the headless probe can read',
+  // THE DECLARATION ITSELF, not just the name appearing somewhere. Checking for
+  // the bare string passed while the declaration was renamed to
+  // `__FIELD_PROOF_TENNIS__`, because the defineProperty call below still
+  // mentioned the old name — the assertion was satisfied by a different site
+  // than the one that matters. Caught by mutation D4, not by reading.
+  html.includes('window._fieldTennisDiag = { ran: false };') &&
+  /_tennisDiag\(\{ ran: true, feedLiveOutcome/.test(html) &&
+  /_tennisDiag\(\{ rowsBeforeTier: all\.length/.test(html) &&
+  /_tennisDiag\(\{ rowsAfterTier: rows\.length \}\)/.test(html) &&
+  /_tennisDiag\(\{ sectionReturned: games\.length \}\)/.test(html) &&
+  // A live getter, because the merge into allData happens in the CALLER, after
+  // fetchTennisLive has already returned.
+  html.includes("Object.defineProperty(window._fieldTennisDiag, 'sectionInAllData'"),
+  'the probe reads a plain page — a proof-mode-only channel reports nothing');
+
 assert('A-TENNIS-3 — completed sets are sliced by the set summary, never the whole array',
   /const completed = detail\.slice\(0, setsWon\)/.test(html) &&
   /detail\.length === setsWon \+ 1/.test(html),

@@ -245,6 +245,21 @@ jobs:
           node scripts/check-v2-section-labels.mjs
           node scripts/mutate-v2-section-labels.mjs
 
+      # The tennis instrumentation's two assertions, shown able to fail.
+      #
+      # A-TENNIS-14 and A-TENNIS-15 are structural string checks, which is the
+      # class most easily satisfied for the wrong reason: A-TENNIS-15's first
+      # version passed while the global it guards had been renamed, because a
+      # DIFFERENT line still mentioned the old name. Mutation D4 caught that;
+      # reading it did not.
+      #
+      # This runs here rather than in smoke-and-verify.yml because the
+      # instrumentation is what the tennis-live-probe reads, and a deploy that
+      # ships a page whose diagnostics have been quietly removed is the case
+      # worth blocking.
+      - name: The tennis diagnostics assertions can be made to fail
+        run: node scripts/mutate-tennis-diag.mjs
+
       # smoke.js can see that fetchRelayDateSections exists and that goToDate
       # calls it; it cannot see what it RETURNS. These four properties are all
       # about the return value, so they run the extracted source against stubs.
