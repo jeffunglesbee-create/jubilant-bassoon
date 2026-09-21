@@ -1,7 +1,8 @@
 {
-  "updated": "20260914T163931Z",
+  "updated": "20260921T163958Z",
   "source": "Statcast des + MLB Stats API officials",
   "processed_game_pks": [
+    "822680",
     "822682",
     "822685",
     "822688",
@@ -30,6 +31,7 @@
     "822729",
     "822731",
     "822732",
+    "822763",
     "822764",
     "822766",
     "822767",
@@ -55,7 +57,12 @@
     "822801",
     "822804",
     "822811",
+    "822843",
+    "822845",
+    "822846",
+    "822847",
     "822848",
+    "822849",
     "822851",
     "822852",
     "822853",
@@ -83,6 +90,12 @@
     "822895",
     "822897",
     "822899",
+    "822921",
+    "822922",
+    "822923",
+    "822924",
+    "822925",
+    "822926",
     "822929",
     "822930",
     "822933",
@@ -111,6 +124,8 @@
     "822973",
     "822976",
     "822978",
+    "823004",
+    "823005",
     "823008",
     "823009",
     "823010",
@@ -201,6 +216,8 @@
     "823217",
     "823219",
     "823220",
+    "823249",
+    "823252",
     "823253",
     "823254",
     "823255",
@@ -230,6 +247,10 @@
     "823296",
     "823297",
     "823300",
+    "823329",
+    "823330",
+    "823332",
+    "823334",
     "823335",
     "823336",
     "823337",
@@ -330,6 +351,10 @@
     "823540",
     "823542",
     "823544",
+    "823570",
+    "823571",
+    "823573",
+    "823574",
     "823577",
     "823578",
     "823579",
@@ -364,6 +389,8 @@
     "823623",
     "823624",
     "823625",
+    "823654",
+    "823655",
     "823657",
     "823658",
     "823659",
@@ -457,6 +484,8 @@
     "823857",
     "823859",
     "823861",
+    "823896",
+    "823899",
     "823900",
     "823901",
     "823902",
@@ -493,6 +522,11 @@
     "823946",
     "823947",
     "823949",
+    "823975",
+    "823977",
+    "823978",
+    "823979",
+    "823980",
     "823984",
     "823990",
     "823994",
@@ -546,7 +580,11 @@
     "824107",
     "824108",
     "824109",
+    "824137",
+    "824138",
+    "824141",
     "824142",
+    "824143",
     "824144",
     "824147",
     "824150",
@@ -604,6 +642,12 @@
     "824269",
     "824270",
     "824275",
+    "824300",
+    "824303",
+    "824304",
+    "824305",
+    "824306",
+    "824307",
     "824309",
     "824310",
     "824312",
@@ -630,6 +674,9 @@
     "824350",
     "824351",
     "824352",
+    "824382",
+    "824383",
+    "824384",
     "824387",
     "824388",
     "824389",
@@ -666,6 +713,10 @@
     "824432",
     "824433",
     "824434",
+    "824461",
+    "824462",
+    "824466",
+    "824467",
     "824468",
     "824469",
     "824470",
@@ -700,6 +751,9 @@
     "824512",
     "824513",
     "824516",
+    "824545",
+    "824547",
+    "824548",
     "824549",
     "824550",
     "824551",
@@ -734,6 +788,8 @@
     "824596",
     "824597",
     "824598",
+    "824626",
+    "824627",
     "824628",
     "824630",
     "824632",
@@ -802,6 +858,8 @@
     "824757",
     "824758",
     "824759",
+    "824788",
+    "824789",
     "824792",
     "824793",
     "824794",
@@ -901,6 +959,10 @@
     "825001",
     "825004",
     "825005",
+    "825028",
+    "825029",
+    "825030",
+    "825032",
     "825033",
     "825035",
     "825037",
@@ -982,19 +1044,19 @@
       }
     },
     "visconti": {
-      "challenged": 12,
-      "overturned": 6,
+      "challenged": 14,
+      "overturned": 7,
       "rate": 0.5,
       "fullName": "Jansen Visconti",
-      "weakness": "down-left",
+      "weakness": "up-left",
       "zones": {
         "7": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 3
         },
         "6": {
-          "challenged": 2,
-          "overturned": 0
+          "challenged": 3,
+          "overturned": 1
         },
         "9": {
           "challenged": 4,
@@ -1023,9 +1085,9 @@
       }
     },
     "tumpane": {
-      "challenged": 13,
+      "challenged": 15,
       "overturned": 8,
-      "rate": 0.615,
+      "rate": 0.533,
       "fullName": "John Tumpane",
       "weakness": "down-left",
       "zones": {
@@ -1054,8 +1116,12 @@
           "overturned": 0
         },
         "7": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 2
+        },
+        "4": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
@@ -1105,9 +1171,9 @@
       }
     },
     "miller": {
-      "challenged": 32,
-      "overturned": 17,
-      "rate": 0.531,
+      "challenged": 34,
+      "overturned": 18,
+      "rate": 0.529,
       "fullName": "Brennan Miller",
       "weakness": "up-left",
       "zones": {
@@ -1120,8 +1186,8 @@
           "overturned": 3
         },
         "1": {
-          "challenged": 7,
-          "overturned": 7
+          "challenged": 8,
+          "overturned": 8
         },
         "6": {
           "challenged": 5,
@@ -1144,7 +1210,7 @@
           "overturned": 2
         },
         "3": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 1
         },
         "2": {
@@ -1154,9 +1220,9 @@
       }
     },
     "diaz": {
-      "challenged": 21,
-      "overturned": 12,
-      "rate": 0.571,
+      "challenged": 23,
+      "overturned": 14,
+      "rate": 0.609,
       "fullName": "Laz Diaz",
       "weakness": "up-left",
       "zones": {
@@ -1181,8 +1247,8 @@
           "overturned": 2
         },
         "9": {
-          "challenged": 5,
-          "overturned": 4
+          "challenged": 7,
+          "overturned": 6
         },
         "13": {
           "challenged": 3,
@@ -1207,9 +1273,9 @@
       }
     },
     "beck": {
-      "challenged": 19,
+      "challenged": 20,
       "overturned": 10,
-      "rate": 0.526,
+      "rate": 0.5,
       "fullName": "Adam Beck",
       "weakness": "down-right",
       "zones": {
@@ -1222,7 +1288,7 @@
           "overturned": 4
         },
         "7": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 0
         },
         "12": {
@@ -1252,9 +1318,9 @@
       }
     },
     "estabrook": {
-      "challenged": 21,
-      "overturned": 9,
-      "rate": 0.429,
+      "challenged": 22,
+      "overturned": 10,
+      "rate": 0.455,
       "fullName": "Mike Estabrook",
       "weakness": "down-right",
       "zones": {
@@ -1275,8 +1341,8 @@
           "overturned": 1
         },
         "2": {
-          "challenged": 1,
-          "overturned": 1
+          "challenged": 2,
+          "overturned": 2
         },
         "7": {
           "challenged": 2,
@@ -1403,9 +1469,9 @@
       }
     },
     "jones": {
-      "challenged": 21,
-      "overturned": 12,
-      "rate": 0.571,
+      "challenged": 24,
+      "overturned": 15,
+      "rate": 0.625,
       "fullName": "Austin Jones",
       "weakness": "down-right",
       "zones": {
@@ -1418,8 +1484,8 @@
           "overturned": 2
         },
         "6": {
-          "challenged": 3,
-          "overturned": 1
+          "challenged": 4,
+          "overturned": 2
         },
         "8": {
           "challenged": 6,
@@ -1434,12 +1500,12 @@
           "overturned": 1
         },
         "4": {
-          "challenged": 3,
-          "overturned": 3
+          "challenged": 4,
+          "overturned": 4
         },
         "1": {
-          "challenged": 3,
-          "overturned": 3
+          "challenged": 4,
+          "overturned": 4
         },
         "11": {
           "challenged": 1,
@@ -1456,9 +1522,9 @@
       }
     },
     "jimenez": {
-      "challenged": 29,
-      "overturned": 16,
-      "rate": 0.552,
+      "challenged": 33,
+      "overturned": 20,
+      "rate": 0.606,
       "fullName": "Edwin Jimenez",
       "weakness": "down",
       "zones": {
@@ -1467,20 +1533,20 @@
           "overturned": 7
         },
         "9": {
-          "challenged": 8,
-          "overturned": 3
+          "challenged": 9,
+          "overturned": 4
         },
         "11": {
           "challenged": 5,
           "overturned": 0
         },
         "8": {
-          "challenged": 3,
-          "overturned": 3
+          "challenged": 4,
+          "overturned": 4
         },
         "14": {
-          "challenged": 4,
-          "overturned": 2
+          "challenged": 5,
+          "overturned": 3
         },
         "13": {
           "challenged": 1,
@@ -1495,8 +1561,8 @@
           "overturned": 0
         },
         "7": {
-          "challenged": 1,
-          "overturned": 1
+          "challenged": 2,
+          "overturned": 2
         },
         "12": {
           "challenged": 1,
@@ -1505,9 +1571,9 @@
       }
     },
     "mackay": {
-      "challenged": 20,
-      "overturned": 10,
-      "rate": 0.5,
+      "challenged": 23,
+      "overturned": 12,
+      "rate": 0.522,
       "fullName": "Alex MacKay",
       "weakness": "left",
       "zones": {
@@ -1516,16 +1582,16 @@
           "overturned": 4
         },
         "14": {
-          "challenged": 8,
-          "overturned": 4
+          "challenged": 9,
+          "overturned": 5
         },
         "4": {
           "challenged": 2,
           "overturned": 2
         },
         "9": {
-          "challenged": 6,
-          "overturned": 5
+          "challenged": 7,
+          "overturned": 6
         },
         "7": {
           "challenged": 2,
@@ -1536,7 +1602,7 @@
           "overturned": 0
         },
         "2": {
-          "challenged": 1,
+          "challenged": 2,
           "overturned": 1
         },
         "8": {
@@ -1546,9 +1612,9 @@
       }
     },
     "wolcott": {
-      "challenged": 19,
-      "overturned": 8,
-      "rate": 0.421,
+      "challenged": 22,
+      "overturned": 9,
+      "rate": 0.409,
       "fullName": "Quinn Wolcott",
       "weakness": "right",
       "zones": {
@@ -1577,23 +1643,27 @@
           "overturned": 2
         },
         "14": {
-          "challenged": 3,
-          "overturned": 0
+          "challenged": 4,
+          "overturned": 1
         },
         "9": {
-          "challenged": 6,
+          "challenged": 7,
           "overturned": 4
         },
         "7": {
           "challenged": 2,
           "overturned": 0
+        },
+        "13": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "valentine": {
-      "challenged": 19,
+      "challenged": 21,
       "overturned": 8,
-      "rate": 0.421,
+      "rate": 0.381,
       "fullName": "Junior Valentine",
       "weakness": "up",
       "zones": {
@@ -1614,11 +1684,11 @@
           "overturned": 2
         },
         "7": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 2
         },
         "14": {
-          "challenged": 5,
+          "challenged": 6,
           "overturned": 2
         },
         "4": {
@@ -1644,9 +1714,9 @@
       }
     },
     "fairchild": {
-      "challenged": 22,
-      "overturned": 10,
-      "rate": 0.455,
+      "challenged": 23,
+      "overturned": 11,
+      "rate": 0.478,
       "fullName": "Chad Fairchild",
       "weakness": "up-left",
       "zones": {
@@ -1675,8 +1745,8 @@
           "overturned": 0
         },
         "3": {
-          "challenged": 3,
-          "overturned": 0
+          "challenged": 4,
+          "overturned": 1
         },
         "14": {
           "challenged": 1,
@@ -1693,9 +1763,9 @@
       }
     },
     "wolf": {
-      "challenged": 29,
+      "challenged": 30,
       "overturned": 16,
-      "rate": 0.552,
+      "rate": 0.533,
       "fullName": "Jim Wolf",
       "weakness": "up-left",
       "zones": {
@@ -1704,7 +1774,7 @@
           "overturned": 2
         },
         "6": {
-          "challenged": 6,
+          "challenged": 7,
           "overturned": 0
         },
         "1": {
@@ -1873,9 +1943,9 @@
       }
     },
     "jean": {
-      "challenged": 20,
+      "challenged": 22,
       "overturned": 10,
-      "rate": 0.5,
+      "rate": 0.455,
       "fullName": "James Jean",
       "weakness": "up-left",
       "zones": {
@@ -1896,7 +1966,7 @@
           "overturned": 3
         },
         "4": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 0
         },
         "13": {
@@ -1914,6 +1984,10 @@
         "6": {
           "challenged": 2,
           "overturned": 1
+        },
+        "8": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
@@ -2013,9 +2087,9 @@
       }
     },
     "moore": {
-      "challenged": 23,
-      "overturned": 14,
-      "rate": 0.609,
+      "challenged": 24,
+      "overturned": 15,
+      "rate": 0.625,
       "fullName": "Malachi Moore",
       "weakness": "up-right",
       "zones": {
@@ -2028,8 +2102,8 @@
           "overturned": 2
         },
         "7": {
-          "challenged": 5,
-          "overturned": 3
+          "challenged": 6,
+          "overturned": 4
         },
         "1": {
           "challenged": 5,
@@ -2140,9 +2214,9 @@
       }
     },
     "bacchus": {
-      "challenged": 15,
+      "challenged": 18,
       "overturned": 6,
-      "rate": 0.4,
+      "rate": 0.333,
       "fullName": "Erich Bacchus",
       "weakness": "up-right",
       "zones": {
@@ -2151,15 +2225,15 @@
           "overturned": 2
         },
         "9": {
-          "challenged": 5,
+          "challenged": 6,
           "overturned": 1
         },
         "7": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 2
         },
         "11": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 0
         },
         "6": {
@@ -2189,9 +2263,9 @@
       }
     },
     "lentz": {
-      "challenged": 17,
-      "overturned": 9,
-      "rate": 0.529,
+      "challenged": 18,
+      "overturned": 10,
+      "rate": 0.556,
       "fullName": "Nic Lentz",
       "weakness": "down-right",
       "zones": {
@@ -2204,8 +2278,8 @@
           "overturned": 4
         },
         "9": {
-          "challenged": 9,
-          "overturned": 4
+          "challenged": 10,
+          "overturned": 5
         },
         "7": {
           "challenged": 2,
@@ -2226,9 +2300,9 @@
       }
     },
     "moscoso": {
-      "challenged": 24,
+      "challenged": 25,
       "overturned": 14,
-      "rate": 0.583,
+      "rate": 0.56,
       "fullName": "Edwin Moscoso",
       "weakness": "right",
       "zones": {
@@ -2257,7 +2331,7 @@
           "overturned": 3
         },
         "13": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 1
         },
         "7": {
@@ -2279,9 +2353,9 @@
       }
     },
     "ripperger": {
-      "challenged": 22,
+      "challenged": 25,
       "overturned": 10,
-      "rate": 0.455,
+      "rate": 0.4,
       "fullName": "Mark Ripperger",
       "weakness": "left",
       "zones": {
@@ -2294,11 +2368,11 @@
           "overturned": 4
         },
         "9": {
-          "challenged": 5,
+          "challenged": 6,
           "overturned": 2
         },
         "7": {
-          "challenged": 6,
+          "challenged": 7,
           "overturned": 4
         },
         "11": {
@@ -2318,7 +2392,7 @@
           "overturned": 0
         },
         "6": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 0
         },
         "13": {
@@ -2430,9 +2504,9 @@
       }
     },
     "wegner": {
-      "challenged": 12,
+      "challenged": 14,
       "overturned": 7,
-      "rate": 0.583,
+      "rate": 0.5,
       "fullName": "Mark Wegner",
       "weakness": "down",
       "zones": {
@@ -2457,7 +2531,7 @@
           "overturned": 1
         },
         "14": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 3
         },
         "4": {
@@ -2471,13 +2545,17 @@
         "9": {
           "challenged": 1,
           "overturned": 0
+        },
+        "11": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "gibson": {
-      "challenged": 12,
-      "overturned": 4,
-      "rate": 0.333,
+      "challenged": 14,
+      "overturned": 5,
+      "rate": 0.357,
       "fullName": "Tripp Gibson",
       "weakness": "down-left",
       "zones": {
@@ -2490,8 +2568,8 @@
           "overturned": 0
         },
         "1": {
-          "challenged": 4,
-          "overturned": 2
+          "challenged": 5,
+          "overturned": 3
         },
         "14": {
           "challenged": 2,
@@ -2516,6 +2594,10 @@
         "4": {
           "challenged": 1,
           "overturned": 1
+        },
+        "8": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
@@ -2561,9 +2643,9 @@
       }
     },
     "tomlinson": {
-      "challenged": 14,
-      "overturned": 8,
-      "rate": 0.571,
+      "challenged": 15,
+      "overturned": 9,
+      "rate": 0.6,
       "fullName": "Nate Tomlinson",
       "weakness": "down-left",
       "zones": {
@@ -2602,23 +2684,27 @@
         "1": {
           "challenged": 1,
           "overturned": 0
+        },
+        "6": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
     "reyburn": {
-      "challenged": 16,
-      "overturned": 6,
-      "rate": 0.375,
+      "challenged": 18,
+      "overturned": 8,
+      "rate": 0.444,
       "fullName": "D.J. Reyburn",
-      "weakness": "up-right",
+      "weakness": "down-right",
       "zones": {
         "12": {
           "challenged": 5,
           "overturned": 4
         },
         "13": {
-          "challenged": 7,
-          "overturned": 2
+          "challenged": 8,
+          "overturned": 3
         },
         "7": {
           "challenged": 5,
@@ -2633,8 +2719,8 @@
           "overturned": 1
         },
         "14": {
-          "challenged": 1,
-          "overturned": 1
+          "challenged": 2,
+          "overturned": 2
         },
         "9": {
           "challenged": 1,
@@ -2864,9 +2950,9 @@
       }
     },
     "dreckman": {
-      "challenged": 12,
-      "overturned": 6,
-      "rate": 0.5,
+      "challenged": 15,
+      "overturned": 8,
+      "rate": 0.533,
       "fullName": "Bruce Dreckman",
       "weakness": "left",
       "zones": {
@@ -2899,6 +2985,14 @@
           "overturned": 1
         },
         "6": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "12": {
+          "challenged": 2,
+          "overturned": 2
+        },
+        "11": {
           "challenged": 1,
           "overturned": 0
         }
@@ -2950,15 +3044,15 @@
       }
     },
     "mahrley": {
-      "challenged": 13,
-      "overturned": 3,
-      "rate": 0.231,
+      "challenged": 15,
+      "overturned": 5,
+      "rate": 0.333,
       "fullName": "Nick Mahrley",
       "weakness": "down-right",
       "zones": {
         "9": {
-          "challenged": 2,
-          "overturned": 1
+          "challenged": 3,
+          "overturned": 2
         },
         "14": {
           "challenged": 1,
@@ -2969,8 +3063,8 @@
           "overturned": 1
         },
         "1": {
-          "challenged": 1,
-          "overturned": 0
+          "challenged": 2,
+          "overturned": 1
         },
         "12": {
           "challenged": 1,
@@ -2995,15 +3089,15 @@
       }
     },
     "hanahan": {
-      "challenged": 14,
-      "overturned": 6,
-      "rate": 0.429,
+      "challenged": 15,
+      "overturned": 7,
+      "rate": 0.467,
       "fullName": "Tom Hanahan",
       "weakness": "down-left",
       "zones": {
         "7": {
-          "challenged": 3,
-          "overturned": 3
+          "challenged": 4,
+          "overturned": 4
         },
         "8": {
           "challenged": 2,
@@ -3040,9 +3134,9 @@
       }
     },
     "hoye": {
-      "challenged": 16,
-      "overturned": 9,
-      "rate": 0.562,
+      "challenged": 21,
+      "overturned": 13,
+      "rate": 0.619,
       "fullName": "James Hoye",
       "weakness": "down-right",
       "zones": {
@@ -3051,8 +3145,8 @@
           "overturned": 2
         },
         "4": {
-          "challenged": 2,
-          "overturned": 1
+          "challenged": 3,
+          "overturned": 2
         },
         "7": {
           "challenged": 4,
@@ -3067,19 +3161,27 @@
           "overturned": 1
         },
         "13": {
-          "challenged": 2,
-          "overturned": 1
+          "challenged": 3,
+          "overturned": 2
         },
         "9": {
-          "challenged": 4,
+          "challenged": 5,
           "overturned": 3
+        },
+        "11": {
+          "challenged": 1,
+          "overturned": 1
+        },
+        "1": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
     "whitson": {
-      "challenged": 13,
+      "challenged": 15,
       "overturned": 8,
-      "rate": 0.615,
+      "rate": 0.533,
       "fullName": "Chad Whitson",
       "weakness": "down-right",
       "zones": {
@@ -3088,7 +3190,7 @@
           "overturned": 4
         },
         "13": {
-          "challenged": 4,
+          "challenged": 5,
           "overturned": 2
         },
         "7": {
@@ -3106,15 +3208,19 @@
         "3": {
           "challenged": 1,
           "overturned": 1
+        },
+        "1": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "jesus": {
-      "challenged": 7,
+      "challenged": 8,
       "overturned": 3,
-      "rate": 0.429,
+      "rate": 0.375,
       "fullName": "Ramon De Jesus",
-      "weakness": null,
+      "weakness": "up-right",
       "zones": {
         "9": {
           "challenged": 1,
@@ -3129,7 +3235,7 @@
           "overturned": 1
         },
         "3": {
-          "challenged": 1,
+          "challenged": 2,
           "overturned": 1
         },
         "11": {
@@ -3143,9 +3249,9 @@
       }
     },
     "ballou": {
-      "challenged": 12,
+      "challenged": 14,
       "overturned": 5,
-      "rate": 0.417,
+      "rate": 0.357,
       "fullName": "Brock Ballou",
       "weakness": "down-right",
       "zones": {
@@ -3162,11 +3268,11 @@
           "overturned": 2
         },
         "8": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 1
         },
         "1": {
-          "challenged": 1,
+          "challenged": 2,
           "overturned": 0
         },
         "12": {
@@ -3184,14 +3290,14 @@
       }
     },
     "tosi": {
-      "challenged": 14,
-      "overturned": 5,
-      "rate": 0.357,
+      "challenged": 17,
+      "overturned": 6,
+      "rate": 0.353,
       "fullName": "Alex Tosi",
       "weakness": "down-left",
       "zones": {
         "7": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 0
         },
         "13": {
@@ -3199,7 +3305,7 @@
           "overturned": 2
         },
         "11": {
-          "challenged": 1,
+          "challenged": 2,
           "overturned": 0
         },
         "3": {
@@ -3217,6 +3323,10 @@
         "6": {
           "challenged": 1,
           "overturned": 0
+        },
+        "14": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -3287,9 +3397,9 @@
       }
     },
     "libka": {
-      "challenged": 14,
-      "overturned": 8,
-      "rate": 0.571,
+      "challenged": 15,
+      "overturned": 9,
+      "rate": 0.6,
       "fullName": "John Libka",
       "weakness": "down-left",
       "zones": {
@@ -3310,8 +3420,8 @@
           "overturned": 1
         },
         "8": {
-          "challenged": 1,
-          "overturned": 0
+          "challenged": 2,
+          "overturned": 1
         },
         "13": {
           "challenged": 1,
@@ -3377,9 +3487,9 @@
       }
     },
     "may": {
-      "challenged": 10,
+      "challenged": 11,
       "overturned": 5,
-      "rate": 0.5,
+      "rate": 0.455,
       "fullName": "Ben May",
       "weakness": "up-left",
       "zones": {
@@ -3388,7 +3498,7 @@
           "overturned": 0
         },
         "11": {
-          "challenged": 3,
+          "challenged": 4,
           "overturned": 0
         },
         "1": {
@@ -3435,9 +3545,9 @@
       }
     },
     "barrett": {
-      "challenged": 11,
-      "overturned": 8,
-      "rate": 0.727,
+      "challenged": 14,
+      "overturned": 9,
+      "rate": 0.643,
       "fullName": "Lance Barrett",
       "weakness": "down-left",
       "zones": {
@@ -3466,19 +3576,23 @@
           "overturned": 1
         },
         "9": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 2
         },
         "8": {
+          "challenged": 2,
+          "overturned": 2
+        },
+        "13": {
           "challenged": 1,
-          "overturned": 1
+          "overturned": 0
         }
       }
     },
     "rehak": {
-      "challenged": 5,
+      "challenged": 7,
       "overturned": 1,
-      "rate": 0.2,
+      "rate": 0.143,
       "fullName": "Jeremie Rehak",
       "weakness": "down",
       "zones": {
@@ -3497,13 +3611,21 @@
         "6": {
           "challenged": 1,
           "overturned": 0
+        },
+        "14": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "9": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "baker": {
-      "challenged": 8,
-      "overturned": 6,
-      "rate": 0.75,
+      "challenged": 10,
+      "overturned": 7,
+      "rate": 0.7,
       "fullName": "Jordan Baker",
       "weakness": "up-left",
       "zones": {
@@ -3526,6 +3648,14 @@
         "8": {
           "challenged": 1,
           "overturned": 1
+        },
+        "9": {
+          "challenged": 1,
+          "overturned": 1
+        },
+        "14": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
@@ -3567,9 +3697,9 @@
       }
     },
     "m\u00e1rquez": {
-      "challenged": 13,
+      "challenged": 14,
       "overturned": 8,
-      "rate": 0.615,
+      "rate": 0.571,
       "fullName": "Alfonso M\u00e1rquez",
       "weakness": "up-right",
       "zones": {
@@ -3600,19 +3730,23 @@
         "2": {
           "challenged": 1,
           "overturned": 1
+        },
+        "8": {
+          "challenged": 1,
+          "overturned": 0
         }
       }
     },
     "hudson": {
-      "challenged": 9,
-      "overturned": 4,
-      "rate": 0.444,
+      "challenged": 13,
+      "overturned": 6,
+      "rate": 0.462,
       "fullName": "Marvin Hudson",
       "weakness": "down-left",
       "zones": {
         "9": {
-          "challenged": 2,
-          "overturned": 0
+          "challenged": 5,
+          "overturned": 1
         },
         "7": {
           "challenged": 1,
@@ -3637,6 +3771,10 @@
         "14": {
           "challenged": 1,
           "overturned": 0
+        },
+        "1": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -3674,9 +3812,9 @@
       }
     },
     "merzel": {
-      "challenged": 6,
+      "challenged": 7,
       "overturned": 2,
-      "rate": 0.333,
+      "rate": 0.286,
       "fullName": "Dan Merzel",
       "weakness": "down-left",
       "zones": {
@@ -3685,7 +3823,7 @@
           "overturned": 1
         },
         "8": {
-          "challenged": 1,
+          "challenged": 2,
           "overturned": 0
         },
         "14": {
@@ -3740,22 +3878,22 @@
       }
     },
     "blaser": {
-      "challenged": 8,
-      "overturned": 5,
-      "rate": 0.625,
+      "challenged": 11,
+      "overturned": 6,
+      "rate": 0.545,
       "fullName": "Cory Blaser",
       "weakness": "down-right",
       "zones": {
         "9": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 2
         },
         "1": {
-          "challenged": 2,
-          "overturned": 1
+          "challenged": 3,
+          "overturned": 2
         },
         "14": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 1
         },
         "8": {
@@ -3810,9 +3948,9 @@
       }
     },
     "walsh": {
-      "challenged": 7,
-      "overturned": 3,
-      "rate": 0.429,
+      "challenged": 10,
+      "overturned": 5,
+      "rate": 0.5,
       "fullName": "Brian Walsh",
       "weakness": "down-left",
       "zones": {
@@ -3833,10 +3971,18 @@
           "overturned": 0
         },
         "13": {
-          "challenged": 2,
-          "overturned": 1
+          "challenged": 3,
+          "overturned": 2
         },
         "11": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "3": {
+          "challenged": 1,
+          "overturned": 1
+        },
+        "7": {
           "challenged": 1,
           "overturned": 0
         }
@@ -3872,9 +4018,9 @@
       }
     },
     "drake": {
-      "challenged": 9,
-      "overturned": 6,
-      "rate": 0.667,
+      "challenged": 10,
+      "overturned": 7,
+      "rate": 0.7,
       "fullName": "Rob Drake",
       "weakness": "left",
       "zones": {
@@ -3897,6 +4043,10 @@
         "7": {
           "challenged": 1,
           "overturned": 0
+        },
+        "12": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
@@ -3926,9 +4076,9 @@
       }
     },
     "porter": {
-      "challenged": 6,
-      "overturned": 4,
-      "rate": 0.667,
+      "challenged": 10,
+      "overturned": 7,
+      "rate": 0.7,
       "fullName": "Alan Porter",
       "weakness": "left",
       "zones": {
@@ -3941,17 +4091,25 @@
           "overturned": 1
         },
         "3": {
-          "challenged": 2,
+          "challenged": 3,
           "overturned": 0
+        },
+        "13": {
+          "challenged": 2,
+          "overturned": 2
+        },
+        "14": {
+          "challenged": 1,
+          "overturned": 1
         }
       }
     },
     "fletcher": {
-      "challenged": 8,
-      "overturned": 4,
-      "rate": 0.5,
+      "challenged": 12,
+      "overturned": 5,
+      "rate": 0.417,
       "fullName": "Andy Fletcher",
-      "weakness": null,
+      "weakness": "up",
       "zones": {
         "2": {
           "challenged": 2,
@@ -3966,23 +4124,27 @@
           "overturned": 1
         },
         "14": {
-          "challenged": 1,
+          "challenged": 2,
           "overturned": 0
         },
         "12": {
-          "challenged": 1,
+          "challenged": 2,
           "overturned": 0
         },
         "9": {
+          "challenged": 2,
+          "overturned": 1
+        },
+        "1": {
           "challenged": 1,
           "overturned": 1
         }
       }
     },
     "rackley": {
-      "challenged": 4,
+      "challenged": 6,
       "overturned": 2,
-      "rate": 0.5,
+      "rate": 0.333,
       "fullName": "David Rackley",
       "weakness": null,
       "zones": {
@@ -3999,6 +4161,14 @@
           "overturned": 0
         },
         "7": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "14": {
+          "challenged": 1,
+          "overturned": 0
+        },
+        "12": {
           "challenged": 1,
           "overturned": 0
         }
