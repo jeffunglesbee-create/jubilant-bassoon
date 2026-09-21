@@ -45,6 +45,13 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
     diagRan: null, feedLiveOutcome: null, feedByDateOutcome: null,
     rowsBeforeTier: null, rowsAfterTier: null, sectionReturned: null,
     sectionInAllData: null, producerThrew: null,
+    // THE RENDER'S OWN COUNTERS, read at the same instant as the card count.
+    // 2026-09-21 21:39Z put the loss inside the render with 42 games sitting in
+    // allData; these say whether a structural render ran after they arrived or
+    // whether the signature guard skipped it. Already-ungated globals, so this
+    // needed no client deploy.
+    renderPipeline: null, tennisSectionCount: null, tennisSectionParent: null,
+    tennisSectionHtmlLength: null, sectionsInModel: null, sectionsInDom: null,
     sampleCardText: null, verdict: null, reason: null,
   };
 
@@ -222,6 +229,34 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
         // bundle predates the instrumentation — which is a different fact from
         // the producer having run and found nothing, so it is reported as
         // `absent` rather than folded into the nulls below.
+        // WHICH SECTIONS THE MODEL HOLDS AND WHICH THE DOM SHOWS. A Tennis
+        // section present with zero cards is not the same as a Tennis section
+        // absent, and neither is the same as every OTHER section also missing —
+        // that last one would make this a slate-wide render failure rather than
+        // a tennis one.
+        sectionsInModel: (() => {
+          try { return (window.allData?.sports || []).map(x => x.sport || '(unnamed)').sort(); }
+          catch (_e) { return null; }
+        })(),
+        sectionsInDom: [...document.querySelectorAll('.sport-section')]
+          .map((el) => el.getAttribute('data-sport') || '(no data-sport)').sort(),
+        renderPipeline: (() => {
+          try {
+            const r = window.FIELD_RENDER_PIPELINE;
+            if (!r) return { absent: true };
+            return { absent: false, scheduled: r.scheduled ?? null,
+                     structuralRenders: r.structuralRenders ?? null,
+                     skippedStructuralRenders: r.skippedStructuralRenders ?? null };
+          } catch (_e) { return null; }
+        })(),
+        // More than one section carrying the same data-sport would mean two
+        // producers, and the probe would have been reading whichever came
+        // first in document order all along.
+        tennisSectionCount: document.querySelectorAll('.sport-section[data-sport="Tennis"]').length,
+        tennisSectionParent: sec && sec.parentElement
+          ? `${sec.parentElement.tagName.toLowerCase()}#${sec.parentElement.id || '(no id)'}.${sec.parentElement.className || '(no class)'}`
+          : null,
+        tennisSectionHtmlLength: sec ? sec.innerHTML.length : null,
         diag: (() => {
           const d = window._fieldTennisDiag;
           if (!d) return { absent: true };
@@ -263,6 +298,12 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
     manifest.sectionReturned = d.sectionReturned ?? null;
     manifest.sectionInAllData = d.sectionInAllData ?? null;
     manifest.producerThrew = d.threw ?? null;
+    manifest.renderPipeline = counts.renderPipeline ?? null;
+    manifest.tennisSectionCount = counts.tennisSectionCount ?? null;
+    manifest.tennisSectionParent = counts.tennisSectionParent ?? null;
+    manifest.tennisSectionHtmlLength = counts.tennisSectionHtmlLength ?? null;
+    manifest.sectionsInModel = counts.sectionsInModel ?? null;
+    manifest.sectionsInDom = counts.sectionsInDom ?? null;
 
     await page.screenshot({ path: `outbox/tennis-live-probe-${stamp}.png`, fullPage: false });
     const sec = await page.$('.sport-section[data-sport="Tennis"]');
