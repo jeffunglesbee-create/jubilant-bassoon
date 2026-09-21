@@ -52,6 +52,7 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
     // needed no client deploy.
     renderPipeline: null, tennisSectionCount: null, tennisSectionParent: null,
     tennisSectionHtmlLength: null, sectionsInModel: null, sectionsInDom: null,
+    tennisGamesInModel: null, tennisSectionAnatomy: null, domSectionCardCounts: null,
     sampleCardText: null, verdict: null, reason: null,
   };
 
@@ -234,10 +235,37 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
         // absent, and neither is the same as every OTHER section also missing —
         // that last one would make this a slate-wide render failure rather than
         // a tennis one.
+        // NOT window.allData — it is module-scoped and reading it through the
+        // window gives undefined, which the 21:42Z run then reported as an
+        // EMPTY MODEL beside a DOM holding three sections. The page exposes it
+        // through a getter that closes over the real binding.
         sectionsInModel: (() => {
-          try { return (window.allData?.sports || []).map(x => x.sport || '(unnamed)').sort(); }
+          try { return window._fieldTennisDiag?.sportsInAllData ?? null; }
           catch (_e) { return null; }
         })(),
+        tennisGamesInModel: (() => {
+          try { return window._fieldTennisDiag?.tennisGamesInAllData ?? null; }
+          catch (_e) { return null; }
+        })(),
+        // WHAT THE ELEMENT ACTUALLY IS. The 21:42Z section screenshot showed
+        // streaming-subscription chips inside 9085 characters of HTML with zero
+        // game cards — so whatever carries data-sport="Tennis" is not the games
+        // section the probe has been assuming it found for sixteen days.
+        tennisSectionAnatomy: sec ? {
+          tag: sec.tagName.toLowerCase(),
+          className: sec.className || '(none)',
+          id: sec.id || '(none)',
+          heading: txt(sec.querySelector('h1,h2,h3,.section-title,.sport-title')).slice(0, 80) || '(no heading)',
+          childTags: [...sec.children].slice(0, 12)
+            .map((c) => `${c.tagName.toLowerCase()}.${(c.className || '(no class)').toString().split(' ')[0]}`),
+          htmlHead: sec.innerHTML.slice(0, 400),
+        } : null,
+        // Every section's card count, so "tennis renders none" can be read
+        // against whether ANY section is rendering cards.
+        domSectionCardCounts: [...document.querySelectorAll('.sport-section')].map((el) => ({
+          sport: el.getAttribute('data-sport') || '(none)',
+          cards: el.querySelectorAll('.game-card').length,
+        })),
         sectionsInDom: [...document.querySelectorAll('.sport-section')]
           .map((el) => el.getAttribute('data-sport') || '(no data-sport)').sort(),
         renderPipeline: (() => {
@@ -304,6 +332,9 @@ const { boundaryLine } = require('./scripts/tennis-boundary-line.cjs');
     manifest.tennisSectionHtmlLength = counts.tennisSectionHtmlLength ?? null;
     manifest.sectionsInModel = counts.sectionsInModel ?? null;
     manifest.sectionsInDom = counts.sectionsInDom ?? null;
+    manifest.tennisGamesInModel = counts.tennisGamesInModel ?? null;
+    manifest.tennisSectionAnatomy = counts.tennisSectionAnatomy ?? null;
+    manifest.domSectionCardCounts = counts.domSectionCardCounts ?? null;
 
     await page.screenshot({ path: `outbox/tennis-live-probe-${stamp}.png`, fullPage: false });
     const sec = await page.$('.sport-section[data-sport="Tennis"]');

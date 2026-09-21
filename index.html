@@ -14856,6 +14856,29 @@ try {
     },
     enumerable: true, configurable: true,
   });
+  // THE WHOLE MODEL'S SECTION LIST, for the same reason and by the same route.
+  // `allData` is module-scoped, not a window property, so a probe reading
+  // `window.allData` gets undefined and reports an EMPTY MODEL — which is what
+  // the 2026-09-21 21:42Z reading did, printing `sectionsInModel: []` beside a
+  // DOM holding three sections. A getter that closes over the real binding is
+  // the only way out of the page for it.
+  Object.defineProperty(window._fieldTennisDiag, 'sportsInAllData', {
+    get(){
+      try { return (allData?.sports || []).map(x => x.sport || '(unnamed)').sort(); }
+      catch(_e){ return null; }
+    },
+    enumerable: true, configurable: true,
+  });
+  Object.defineProperty(window._fieldTennisDiag, 'tennisGamesInAllData', {
+    get(){
+      try {
+        return (allData?.sports || [])
+          .filter(x => x.sport === 'Tennis')
+          .reduce((n, x) => n + ((x.games || []).length), 0);
+      } catch(_e){ return null; }
+    },
+    enumerable: true, configurable: true,
+  });
 } catch(_e) {}
 
 /// True when a BSD tennis match belongs to a competition FIELD shows.
@@ -28188,7 +28211,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-21a';
+  const SW_VERSION = '2026-09-21b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
