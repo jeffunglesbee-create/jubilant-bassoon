@@ -15208,6 +15208,25 @@ if (typeof window !== 'undefined') {
       sportsLength:  Array.isArray(allData.sports) ? allData.sports.length : null,
       sportsLabels:  Array.isArray(allData.sports)
         ? allData.sports.map(x => (x && (x.section || x.sport)) || '(unnamed)') : null,
+      // HOW MANY GAMES EACH SECTION CARRIES, which the labels alone cannot say.
+      //
+      // `sections_model_not_in_dom` compares LABELS, so a section holding zero
+      // games counts as missing — and renderAll returns "" for exactly that
+      // case (`if(!games.length) return ""`), which is correct behaviour, not a
+      // defect. The gap of 8 measured on 2026-09-21 cannot currently tell:
+      //
+      //   a section with games the render dropped   <- the defect
+      //   a section with games: [] rendering nothing <- working as designed
+      //
+      // Same absence collapse this repo has scripts/check-absence-collapse.mjs
+      // for, one layer above the one it was last found in. Counting is what
+      // separates them, and the count is free.
+      sportsGameCounts: Array.isArray(allData.sports)
+        ? allData.sports.map(x => ({
+            label: (x && (x.section || x.sport)) || '(unnamed)',
+            games: Array.isArray(x && x.games) ? x.games.length : null,
+          }))
+        : null,
     },
     v2SectionInjected: { ..._v2SectionInjected },
   });
@@ -23168,7 +23187,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-21c';
+  const SW_VERSION = '2026-09-21d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

@@ -106,6 +106,13 @@ jobs:
           node scripts/check-probe-window.mjs
           node scripts/mutate-probe-window.mjs
 
+      # A splitter that mislabels which sections are a defect turns a real
+      # reading into a wrong diagnosis, so it runs before the browser half.
+      - name: The gap split holds, and can fail
+        run: |
+          node scripts/check-gap-split.mjs
+          node scripts/mutate-gap-split.mjs
+
       - name: Run odds line probe
         run: node odds_line_probe.js
         env:

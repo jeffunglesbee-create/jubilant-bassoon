@@ -17,6 +17,7 @@ const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const { settleScan } = require('./scripts/slate-settle.cjs');
 const { windowReality } = require('./scripts/probe-window.cjs');
+const { splitGap } = require('./scripts/gap-split.cjs');
 
 // ?wpt — SKIP THE FIRST-VISIT MY SERVICES MODAL (PM-26-A, Rule 54). Every
 // headless run is a first visit, so without it the modal is on screen for the
@@ -114,6 +115,9 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // null when the comparison could not be made at all, [] when model and DOM
     // agree. Not the same thing, never merged (Rule 99).
     sections_model_not_in_dom: null,
+    // The gap split into dropped / empty / unknown. null when the split could
+    // not be made at all — not an empty split, which would claim no defect.
+    gap_split: null,
     // The app's OWN swallowed-failure store. page.on('pageerror') sees uncaught
     // throws and the init-script hook sees unhandled rejections; neither sees a
     // failure the app caught on purpose. injectV2SportSection wraps its whole
@@ -562,6 +566,23 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     const dom = m.slate_sections_present || null;
     m.sections_model_not_in_dom =
       (model === null || dom === null) ? null : model.filter(x => !dom.includes(x));
+
+    // THE GAP, SPLIT BY WHETHER THERE WAS ANYTHING TO RENDER.
+    //
+    // renderAll returns "" for a section with no games, so a label in the model
+    // with games: [] is absent from the DOM by design. Counting it as a defect
+    // inflates the gap with sections that are behaving correctly, and the 0/5
+    // done condition can never close while they do.
+    //
+    // Three states, never merged (Rule 99): `dropped` is the defect, `empty` is
+    // correct behaviour, `unknown` is a section whose count could not be read —
+    // which happens on a deployed bundle predating sportsGameCounts.
+    const counts = (m.slate_state && m.slate_state.allData && m.slate_state.allData.sportsGameCounts) || null;
+    if (counts === null || m.sections_model_not_in_dom === null) {
+      m.gap_split = null;
+    } else {
+      m.gap_split = splitGap(m.sections_model_not_in_dom, counts);
+    }
 
     // The ordering verdict belongs in the artifact, not only in the console.
     // sections_model_not_in_dom was computed in the summary block until an hour
