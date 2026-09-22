@@ -3208,7 +3208,15 @@ assert('A416 — PM-26-C5: LCP anchor preserved across main.innerHTML transition
   // const _renderAllHTML = filtered.map... + applyMainHTML(_renderAllHTML)
   // must be present.
   !/main\.innerHTML=filtered\.map\(/.test(html) &&
-  /const _renderAllHTML\s*=\s*filtered\.map\(/.test(html) &&
+  // THE SHAPE, NOT THE SPELLING. This pinned
+  // `const _renderAllHTML = filtered.map(` and so went red on 2026-09-22 when
+  // the map was split into `_sectionHTML` and joined on the next line — a
+  // change that preserves everything this assertion is about, because the
+  // per-section array is what lets the render trace say WHICH section produced
+  // nothing. What matters is that renderAll builds a string from filtered and
+  // hands it to applyMainHTML, never to innerHTML.
+  /filtered\.map\(/.test(html) &&
+  /const _renderAllHTML\s*=\s*_sectionHTML\.filter\(Boolean\)\.join\(""\)/.test(html) &&
   /applyMainHTML\(_renderAllHTML\)/.test(html) &&
   // Snapshot restore must also use applyMainHTML so the anchor is preserved
   // across the snapshot→fresh-render transition on 2nd+ visits.
@@ -6560,9 +6568,19 @@ assert('A-SOCCERDRAMA-5 — FIFA rank fetch/cache exists and threads homeRank/aw
   'fetchTeamRank/getCachedTeamRank must exist, and computeDramaRetroactive must accept and use homeRank/awayRank params, threaded from _backfillOneDramaGame — without this, the upset bonus logic would be correct in isolation but never receive real rank data at its real call sites (the same failure class already caught twice tonight for the circadian classification and card-attribute-sync work).');
 
 // ── Newspaper repaint-wipe fix (A-NPWIPE — CC-CMD-2026-07-04-newspaper-repaint-wipe-fix) ──
-assert('A-NPWIPE-1 — renderAll empty-filter branch preserves the newspaper via applyMainHTML',
-  !!html.match(/filtered\.every\(s=>!\(s\.games\|\|\[\]\)\.length\)\)\{\s*applyMainHTML\(/),
-  'renderAll()\'s empty-filter branch must call applyMainHTML(...) instead of assigning main.innerHTML directly — a direct assignment bypasses applyMainHTML\'s #field-newspaper preserve/re-prepend logic and permanently wipes the newspaper banner until a full reload.');
+// THE INTENT, NOT THE SPELLING. This pinned `...length)){` immediately
+// followed by `applyMainHTML(`, so inserting ANY statement into the branch —
+// here the render-trace stamp — turned it red while the property it exists to
+// protect was untouched. An assertion that fails on a correct change is
+// reporting on adjacency, not on the newspaper. It now reads the branch body
+// and asserts the two things that actually matter: applyMainHTML is what the
+// branch calls, and nothing in it assigns main.innerHTML.
+{
+  const _npwipe1 = html.match(/filtered\.every\(s=>!\(s\.games\|\|\[\]\)\.length\)\)\{([\s\S]*?)return;\s*\}/);
+  assert('A-NPWIPE-1 — renderAll empty-filter branch preserves the newspaper via applyMainHTML',
+    !!_npwipe1 && _npwipe1[1].includes('applyMainHTML(') && !_npwipe1[1].includes('main.innerHTML'),
+    'renderAll()\'s empty-filter branch must call applyMainHTML(...) instead of assigning main.innerHTML directly — a direct assignment bypasses applyMainHTML\'s #field-newspaper preserve/re-prepend logic and permanently wipes the newspaper banner until a full reload.');
+}
 
 assert('A-NPWIPE-2 — no remaining direct main.innerHTML bypasses in goToDate — all route through applyMainHTML',
   (html.match(/main\.innerHTML\s*=\s*`<div class="(empty-note|loading-wrap)"/g) || []).length === 0,
@@ -7475,6 +7493,54 @@ assert('A-TENNIS-2 — fetchTennisLive is actually merged into the render path',
 // carried no diagnostic. These two assertions are what stops the collapse being
 // reintroduced by a future simplification that "tidies" the branches back into
 // one. Tracked by docs/CC-CMD-2026-09-21-tennis-renders-zero-above-26.md.
+// ── The render trace ───────────────────────────────────────────────────────
+// `sections_model_not_in_dom` compares allData AT PROBE TIME against the DOM.
+// It cannot separate a section renderAll never iterated from one it iterated
+// and emitted nothing for. Measured 2026-09-22: NHL 8 games, WNBA 2, NFL 1, all
+// in allData, none in the DOM, while MLB rendered from the same model in the
+// same pass. Tracked by docs/CC-CMD-2026-09-12-v2-sections-in-model-not-in-dom.md.
+assert('A-TRACE-1 — renderAll records what it saw and what each section produced',
+  html.includes('window._fieldRenderTrace') &&
+  // The per-section array has to exist for the zip to be possible at all.
+  /const _sectionHTML = filtered\.map\(/.test(html) &&
+  /const _renderAllHTML = _sectionHTML\.filter\(Boolean\)\.join\(""\)/.test(html) &&
+  // emitted is the field the whole trace exists for.
+  /emitted: typeof html === 'string' && html\.length > 0/.test(html) &&
+  /games: Array\.isArray\(sec && sec\.games\) \? sec\.games\.length : null/.test(html),
+  'without the per-section array nothing can say WHICH section produced nothing');
+
+// THREE COUNTS, not one. A section can vanish at the sport filter, at the
+// game-level filter, or in the map — and one number cannot say which.
+assert('A-TRACE-2 — the trace carries the filters and all three section counts',
+  /sportsIn: Array\.isArray\(sports\)/.test(html) &&
+  /visibleCount: Array\.isArray\(visible\)/.test(html) &&
+  /filteredCount: Array\.isArray\(filtered\)/.test(html) &&
+  html.includes('activeFilter: (typeof activeFilter') &&
+  html.includes('myTeamsFilter: !!(typeof myTeamsFilter'),
+  'a trace that omits the filters invites blaming the renderer for a filter doing its job');
+
+// EVERY EXIT STAMPS. renderAll has three and only one reaches the section map.
+// Without a stamp at the other two, a render that bailed leaves the PREVIOUS
+// render's trace in place and a reader has no way to tell a current trace from
+// a stale one — a copy read as the source, which is the substitution this whole
+// instrumentation chain exists to stop.
+assert('A-TRACE-3 — all three of renderAll\'s exits stamp the trace, and the stamp says which one',
+  (html.match(/_stampRenderTrace\(/g) || []).length === 4 &&   // 1 definition + 3 call sites
+  html.includes("_stampRenderTrace('no-alldata')") &&
+  html.includes("_stampRenderTrace('empty-note'") &&
+  html.includes("_stampRenderTrace('rendered', sports, visible, filtered, _sectionHTML)") &&
+  /\n      outcome,/.test(html),
+  'a trace stamped only on the full-render path leaves the previous render\'s object behind on the other two, and `at` then describes a render that is not the one being read');
+
+// THE MODEL'S OWN LIST, not the renderer's. A section dropped before the map
+// cannot appear in `sections` at all — it would vanish from the trace exactly
+// as it vanishes from the DOM, and the trace would agree with the defect
+// instead of naming it.
+assert('A-TRACE-4 — the trace carries the model\'s section list alongside the rendered one',
+  /modelSections: Array\.isArray\(sports\) \? sports\.map\(desc\) : \[\]/.test(html) &&
+  /sections: Array\.isArray\(filtered\) \? filtered\.map\(/.test(html),
+  'without modelSections a section lost before the map is indistinguishable from one that never entered allData, and scripts/render-trace-verdict.cjs reports the whole gap as not-iterated');
+
 assert('A-TENNIS-14 — readRows names WHICH absence it found, not just that there was one',
   html.includes("outcome: n === 'TimeoutError' ? 'timeout'") &&
   html.includes("outcome: `http:${res.value?.status ?? '?'}`") &&

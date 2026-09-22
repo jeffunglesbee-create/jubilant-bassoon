@@ -91,6 +91,36 @@ const MUTATIONS = [
    'A-FTO-3',
    'a guard that tests one list while the render uses another is the vacuous-assertion shape, and the filter would run a third time per section for nothing'],
 
+  ['D9 the per-section array collapses back into one expression',
+   '  const _renderAllHTML = _sectionHTML.filter(Boolean).join("");',
+   '  const _renderAllHTML = filtered.map(() => "").filter(Boolean).join("");',
+   'A-TRACE-1',
+   'THE STATE THE TRACE EXISTS TO END: the map result is thrown away in the same expression, so nothing can say WHICH section produced nothing — which is why the gap has been a count for ten days'],
+
+  ['D10 `emitted` is recorded without consulting the section output',
+   "          emitted: typeof html === 'string' && html.length > 0,",
+   '          emitted: true,',
+   'A-TRACE-1',
+   'a section that produced nothing would report as emitted, and the trace would agree with the defect instead of naming it'],
+
+  ['D11 the trace drops the filters',
+   '      activeFilter: (typeof activeFilter !== \'undefined\') ? activeFilter : null,',
+   '      activeFilter: null,',
+   'A-TRACE-2',
+   'a myTeams or freeOnly filter can legitimately empty a section; a trace that cannot say so invites blaming the renderer for a filter doing its job'],
+
+  ['D12 the bail-out exit stops stamping, so it leaves the previous render’s trace',
+   "  if(!allData){ _stampRenderTrace('no-alldata'); return; }",
+   '  if(!allData){ return; }',
+   'A-TRACE-3',
+   'THE STALE-TRACE TRAP: a render that bailed leaves the LAST render’s object in place with its own `at`, and a reader has no way to tell a current trace from a copy of an older one — the source-versus-copy substitution this whole chain exists to stop'],
+
+  ['D13 the model’s own section list is dropped from the trace',
+   '      modelSections: Array.isArray(sports) ? sports.map(desc) : [],',
+   '      modelSections: [],',
+   'A-TRACE-4',
+   'a section lost BEFORE the map vanishes from the trace exactly as it vanishes from the DOM, so the trace agrees with the defect; render-trace-verdict.cjs would then file the entire gap as not-iterated'],
+
   ['D6 the sectionInAllData getter becomes a value read too early',
    "Object.defineProperty(window._fieldTennisDiag, 'sectionInAllData', {",
    "Object.defineProperty(window._fieldTennisDiag, 'sectionInAllDataSnapshot', {",
@@ -125,8 +155,8 @@ for (const [name, anchor, repl, expect, why] of MUTATIONS) {
 }
 
 console.log(`\n${caught} of ${MUTATIONS.length} mutations caught.`);
-console.log('COVERAGE: A-TENNIS-14 and A-TENNIS-15 only — the two assertions added');
-console.log('for the Task 1 instrumentation. It does NOT cover the other 1049 smoke');
-console.log('assertions, and it proves nothing about whether the instrumented values');
-console.log('are CORRECT at runtime: that is the live probe’s job, not this one’s.');
+console.log('COVERAGE: A-TENNIS-14/15, A-FTO-3 and A-TRACE-1..4 — 7 of the 1055 smoke');
+console.log('assertions. It does NOT cover the other 1048, and it proves nothing about');
+console.log('whether the instrumented values are CORRECT at runtime: that is the live');
+console.log('probe’s job, not this one’s.');
 process.exit(caught === MUTATIONS.length ? 0 : 1);

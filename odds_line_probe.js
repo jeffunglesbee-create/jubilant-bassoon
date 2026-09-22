@@ -18,6 +18,7 @@ const fs = require('fs');
 const { settleScan } = require('./scripts/slate-settle.cjs');
 const { windowReality } = require('./scripts/probe-window.cjs');
 const { splitGap, keyMismatches, gapOnDomKey } = require('./scripts/gap-split.cjs');
+const { traceVerdicts, verdictCensus } = require('./scripts/render-trace-verdict.cjs');
 
 // ?wpt — SKIP THE FIRST-VISIT MY SERVICES MODAL (PM-26-A, Rule 54). Every
 // headless run is a first visit, so without it the modal is on screen for the
@@ -121,6 +122,18 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // The mismatch between the two keys, and the gap recomputed without it.
     // null when it could not be computed — never [] , which would claim none.
     section_key_mismatches: null, gap_on_dom_key: null, gap_split_on_dom_key: null,
+    // WHAT renderAll ACTUALLY SAW AND PRODUCED, per section. The gap has been a
+    // COUNT for ten days and a count cannot separate a section the render never
+    // iterated from one it iterated and emitted nothing for — the two want
+    // different fixes, and every hypothesis refuted so far was refuted because
+    // it assumed one of them.
+    render_trace: null,
+    // How stale the trace is relative to the read. A trace from a render that
+    // ran before the sections arrived describes a different page.
+    render_trace_age_ms: null,
+    // The gap, one verdict per section. null when it could not be reached —
+    // never [], which would read as "every section accounted for" (Rule 99).
+    gap_verdicts: null, gap_verdict_census: null,
     // The app's OWN swallowed-failure store. page.on('pageerror') sees uncaught
     // throws and the init-script hook sees unhandled rejections; neither sees a
     // failure the app caught on purpose. injectV2SportSection wraps its whole
@@ -378,6 +391,14 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     m.slate_state = await page.evaluate(
       () => (typeof window.__fieldSlateState === 'function' ? window.__fieldSlateState() : null));
 
+    // The render's own account of the pass that produced the DOM being read
+    // above. Published by _stampRenderTrace at all three of renderAll's exits,
+    // so `outcome` says which one — a render that bailed at `!allData` and one
+    // that emitted fourteen sections both leave an object behind.
+    m.render_trace = await page.evaluate(() => (window._fieldRenderTrace || null));
+    m.render_trace_age_ms = (m.render_trace && typeof m.render_trace.at === 'number')
+      ? (Date.now() - m.render_trace.at) : null;
+
     m.espn_scores_by_sport = await page.evaluate(() => {
       const es = window.espnScores;
       if (!es) return null;   // null, not {} — absent and empty are different
@@ -598,6 +619,13 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       m.gap_split_on_dom_key = (m.gap_on_dom_key && counts) ? splitGap(m.gap_on_dom_key, counts) : null;
     }
 
+    // ONE VERDICT PER MISSING SECTION, from the render's own trace.
+    // dropped-at-render is the defect; emitted-but-absent is a different one,
+    // downstream of the join; filtered-out and empty-by-design are correct
+    // behaviour; not-iterated is a timing artifact, not a render failure.
+    m.gap_verdicts = traceVerdicts(m.sections_model_not_in_dom, m.render_trace);
+    m.gap_verdict_census = verdictCensus(m.gap_verdicts);
+
     // The ordering verdict belongs in the artifact, not only in the console.
     // sections_model_not_in_dom was computed in the summary block until an hour
     // before this line was written, and every committed manifest carried null
@@ -744,8 +772,22 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
               + `${JSON.stringify(m.sections_model_not_in_dom)}`);
     if (m.sections_model_not_in_dom.length) {
       failed++;
-      console.error(`FAIL — ${m.sections_model_not_in_dom.length} section(s) are in the model and not on `
-                  + `the page. injectV2SportSection pushed them and nothing rendered them.`);
+      // The second sentence used to read "injectV2SportSection pushed them and
+      // nothing rendered them", which is a CAUSE, asserted on every run, by a
+      // line that had no way to know it. The trace knows; this prints what it
+      // says and nothing more.
+      console.error(`FAIL — ${m.sections_model_not_in_dom.length} section(s) are in the model and not on the page.`);
+    }
+    if (m.gap_verdicts === null) {
+      console.log(`  where each was lost: NOT DETERMINED — `
+                + `${m.render_trace ? 'the trace is half-formed' : 'no window._fieldRenderTrace (build predates it)'}`);
+    } else {
+      console.log(`  where each was lost (trace outcome "${m.render_trace.outcome}", `
+                + `${m.render_trace_age_ms}ms before this read, `
+                + `${m.render_trace.sections.length} of ${m.render_trace.sportsIn} model sections iterated): `
+                + `${JSON.stringify(m.gap_verdict_census)}`);
+      for (const v of m.gap_verdicts) console.log(`    ${v.label} — ${v.verdict}`
+                + `${v.games === null ? '' : ` (${v.games} games, ${v.chars} chars)`}`);
     }
   }
 

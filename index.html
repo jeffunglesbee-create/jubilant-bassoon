@@ -6972,6 +6972,62 @@ function mlbStreams(){ return resolveBundle(MLB_BUNDLE); }
 // Render/push ordering ledger. Deliberately NOT a boolean and not a count:
 // "did a render happen" and "did a render happen AFTER the last section was
 // pushed" are different questions, and only the second one is diagnostic.
+// WHAT THE RENDER SAW, AND WHAT IT PRODUCED, PER SECTION.
+//
+// `sections_model_not_in_dom` compares allData AT PROBE TIME against the DOM,
+// which cannot separate two very different failures: a section renderAll never
+// iterated (it entered allData after this pass), and one it iterated and
+// emitted nothing for. Measured 2026-09-22: NHL 8 games, WNBA 2, NFL 1, all in
+// allData, none in the DOM, while MLB rendered from the same model in the same
+// pass. No reading so far separates those; the count has been the whole of the
+// evidence for ten days.
+//
+// Called from all three of renderAll's exits, so `at` always describes the
+// render that just ran. Overwritten each time on purpose — the question is
+// about the LAST render, and a growing log is a leak on a 15-30s poll.
+function _stampRenderTrace(outcome, sports, visible, filtered, sectionHTML){
+  try {
+    const desc = (sec) => ({
+      sport: (sec && typeof sec.sport === 'string') ? sec.sport : null,
+      label: (sec && (sec.section || sec.sport)) || '(unnamed)',
+      games: Array.isArray(sec && sec.games) ? sec.games.length : null,
+    });
+    window._fieldRenderTrace = {
+      at: Date.now(),
+      // Which exit. Without it, a render that bailed at `!allData` and one that
+      // emitted 14 sections both leave an object, and only the contents differ.
+      outcome,
+      // The filters, because every one of them can legitimately empty a section
+      // and a trace that omits them invites blaming the renderer for a filter
+      // doing its job.
+      activeFilter: (typeof activeFilter !== 'undefined') ? activeFilter : null,
+      myTeamsFilter: !!(typeof myTeamsFilter !== 'undefined' && myTeamsFilter),
+      rivalsFilter: !!(typeof rivalsFilter !== 'undefined' && rivalsFilter),
+      freeOnlyFilter: !!(typeof freeOnlyFilter !== 'undefined' && freeOnlyFilter),
+      // Three counts, not one: how many sections the model held, how many
+      // survived the section-level filter, how many reached the map.
+      sportsIn: Array.isArray(sports) ? sports.length : null,
+      visibleCount: Array.isArray(visible) ? visible.length : null,
+      filteredCount: Array.isArray(filtered) ? filtered.length : null,
+      // THE MODEL'S OWN LIST, not the renderer's. A section dropped before the
+      // map cannot appear in `sections` at all — it would vanish from the trace
+      // exactly as it vanishes from the DOM, and the trace would agree with the
+      // defect. Zipping the two names where each section was lost.
+      modelSections: Array.isArray(sports) ? sports.map(desc) : [],
+      sections: Array.isArray(filtered) ? filtered.map((sec, i) => {
+        const html = Array.isArray(sectionHTML) ? sectionHTML[i] : undefined;
+        return Object.assign(desc(sec), {
+          // `emitted` is the whole point: false with games > 0 is the defect,
+          // false with games === 0 is `if(!games.length) return ""` doing its
+          // job, and those two must not read the same.
+          emitted: typeof html === 'string' && html.length > 0,
+          chars: typeof html === 'string' ? html.length : null,
+        });
+      }) : [],
+    };
+  } catch (_e) {}
+}
+
 const _renderLedger = {
   renders: 0, lastRenderAt: null,            // renderAll() entries
   lastPushAt: null, lastPushSport: null,     // injectV2SportSection() pushes
@@ -13228,7 +13284,12 @@ function renderAll(skipUnchanged){
   _renderLedger.renders++;
   _renderLedger.lastRenderAt = Date.now();
   _renderLedger.pushesSinceLastRender = 0;
-  if(!allData) return;
+  // EVERY EXIT STAMPS. renderAll has three of them and only one reaches the
+  // per-section trace below; without a stamp here a render that bailed leaves
+  // the PREVIOUS render's trace in place, and a reader has no way to tell a
+  // current trace from a stale one. That substitution — a copy read as the
+  // source — is the thing this whole instrumentation chain exists to stop.
+  if(!allData){ _stampRenderTrace('no-alldata'); return; }
   const main=document.getElementById("main");
   const sports=allData.sports||[];
 
@@ -13265,7 +13326,7 @@ function renderAll(skipUnchanged){
     : freeOnlyFilter
       ? visible.map(s=>({...s, games:(s.games||[]).filter(shouldShowCard)}))
       : visible;
-  if(!filtered.length||filtered.every(s=>!(s.games||[]).length)){ applyMainHTML('<div class="empty-note">No '+(freeOnlyFilter?"free ":"")+'events found for this filter</div>'); return; }
+  if(!filtered.length||filtered.every(s=>!(s.games||[]).length)){ _stampRenderTrace('empty-note', sports, visible, filtered); applyMainHTML('<div class="empty-note">No '+(freeOnlyFilter?"free ":"")+'events found for this filter</div>'); return; }
   // J3 FIELD Brief supersedes Tonight Summary Card — rendered in #field-brief above main
   // PM-26-C5: build HTML string, then call applyMainHTML to preserve LCP
   // anchor identity across the skeleton→real transition. See applyMainHTML
@@ -13274,7 +13335,11 @@ function renderAll(skipUnchanged){
   // state only becomes available here, not at bootNewspaper() time — see
   // applyNewspaperVoice, called after applyMainHTML below).
   const _renderAllCircadianGames = [];
-  const _renderAllHTML = filtered.map((sec,si)=>{
+  // ARRAY FIRST, THEN JOIN. This was `filtered.map(...).filter(Boolean).join("")`
+  // in one expression, which threw away the per-section result — so nothing
+  // could say WHICH section produced nothing. The join below is byte-identical;
+  // what is added is the ability to zip sections against their own output.
+  const _sectionHTML = filtered.map((sec,si)=>{
     const games=sec.games||[];
     if(!games.length) return "";
     // Circadian sort order (CC-CMD-2026-07-04-circadian-card-sort-order):
@@ -13478,7 +13543,11 @@ function renderAll(skipUnchanged){
       <div class="games-list">${cards}</div>
       ${_overThreshold ? buildOverflowStrip(overflowGames, sec.sport) : ''}
     </div>`;
-  }).filter(Boolean).join("");
+  });
+  const _renderAllHTML = _sectionHTML.filter(Boolean).join("");
+
+  _stampRenderTrace('rendered', sports, visible, filtered, _sectionHTML);
+
   applyMainHTML(_renderAllHTML);
   // Render-signature gate (CC-CMD-2026-07-10-render-signature-gate): stamp
   // the signature after EVERY structural render, not just ones that went
@@ -28267,7 +28336,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-22a';
+  const SW_VERSION = '2026-09-22b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
