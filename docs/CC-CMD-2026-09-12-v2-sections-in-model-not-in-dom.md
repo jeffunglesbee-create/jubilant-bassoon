@@ -335,3 +335,111 @@ mid-flight.
 
 A per-section trace — which branch each section took, and which path added it —
 names it. Reading further will not.
+
+---
+
+## 2026-09-22 — the per-section trace is built, and the gap now gets a verdict per section
+
+Commit `179e493`, SW `2026-09-22b`, smoke 1055/0.
+
+Ten days of this document have been a count. `sections_model_not_in_dom`
+compares `allData` at probe time against the DOM, and that comparison cannot
+separate three different failures:
+
+| what happened | what the count says | what it needs |
+|---|---|---|
+| the render never iterated the section — it entered `allData` after that pass | missing | a render call, Rule 24 on frequency |
+| the render iterated it and a filter removed it | missing | nothing; the filter is working |
+| the render iterated it and emitted nothing for it | missing | the section loop |
+
+Every hypothesis this document has refuted — the missing `else`, the mid-poll
+read, the render that never ran, benignly empty sections, the `data-sport` key
+mismatch — was refuted because a count cannot say which of the three it was.
+Each refutation cost a build, a deploy and a scheduled run to learn one bit.
+
+### What was built
+
+`renderAll` builds its sections into an array before joining
+(`const _sectionHTML = filtered.map(...)`, then
+`_sectionHTML.filter(Boolean).join("")`). The join is byte-identical; what is
+added is that each section's own output can be zipped against the section that
+produced it.
+
+`_stampRenderTrace` publishes `window._fieldRenderTrace`:
+
+```
+outcome         which of renderAll's three exits produced this trace
+activeFilter / myTeamsFilter / rivalsFilter / freeOnlyFilter
+sportsIn / visibleCount / filteredCount
+modelSections   the model's own list:  {sport, label, games}
+sections        what the map iterated: {sport, label, games, emitted, chars}
+```
+
+**Stamped at all three exits, not just the full-render one.** A render that
+bailed at `!allData` or at the empty-filter branch used to leave the PREVIOUS
+render's trace in place, with its own `at`, and a reader had no way to tell a
+current trace from a copy of an older one. That is the source-versus-copy
+substitution this whole chain exists to stop, and it would have been rebuilt
+inside the instrument written to end it.
+
+**`modelSections` matters for the same reason.** A section dropped before the
+map cannot appear in `sections` at all — it would vanish from the trace exactly
+as it vanishes from the DOM, and the trace would agree with the defect instead
+of naming it.
+
+### What the probe now reports
+
+`scripts/render-trace-verdict.cjs` turns the gap into one verdict per section:
+
+| verdict | meaning |
+|---|---|
+| `dropped-at-render` | iterated, had games, emitted nothing — **the defect** |
+| `emitted-but-absent` | produced HTML and is still not in the DOM — a *different* defect, downstream of the join, and one `applyMainHTML` has caused before (the card-less zero-change fast path, 2026-09-12) |
+| `filtered-out` | in the model the render read, not in what it iterated |
+| `empty-by-design` | zero games; `if(!games.length) return ""` doing its job |
+| `unknown-count` | the count could not be read |
+| `not-iterated` | not in the model the render read — a timing artifact, not a render failure |
+
+`null` when the verdict cannot be reached at all, never `[]`.
+
+The probe's FAIL line used to end *"injectV2SportSection pushed them and
+nothing rendered them"* — a cause, asserted on every run since the field
+existed, by a line that had no way to know it. It prints the trace's verdicts
+now and nothing more.
+
+### Verification
+
+- `scripts/check-render-trace-verdict.mjs` — 15/15.
+- `scripts/mutate-render-trace-verdict.mjs` — **8 of 8 caught**, with a positive
+  control running an unmutated copy at the mutant location first.
+- `scripts/mutate-tennis-diag.mjs` — **13 of 13 caught** (D12 removes the
+  bail-out stamp, D13 drops `modelSections`).
+- smoke A-TRACE-1..4.
+
+`A-NPWIPE-1` pinned `...length)){` immediately followed by `applyMainHTML(`, so
+inserting the empty-note stamp turned it red while the newspaper property it
+protects was untouched. It now reads the branch body and asserts the two things
+that matter: `applyMainHTML` is what the branch calls, and nothing in it
+assigns `main.innerHTML`.
+
+### Scheduled run 20260922T194444Z, on the build before this one
+
+```
+trigger schedule (step 1, Yesterday)
+gap    ["NHL","NFL"]
+split  dropped NHL:8 · NFL:1 · empty 0 · unknown 0
+render_after_last_push_ms  +11543
+```
+
+WNBA has dropped out of the set since 08:49Z and NHL is the only constant
+across every reading back to 2026-09-21. `render_trace` is absent from this
+manifest — it was produced by the deployed bundle that predates the trace,
+which is what `null`-not-`[]` is for.
+
+**No cause is claimed here.** The next scheduled run reads the trace, and the
+verdict census is what this document has been missing.
+
+### Done condition, unchanged
+
+`scripts/check-sections-gap-streak.mjs` — five consecutive scheduled runs with
+the gap empty. **0 of 5.**

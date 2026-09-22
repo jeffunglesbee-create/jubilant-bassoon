@@ -17,6 +17,7 @@ All of them, newest first:
 
 | arc | session doc |
 |---|---|
+| the sections gap gets a verdict per section — `_fieldRenderTrace`, stamped at all three of `renderAll`'s exits | `cc-session-2026-09-22-per-section-render-trace.md` |
 | tennis rendered 0 cards above the overflow threshold — root cause found, fixed, verified live at 42 cards | `cc-session-2026-09-21-tennis-zero-cards.md` |
 | render-target completeness — STOPPED: no honest enumeration exists | `cc-session-2026-09-19-render-target-completeness.md` |
 | the odds probe reads a complete slate, not whatever hour it woke at | `cc-session-2026-09-15-probe-window-reality.md` |
@@ -89,6 +90,21 @@ corrections are recorded in place rather than edited away.
 | `slate-size-variance` | the probe read mid-poll-cycle | flat at 45 across 12 samples / 60s — DISPROVED, CLOSED |
 | `v2-sections-never-injected` | the injector's missing `else` | 15 sections in `allData.sports`, memo all true, no capture — DISPROVED, CLOSED |
 | `v2-sections-in-model-not-in-dom` | the loss is in the render | Task 0 done; bad side armed, OPEN |
+| `v2-sections-in-model-not-in-dom` | benignly empty sections inflate the gap | `gap_split` dropped 7 · empty 0 · unknown 0 — REFUTED 2026-09-22 |
+| `v2-sections-in-model-not-in-dom` | the `data-sport` key mismatch inflates the gap | `section_key_mismatches: []`, gap 3 either way — REFUTED 2026-09-22 |
+| `v2-sections-in-model-not-in-dom` | nothing rendered since the push | `render_after_last_push_ms` positive on every run since 09-21 — no longer in play |
+
+**Streak reset, and why it is honest.** `cc-session-2026-09-15-probe-window-reality.md`
+established that every earlier scheduled green had been taken on an EMPTY probe
+window — a gap of `[]` over a slate with nothing in it. The streak was reset to
+`0/5` there and has not moved. `outbox/2026-09-21-the-gap-zero-was-a-different-day.md`
+records a later "gap 8 → 0" claim, published and then refuted by a control run:
+the zeros were dispatch runs reading **Today**, the eights were scheduled runs
+reading **Yesterday** (`scripts/probe-window.cjs`, `step_back_days = scheduled ? 1 : 0`).
+
+As of 2026-09-22 the gap is `["NHL","NFL"]`, both dropped, and `_fieldRenderTrace`
+(commit `179e493`) is the instrument that says which of the three losses it is.
+
 
 **The finding is that it is intermittent.** Same build, identical inputs, one
 afternoon: **129, 128, 45, 129, 45, 134, 140.** Twelve minutes separated a
