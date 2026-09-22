@@ -276,6 +276,11 @@ jobs:
           node scripts/mutate-workflow-dup-keys.mjs
           node scripts/check-workflow-dup-keys.mjs
 
+      - name: The sections gap is a same-day comparison
+        run: |
+          node scripts/check-gap-cotemporal.mjs
+          node scripts/mutate-gap-cotemporal.mjs
+
       - name: No new probe loads the page without ?wpt
         run: |
           node scripts/check-probe-wpt.mjs --self-test

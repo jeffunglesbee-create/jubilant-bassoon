@@ -95,7 +95,20 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // nobody had measured.
     slate_settle_series_step0: [],
     slate_by_sport: null,          // section label -> card count, at the read
-    slate_sections_present: null,  // every .sport-section's label, incl. empty ones
+    // EVERY .sport-section's label, READ BEFORE THE STEP-BACK. On a
+    // step_back_days>0 run this describes TODAY, while slate_state and
+    // render_trace below describe the date the probe stepped to. Kept under
+    // its own name, with its own date label, because comparing it against the
+    // model is comparing two different days — see sections_model_not_in_dom.
+    slate_sections_present: null,
+    slate_sections_present_date_label: null,
+    // The same census taken AT THE MODEL READ, on whatever date the probe ended
+    // on. This is the one the gap is computed from.
+    slate_sections_at_model_read: null,
+    slate_sections_at_model_read_date_label: null,
+    // Which date the gap was computed on, and which date the pre-step census
+    // described. Printed with the gap so the pairing is visible, not inferred.
+    gap_compared_on: null, gap_pre_step_census_was: null,
     slate_read_at_ms: null,        // performance.now() at the read, since navigation
     slate_settled_at_s: null,      // when three consecutive equal readings landed
     slate_settle_reached: false,   // false => the counts below are mid-cycle
@@ -232,6 +245,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       }
       m.slate_by_sport = census ? census.by_sport : null;
       m.slate_sections_present = census ? census.sections : null;
+      m.slate_sections_present_date_label = await dateLabel();
       m.slate_read_at_ms = census ? census.since_nav_ms : null;
     }
 
@@ -390,6 +404,20 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // absences, neither collapsed into the other.
     m.slate_state = await page.evaluate(
       () => (typeof window.__fieldSlateState === 'function' ? window.__fieldSlateState() : null));
+
+    // THE DOM, READ AT THE SAME MOMENT AS THE MODEL. This did not exist until
+    // 2026-09-22, and its absence is the reason every gap figure this document
+    // has published is suspect: slate_sections_present is taken in the settle
+    // loop, which runs BEFORE the step-back loop, while slate_state is read
+    // after it. On a step_back_days>0 run — which is every scheduled run — the
+    // gap was therefore yesterday's model minus today's DOM sections, and the
+    // sections that "vanished" were simply the ones the two dates do not share.
+    // Same source-versus-copy substitution, inside the instrument built to
+    // measure it.
+    m.slate_sections_at_model_read = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.sport-section'))
+        .map(el => el.getAttribute('data-sport') || '(no data-sport)'));
+    m.slate_sections_at_model_read_date_label = await dateLabel();
 
     // The render's own account of the pass that produced the DOM being read
     // above. Published by _stampRenderTrace at all three of renderAll's exits,
@@ -587,7 +615,16 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
   // an artifact (Rule 90).
   {
     const model = (m.slate_state && m.slate_state.allData && m.slate_state.allData.sportsLabels) || null;
-    const dom = m.slate_sections_present || null;
+    // The co-temporal census, NOT slate_sections_present. Same date as the
+    // model, or the comparison is between two different days.
+    const dom = m.slate_sections_at_model_read || null;
+    // Both census date labels, side by side, so a reader can see for themselves
+    // that the gap is a same-day comparison. They differ by design on any
+    // step_back_days>0 run; what must never differ is the model's date and the
+    // census the gap is computed from, and those are read within ms of each
+    // other above.
+    m.gap_compared_on = m.slate_sections_at_model_read_date_label;
+    m.gap_pre_step_census_was = m.slate_sections_present_date_label;
     m.sections_model_not_in_dom =
       (model === null || dom === null) ? null : model.filter(x => !dom.includes(x));
 
@@ -615,7 +652,7 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     {
       const counts = (m.slate_state && m.slate_state.allData && m.slate_state.allData.sportsGameCounts) || null;
       m.section_key_mismatches = keyMismatches(counts);
-      m.gap_on_dom_key = gapOnDomKey(counts, m.slate_sections_present);
+      m.gap_on_dom_key = gapOnDomKey(counts, m.slate_sections_at_model_read);
       m.gap_split_on_dom_key = (m.gap_on_dom_key && counts) ? splitGap(m.gap_on_dom_key, counts) : null;
     }
 
@@ -767,9 +804,17 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
               + `${m.slate_state ? 'no allData.sportsLabels' : 'no slate_state (old build?)'}`);
   } else {
     const total = m.slate_state.allData.sportsLabels.length;
-    console.log(`sections in allData.sports but NOT in the DOM `
+    console.log(`sections in allData.sports but NOT in the DOM on ${m.gap_compared_on} `
               + `(${m.sections_model_not_in_dom.length} of ${total}): `
               + `${JSON.stringify(m.sections_model_not_in_dom)}`);
+    // THE DATE, EVERY TIME. Until 2026-09-22 this compared the model on the
+    // stepped-to date against a DOM census taken before the step, and nothing
+    // in the output said so.
+    console.log(`  DOM census for that comparison: ${JSON.stringify(m.slate_sections_at_model_read)}`);
+    if (m.gap_pre_step_census_was !== m.gap_compared_on) {
+      console.log(`  (the pre-step census, on ${m.gap_pre_step_census_was}, held `
+                + `${JSON.stringify(m.slate_sections_present)} — a DIFFERENT date, not comparable)`);
+    }
     if (m.sections_model_not_in_dom.length) {
       failed++;
       // The second sentence used to read "injectV2SportSection pushed them and
