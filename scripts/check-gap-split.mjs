@@ -2,7 +2,7 @@
 // defect, so every way of NOT being one has to stay distinguishable.
 import { createRequire } from 'node:module';
 const MOD = process.env.GAP_SPLIT_MODULE || './gap-split.cjs';
-const { splitGap } = createRequire(import.meta.url)(MOD);
+const { splitGap, keyMismatches, gapOnDomKey } = createRequire(import.meta.url)(MOD);
 
 let bad = 0, n = 0;
 const eq = (label, got, want) => { n++;
@@ -38,6 +38,32 @@ eq('an unreadable model yields null, not a clean bill', splitGap(['NHL'], null),
 eq('an unreadable gap yields null too', splitGap(null, C), null);
 eq('an empty gap is a real empty split, not null',
   splitGap([], C), { dropped: [], empty: [], unknown: [] });
+
+// ── the two keys ──────────────────────────────────────────────────────────
+// renderAll writes data-sport="${sec.sport}"; the manifest reports
+// section || sport. For a league-config section those differ by design.
+const K = [
+  { label: 'WNBA', sport: 'basketball', games: 2 },
+  { label: 'Baseball (MLB)', sport: 'Baseball (MLB)', games: 3 },
+  { label: 'Tennis', sport: null, games: 42 },
+];
+
+eq('A SECTION WHOSE TWO KEYS DIFFER IS NAMED',
+  keyMismatches(K).map(m => m.label), ['WNBA']);
+eq('...and one whose keys agree is not', keyMismatches(K).some(m => m.label === 'Baseball (MLB)'), false);
+// A missing sport key is a different fact from a mismatched one.
+eq('a null sport is not a mismatch', keyMismatches(K).some(m => m.label === 'Tennis'), false);
+eq('unreadable counts yield null, not "no mismatches"', keyMismatches(null), null);
+
+eq('EITHER KEY MATCHING MEANS IT RENDERED',
+  gapOnDomKey(K, ['basketball', 'Baseball (MLB)', 'Tennis']), []);
+eq('the label alone still counts as present',
+  gapOnDomKey([{ label: 'WNBA', sport: 'basketball', games: 2 }], ['WNBA']), []);
+eq('a section absent under BOTH keys is a real gap',
+  gapOnDomKey(K, ['Baseball (MLB)', 'Tennis']), ['WNBA']);
+eq('an unreadable DOM list yields null, not a clean bill', gapOnDomKey(K, null), null);
+eq('an empty DOM means everything is missing',
+  gapOnDomKey(K, []).length, 3);
 
 console.log(`\n${n - bad}/${n} checks passed`);
 console.log('COVERAGE: splitGap only. It does NOT read a manifest, run the probe, or');

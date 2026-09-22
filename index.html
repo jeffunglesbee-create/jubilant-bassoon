@@ -20287,9 +20287,23 @@ if (typeof window !== 'undefined') {
       // Same absence collapse this repo has scripts/check-absence-collapse.mjs
       // for, one layer above the one it was last found in. Counting is what
       // separates them, and the count is free.
+      // BOTH KEYS, because they are different things and the DOM uses one of
+      // them. renderAll writes `data-sport="${sec.sport}"` (field.js:8407)
+      // while this manifest has always reported `section || sport`. For a
+      // section built from the league config those differ by design —
+      // `{sport:"basketball", league:"wnba", section:"WNBA"}` renders as
+      // data-sport="basketball" and reports as "WNBA" — so comparing the two
+      // lists counts a section that rendered perfectly well as missing.
+      //
+      // `sections_model_not_in_dom` has been comparing across that mismatch.
+      // Recording both is what lets the next reading say how much of the gap
+      // is the defect and how much is the measurement.
       sportsGameCounts: Array.isArray(allData.sports)
         ? allData.sports.map(x => ({
             label: (x && (x.section || x.sport)) || '(unnamed)',
+            // The key the DOM is keyed by. Null when absent, never defaulted to
+            // the label — that would hide the very mismatch this exists to show.
+            sport: (x && typeof x.sport === 'string') ? x.sport : null,
             games: Array.isArray(x && x.games) ? x.games.length : null,
           }))
         : null,
@@ -28253,7 +28267,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-21d';
+  const SW_VERSION = '2026-09-22a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

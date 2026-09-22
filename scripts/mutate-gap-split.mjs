@@ -50,6 +50,21 @@ const MUTATIONS = [
    '    if (n === undefined || n === null) bucket.empty.push(label);',
    'a deployed bundle predating sportsGameCounts reports every label that way; filing them as empty announces "no defect" for a page never measured'],
 
+  ['G5 a matching DOM key no longer counts as present',
+   '    .filter(c => c && !inDom.has(c.label) && !(typeof c.sport === \'string\' && inDom.has(c.sport)))',
+   '    .filter(c => c && !inDom.has(c.label))',
+   'THE ARTIFACT THIS REMOVES: every league-config section renders as data-sport="basketball" or "hockey" and reports as "WNBA" or "NHL", so comparing on the label alone calls a rendered section missing'],
+
+  ['G6 a null sport key is reported as a mismatch',
+   "    .filter(c => c && typeof c.sport === 'string' && c.sport !== c.label)",
+   '    .filter(c => c && c.sport !== c.label)',
+   'a section with no sport key at all has not mismatched anything; folding the two together is the absence collapse this file exists to avoid'],
+
+  ['G7 the mismatch list claims none when it cannot be computed',
+   '  if (!Array.isArray(counts)) return null;\n  return counts\n    .filter(c => c && typeof c.sport',
+   '  if (!Array.isArray(counts)) return [];\n  return counts\n    .filter(c => c && typeof c.sport',
+   'an empty list reads as "checked, no mismatches"; null says the check could not run'],
+
   ['G4 an unreadable input yields a clean bill instead of null',
    '  if (!Array.isArray(missing) || !Array.isArray(counts)) return null;',
    '  if (!Array.isArray(missing) || !Array.isArray(counts)) return { dropped: [], empty: [], unknown: [] };',

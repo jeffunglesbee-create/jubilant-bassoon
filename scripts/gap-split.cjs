@@ -32,4 +32,38 @@ function splitGap(missing, counts) {
   return bucket;
 }
 
-module.exports = { splitGap };
+/**
+ * The sections whose model label and DOM key disagree.
+ *
+ * `renderAll` writes `data-sport="${sec.sport}"`; the manifest reports
+ * `section || sport`. For a league-config section those differ by design
+ * (`{sport:"basketball", section:"WNBA"}`), so a comparison across the two
+ * counts a rendered section as missing. This names them so the count can be
+ * read honestly rather than argued about.
+ *
+ * `sport: null` is NOT a mismatch — it means the entry has no sport key at all,
+ * which is a different fact and belongs in `unknown`, not here.
+ */
+function keyMismatches(counts) {
+  if (!Array.isArray(counts)) return null;
+  return counts
+    .filter(c => c && typeof c.sport === 'string' && c.sport !== c.label)
+    .map(c => ({ label: c.label, sport: c.sport, games: c.games }));
+}
+
+/**
+ * The gap recomputed on the key the DOM is keyed by.
+ *
+ * Takes the model's counts and the DOM's data-sport values and returns the
+ * labels genuinely absent — a section is present if EITHER of its keys is in
+ * the DOM, because either one matching means it rendered.
+ */
+function gapOnDomKey(counts, domSports) {
+  if (!Array.isArray(counts) || !Array.isArray(domSports)) return null;
+  const inDom = new Set(domSports);
+  return counts
+    .filter(c => c && !inDom.has(c.label) && !(typeof c.sport === 'string' && inDom.has(c.sport)))
+    .map(c => c.label);
+}
+
+module.exports = { splitGap, keyMismatches, gapOnDomKey };

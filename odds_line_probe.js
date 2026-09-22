@@ -17,7 +17,7 @@ const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const { settleScan } = require('./scripts/slate-settle.cjs');
 const { windowReality } = require('./scripts/probe-window.cjs');
-const { splitGap } = require('./scripts/gap-split.cjs');
+const { splitGap, keyMismatches, gapOnDomKey } = require('./scripts/gap-split.cjs');
 
 // ?wpt — SKIP THE FIRST-VISIT MY SERVICES MODAL (PM-26-A, Rule 54). Every
 // headless run is a first visit, so without it the modal is on screen for the
@@ -118,6 +118,9 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
     // The gap split into dropped / empty / unknown. null when the split could
     // not be made at all — not an empty split, which would claim no defect.
     gap_split: null,
+    // The mismatch between the two keys, and the gap recomputed without it.
+    // null when it could not be computed — never [] , which would claim none.
+    section_key_mismatches: null, gap_on_dom_key: null, gap_split_on_dom_key: null,
     // The app's OWN swallowed-failure store. page.on('pageerror') sees uncaught
     // throws and the init-script hook sees unhandled rejections; neither sees a
     // failure the app caught on purpose. injectV2SportSection wraps its whole
@@ -582,6 +585,17 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
       m.gap_split = null;
     } else {
       m.gap_split = splitGap(m.sections_model_not_in_dom, counts);
+    }
+    // THE SAME GAP, ON THE KEY THE DOM IS ACTUALLY KEYED BY. The list above
+    // compares the model's `section || sport` against the DOM's `sec.sport`,
+    // which are different strings for every league-config section. Both are
+    // reported: the old number stays comparable with the committed series, and
+    // this one is the honest denominator.
+    {
+      const counts = (m.slate_state && m.slate_state.allData && m.slate_state.allData.sportsGameCounts) || null;
+      m.section_key_mismatches = keyMismatches(counts);
+      m.gap_on_dom_key = gapOnDomKey(counts, m.slate_sections_present);
+      m.gap_split_on_dom_key = (m.gap_on_dom_key && counts) ? splitGap(m.gap_on_dom_key, counts) : null;
     }
 
     // The ordering verdict belongs in the artifact, not only in the console.
