@@ -285,3 +285,53 @@ before the browser step.
 
 The done condition — five consecutive SCHEDULED runs with an empty gap — is
 unchanged and still `0/5`.
+
+## 2026-09-22 19:39Z — the key-mismatch hypothesis is REFUTED
+
+`renderAll` writes `data-sport="${sec.sport}"` while the manifest reported
+`section || sport`, and the league config at `field.js:3255-3259` carries rows
+like `{sport:"basketball", section:"WNBA"}`. That looked like it would inflate
+the gap with sections that rendered fine under a different key.
+
+**It does not.** From `outbox/odds-line-probe-manifest-20260922T193903Z.json`,
+SW `2026-09-22a`:
+
+```
+section_key_mismatches: []
+old comparison  gap 3  ["NHL","WNBA","NFL"]
+on the DOM key  gap 3  ["NHL","WNBA","NFL"]
+split           dropped 3 · empty 0 · unknown 0
+                NHL:8 · WNBA:2 · NFL:1
+in DOM          Baseball (MLB), Australian Football (AFL), Tennis, Golf
+```
+
+Every section in `allData.sports` has `sport === label`. Those config rows are a
+lookup table, not the shape of the objects that reach the model. The gap was
+already being measured on the right key.
+
+The instrumentation stays: the number is now proven rather than arguable, and
+`section_key_mismatches` will catch the day a section does carry two keys.
+
+### What the reading does say
+
+- **MLB renders; NHL, WNBA and NFL do not**, from the same model in the same
+  pass, with 8, 2 and 1 games respectively. Not a volume effect.
+- **AFL, Tennis and Golf are in the DOM and NOT in the model.** They arrive via
+  the supplemental merge (`fetchSupplemental` / `fetchTennisLive`), which is a
+  different path from `injectV2SportSection`.
+- `render_after_last_push_ms` positive, `pushesSinceLastRender: 0` — by the
+  ledger's own decision table a render ran after the last push, so this is not
+  "nothing has rendered them yet".
+
+### The next measurement, not the next guess
+
+What distinguishes MLB from NHL/WNBA/NFL at render time. The candidates are in
+`renderAll`'s section loop and in which path put each section into `allData`;
+no reading so far separates them, and `field.js:21683`
+(`allData={sports:[...verified,...supplemental]}`, documented at :21625 as
+having required the MLS proof path to push into `verified` too) is the one
+place a section can be present in the model and still have been replaced
+mid-flight.
+
+A per-section trace — which branch each section took, and which path added it —
+names it. Reading further will not.
