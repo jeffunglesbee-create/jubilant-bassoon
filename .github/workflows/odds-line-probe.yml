@@ -142,6 +142,12 @@ jobs:
       - name: Sections-gap streak
         if: always()
         run: |
+          # The counter's own tests run here, not only the counter. Its
+          # same-day-comparison exclusion (2026-09-22) is the second reset this
+          # denominator has needed, and a reset the tests cannot prove it
+          # enforces is a reset in prose only.
+          node scripts/check-sections-gap-streak-logic.mjs
+          node scripts/mutate-sections-gap-streak.mjs
           node scripts/check-sections-gap-streak.mjs | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Commit results

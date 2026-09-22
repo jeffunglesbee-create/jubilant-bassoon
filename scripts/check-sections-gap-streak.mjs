@@ -25,9 +25,18 @@ import { readFileSync, readdirSync } from 'node:fs';
  *
  * A red resets BOTH counters. A run predating the fix is excluded rather than
  * treated as green: it measured the defect.
+ *
+ * A run whose comparison was NOT same-day is excluded for a stronger reason: it
+ * did not measure this defect at all. Until 2026-09-22 the probe read the DOM
+ * section census in the settle loop, BEFORE the step-back loop, and the model
+ * after it — so on every scheduled run the gap was yesterday's model minus
+ * today's DOM sections. A manifest says for itself whether its comparison was
+ * same-day, by carrying `gap_compared_on`; an SW cutoff cannot express this,
+ * because the fix is in the probe, which runs from the repo checkout and not
+ * from the deployed bundle.
  */
 export function computeStreak(runs, fixSw) {
-  const since = runs.filter(r => r.sw && r.sw >= fixSw);
+  const since = runs.filter(r => r.sw && r.sw >= fixSw && r.comparedOn);
   let allStreak = 0, schedStreak = 0;
   for (let i = since.length - 1; i >= 0; i--) {
     const r = since[i];
@@ -36,6 +45,20 @@ export function computeStreak(runs, fixSw) {
     if (r.trigger === 'schedule') schedStreak++;
   }
   return { since, allStreak, schedStreak };
+}
+
+/**
+ * A manifest's gap field -> one of 'green' | 'red' | 'n/a'.
+ *
+ * Extracted 2026-09-22 because it had no test: it lived inside the CLI guard
+ * below, the logic test constructs `state` in its own fixtures, and a mutation
+ * making an ABSENT gap read as green went uncaught. Absent and empty are
+ * different facts (Rule 99) and this is the line that has to keep them apart —
+ * a manifest predating the field cannot vouch for it.
+ */
+export function runState(gap) {
+  if (gap === undefined || gap === null) return 'n/a';
+  return (Array.isArray(gap) && gap.length === 0) ? 'green' : 'red';
 }
 
 const DIR = 'outbox';
@@ -63,19 +86,27 @@ if (process.argv[1] && process.argv[1].endsWith('check-sections-gap-streak.mjs')
       stamp: f.replace(/^odds-line-probe-manifest-/, '').replace(/\.json$/, ''),
       sw: j.sw_version || j.swVersion || null,
       trigger: j.triggered_by || null,
+      // null on every manifest before 2026-09-22: those runs compared two
+      // different dates and cannot vouch for a gap either way.
+      comparedOn: j.gap_compared_on || null,
       // absent is NOT green. A manifest predating the field cannot vouch for it.
-      state: gap === undefined || gap === null ? 'n/a' : (Array.isArray(gap) && gap.length === 0 ? 'green' : 'red'),
+      state: runState(gap),
       gap,
     });
   }
 
   const { since, allStreak, schedStreak } = computeStreak(runs, FIX_SW);
 
-  console.log(`manifests: ${runs.length} total, ${since.length} at or after the fix (SW >= ${FIX_SW})\n`);
+  const valid = runs.filter(r => r.comparedOn).length;
+  console.log(`manifests: ${runs.length} total, ${valid} with a same-day comparison, `
+            + `${since.length} of those at or after the fix (SW >= ${FIX_SW})`);
+  console.log(`${runs.length - valid} manifest(s) compared the model against a DOM census taken`);
+  console.log(`before the step-back — a different date. Those are not green and not red.\n`);
   for (const r of since.slice(-10)) {
     const mark = r.state === 'green' ? 'green' : r.state === 'red' ? 'RED  ' : 'n/a  ';
     const n = Array.isArray(r.gap) ? r.gap.length : '-';
-    console.log(`  ${mark}  ${r.stamp}  sw=${r.sw}  ${String(r.trigger).padEnd(18)} gap=${n}`);
+    console.log(`  ${mark}  ${r.stamp}  sw=${r.sw}  ${String(r.trigger).padEnd(18)} `
+              + `gap=${n}  on=${r.comparedOn}`);
   }
 
   const done = schedStreak >= REQUIRED;
