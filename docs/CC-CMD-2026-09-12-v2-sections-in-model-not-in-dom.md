@@ -232,3 +232,56 @@ run reads 129 with `sections_model_not_in_dom: []`, that is the answer and this
 defect is intermittent; if it reads 129 with a gap, the two are unrelated. The
 probe records what is needed either way and the 03:45 UTC scheduled run is the
 next chance.
+
+---
+
+## 2026-09-22 — the gap is real, and every section in it carries games
+
+The count was ambiguous until now. `sections_model_not_in_dom` compares LABELS,
+and `renderAll` returns `""` for a section with no games, so a model entry with
+`games: []` counted toward the gap while behaving correctly. **That hypothesis
+is refuted.**
+
+From `outbox/odds-line-probe-manifest-20260922T002248Z.json`, SW `2026-09-21d`,
+Yesterday's completed slate:
+
+```
+DROPPED (defect): 7
+  NHL 7 · Premier League 4 · EFL Championship 2 · La Liga 5
+  Serie A 5 · Bundesliga 3 · Ligue 1 3
+empty (correct) : 0
+unknown         : 0
+```
+
+**29 games across 7 sections are in `allData` and not in the DOM.** Nothing in
+the gap is there for a benign reason.
+
+### What rendered, and what did not
+
+The same model held eleven sections. Four reached the DOM — `Baseball (MLB)` 15,
+`WNBA` 13, `NFL` 15, `MLS Soccer` 2 — and seven did not.
+
+**MLS Soccer rendered with 2 games.** So this is not "soccer never renders", and
+it is not a size threshold in the direction the tennis defect had: the sections
+that failed hold 2 to 7 games each, and one that holds 2 succeeded. Whatever
+selects them, it is not the game count alone.
+
+### What this rules out
+
+- Not the featured/overflow split fixed in `6c2f0124`: every section here is far
+  below `FEATURED_TIER_OVERFLOW_THRESHOLD` (30), so that branch never runs.
+- Not an empty model: the counts above are read from `allData` at the same
+  instant the DOM is counted.
+- Not a section-level filter on sport: MLS Soccer passed and the other six
+  soccer leagues did not.
+
+### Instrumentation now in place
+
+`__fieldSlateState()` reports `sportsGameCounts`; the probe records `gap_split`
+with `dropped` / `empty` / `unknown` buckets, `null` when the split cannot be
+made at all. `scripts/gap-split.cjs` + `check-gap-split.mjs` (10/10) +
+`mutate-gap-split.mjs` (4/4, with a positive control) run in the probe workflow
+before the browser step.
+
+The done condition — five consecutive SCHEDULED runs with an empty gap — is
+unchanged and still `0/5`.
