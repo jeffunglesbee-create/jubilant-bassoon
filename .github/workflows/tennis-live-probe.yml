@@ -66,13 +66,20 @@ jobs:
       - name: Probe the deployed page against the live feed
         id: probe
         continue-on-error: true
+        # ONE env BLOCK. This step had two, because PROBE_TRIGGER was added
+        # above a `run:` that was already followed by an env: of its own.
+        # GitHub rejects a duplicate key outright — the whole workflow becomes
+        # invalid, no jobs are created, the run fails in zero seconds, and
+        # NOTHING IS SCHEDULED. Measured: runs 45, 46 and 47 each lasted 0s with
+        # 0 jobs, and the two scheduled probes on 2026-09-22 (00:57 and 14:00
+        # UTC) never fired — 19 hours of silence from a workflow whose last
+        # green run had looked fine.
         env:
           # The streak counter only credits SCHEDULED runs, so the probe has to
           # know which it was. Same variable odds-line-probe.yml already sets.
           PROBE_TRIGGER: ${{ github.event_name }}
-        run: node tennis_live_probe.js
-        env:
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+        run: node tennis_live_probe.js
 
       # Committed BEFORE the job is allowed to fail. A FAIL verdict is the most
       # valuable artifact this produces and losing it to a red step would be

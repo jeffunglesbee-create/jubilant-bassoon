@@ -266,6 +266,16 @@ jobs:
       # the Tennis element were streaming chrome. Ratcheted — seventeen existing
       # probes are recorded in docs/probe-wpt-baseline.json rather than edited
       # blind, so green means no NEW one.
+      # A duplicate key makes a workflow INVALID — GitHub creates the run, fails
+      # it in zero seconds with zero jobs, and schedules nothing. Measured
+      # 2026-09-22: tennis-live-probe.yml gained a second `env:` in one step and
+      # went silent for 19 hours behind three ordinary-looking reds.
+      - name: No workflow has a duplicate key
+        run: |
+          node scripts/check-workflow-dup-keys-logic.mjs
+          node scripts/mutate-workflow-dup-keys.mjs
+          node scripts/check-workflow-dup-keys.mjs
+
       - name: No new probe loads the page without ?wpt
         run: |
           node scripts/check-probe-wpt.mjs --self-test
