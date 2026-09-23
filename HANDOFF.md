@@ -17,7 +17,7 @@ All of them, newest first:
 
 | arc | session doc |
 |---|---|
-| the sections gap gets a verdict per section — `_fieldRenderTrace`, stamped at all three of `renderAll`'s exits | `cc-session-2026-09-22-per-section-render-trace.md` |
+| the sections gap gets a verdict per section, and the gap turned out to be a two-date subtraction | `cc-session-2026-09-22-per-section-render-trace.md` |
 | tennis rendered 0 cards above the overflow threshold — root cause found, fixed, verified live at 42 cards | `cc-session-2026-09-21-tennis-zero-cards.md` |
 | render-target completeness — STOPPED: no honest enumeration exists | `cc-session-2026-09-19-render-target-completeness.md` |
 | the odds probe reads a complete slate, not whatever hour it woke at | `cc-session-2026-09-15-probe-window-reality.md` |
@@ -102,8 +102,17 @@ records a later "gap 8 → 0" claim, published and then refuted by a control run
 the zeros were dispatch runs reading **Today**, the eights were scheduled runs
 reading **Yesterday** (`scripts/probe-window.cjs`, `step_back_days = scheduled ? 1 : 0`).
 
-As of 2026-09-22 the gap is `["NHL","NFL"]`, both dropped, and `_fieldRenderTrace`
-(commit `179e493`) is the instrument that says which of the three losses it is.
+**Resolved 2026-09-22 (`5115a3e`): the gap was the measurement.** The probe read
+the DOM section census in the settle loop, BEFORE the step-back loop, and the
+model after it — so on every scheduled run `sections_model_not_in_dom` was
+yesterday's model minus today's DOM sections. Manifest `20260922T195845Z` shows
+Baseball (MLB) at 16 cards in one side and 3 games in the other. The gap is now
+computed from a census taken at the model read; the first same-day comparison
+(`20260922T200611Z`) reads `[]` over four sections and fourteen games.
+
+`computeStreak` excludes any run without `gap_compared_on` — 59 of 60 manifests
+on disk. The done condition is unchanged and honest at **0 of 5 scheduled
+greens**; one dispatched green is not evidence.
 
 
 **The finding is that it is intermittent.** Same build, identical inputs, one

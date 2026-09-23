@@ -129,3 +129,76 @@ every reading back to 2026-09-21.
 None deferred. The one open item is the done condition itself, which is a
 scheduled measurement, not work: the probe now carries the verdict fields and
 the next scheduled run populates them.
+
+---
+
+# Part 2 — the trace worked, and what it found was the measurement
+
+Commits `5115a3e`, `73380e7`. Smoke 1055/0 throughout.
+
+## The reading that started it
+
+The trace's first live run reported all three missing sections as
+`emitted-but-absent` — NHL 22,988 chars, NFL 3,533, MLS Soccer 3,590. Real
+HTML, produced 3.4s before the DOM read. **I published that as "the loss is
+downstream of the join" before running the next check.** That was an untested
+premise reported as a finding, which is the thing Rule 100's corollary names.
+
+## The refutation, in fields the manifest was already printing
+
+`slate_sections_present` is read in the settle loop, **before** the step-back
+loop. `slate_state` and `render_trace` are read **after** it. Every scheduled
+run steps back one day.
+
+```
+DOM census (Today)      Baseball (MLB) 16, AFL 1, Tennis 71, WNBA 5, Golf 1
+model (Yesterday)       NHL 8, Baseball (MLB) 3, WNBA 8, NFL 1, MLS Soccer 1
+difference              NHL, NFL, MLS Soccer      = the reported gap, exactly
+```
+
+MLB reads 16 cards in one and 3 games in the other. The gap was **yesterday's
+model minus today's DOM sections**, for as long as the field has existed.
+
+## The first honest reading
+
+`20260922T200611Z`, dispatch, stepped 1: gap `[]` over a slate with four
+sections and fourteen games. All four model sections in the DOM.
+
+## Verification
+
+| check | result |
+|---|---|
+| `check-gap-cotemporal.mjs` | 8 of 8 |
+| `mutate-gap-cotemporal.mjs` | **6 of 6**, positive control green |
+| `check-sections-gap-streak-logic.mjs` | 19 of 19 |
+| `mutate-sections-gap-streak.mjs` | **6 of 6**, positive control green |
+| `node smoke.js index.html` | 1055 passed, 0 failed |
+
+Both new harnesses run an unmutated copy at the mutant location first.
+
+## Three defects in the instruments, all found by mutation
+
+1. **The gate's existence check was vacuous** — it passed a mutation putting
+   the census behind `if (false)`, because the text was still present.
+   Statement position required now.
+2. **`runState` had no test at all** — the mapping lived inside the CLI guard
+   and the logic test builds `state` in its own fixtures. A mutation making an
+   absent gap read as green went uncaught. Extracted and tested.
+3. **A replacement fixture that did not discriminate** — `'[]'` reads red
+   under both the real rule and a length-only one. `''` and `0` separate them.
+
+`mutate-sections-gap-streak.mjs` did not exist before this session. Every
+property that counter asserted had only ever passed.
+
+## What is NOT established
+
+- **The gap is not proven absent.** One dispatched green. The done condition
+  is five consecutive SCHEDULED greens and reads **0 of 5**; the counter now
+  excludes 59 of 60 manifests because their comparison was not same-day.
+- **No claim that the render was ever correct or ever wrong** on the sections
+  in question. The measurement could not support either, which is the finding.
+
+## Carry-forwards
+
+None deferred. The open item is a scheduled measurement, not work: the two
+crons populate the streak.

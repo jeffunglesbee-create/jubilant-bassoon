@@ -443,3 +443,99 @@ verdict census is what this document has been missing.
 
 `scripts/check-sections-gap-streak.mjs` — five consecutive scheduled runs with
 the gap empty. **0 of 5.**
+
+---
+
+## 2026-09-22, later — the defect was the measurement
+
+Commits `5115a3e`, `73380e7`.
+
+The trace shipped hours earlier reported all three missing sections as
+`emitted-but-absent`: NHL 22,988 chars, NFL 3,533, MLS Soccer 3,590 — real
+HTML, produced by a render 3.4 seconds before the DOM was read. That reads as
+a defect downstream of the join, and it was stated as one here before the next
+check was run.
+
+It is not. **The two things being compared were read on different days.**
+
+| read | where | when |
+|---|---|---|
+| `slate_sections_present` | the settle loop | **before** the step-back loop |
+| `slate_state`, `render_trace` | after the step | **after** it |
+
+Every scheduled run steps back one day. So `sections_model_not_in_dom` has
+been **yesterday's model minus today's DOM sections** for as long as the field
+has existed, and the sections that "vanished" are the ones the two dates do
+not share.
+
+Manifest `20260922T195845Z` carries its own refutation in fields it had
+already been printing:
+
+```
+DOM census (Today)      Baseball (MLB) 16, AFL 1, Tennis 71, WNBA 5, Golf 1
+model (Yesterday)       NHL 8, Baseball (MLB) 3, WNBA 8, NFL 1, MLS Soccer 1
+difference              NHL, NFL, MLS Soccer      = the reported gap, exactly
+```
+
+MLB reads **16 cards** in one and **3 games** in the other. Tennis is 71 in
+the DOM and absent from the model. Two dates, one subtraction.
+
+This also dissolves the entry filed above as a puzzle — *"AFL, Tennis and Golf
+are in the DOM and NOT in the model"* — which is the same artifact seen from
+the other side.
+
+### The first honest reading
+
+Manifest `20260922T200611Z`, dispatch, stepped back 1:
+
+```
+gap compared on   Yesterday
+gap census        ["NHL","Baseball (MLB)","WNBA","NFL"]
+model             NHL 8, Baseball (MLB) 3, WNBA 2, NFL 1
+GAP               []
+```
+
+All four sections in the model are in the DOM. A real empty comparison over a
+slate with four sections and fourteen games — **not** the empty-probe-window
+failure of 09-15, which was `[]` over a slate holding nothing.
+
+### What was changed
+
+- `slate_sections_at_model_read` — a second census taken within milliseconds of
+  the model read. The gap is computed from it.
+- Both censuses carry their own date label, and the summary prints the date the
+  gap was compared on. A gap figure with no date is a number a reader carries
+  into a conclusion, which is what happened on 09-21 and again on 09-22.
+- `scripts/check-gap-cotemporal.mjs` asserts the read ORDER, not the spelling,
+  and is wired into deploy-gate. `mutate-gap-cotemporal.mjs` 6 of 6.
+- `computeStreak` excludes any run without `gap_compared_on` — **59 of the 60
+  manifests on disk**. Not green, not red: they did not measure this defect.
+  An SW cutoff cannot express it, because the fix is in the probe, which runs
+  from the repo checkout and not the deployed bundle.
+
+### Three defects found in the instruments, none by reading
+
+1. **The gate's own existence check was vacuous.** Its first version passed a
+   mutation that put the census behind `if (false)` — the text was still
+   present, so "the census exists" was satisfied by a string appearing in the
+   file it was written alongside. It requires statement position now.
+2. **`runState` had no test.** The green/red/n-a mapping lived inside the CLI
+   guard, and the logic test builds `state` in its own fixtures, so a mutation
+   making an ABSENT gap read as green went uncaught. Extracted and tested.
+3. **A fixture that did not discriminate.** The replacement for (2) missed a
+   shape-check-to-length-check mutation because `'[]'` reads red under both
+   rules. `''` and `0` read red only under the real one.
+
+`mutate-sections-gap-streak.mjs` did not exist before this. Every property the
+counter asserted was one that had only ever passed.
+
+### Status
+
+- **The render is not dropping sections.** Ten days of looking at `renderAll`,
+  `injectV2SportSection` and the render ledger, and the loss was in the
+  subtraction.
+- **The done condition stands and has not moved:** five consecutive SCHEDULED
+  greens, **0 of 5**. One dispatched green is not evidence; the bar exists to
+  exclude exactly that.
+- **The trace stays.** It is what produced the `emitted-but-absent` reading
+  that made the two-date artifact visible at all — a count could not have.
