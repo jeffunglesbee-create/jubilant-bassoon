@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema_version": "2.1",
-    "generated_at": "2026-10-01T14:40:57.573Z",
-    "for_date": "2026-10-01",
+    "generated_at": "2026-10-02T14:01:02.609Z",
+    "for_date": "2026-10-02",
     "source": "field-data workflow (automated)",
     "window_dates": [
-      "2026-10-01",
       "2026-10-02",
       "2026-10-03",
-      "2026-10-04"
+      "2026-10-04",
+      "2026-10-05"
     ],
     "windowed_sports": [
       "mlb",
@@ -20,20 +20,20 @@
       "nba"
     ],
     "notes_for_dates": [
-      "2026-10-01"
+      "2026-10-02"
     ],
     "games_found": {
-      "nhl": 8,
+      "nhl": 5,
       "nba": 0,
-      "mlb": 1,
+      "mlb": 0,
       "mls": 0,
       "wnba": 1
     },
     "games_found_by_date": {
-      "2026-10-01": 10,
-      "2026-10-02": 1,
+      "2026-10-02": 6,
       "2026-10-03": 4,
-      "2026-10-04": 4
+      "2026-10-04": 4,
+      "2026-10-05": 2
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -43,10 +43,10 @@
     "nhl": [
       {
         "sport": "NHL",
-        "home": "New Jersey Devils",
-        "away": "Philadelphia Flyers",
-        "start_time": "2026-10-01T23:00:00Z",
-        "venue": "Prudential Center",
+        "home": "Detroit Red Wings",
+        "away": "New York Rangers",
+        "start_time": "2026-10-02T22:30:00Z",
+        "venue": "Little Caesars Arena",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -54,10 +54,10 @@
       },
       {
         "sport": "NHL",
-        "home": "New York Rangers",
-        "away": "Tampa Bay Lightning",
-        "start_time": "2026-10-01T23:00:00Z",
-        "venue": "Madison Square Garden",
+        "home": "Carolina Hurricanes",
+        "away": "Washington Capitals",
+        "start_time": "2026-10-02T23:00:00Z",
+        "venue": "Lenovo Center",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -65,10 +65,10 @@
       },
       {
         "sport": "NHL",
-        "home": "Columbus Blue Jackets",
-        "away": "Buffalo Sabres",
-        "start_time": "2026-10-01T23:00:00Z",
-        "venue": "Nationwide Arena",
+        "home": "Winnipeg Jets",
+        "away": "Boston Bruins",
+        "start_time": "2026-10-03T00:00:00Z",
+        "venue": "Canada Life Centre",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -76,10 +76,10 @@
       },
       {
         "sport": "NHL",
-        "home": "Nashville Predators",
-        "away": "Minnesota Wild",
-        "start_time": "2026-10-02T00:00:00Z",
-        "venue": "Bridgestone Arena",
+        "home": "Dallas Stars",
+        "away": "St. Louis Blues",
+        "start_time": "2026-10-03T01:00:00Z",
+        "venue": "American Airlines Center",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -87,43 +87,10 @@
       },
       {
         "sport": "NHL",
-        "home": "Calgary Flames",
-        "away": "Seattle Kraken",
-        "start_time": "2026-10-02T01:00:00Z",
-        "venue": "Scotiabank Saddledome",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "Utah Hockey Club",
-        "away": "Chicago Blackhawks",
-        "start_time": "2026-10-02T01:30:00Z",
-        "venue": "Delta Center",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "Vancouver Canucks",
-        "away": "Edmonton Oilers",
-        "start_time": "2026-10-02T02:00:00Z",
-        "venue": "Rogers Arena",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "San Jose Sharks",
-        "away": "Florida Panthers",
-        "start_time": "2026-10-02T02:00:00Z",
-        "venue": "SAP Center at San Jose",
+        "home": "Vegas Golden Knights",
+        "away": "Anaheim Ducks",
+        "start_time": "2026-10-03T02:00:00Z",
+        "venue": "T-Mobile Arena",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -131,45 +98,29 @@
       }
     ],
     "nba": [],
-    "mlb": [
-      {
-        "sport": "MLB",
-        "home": "Atlanta Braves",
-        "away": "Philadelphia Phillies",
-        "start_time": "2026-10-02T00:00:00Z",
-        "venue": "Truist Park",
-        "league": "MLB Playoffs",
-        "isPlayoff": true,
-        "nationalBundle": null,
-        "espnGOTD": false,
-        "peacockGOTD": false,
-        "mlbnShowcase": false,
-        "_postponed": false,
-        "confirmed": true
-      }
-    ],
+    "mlb": [],
     "soccer": [],
     "wnba": [
       {
         "sport": "WNBA",
-        "home": "Las Vegas Aces",
-        "away": "Indiana Fever",
-        "start_time": "2026-10-02T01:00Z",
-        "venue": "Michelob ULTRA Arena",
+        "home": "Golden State Valkyries",
+        "away": "Dallas Wings",
+        "start_time": "2026-10-03T01:00Z",
+        "venue": "Chase Center",
         "league": "WNBA",
         "confirmed": true
       }
     ]
   },
   "schedules_by_date": {
-    "2026-10-01": {
+    "2026-10-02": {
       "nhl": [
         {
           "sport": "NHL",
-          "home": "New Jersey Devils",
-          "away": "Philadelphia Flyers",
-          "start_time": "2026-10-01T23:00:00Z",
-          "venue": "Prudential Center",
+          "home": "Detroit Red Wings",
+          "away": "New York Rangers",
+          "start_time": "2026-10-02T22:30:00Z",
+          "venue": "Little Caesars Arena",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
@@ -177,10 +128,10 @@
         },
         {
           "sport": "NHL",
-          "home": "New York Rangers",
-          "away": "Tampa Bay Lightning",
-          "start_time": "2026-10-01T23:00:00Z",
-          "venue": "Madison Square Garden",
+          "home": "Carolina Hurricanes",
+          "away": "Washington Capitals",
+          "start_time": "2026-10-02T23:00:00Z",
+          "venue": "Lenovo Center",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
@@ -188,10 +139,10 @@
         },
         {
           "sport": "NHL",
-          "home": "Columbus Blue Jackets",
-          "away": "Buffalo Sabres",
-          "start_time": "2026-10-01T23:00:00Z",
-          "venue": "Nationwide Arena",
+          "home": "Winnipeg Jets",
+          "away": "Boston Bruins",
+          "start_time": "2026-10-03T00:00:00Z",
+          "venue": "Canada Life Centre",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
@@ -199,10 +150,10 @@
         },
         {
           "sport": "NHL",
-          "home": "Nashville Predators",
-          "away": "Minnesota Wild",
-          "start_time": "2026-10-02T00:00:00Z",
-          "venue": "Bridgestone Arena",
+          "home": "Dallas Stars",
+          "away": "St. Louis Blues",
+          "start_time": "2026-10-03T01:00:00Z",
+          "venue": "American Airlines Center",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
@@ -210,82 +161,16 @@
         },
         {
           "sport": "NHL",
-          "home": "Calgary Flames",
-          "away": "Seattle Kraken",
-          "start_time": "2026-10-02T01:00:00Z",
-          "venue": "Scotiabank Saddledome",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "Utah Hockey Club",
-          "away": "Chicago Blackhawks",
-          "start_time": "2026-10-02T01:30:00Z",
-          "venue": "Delta Center",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "Vancouver Canucks",
-          "away": "Edmonton Oilers",
-          "start_time": "2026-10-02T02:00:00Z",
-          "venue": "Rogers Arena",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "San Jose Sharks",
-          "away": "Florida Panthers",
-          "start_time": "2026-10-02T02:00:00Z",
-          "venue": "SAP Center at San Jose",
+          "home": "Vegas Golden Knights",
+          "away": "Anaheim Ducks",
+          "start_time": "2026-10-03T02:00:00Z",
+          "venue": "T-Mobile Arena",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
           "confirmed": true
         }
       ],
-      "nba": [],
-      "mlb": [
-        {
-          "sport": "MLB",
-          "home": "Atlanta Braves",
-          "away": "Philadelphia Phillies",
-          "start_time": "2026-10-02T00:00:00Z",
-          "venue": "Truist Park",
-          "league": "MLB Playoffs",
-          "isPlayoff": true,
-          "nationalBundle": null,
-          "espnGOTD": false,
-          "peacockGOTD": false,
-          "mlbnShowcase": false,
-          "_postponed": false,
-          "confirmed": true
-        }
-      ],
-      "soccer": [],
-      "wnba": [
-        {
-          "sport": "WNBA",
-          "home": "Las Vegas Aces",
-          "away": "Indiana Fever",
-          "start_time": "2026-10-02T01:00Z",
-          "venue": "Michelob ULTRA Arena",
-          "league": "WNBA",
-          "confirmed": true
-        }
-      ]
-    },
-    "2026-10-02": {
-      "nhl": [],
       "nba": [],
       "mlb": [],
       "soccer": [],
@@ -323,7 +208,7 @@
         {
           "sport": "MLB",
           "home": "Los Angeles Dodgers",
-          "away": "ATL/PHI",
+          "away": "Atlanta Braves",
           "start_time": "2026-10-03T20:00:00Z",
           "venue": "UNIQLO Field at Dodger Stadium",
           "league": "MLB Playoffs",
@@ -391,7 +276,7 @@
         {
           "sport": "MLB",
           "home": "Los Angeles Dodgers",
-          "away": "ATL/PHI",
+          "away": "Atlanta Braves",
           "start_time": "2026-10-05T00:00:00Z",
           "venue": "UNIQLO Field at Dodger Stadium",
           "league": "MLB Playoffs",
@@ -425,6 +310,44 @@
           "confirmed": true
         }
       ]
+    },
+    "2026-10-05": {
+      "nhl": [],
+      "nba": [],
+      "mlb": [
+        {
+          "sport": "MLB",
+          "home": "Cleveland Guardians",
+          "away": "Chicago White Sox",
+          "start_time": "2026-10-05T21:00:00Z",
+          "venue": "Progressive Field",
+          "league": "MLB Playoffs",
+          "isPlayoff": true,
+          "nationalBundle": null,
+          "espnGOTD": false,
+          "peacockGOTD": false,
+          "mlbnShowcase": false,
+          "_postponed": false,
+          "confirmed": true
+        },
+        {
+          "sport": "MLB",
+          "home": "Tampa Bay Rays",
+          "away": "New York Yankees",
+          "start_time": "2026-10-06T00:00:00Z",
+          "venue": "Tropicana Field",
+          "league": "MLB Playoffs",
+          "isPlayoff": true,
+          "nationalBundle": null,
+          "espnGOTD": false,
+          "peacockGOTD": false,
+          "mlbnShowcase": false,
+          "_postponed": false,
+          "confirmed": true
+        }
+      ],
+      "soccer": [],
+      "wnba": []
     }
   },
   "game_overlays": []
