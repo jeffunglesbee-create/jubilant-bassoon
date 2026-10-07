@@ -32,4 +32,22 @@ jobs:
           git config user.email "claude@field.dev"
           git config user.name  "FIELD CI"
           git commit -m "codemap: refresh from ${GITHUB_SHA::7} [skip ci]"
-          git push
+          # Retry with a rebase, which is what every other committing workflow
+          # in this repo does. A bare `git push` was this one's own exception
+          # and it lost a race on 2026-10-07: deploy-gate.yml's A190 SW_VERSION
+          # auto-fix pushed 41 seconds after the commit this run was triggered
+          # by, the push was rejected non-fast-forward, and the job went red
+          # with the code map regenerated and thrown away. The gate's auto-fix
+          # lands on EVERY deploy-triggering commit, so this was a race this
+          # workflow would keep losing.
+          for i in 1 2 3 4; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((2**i))
+          done
+          # The loop exits 0 when every attempt fails — its last command is
+          # `sleep`, and a failing `&&` list does not trip `set -e`. Without
+          # this check a dropped code map reports as a green step. Borrowed
+          # verbatim from deploy-gate.yml, which hit exactly that.
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: codemap push did not land after retries"; exit 1; }
