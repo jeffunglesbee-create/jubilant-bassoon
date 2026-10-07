@@ -1216,9 +1216,14 @@ same thing: `unreferenced-css-check.mjs` found `card-odds`, 1 of a declared 0.
   invisible because `scripts/pre-commit` lints `index.html` with `--cache`, so
   commits that do not touch it reuse the cached pass.
 
-NOT stated, deliberately: when `.card-odds` was introduced. `git log -S` returned
-one commit, but this clone is shallow at 367 commits, so that result marks the
-shallow boundary rather than the introducing commit.
+Corrected after the fact: `f79b5608`'s message says when `.card-odds` arrived is
+not stated, because `git log -S` over this shallow clone marks only the shallow
+boundary. True about the clone, wrong as a conclusion — `gh api
+repos/.../commits/d207c19` answers it in one call. `.card-odds` was live and
+emitted at `d207c19`, 2026-09-12, *"fix: the odds line was wired into a function
+nothing calls"*, which is also chrome-inventory's last green run; the wiring was
+removed before `68b1484` the next day and the rule outlived it by 24 days.
+`smoke.js` A-ODDS-7 now asserts that wiring stays gone.
 
 Open: the hook's `--cache` on `index.html` hides a repo-wide lint failure from
 every commit that does not touch that file. Left as a decision, not a silent fix.

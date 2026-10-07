@@ -18,7 +18,8 @@ field-relay-nba's `cc-session-2026-10-06-tennis-split-read-from-client.md`.
 
 `chrome-inventory.yml` run **68**, `f79b560`: **success.** Its previous green
 was run 35, `d207c19`, 2026-09-12T01:20Z — **32 consecutive failures** between
-them. 31 of its 67 earlier runs were green, so the workflow passes when the
+them. (`d207c19` is not in this shallow clone; it is on GitHub, confirmed by
+`gh api repos/.../commits/d207c19`.) 31 of its 67 earlier runs were green, so the workflow passes when the
 repo is clean; it was not broken.
 
 ## What it was reporting
@@ -42,8 +43,12 @@ Found by running the workflow's two steps locally; both self-tests pass and
 - nothing in `src/legacy/field.js`, `src/solid/`, `src/debrief/` or any other
   file emits it, by literal or by the 18 template/concat prefixes the check
   credits
-- its comment said *"hidden unless `oddsLine()` returns a string"* and
-  `oddsLine` does not exist anywhere in the repo
+- its comment said *"hidden unless `oddsLine()` returns a string"*, and
+  `oddsLine` does not exist in the repo today — **it did, and its removal was
+  deliberate**: `smoke.js` A-ODDS-7 now asserts
+  `!/data-slot="odds"/ && !/function oddsLine\(/`, titled *"the dead field.js
+  wiring is gone"*. So nothing can emit `.card-odds` again without that
+  assertion going red first
 - nothing in `smoke.js`, `field_smoke.js`, `field_unit.js` or `docs/` names it
 - the odds line that IS rendered comes from `src/debrief/index.ts` and carries
   `debrief-odds`, `debrief-odds__scenario`, `debrief-odds__line` and
@@ -58,7 +63,7 @@ like a signal) is what the live rules do. Checked before claiming it.
 The check was made to fail on purpose first: adding a `.mutant-dead-class` rule
 takes it to `unreferenced: 1` and red.
 
-## A premise I was about to publish, and what refuted it
+## A premise I refuted, and then a worse one I published
 
 `git log -S'card-odds'` returned exactly one commit — `d78372bb`, 2026-09-21,
 *"nfl standings probe + espn shape"* — and the obvious reading is that this
@@ -70,10 +75,28 @@ the shallow boundary rather than the introducing commit. The giveaway arrived
 when `git worktree add d78372bb~1` failed with *"invalid reference"* — the
 parent is not in the clone, so neither is the history `-S` would need.
 
-When `.card-odds` arrived is therefore **not stated** anywhere, including in the
-commit message. A shallow clone is a truncated copy of the history, and this
-repo's standing question applies to it: *is this the source, or a copy of the
-source?*
+So far so good. Then I wrote, in `f79b5608`'s commit message and in the first
+version of this doc, that **when `.card-odds` arrived is therefore not stated**.
+
+**That was wrong, and one command answered it.** The shallow clone is not the
+repository; GitHub is. Verifying the SHAs in this doc turned up `d207c19` as
+"MISSING" locally, and `gh api repos/.../commits/d207c19` returned it
+immediately:
+
+> **`d207c19` — 2026-09-12T01:20:38Z — *"fix: the odds line was wired into a
+> function nothing calls"*** — adding `fillSlot(card, 'odds', oddsLine(...))`
+> to `renderCard`, plus the first A-ODDS-7, plus a smoke assertion naming
+> `.card-odds` and forbidding animation, accent colour and bold weight on it.
+
+That is the same commit as chrome-inventory's **last green run, number 35**. So
+`.card-odds` was live and emitted on 2026-09-12, the wiring was removed
+sometime in the ~20 commits before `68b1484` on 2026-09-13T02:18Z — the first
+red run — and the rule outlived it by 24 days.
+
+Declaring a question unanswerable is a published claim like any other, and this
+one cost nothing to check. The rule I keep rediscovering is not *"shallow
+clones lie"*; it is that **the reading has to come from the source**, and for
+history the source is the remote, not the checkout.
 
 ## The blocker in front of the fix
 
