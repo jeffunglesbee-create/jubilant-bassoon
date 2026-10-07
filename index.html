@@ -28337,7 +28337,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-06a';
+  const SW_VERSION = '2026-10-06b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -37301,7 +37301,8 @@ function toggleWCView() {
     if (pickemSec) { pickemSec.setAttribute('hidden', ''); pickemSec.style.display = ''; }
     if (document.body.classList.contains('tennis-mode')) {
       document.body.classList.remove('tennis-mode');
-      document.getElementById('tennis-nav-link')?.classList.remove('active');
+      const _tnNavLnk = document.getElementById('tennis-nav-link');
+      if (_tnNavLnk) _tnNavLnk.classList.remove('active');
     }
     const _tnSec = document.getElementById('tennis-section');
     if (_tnSec) { _tnSec.setAttribute('hidden', ''); _tnSec.style.display = ''; }
@@ -37350,7 +37351,8 @@ function togglePickEmView() {
     if (wcSec) { wcSec.setAttribute('hidden', ''); wcSec.style.display = ''; }
     if (document.body.classList.contains('tennis-mode')) {
       document.body.classList.remove('tennis-mode');
-      document.getElementById('tennis-nav-link')?.classList.remove('active');
+      const _tnNavLnk = document.getElementById('tennis-nav-link');
+      if (_tnNavLnk) _tnNavLnk.classList.remove('active');
     }
     const _tnSec = document.getElementById('tennis-section');
     if (_tnSec) { _tnSec.setAttribute('hidden', ''); _tnSec.style.display = ''; }
@@ -37875,25 +37877,29 @@ function toggleTennisView() {
     // independent by design.
     if (document.body.classList.contains('journalism-mode')) {
       document.body.classList.remove('journalism-mode');
-      document.getElementById('jrn-nav-link')?.classList.remove('active');
+      const _jrnNavLnk = document.getElementById('jrn-nav-link');
+      if (_jrnNavLnk) _jrnNavLnk.classList.remove('active');
     }
     const _tJrn = document.getElementById('field-journalism-section');
     if (_tJrn) { _tJrn.setAttribute('hidden', ''); _tJrn.style.display = ''; }
     if (document.body.classList.contains('wc-mode')) {
       document.body.classList.remove('wc-mode');
-      document.getElementById('wc-nav-link')?.classList.remove('active');
+      const _wcNavLnk = document.getElementById('wc-nav-link');
+      if (_wcNavLnk) _wcNavLnk.classList.remove('active');
     }
     const _tWc = document.getElementById('wc-section');
     if (_tWc) { _tWc.setAttribute('hidden', ''); _tWc.style.display = ''; }
     if (document.body.classList.contains('pickem-mode')) {
       document.body.classList.remove('pickem-mode');
-      document.getElementById('pickem-nav-link')?.classList.remove('active');
+      const _pickemNavLnk = document.getElementById('pickem-nav-link');
+      if (_pickemNavLnk) _pickemNavLnk.classList.remove('active');
     }
     const _tPk = document.getElementById('pickem-section');
     if (_tPk) { _tPk.setAttribute('hidden', ''); _tPk.style.display = ''; }
     if (document.body.classList.contains('stats-mode')) {
       document.body.classList.remove('stats-mode');
-      document.getElementById('stats-nav-link')?.classList.remove('active');
+      const _statsNavLnk = document.getElementById('stats-nav-link');
+      if (_statsNavLnk) _statsNavLnk.classList.remove('active');
     }
     const _tSt = document.getElementById('stats-section');
     if (_tSt) { _tSt.setAttribute('hidden', ''); _tSt.style.display = ''; }
@@ -37936,7 +37942,8 @@ function toggleStatsView() {
     if (_pkSec) { _pkSec.setAttribute('hidden', ''); _pkSec.style.display = ''; }
     if (document.body.classList.contains('tennis-mode')) {
       document.body.classList.remove('tennis-mode');
-      document.getElementById('tennis-nav-link')?.classList.remove('active');
+      const _tnNavLnk = document.getElementById('tennis-nav-link');
+      if (_tnNavLnk) _tnNavLnk.classList.remove('active');
     }
     const _tnSec = document.getElementById('tennis-section');
     if (_tnSec) { _tnSec.setAttribute('hidden', ''); _tnSec.style.display = ''; }
