@@ -23271,7 +23271,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-09-22b';
+  const SW_VERSION = '2026-10-07a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32446,6 +32446,25 @@ const _TENNIS_DRAW_TIER_RANK = {
 //     509 Billie Jean King Cup 2026    77 matches, likewise
 //     508 BJK Cup Group I 2026        130 matches, likewise
 //
+//   509 MOVED TO ADMITTED on 2026-10-07. The reading above is not retracted —
+//   it was true on 2026-09-06 — but the route no longer serves what it read.
+//   tennis-tier-ladders.yml, which exists to catch exactly this, went red on
+//   2026-09-21 and stayed red for three weekly runs with the same finding:
+//   "509 now serves 7 main-draw match(es) but the client excludes it by name
+//   — a real draw nobody can reach." Read from the deployed draw route on
+//   2026-10-07:
+//
+//     509 Billie Jean King Cup 2026   QF=4 SF=2 F=1   7 main-draw matches
+//         complete, 6 edges forming one tree, anomalies []
+//         99 rubbers + 7 qualification sit under roundsOutsideMainDraw
+//
+//   It is the same shape as 391 United Cup, which this list already admits:
+//   category `other`, nations rather than players as p1/p2, rank null on
+//   every entry, sets null on every node, 7 main-draw matches in QF/SF/F.
+//   The two are indistinguishable in structure, so admitting one and hiding
+//   the other was a name, not a decision. 508 and 446 still serve zero
+//   main-draw rounds and stay excluded on the measurement, not the habit.
+//
 // The Cups are ties. A tie has no bracket, and rendering "no main-draw rounds
 // yet" over one would be the same false claim as calling a 96-draw's entry
 // round 32 missing matches.
@@ -32456,11 +32475,26 @@ const _TENNIS_DRAW_TIER_RANK = {
 // renders is the knockout the group stage feeds.
 const _TENNIS_DRAW_NAMED_RANK = {
   'ATP Finals': 1, 'WTA Finals': 1, 'Next Gen Finals': 2, 'United Cup': 2,
+  // Rank 2 is the United Cup's, because 509 is the United Cup's shape: a
+  // nation knockout in the seven-round vocabulary. Dropping it from the
+  // regex below is NOT enough on its own — category `other` has no tier
+  // rank, so `rank == null` would still skip it one line later.
+  'Billie Jean King Cup': 2,
 };
 // Named so the exclusion is a decision on the page rather than a gap in the
 // table above. If BSD ever serves a Davis Cup knockout under the seven-round
 // vocabulary, this line is what has to change, and it is findable.
-const _TENNIS_DRAW_NO_BRACKET = /^(Davis Cup|Billie Jean King Cup( Group I)?)$/;
+//
+// It happened, to the senior Billie Jean King Cup rather than the Davis Cup,
+// and this line is what changed. `Group I` stays: 508 serves 130 matches and
+// zero main-draw rounds, so the Group I stage really is ties only. The
+// optional group is gone, so the name must now match in full.
+//
+// Both remaining arms are a SECOND lock, not the only one: neither name has a
+// rank, so `rank == null` one line below would skip them even with this regex
+// deleted. That redundancy is the point — a named exclusion is a decision on
+// the page, where a null-rank skip is indistinguishable from forgetting.
+const _TENNIS_DRAW_NO_BRACKET = /^(Davis Cup|Billie Jean King Cup Group I)$/;
 function _tennisDrawPick(rows){
   const seen = new Map();
   for (const m of rows || []) {

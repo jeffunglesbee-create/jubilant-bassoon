@@ -7763,22 +7763,35 @@ assert('A-TDRAW-20 — the tennis grid starts its columns at the top',
   /repeat\(4,1fr\) 120px repeat\(4,1fr\);min-width:900px;align-items:center/.test(html),
   'the World Cup grid must keep align-items:center — it is a different shape');
 
-assert('A-TDRAW-16 — the four team events with a knockout can reach the tab',
+assert('A-TDRAW-16 — the five team events with a knockout can reach the tab',
   // All seven named events sit in category `other`, which has no rank, so
   // until this list existed the loop skipped every one of them. That was right
   // for three and a silent loss for four, and a null-rank accident reads
   // exactly like a decision.
+  //
+  // Five as of 2026-10-07: the Billie Jean King Cup (509) began serving a
+  // QF/SF/F nation knockout, tennis-tier-ladders.yml reported it red for
+  // three weekly runs, and the entry here is what makes it reachable — the
+  // regex in A-TDRAW-17 is necessary but not sufficient, because `rank ==
+  // null` would still skip it.
   /'ATP Finals': 1, 'WTA Finals': 1, 'Next Gen Finals': 2, 'United Cup': 2/.test(html) &&
+  /'Billie Jean King Cup': 2/.test(html) &&
   /_TENNIS_DRAW_TIER_RANK\[t\.category\] \?\? _TENNIS_DRAW_NAMED_RANK\[t\.name \|\| ''\]/.test(html),
-  'the ATP/WTA/Next Gen Finals and the United Cup each serve a real knockout the route renders');
+  'the ATP/WTA/Next Gen Finals, the United Cup and the BJK Cup each serve a real knockout the route renders');
 
-assert('A-TDRAW-17 — the Cups are excluded by name, as a decision not a gap',
+assert('A-TDRAW-17 — the tie-only Cups are excluded by name, as a decision not a gap',
   // Davis Cup 2026 serves 194 matches and not one is in the seven-round
   // vocabulary. A tie has no bracket. Excluding it by omission would be
   // indistinguishable from forgetting it.
-  /_TENNIS_DRAW_NO_BRACKET = \/\^\(Davis Cup\|Billie Jean King Cup\( Group I\)\?\)\$\//.test(html) &&
+  //
+  // The senior BJK Cup LEFT this set on 2026-10-07 — 509 now serves QF=4
+  // SF=2 F=1 and is admitted above. `Group I` must stay, and the optional
+  // group is gone so the name has to match in full: 508 serves 130 matches
+  // and zero main-draw rounds. This assertion is also what stops the
+  // exclusion being widened back over a draw the route really serves.
+  /_TENNIS_DRAW_NO_BRACKET = \/\^\(Davis Cup\|Billie Jean King Cup Group I\)\$\//.test(html) &&
   /if \(_TENNIS_DRAW_NO_BRACKET\.test\(t\.name \|\| ''\)\) continue;/.test(html),
-  'a competition played as ties must not be offered as a draw');
+  'a competition played as ties must not be offered as a draw, and one that is not must not be hidden');
 
 assert('A-TDRAW-18 — "no rounds YET" and "never will" are different sentences',
   // A draw whose first round is unscheduled has none yet. A competition played
