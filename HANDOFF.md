@@ -1195,6 +1195,34 @@ Smoke: 965/0 (client, run fresh after every commit below, not reused)
 SW version: 2026-08-12f (index.html/sw.js in sync; bumped a→f across six
 deploying commits this session)
 
+## Session 2026-10-06 — chrome-inventory, red for 32 runs
+
+Session doc (Rule 67): `outbox/cc-session-2026-10-06-chrome-inventory-green.md` — DONE, confidence 96
+
+SW version: 2026-10-06a → 2026-10-06b
+
+`chrome-inventory.yml` run 68 (`f79b560`) is **green**. Its previous green was
+run 35 on 2026-09-12 — 32 consecutive failures between them, all reporting the
+same thing: `unreferenced-css-check.mjs` found `card-odds`, 1 of a declared 0.
+
+- **`f79b5608`** — `.card-odds` deleted. One occurrence in the whole repo, the
+  rule itself; nothing emits it, `oddsLine()` does not exist, and the odds line
+  that renders comes from `src/debrief/index.ts` as `debrief-odds*`. Its
+  governance paragraph moved onto `.debrief-odds__scenario` /
+  `.debrief-odds__line`, where odds are actually displayed and where the
+  constraint it states is what the rules do.
+- **`fcea0e30`** — 7 eslint `no-restricted-syntax` errors fixed, present at
+  every commit since 2026-09-21 and blocking any `index.html` change. They were
+  invisible because `scripts/pre-commit` lints `index.html` with `--cache`, so
+  commits that do not touch it reuse the cached pass.
+
+NOT stated, deliberately: when `.card-odds` was introduced. `git log -S` returned
+one commit, but this clone is shallow at 367 commits, so that result marks the
+shallow boundary rather than the introducing commit.
+
+Open: the hook's `--cache` on `index.html` hides a repo-wide lint failure from
+every commit that does not touch that file. Left as a decision, not a silent fix.
+
 ## Session 2026-10-06 — the BJK Cup draw nobody could reach
 
 Session doc (Rule 67): `outbox/cc-session-2026-10-06-bjk-cup-draw-unreachable.md` — DONE, confidence 96
