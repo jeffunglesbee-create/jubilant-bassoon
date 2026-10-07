@@ -1195,6 +1195,40 @@ Smoke: 965/0 (client, run fresh after every commit below, not reused)
 SW version: 2026-08-12f (index.html/sw.js in sync; bumped a→f across six
 deploying commits this session)
 
+## Session 2026-10-06 — the BJK Cup draw nobody could reach
+
+Session doc (Rule 67): `outbox/cc-session-2026-10-06-bjk-cup-draw-unreachable.md` — DONE, confidence 96
+
+SW version: 2026-09-22b → 2026-10-06a (set by deploy-gate.yml's A190 auto-fix,
+which re-dated a UTC value to ET; the bundle that shipped carries the corrected
+one, asserted live by the gate's Confirm step)
+
+`tennis-tier-ladders.yml` was not a dead cron. It is an undeclared detector that
+had reported the same real cross-repo finding once a week for three weeks: 509
+Billie Jean King Cup began serving a QF=4 SF=2 F=1 nation knockout and the
+client hid it by name. 391 United Cup, already admitted, is indistinguishable
+from it in structure — category `other`, nations as p1/p2, rank and sets null
+throughout, 6 edges, no anomalies.
+
+- **client `6af0ffbb`** — the senior Cup leaves `_TENNIS_DRAW_NO_BRACKET` and
+  gains `'Billie Jean King Cup': 2` in `_TENNIS_DRAW_NAMED_RANK`. Both edits
+  load-bearing, each caught by mutation when reverted alone. Group I and the
+  Davis Cup stay excluded on a measurement: both still serve zero main-draw
+  rounds. smoke A-TDRAW-16/17 rewritten; 1055 passed, 0 failed.
+- **relay `e351a92`** — the probe's copies of the client's lists follow, with
+  the comment now stating that they ARE copies.
+- **client `9837e4cb`** — `codemap.yml`'s bare `git push` joins the repo's
+  rebase-and-retry convention. It lost a race to the A190 auto-fix on
+  `6af0ffbb` and discarded a generated code map while going red.
+
+Done condition met on a real run: tier-ladders run 9 green, `clientSplitDrift: []`,
+artifact `399cd5a`, coverage `perTier: 1` (14 editions of 42 — the split check
+reads all 7 named events regardless).
+
+Open: the probe's client lists are still literals (reading the client's source is
+the fix, not in these commits); `chrome-inventory.yml` red on every run since
+2026-09-13, undeclared, same check green inside the deploy gate.
+
 ## Session 2026-08-12 — Stats tab, four CC-CMDs
 
 Session docs (Rule 67):
