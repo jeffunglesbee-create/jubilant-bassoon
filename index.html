@@ -1917,17 +1917,6 @@ body.wf-mode .np-inner{max-width:100%}
 /* card-debrief slot (reserved for Phase 3 — The Debrief) */
 .card-debrief{display:none;grid-column:1/-1}
 
-/* Odds line — pull-only display, hidden unless oddsLine() returns a string.
-   Deliberately plain: no colour by magnitude, no badge, no emphasis that would
-   draw attention to a game because its line moved. Rule F clears displaying a
-   bookmaker's price; it does not carry Rule A, so nothing here may behave like
-   a signal. */
-.card-odds {
-  font-size: 0.78rem;
-  color: var(--text-dim, #8a8a8a);
-  margin-top: 2px;
-  font-variant-numeric: tabular-nums;
-}
 .game-card.is-final .card-debrief{display:block}
 .game-card.is-final [data-slot="brief"]{display:none}
 /* Debrief inner layers */
@@ -1939,6 +1928,12 @@ body.wf-mode .np-inner{max-width:100%}
 .debrief-drama__bar[data-tier="MUST"]{background:#dc2626}
 .debrief-drama__chips{display:flex;flex-wrap:wrap;gap:.25rem}
 .debrief-prediction__text{font-size:.72rem;line-height:1.5;opacity:.6;font-style:italic;margin:0}
+/* Odds display — deliberately plain: no colour by magnitude, no badge, no
+   emphasis that would draw attention to a game because its line moved. Rule F
+   clears displaying a bookmaker's price; it does not carry Rule A, so nothing
+   here may behave like a signal. Carried here on 2026-10-06 from a `.card-odds`
+   rule that said the same thing and that nothing had ever emitted; these two
+   rules are where odds are actually displayed, by src/debrief/index.ts. */
 .debrief-odds__scenario{margin-bottom:.2rem}
 .debrief-odds__line{font-size:.68rem;opacity:.55}
 .debrief-arc__dots{display:flex;gap:.3rem;flex-wrap:wrap}
