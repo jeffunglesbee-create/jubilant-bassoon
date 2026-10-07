@@ -1217,7 +1217,7 @@ throughout, 6 edges, no anomalies.
   rounds. smoke A-TDRAW-16/17 rewritten; 1055 passed, 0 failed.
 - **relay `e351a92`** — the probe's copies of the client's lists follow, with
   the comment now stating that they ARE copies.
-- **client `9837e4cb`** — `codemap.yml`'s bare `git push` joins the repo's
+- **client `8213bc50`** — `codemap.yml`'s bare `git push` joins the repo's
   rebase-and-retry convention. It lost a race to the A190 auto-fix on
   `6af0ffbb` and discarded a generated code map while going red.
 

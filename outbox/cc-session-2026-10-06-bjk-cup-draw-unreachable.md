@@ -3,7 +3,14 @@
 **Repos:** jubilant-bassoon (client), field-relay-nba (the probe's copy of the
 client's lists)
 **HEAD progression (client):** `8ff506e7` → `6af0ffbb` → `c90694a4` (gate's A190
-auto-fix) → `9837e4cb`
+auto-fix) → `8213bc50` → `9555e6d4`
+
+**SHA correction:** this doc first cited `9837e4cb` and `1c661787` for the last
+two commits. Both were rewritten by the rebase that landed them — four other
+workflows had pushed to main in the meantime — and the published SHAs pointed at
+nothing. Corrected to `8213bc50` and `9555e6d4`. The lesson is the one this repo
+already writes down about copies: a SHA recorded before the push is a prediction,
+not a reading.
 **HEAD progression (relay):** `b5f37d2` → `e351a92` → `399cd5a` (the run's own
 artifact)
 **Smoke:** 1055 passed, 0 failed (was 1055/0 before; A-TDRAW-16 and A-TDRAW-17
@@ -89,7 +96,7 @@ copies follow. Verified against the real committed reading, not a constructed
 one: on `outbox/tennis-tier-ladders-2026-10-05T12-12-11-646Z.json` the old lists
 produce exactly one drift line and the new lists produce none.
 
-**jubilant-bassoon `9837e4cb`** — `codemap.yml`'s bare `git push` joins the
+**jubilant-bassoon `8213bc50`** — `codemap.yml`'s bare `git push` joins the
 repo's retry convention. See "What went wrong" below.
 
 ## Done condition — met on a real run
@@ -143,7 +150,7 @@ later, the push was rejected non-fast-forward, and the job failed having
 generated `CODE_MAP.json` and thrown it away. Its 7 prior runs were green
 because nothing else happened to push in that window; the auto-fix lands on
 every deploy-triggering commit, so this was a race it would keep losing. Fixed
-in `9837e4cb` with the convention every sibling workflow uses, plus
+in `8213bc50` with the convention every sibling workflow uses, plus
 deploy-gate.yml's `merge-base --is-ancestor` guard — a `for` loop whose body is
 a failing `&&` list exits 0 under `bash -e -o pipefail`, so without that guard a
 dropped artifact reports as a green step. Positive and negative controls both
