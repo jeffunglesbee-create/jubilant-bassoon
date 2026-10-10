@@ -20474,14 +20474,93 @@ const RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev/nba';
 // Spec: docs/espn-pivot-phase0-1-2026-05-29.md  Relay: /v2/* routes live.
 // The eight European club competitions auto-roll -- see _euSeasonActive below.
 const V2_RELAY_BASE = 'https://field-relay-nba.jeffunglesbee.workers.dev';
+// FALLBACK OF LAST RESORT — not the source of truth. Demoted 2026-10-10.
+//
 // European club seasons run Aug -> May every year. A boolean needs a human to
 // remember; an absolute-year date gate needs a human every July. This needs
 // neither. Opening a few weeks early is harmless (the relay simply returns no
 // games); opening late is a live product outage, which is what happened in
 // Aug 2026. Month-based so it auto-rolls every season.
+//
+// It is STILL A GUESS about a fact the vendor states for free. BSD's
+// /api/v2/coverage/ reports `status` per sport, token-free (measured
+// 2026-10-10: 200 with a token and 200 without). refreshEuSeasonFromCoverage()
+// below replaces this answer as soon as that call returns.
+//
+// KEPT, NOT DELETED, deliberately: a removed fallback with a failing new source
+// is an outage, and this whole line of work exists because eight leagues went
+// dark from mid-August when a frozen boolean was the only answer. If the
+// coverage call never returns, this is what is live, and FIELD_SEASON_STATE
+// says so out loud.
 function _euSeasonActive(){
   const m = new Date().getUTCMonth(); // 0=Jan
   return m >= 7 || m <= 5;            // Aug(7)..Dec, Jan..Jun(5)
+}
+
+// WHICH SOURCE ANSWERED. Rule 99 — four states, never collapsed:
+//   'date-fallback'    _euSeasonActive() is live; no coverage call has returned
+//   'vendor'           BSD coverage answered and the eight keys reflect it
+//   'vendor-unpriced'  football in_season but priced_next_7d 0 — fixtures, no
+//                      odds. NOT off-season, and not the same as having prices.
+//   'coverage-failed'  the call failed; we do not know, and the date
+//                      calculation is answering because something must
+window.FIELD_SEASON_STATE = {
+  source: 'date-fallback',
+  at: null,
+  vendorStatus: null,
+  pricedNext7d: null,
+  detail: '_euSeasonActive() — no coverage call has returned yet',
+};
+
+// The eight European club competitions the frozen booleans covered.
+const _EU_CLUB_KEYS = ['epl', 'eflchamp', 'eflone', 'efltwo',
+                       'laliga', 'seriea', 'bundesliga', 'ligue1'];
+
+// COVERAGE IS PER SPORT, NOT PER COMPETITION. It says football is in season;
+// it does not say the EFL Two is. So this replaces the eight-boolean CLASS of
+// defect exactly as far as the vendor's granularity allows, and no further.
+// Per-league season state does exist upstream — /api/v2/leagues/{id}/seasons/
+// carries `is_current`, measured 2026-10-10 on EPL — but reading it costs one
+// call per competition, which is a separate decision with its own CC-CMD.
+async function refreshEuSeasonFromCoverage(){
+  try {
+    const r = await fetch(`${V2_RELAY_BASE}/bsd/coverage?sport=football`,
+                          { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) {
+      window.FIELD_SEASON_STATE = { source: 'coverage-failed', at: new Date().toISOString(),
+        vendorStatus: null, pricedNext7d: null,
+        detail: `coverage HTTP ${r.status} — season state unknown; _euSeasonActive() is answering` };
+      return;
+    }
+    const body = await r.json();
+    const rows = Array.isArray(body) ? body
+      : (body.sports ?? body.results ?? Object.entries(body)
+          .map(([k, v]) => (v && typeof v === 'object' ? { sport: k, ...v } : null)).filter(Boolean));
+    const football = (Array.isArray(rows) ? rows : []).find(x => (x.sport ?? x.name) === 'football');
+    if (!football || typeof football.status !== 'string') {
+      // Rule 99: a payload without football is NOT "football is off" — it is a
+      // payload we could not read, which is the third state, not the first.
+      window.FIELD_SEASON_STATE = { source: 'coverage-failed', at: new Date().toISOString(),
+        vendorStatus: null, pricedNext7d: null,
+        detail: 'coverage answered but carried no football row — season state unknown' };
+      return;
+    }
+    const active = football.status === 'in_season';
+    const priced = football.priced_next_7d ?? 0;
+    for (const k of _EU_CLUB_KEYS) FIELD_V2_SOURCES[k] = active;
+    window.FIELD_SEASON_STATE = {
+      source: active && priced === 0 ? 'vendor-unpriced' : 'vendor',
+      at: new Date().toISOString(),
+      vendorStatus: football.status,
+      pricedNext7d: priced,
+      detail: `BSD coverage: football ${football.status}, priced_next_7d ${priced}` +
+              (active && priced === 0 ? ' — fixtures but no prices, which is not off-season' : ''),
+    };
+  } catch (e) {
+    window.FIELD_SEASON_STATE = { source: 'coverage-failed', at: new Date().toISOString(),
+      vendorStatus: null, pricedNext7d: null,
+      detail: `coverage call threw (${e && e.message}) — season state unknown; _euSeasonActive() is answering` };
+  }
 }
 const FIELD_V2_SOURCES = {
   nba: true, nhl: true, mlb: true, wnba: true, // Phase 1/2: LIVE
@@ -20509,6 +20588,13 @@ const FIELD_V2_SOURCES = {
   nfl: new Date() >= new Date('2026-08-06T00:00:00Z'),
   cfb: new Date() >= new Date('2026-08-29T00:00:00Z'),
 };
+
+// Fire-and-forget, immediately. The eight keys above are already populated by
+// _euSeasonActive(), so nothing waits on this and nothing is dark while it is
+// in flight — the vendor's answer overwrites a working default rather than
+// filling an empty one. Every reader of FIELD_V2_SOURCES filters it lazily at
+// call time (field.js:16072, :16118), so an in-place update is seen.
+refreshEuSeasonFromCoverage();
 // ESPN league ID → FIELD V2 sport key (belt-and-suspenders safety net in fetchESPNScores)
 const ESPN_TO_V2_MAP = {
   'nba':'nba', 'nhl':'nhl', 'mlb':'mlb', 'wnba':'wnba',
@@ -28332,7 +28418,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-06b';
+  const SW_VERSION = '2026-10-10a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
