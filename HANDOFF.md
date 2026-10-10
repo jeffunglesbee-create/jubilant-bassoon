@@ -17,6 +17,7 @@ All of them, newest first:
 
 | arc | session doc |
 |---|---|
+| the vendor states the European season; `_euSeasonActive()` demoted to fallback, not deleted | `cc-session-2026-10-10-coverage-replaces-season-date-math.md` |
 | the sections gap gets a verdict per section, and the gap turned out to be a two-date subtraction | `cc-session-2026-09-22-per-section-render-trace.md` |
 | tennis rendered 0 cards above the overflow threshold — root cause found, fixed, verified live at 42 cards | `cc-session-2026-09-21-tennis-zero-cards.md` |
 | render-target completeness — STOPPED: no honest enumeration exists | `cc-session-2026-09-19-render-target-completeness.md` |
