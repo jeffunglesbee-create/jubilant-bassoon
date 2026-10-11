@@ -56,6 +56,11 @@ jobs:
       # A ratchet, not a ban: the Odds key is 0 and may never return; the shared
       # secret is 9 and load-bearing until it is rotated (field-relay-nba
       # docs/CC-CMD-2026-08-25-rotate-relay-secret.md).
+      - name: Document citations are anchored, not just numbered
+        run: |
+          node scripts/check-doc-citations.mjs --self-test
+          node scripts/check-doc-citations.mjs
+
       - name: No known-exposed credential appears more often than declared
         run: node scripts/check-exposed-secrets.mjs --self-test && node scripts/check-exposed-secrets.mjs
 
