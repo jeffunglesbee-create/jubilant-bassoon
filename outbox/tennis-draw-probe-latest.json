@@ -1,5 +1,5 @@
 {
-  "ts": "2026-10-10T19:18:13.660Z",
+  "ts": "2026-10-11T05:53:46.416Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "relayReachable": true,
@@ -7,39 +7,42 @@
   "pickedSeason": "2026",
   "relayDrawStatus": 200,
   "relayRounds": [
-    "Round of 64=18"
+    "Round of 64=18",
+    "Round of 32=8"
   ],
-  "relayMainDrawMatches": 18,
+  "relayMainDrawMatches": 26,
   "relayEdges": 0,
   "relayAnomalies": [],
   "relayChampion": null,
   "pageLoaded": true,
   "navLinkVisible": true,
   "sectionVisible": true,
-  "treeMatchCards": 18,
-  "listMatchRows": 18,
+  "treeMatchCards": 26,
+  "listMatchRows": 26,
   "columnHeads": [
     "R64",
+    "R32",
+    "R32",
     "R64"
   ],
   "championOnPage": null,
   "anomalyLineOnPage": false,
   "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 400 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 400 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()"
   ],
   "failedRequests": [],
-  "renderWaitMs": 4082,
+  "renderWaitMs": 3719,
   "renderTimedOut": null,
-  "relayFetchMs": 5572,
+  "relayFetchMs": 2422,
   "urlLoaded": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt=1",
   "setupOverlayState": "suppressed by ?wpt",
   "treeHeightPx": 496,
@@ -48,12 +51,12 @@
   "treeDisplay": "block",
   "listDisplay": "none",
   "listHeightPx": 0,
-  "cardsInViewport": 18,
+  "cardsInViewport": 26,
   "cardsCovered": 0,
   "cardsCoveredBy": [],
   "firstCardVisible": true,
   "firstCardCoveredBy": null,
   "verdict": "PASS",
-  "reason": "177 Wuhan (wta_1000) 2026: 18 matches drawn in 1 round(s), 0 edge(s) joined",
-  "sampleText": "\n    \n      R64\n      \n      R64\n    \n    \n      \n    \n    A. Kalinina#50\n  \n    \n    S. Kartal#129\n  \n    \n  \n    \n    A. Li#30\n  \n    \n    Q. Zheng#54\n  \n    \n  \n    \n    B. Bencic#12\n  \n    \n    S. Zhang#57\n  \n    \n  \n    \n    C. Tauson#44\n  \n    \n    M. Bouzkova#27\n  \n    \n  \n    \n    D. Snigur#46\n  \n    \n    E. Mertens#19\n  \n    \n  \n    \n    D. Yastremska#111\n  \n    \n    C. Bucsa#35\n  \n    \n "
+  "reason": "177 Wuhan (wta_1000) 2026: 26 matches drawn in 2 round(s), 0 edge(s) joined",
+  "sampleText": "\n    \n      R64R32\n      \n      R32R64\n    \n    \n      \n    \n    A. Kalinina#50\n  \n    \n    S. Kartal#129\n  \n    \n  \n    \n    A. Li#30\n  \n    \n    Q. Zheng#54\n  \n    \n  \n    \n    B. Bencic#12\n  \n    \n    S. Zhang#57\n  \n    \n  \n    \n    C. Tauson#44\n  \n    \n    M. Bouzkova#27\n  \n    \n  \n    \n    D. Snigur#46\n  \n    \n    E. Mertens#19\n  \n    \n  \n    \n    D. Yastremska#111\n  \n    \n    C. Bucsa#35\n  \n"
 }
