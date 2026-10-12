@@ -1,5 +1,18 @@
 # FIELD HANDOFF
 
+## 2026-10-12b — the forward window probe died four days without a manifest
+
+`forward-window-probe.yml` failed its scheduled runs 10-08 to 10-11 on
+`Cannot read properties of undefined (reading 'scheduleForDate')` at
+`forward_window_probe.js:66`, two seconds in, and left no manifest. `e1681b21`
+makes it leave one when it dies: the swallowed first-wait error, every
+main-frame navigation, each failed read, the stage, the Playwright version.
+Dispatch run 38293199977 then **passed** on Playwright 1.64.0 with no retry
+used, so **why it died is not established**. Playwright 1.64.0 was published
+inside the failure window and is installed unpinned; three local
+reproductions on 1.61 and 1.64 did not crash. Session doc:
+field-relay-nba `outbox/odds-watches-daily-read-2026-10-12.md`.
+
 ## 2026-10-12 — five copies of a third odds key were here
 
 `.coderabbit.yaml` x1, `docs/CC-CMD-2026-06-16-odds-quota-audit.md` x1,
