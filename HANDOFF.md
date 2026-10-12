@@ -1,5 +1,36 @@
 # FIELD HANDOFF
 
+## 2026-10-12 — five copies of a third odds key were here
+
+`.coderabbit.yaml` x1, `docs/CC-CMD-2026-06-16-odds-quota-audit.md` x1,
+`outbox/cc-odds-audit-results.md` x3 — all now
+`<redacted 2026-10-12 — see docs/exposed-secrets.sha256>`.
+
+**There are three odds keys and every document calls all three "the Odds API
+key".** The exhausted free-tier one was removed 2026-08-25 and is pinned at 0.
+The live 20K-plan key was rotated by the owner 2026-09-15. This was the third:
+the Starter-tier value held by field-relay-nba's `env.ODDS_API_KEY_FALLBACK`,
+never rotated.
+
+`docs/exposed-secrets.sha256` now declares it at max 0. **A ratchet only knows
+the hashes it is given** — this repo's scanner printed PASS on every run while
+five copies of an undeclared odds key sat in tracked files.
+
+The gate was proven able to fail first, with a THROWAWAY token rather than by
+rewriting a credential: a `deadbeef` string planted in a temp file, hash declared
+at 0, gate red with exit 1, then both removed. The relay's own mutation does not
+transfer — the two checkers are different programs.
+
+`.coderabbit.yaml:26` was a review instruction saying "never hardcode the Starter
+key (&lt;the key&gt;)". The instruction survives; the value is gone.
+
+Redaction is not rotation: the value is in this repo's git history and history
+was not rewritten. Rotating at the provider is the owner's step. See
+field-relay-nba/docs/CC-CMD-2026-10-12-starter-key-exposure.md.
+
+---
+
+
 ## Session doc index — 2026-09-07 onward
 
 Rule 67 requires the HANDOFF write to name the session doc. Thirteen were
