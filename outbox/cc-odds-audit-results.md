@@ -449,13 +449,13 @@ Same change at line 8125 for `fetchSportOddsHistorical`.
 
 ### F3 — Starter key fallback
 
-The bundle already has `ODDS_API_KEY_FALLBACK = "<redacted 2026-08-25 — see docs/exposed-secrets.sha256>"` at line 5557, **but it is used as the default when env.ODDS_API_KEY is missing**, not as a failover on 401/429. The spec wants the Starter key (`8452c3ac6e226ca6eff8b087391d3c76`) added as a fresh failover key.
+The bundle already has `ODDS_API_KEY_FALLBACK = "<redacted 2026-08-25 — see docs/exposed-secrets.sha256>"` at line 5557, **but it is used as the default when env.ODDS_API_KEY is missing**, not as a failover on 401/429. The spec wants the Starter key (`<redacted 2026-10-12 — see docs/exposed-secrets.sha256>`) added as a fresh failover key.
 
 Rename the existing hardcoded fallback to `ODDS_API_KEY_DEFAULT` (its actual semantic role — a default when env is missing during dev). Add a new env-bound `ODDS_API_KEY_FALLBACK` for failover:
 
 ```js
 const ODDS_API_KEY_DEFAULT  = "<redacted 2026-08-25 — see docs/exposed-secrets.sha256>"; // dev fallback when env missing
-// env.ODDS_API_KEY_FALLBACK = "8452c3ac6e226ca6eff8b087391d3c76" — Starter plan failover
+// env.ODDS_API_KEY_FALLBACK = "<redacted 2026-10-12 — see docs/exposed-secrets.sha256>" — Starter plan failover
 
 async function guardedOddsFetchWithFallback(env, urlBuilder, init) {
   // urlBuilder(key) → string, so we can swap keys without rebuilding manually
@@ -491,7 +491,7 @@ The Starter key (500 credits) is WC-only / live-only / 180s-cooldown — gate th
 
 # Starter plan failover — Odds API
 # Hardcoded fallback when primary returns 401/429; WC-only, live-only, 180s cooldown
-ODDS_API_KEY_FALLBACK = "8452c3ac6e226ca6eff8b087391d3c76"
+ODDS_API_KEY_FALLBACK = "<redacted 2026-10-12 — see docs/exposed-secrets.sha256>"
 ```
 
 Or set via `wrangler secret put ODDS_API_KEY_FALLBACK` if treated as a secret.

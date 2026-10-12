@@ -23,7 +23,7 @@ reviews:
         - Smoke assertions in smoke.js must match any new features added
         - SW_VERSION must be bumped on every deploy-triggering change
         - Any new analytics lookup table must have corresponding smoke assertion checking actual data values, not just function presence
-        - Odds API: never hardcode the Starter key (8452c3ac6e226ca6eff8b087391d3c76) — that plan is exhausted
+        - Odds API: never hardcode the Starter key (<redacted 2026-10-12 — see docs/exposed-secrets.sha256>) — that plan is exhausted
     
     - path: "smoke.js"
       instructions: |
