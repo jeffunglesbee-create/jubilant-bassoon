@@ -1,5 +1,100 @@
 # FIELD HANDOFF
 
+## 2026-10-12c — the password nothing could read, and four relay commits chat was allowed to write
+
+The FIELD Handoff connector's OAuth refresh token lapsed. Re-authorizing presents
+the shared-password page, which compares against `env.FIELD_MCP_SECRET` — a value
+living in a GitHub Actions secret and a Cloudflare Worker secret, **neither of
+which can display it back**. That is the Deploy Courier working as designed: it
+exists so no human ever handles the value, and it succeeded. The owner was locked
+out of his own single-user server with no recovery path.
+
+**The property that makes the provisioning secure is the property that makes
+recovery impossible.** Those are the same fact seen from two sides, not a tension.
+Rotation is not a fix and must not be proposed as one — a rotated value is equally
+unreadable, and `bootstrap-relay-secret.yml` extracts from source besides, so
+rotating before the 13 literals come out of `src/index.js` reinstalls the old
+value. Codex: `incident-2026-10-12-mcp-reauth-lockout`.
+
+**Four relay commits on 2026-10-12 were authored and pushed by chat, not by a CC
+session** — `1be6737`, `14503e7`, `947dbcf`, `168786f`, all `src/mcp-oauth.js` and
+one new workflow. One-time, explicitly asked for and explicitly granted, because
+the connector was down so the normal dispatch path was unavailable and the broken
+thing was the authorization code itself. **The exception is spent and sets no
+precedent.** Read `governance-2026-10-12-chat-relay-code-exception` before reading
+the commit log, which on its own would teach the wrong lesson.
+
+### The enrollment window
+
+`MCP_ENROLL_UNTIL` holds an ISO-8601 instant. While it is in the future,
+`POST /oauth/authorize` accepts the authorization without the password and warns
+with the `client_id` and the expiry. `enrollmentState()` returns four values —
+`unset`, `unparseable`, `expired`, `open` — and only `open` opens anything
+(Rule 99); an unparseable value must not read as open or a typo holds the door
+permanently. It closes by the clock, so there is no revoke step to forget.
+
+Verified live, same throwaway DCR client, same deliberately wrong password, one
+variable changed: unset → 401 · open → 302 with a code · expired on its own → 401
+· closed by `minutes: 0` → 401. `/mcp` answers 401 to both no-header and a garbage
+bearer, which is what makes the 302 mean something.
+
+`.github/workflows/open-enrollment-window.yml`, dispatch only, capped at 60
+minutes. **Never add `set -x`** — that leaked `FIELD_MCP_SECRET` on 2026-07-13.
+
+### Three defects chat shipped inside its own exception
+
+Cloudflare answers **201** on creating the var; the check accepted only 200.
+Cloudflare **pretty-prints**, so the flag arrives as `"success": true` with a
+space; the check grepped for none. Both marked a run red **after the write had
+already succeeded** — the dangerous direction, since the next person would read
+the red X and conclude the window had not opened while the relay was accepting
+unauthenticated authorizations. Same mistake twice: asserting against a response's
+shape rather than its content.
+
+The third reached the owner. `GET /oauth/authorize` drew an identical password
+form in both states, so nothing on screen distinguished "needs a password you
+cannot read" from "will accept anything you type." He reported the reconnect as
+failed while the relay was ready to authorize him. Fixed in `168786f`: the page
+now shows a banner naming the closing instant and omits the password field
+entirely while the window is open. **A correct mechanism that cannot be observed
+is indistinguishable from a broken one** — Rule 99 reproduced in the UI of the
+thing built to repair a Rule 99 problem.
+
+### Not established
+
+During the first revoke test a revoked token answered 200 once; a clean retest
+answered 401 immediately and still 401 after 75s. **Cause unknown.** KV
+read-after-delete consistency is the candidate — that sequence fired two deletes
+against the namespace back to back — but it is not proven and is recorded rather
+than filed as a defect.
+
+`unparseable` is proven by `Date.parse` semantics, not by a live probe.
+
+### Carry-forwards
+
+`docs/CC-CMD-2026-10-12-oauth-reauth-without-shared-secret.md` (`d878b1c`) is
+filed and **not dispatched**. It removes the shared secret's monopoly on
+re-authorization so this cannot recur on the 90-day refresh clock. It leads with
+the trap: per-client trust keyed on `client_id` authorizes anyone, because
+`client_id` is not a secret — it rides in the authorize URL, `/oauth/register`
+hands one to any caller, and the repo is public. Task 1 is a blocking probe of
+whether the Claude iOS in-app browser persists cookies across an app restart;
+that answer decides whether the cookie design exists at all or WebAuthn is the
+only path.
+
+The throwaway probe client sits in `MCP_OAUTH` KV until its 90-day TTL. No DCR
+delete endpoint exists and the available KV tools are namespace-level, not
+key-level. A `client_id` alone authorizes nothing, so it adds no surface.
+
+`/deploy/verify` reported `match: false` at session end. **Benign** — every commit
+after `168786f` carries `[skip ci]` and none touch `src/`. That route compares
+HEAD to deployed without regard for `[skip ci]`, so it reads red whenever a doc
+commit lands after a deploy.
+
+Still owner-only, unchanged from before this session: the two plaintext PATs in
+Drive docs, the `RELAY_SHARED_SECRET` rotation in the stated order (literals out
+first, then rotate), and the stray `claude/zealous-brahmagupta-tm92w3` branch.
+
 ## 2026-10-12b — the forward window probe died four days without a manifest
 
 `forward-window-probe.yml` failed its scheduled runs 10-08 to 10-11 on
