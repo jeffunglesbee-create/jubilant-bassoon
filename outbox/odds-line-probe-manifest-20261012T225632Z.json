@@ -1,0 +1,1236 @@
+{
+  "probed_at": "2026-10-12T22:56:32.384Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "triggered_by": "schedule",
+  "window": {
+    "cron": "16:10Z European window",
+    "delay_minutes": 406,
+    "trigger": "schedule",
+    "et_hour": 18,
+    "today_likely_complete": false,
+    "step_back_days": 1,
+    "step_back_source": "scheduled-default-1",
+    "reads_complete_slate": true,
+    "zero_debriefs_is_evidence": true
+  },
+  "sw_version": "2026-10-10a",
+  "cards_seen": 0,
+  "odds_slot_present_in_dom": true,
+  "slots_hidden": 0,
+  "slots_visible": 15,
+  "states": {
+    "no_odds": {
+      "game": "nba:0012600042",
+      "text": "(no movement line — buildOddsMovement returned null; 25 of 40 rendered debriefs)"
+    },
+    "opened_only": {
+      "game": "espn:401908030",
+      "text": "Home line opened +119 (46% implied)"
+    },
+    "unchanged": {
+      "game": "espn:401882852",
+      "text": "Home moneyline +170 (37% implied), unchanged from open"
+    },
+    "moved": {
+      "game": "espn:761859",
+      "text": "Home moneyline -195 → -210, 1.6 pts toward home"
+    }
+  },
+  "debriefs_total": 40,
+  "debriefs_with_movement_line": 15,
+  "debriefs_no_movement_line": 25,
+  "date_label": "Yesterday",
+  "stepped_back_days": 1,
+  "setup_overlay_dismissed": false,
+  "date_nav_error": null,
+  "slate_by_step": [
+    {
+      "step": 0,
+      "label": "Today",
+      "cards": 53
+    },
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "cards": 65
+    }
+  ],
+  "slate_settle_series": [
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "series": [
+        {
+          "at_s": 5,
+          "cards": 41
+        },
+        {
+          "at_s": 10,
+          "cards": 65
+        },
+        {
+          "at_s": 15,
+          "cards": 65
+        },
+        {
+          "at_s": 20,
+          "cards": 65
+        }
+      ]
+    }
+  ],
+  "slate_settle_series_step0": [
+    {
+      "at_s": 5,
+      "total": 53,
+      "since_nav_ms": 15703,
+      "by_sport": {
+        "Baseball (MLB)": 2,
+        "Tennis": 49,
+        "Canadian Football (CFL)": 1,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 10,
+      "total": 53,
+      "since_nav_ms": 20708,
+      "by_sport": {
+        "Baseball (MLB)": 2,
+        "Tennis": 49,
+        "Canadian Football (CFL)": 1,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 15,
+      "total": 53,
+      "since_nav_ms": 25714,
+      "by_sport": {
+        "Baseball (MLB)": 2,
+        "Tennis": 49,
+        "Canadian Football (CFL)": 1,
+        "Golf": 1
+      }
+    }
+  ],
+  "slate_by_sport": {
+    "Baseball (MLB)": 2,
+    "Tennis": 49,
+    "Canadian Football (CFL)": 1,
+    "Golf": 1
+  },
+  "slate_sections_present": [
+    "Baseball (MLB)",
+    "Tennis",
+    "Canadian Football (CFL)",
+    "Golf"
+  ],
+  "slate_sections_present_date_label": "Today",
+  "slate_sections_at_model_read": [
+    "NBA",
+    "NHL",
+    "Baseball (MLB)",
+    "MLS Soccer",
+    "Premier League",
+    "EFL Championship",
+    "La Liga",
+    "Serie A",
+    "Bundesliga",
+    "Ligue 1",
+    "NFL",
+    "College Football",
+    "UEFA Champions League"
+  ],
+  "slate_sections_at_model_read_date_label": "Yesterday",
+  "gap_compared_on": "Yesterday",
+  "gap_pre_step_census_was": "Today",
+  "slate_read_at_ms": 25714,
+  "slate_settled_at_s": 15,
+  "slate_settle_reached": true,
+  "slate_cards_date_label": "Yesterday",
+  "slate_cards_after_steps": 1,
+  "empty_note": null,
+  "main_state": null,
+  "page_errors": [],
+  "page_error_count": 0,
+  "date_nav_check": {
+    "label": "Sat, Oct 10",
+    "cards": 131,
+    "empty_note": null,
+    "loading_wraps": 0,
+    "loading_wrap_in_main": 0,
+    "main_children": [
+      "section#field-newspaper.field-newspaper",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section"
+    ],
+    "lcp_anchor_anywhere": 0,
+    "lcp_anchor_in_main": 0,
+    "rejections": [],
+    "failure_kind": null,
+    "ok": true
+  },
+  "context_game_requests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879267",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882852",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401875005",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874763",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/cfl_13419746",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600042",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020085",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020084",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020086",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401908031",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A761859",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879266",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401878774",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401879264",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880237",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882854",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882847",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882855",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882850",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874940",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874951",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874776",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874789",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874764",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401884774",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401884778",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401876443",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401876441",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401876440",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872981",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872990",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872984",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872982",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872986",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872987",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872983",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872985",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872988",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872989",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401872991"
+  ],
+  "context_id_forms": {
+    "espn_prefixed": 38,
+    "other": 5
+  },
+  "v2_games_requests": 173,
+  "v2_games_by_sport": {
+    "nba": 7,
+    "nhl": 7,
+    "mlb": 7,
+    "wnba": 7,
+    "mls": 19,
+    "afl": 7,
+    "epl": 7,
+    "ucl": 7,
+    "europa": 7,
+    "conference": 7,
+    "uclqual": 7,
+    "europaqual": 7,
+    "conferencequal": 7,
+    "eflchamp": 7,
+    "eflone": 7,
+    "efltwo": 7,
+    "laliga": 7,
+    "seriea": 7,
+    "bundesliga": 7,
+    "ligue1": 7,
+    "wc26": 7,
+    "nfl": 7,
+    "cfb": 7
+  },
+  "v2_games_dates": {
+    "2026-10-12": 73,
+    "2026-10-13": 69,
+    "2026-10-11": 27,
+    "2026-10-10": 4
+  },
+  "espn_scores_by_sport": {
+    "nhl": 19,
+    "nba": 5,
+    "mlb": 2,
+    "epl": 1,
+    "laliga": 1,
+    "cfb": 2,
+    "ucl": 9,
+    "seriea": 2,
+    "nfl": 1,
+    "eflchamp": 8,
+    "(no _sport)": 50
+  },
+  "slate_state": {
+    "renderLedger": {
+      "renders": 9,
+      "lastRenderAt": 1791845824628,
+      "lastPushAt": 1791845824460,
+      "lastPushSport": "ucl",
+      "pushesSinceLastRender": 0
+    },
+    "allData": {
+      "sportsIsArray": true,
+      "sportsLength": 13,
+      "sportsLabels": [
+        "NBA",
+        "NHL",
+        "Baseball (MLB)",
+        "MLS Soccer",
+        "Premier League",
+        "EFL Championship",
+        "La Liga",
+        "Serie A",
+        "Bundesliga",
+        "Ligue 1",
+        "NFL",
+        "College Football",
+        "UEFA Champions League"
+      ],
+      "sportsGameCounts": [
+        {
+          "label": "NBA",
+          "sport": "NBA",
+          "games": 5
+        },
+        {
+          "label": "NHL",
+          "sport": "NHL",
+          "games": 3
+        },
+        {
+          "label": "Baseball (MLB)",
+          "sport": "Baseball (MLB)",
+          "games": 1
+        },
+        {
+          "label": "MLS Soccer",
+          "sport": "MLS Soccer",
+          "games": 1
+        },
+        {
+          "label": "Premier League",
+          "sport": "Premier League",
+          "games": 4
+        },
+        {
+          "label": "EFL Championship",
+          "sport": "EFL Championship",
+          "games": 9
+        },
+        {
+          "label": "La Liga",
+          "sport": "La Liga",
+          "games": 5
+        },
+        {
+          "label": "Serie A",
+          "sport": "Serie A",
+          "games": 7
+        },
+        {
+          "label": "Bundesliga",
+          "sport": "Bundesliga",
+          "games": 2
+        },
+        {
+          "label": "Ligue 1",
+          "sport": "Ligue 1",
+          "games": 3
+        },
+        {
+          "label": "NFL",
+          "sport": "NFL",
+          "games": 14
+        },
+        {
+          "label": "College Football",
+          "sport": "College Football",
+          "games": 2
+        },
+        {
+          "label": "UEFA Champions League",
+          "sport": "UEFA Champions League",
+          "games": 9
+        }
+      ]
+    },
+    "v2SectionInjected": {
+      "cfb": true,
+      "nfl": true,
+      "epl": true,
+      "laliga": true,
+      "seriea": true,
+      "eflchamp": true,
+      "ucl": true
+    }
+  },
+  "render_after_last_push_ms": 168,
+  "sections_model_not_in_dom": [],
+  "gap_split": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "section_key_mismatches": [],
+  "gap_on_dom_key": [],
+  "gap_split_on_dom_key": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "render_trace": {
+    "at": 1791845824750,
+    "outcome": "rendered",
+    "activeFilter": "all",
+    "myTeamsFilter": false,
+    "rivalsFilter": false,
+    "freeOnlyFilter": false,
+    "sportsIn": 13,
+    "visibleCount": 13,
+    "filteredCount": 13,
+    "modelSections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 5
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 3
+      },
+      {
+        "sport": "Baseball (MLB)",
+        "label": "Baseball (MLB)",
+        "games": 1
+      },
+      {
+        "sport": "MLS Soccer",
+        "label": "MLS Soccer",
+        "games": 1
+      },
+      {
+        "sport": "Premier League",
+        "label": "Premier League",
+        "games": 4
+      },
+      {
+        "sport": "EFL Championship",
+        "label": "EFL Championship",
+        "games": 9
+      },
+      {
+        "sport": "La Liga",
+        "label": "La Liga",
+        "games": 5
+      },
+      {
+        "sport": "Serie A",
+        "label": "Serie A",
+        "games": 7
+      },
+      {
+        "sport": "Bundesliga",
+        "label": "Bundesliga",
+        "games": 2
+      },
+      {
+        "sport": "Ligue 1",
+        "label": "Ligue 1",
+        "games": 3
+      },
+      {
+        "sport": "NFL",
+        "label": "NFL",
+        "games": 14
+      },
+      {
+        "sport": "College Football",
+        "label": "College Football",
+        "games": 2
+      },
+      {
+        "sport": "UEFA Champions League",
+        "label": "UEFA Champions League",
+        "games": 9
+      }
+    ],
+    "sections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 5,
+        "emitted": true,
+        "chars": 15577
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 3,
+        "emitted": true,
+        "chars": 9200
+      },
+      {
+        "sport": "Baseball (MLB)",
+        "label": "Baseball (MLB)",
+        "games": 1,
+        "emitted": true,
+        "chars": 4411
+      },
+      {
+        "sport": "MLS Soccer",
+        "label": "MLS Soccer",
+        "games": 1,
+        "emitted": true,
+        "chars": 3525
+      },
+      {
+        "sport": "Premier League",
+        "label": "Premier League",
+        "games": 4,
+        "emitted": true,
+        "chars": 12603
+      },
+      {
+        "sport": "EFL Championship",
+        "label": "EFL Championship",
+        "games": 9,
+        "emitted": true,
+        "chars": 23678
+      },
+      {
+        "sport": "La Liga",
+        "label": "La Liga",
+        "games": 5,
+        "emitted": true,
+        "chars": 15291
+      },
+      {
+        "sport": "Serie A",
+        "label": "Serie A",
+        "games": 7,
+        "emitted": true,
+        "chars": 21510
+      },
+      {
+        "sport": "Bundesliga",
+        "label": "Bundesliga",
+        "games": 2,
+        "emitted": true,
+        "chars": 5957
+      },
+      {
+        "sport": "Ligue 1",
+        "label": "Ligue 1",
+        "games": 3,
+        "emitted": true,
+        "chars": 8690
+      },
+      {
+        "sport": "NFL",
+        "label": "NFL",
+        "games": 14,
+        "emitted": true,
+        "chars": 43023
+      },
+      {
+        "sport": "College Football",
+        "label": "College Football",
+        "games": 2,
+        "emitted": true,
+        "chars": 5749
+      },
+      {
+        "sport": "UEFA Champions League",
+        "label": "UEFA Champions League",
+        "games": 9,
+        "emitted": true,
+        "chars": 26254
+      }
+    ]
+  },
+  "render_trace_age_ms": 13937,
+  "gap_verdicts": [],
+  "gap_verdict_census": {},
+  "field_errors": [
+    {
+      "fn": "scores:find-espn-score-no-match",
+      "err": "no match found: Baltimore Ravens @ Atlanta Falcons",
+      "ts": 1791845819078
+    },
+    {
+      "fn": "scores:fetch-team-rank",
+      "err": "fifa-rankings HTTP 404",
+      "ts": 1791845793479
+    },
+    {
+      "fn": "user:fetch-state",
+      "err": "HTTP 404",
+      "ts": 1791845795639
+    }
+  ],
+  "field_error_count": 3,
+  "field_errors_by_fn": {
+    "scores:find-espn-score-no-match": 1,
+    "scores:fetch-team-rank": 1,
+    "user:fetch-state": 1
+  },
+  "visible_samples": [
+    {
+      "id": "espn:401908030",
+      "label": "Los Angeles Dodgers @ Milwaukee Brewers",
+      "hidden": false,
+      "text": "Home line opened +119 (46% implied)"
+    },
+    {
+      "id": "espn:761859",
+      "label": "LA Galaxy @ St. Louis CITY SC",
+      "hidden": false,
+      "text": "Home moneyline -195 → -210, 1.6 pts toward home"
+    },
+    {
+      "id": "espn:401879267",
+      "label": "Newcastle United @ Coventry City",
+      "hidden": false,
+      "text": "Home moneyline +215 → +230, 1.4 pts toward away"
+    },
+    {
+      "id": "espn:401878774",
+      "label": "Everton @ Hull City",
+      "hidden": false,
+      "text": "Home line opened +270 (27% implied)"
+    },
+    {
+      "id": "espn:401879264",
+      "label": "Manchester City @ Liverpool",
+      "hidden": false,
+      "text": "Home line opened +205 (33% implied)"
+    },
+    {
+      "id": "espn:401882852",
+      "label": "Sevilla @ Levante",
+      "hidden": false,
+      "text": "Home moneyline +170 (37% implied), unchanged from open"
+    },
+    {
+      "id": "espn:401874763",
+      "label": "Udinese @ Torino",
+      "hidden": false,
+      "text": "Home moneyline +140 (42% implied), unchanged from open"
+    },
+    {
+      "id": "espn:401874940",
+      "label": "AS Roma @ Como",
+      "hidden": false,
+      "text": "Home line opened +135 (43% implied)"
+    }
+  ],
+  "error": null,
+  "slate_cards": 65,
+  "debrief_injected": 41,
+  "debrief_visible": 40,
+  "existing_odds_layers": 14,
+  "debrief_cards": [
+    {
+      "gameid": "nba:0012600042",
+      "sport": "NBA",
+      "home": "Portland Trail Blazers",
+      "away": "London Lions",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020085",
+      "sport": "NHL",
+      "home": "New York Rangers",
+      "away": "Vancouver Canucks",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020084",
+      "sport": "NHL",
+      "home": "Washington Capitals",
+      "away": "Seattle Kraken",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020086",
+      "sport": "NHL",
+      "home": "Philadelphia Flyers",
+      "away": "Carolina Hurricanes",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401908030",
+      "sport": "Baseball (MLB)",
+      "home": "Milwaukee Brewers",
+      "away": "Los Angeles Dodgers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:761859",
+      "sport": "MLS Soccer",
+      "home": "St. Louis CITY SC",
+      "away": "LA Galaxy",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401879267",
+      "sport": "Premier League",
+      "home": "Coventry City",
+      "away": "Newcastle United",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401879266",
+      "sport": "Premier League",
+      "home": "Crystal Palace",
+      "away": "Nottingham Forest",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401878774",
+      "sport": "Premier League",
+      "home": "Hull City",
+      "away": "Everton",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401879264",
+      "sport": "Premier League",
+      "home": "Liverpool",
+      "away": "Manchester City",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401882852",
+      "sport": "La Liga",
+      "home": "Levante",
+      "away": "Sevilla",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401882854",
+      "sport": "La Liga",
+      "home": "Elche",
+      "away": "Celta Vigo",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401882847",
+      "sport": "La Liga",
+      "home": "Real Sociedad",
+      "away": "Deportivo",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401882855",
+      "sport": "La Liga",
+      "home": "Real Betis",
+      "away": "Osasuna",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401882850",
+      "sport": "La Liga",
+      "home": "Racing Santander",
+      "away": "Valencia",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401875005",
+      "sport": "Serie A",
+      "home": "Atalanta",
+      "away": "Venezia",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401874763",
+      "sport": "Serie A",
+      "home": "Torino",
+      "away": "Udinese",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401874940",
+      "sport": "Serie A",
+      "home": "Como",
+      "away": "AS Roma",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401874951",
+      "sport": "Serie A",
+      "home": "Lazio",
+      "away": "Monza",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401874776",
+      "sport": "Serie A",
+      "home": "Lecce",
+      "away": "Bologna",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401874789",
+      "sport": "Serie A",
+      "home": "Sassuolo",
+      "away": "AC Milan",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401874764",
+      "sport": "Serie A",
+      "home": "Cagliari",
+      "away": "Juventus",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401884774",
+      "sport": "Bundesliga",
+      "home": "FC Cologne",
+      "away": "Borussia Mönchengladbach",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401884778",
+      "sport": "Bundesliga",
+      "home": "SC Freiburg",
+      "away": "Schalke 04",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401876443",
+      "sport": "Ligue 1",
+      "home": "Nice",
+      "away": "Strasbourg",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401876441",
+      "sport": "Ligue 1",
+      "home": "Stade Rennais",
+      "away": "AJ Auxerre",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401876440",
+      "sport": "Ligue 1",
+      "home": "Troyes",
+      "away": "Marseille",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401872981",
+      "sport": "NFL",
+      "home": "Jacksonville Jaguars",
+      "away": "Philadelphia Eagles",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872990",
+      "sport": "NFL",
+      "home": "Green Bay Packers",
+      "away": "Chicago Bears",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872984",
+      "sport": "NFL",
+      "home": "Tennessee Titans",
+      "away": "Houston Texans",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872982",
+      "sport": "NFL",
+      "home": "Miami Dolphins",
+      "away": "Cincinnati Bengals",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872986",
+      "sport": "NFL",
+      "home": "New England Patriots",
+      "away": "Las Vegas Raiders",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872987",
+      "sport": "NFL",
+      "home": "New Orleans Saints",
+      "away": "Minnesota Vikings",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872983",
+      "sport": "NFL",
+      "home": "New York Jets",
+      "away": "Cleveland Browns",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872985",
+      "sport": "NFL",
+      "home": "Pittsburgh Steelers",
+      "away": "Indianapolis Colts",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872988",
+      "sport": "NFL",
+      "home": "Washington Commanders",
+      "away": "New York Giants",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872989",
+      "sport": "NFL",
+      "home": "Los Angeles Chargers",
+      "away": "Denver Broncos",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872991",
+      "sport": "NFL",
+      "home": "Arizona Cardinals",
+      "away": "Detroit Lions",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872992",
+      "sport": "NFL",
+      "home": "Seattle Seahawks",
+      "away": "San Francisco 49ers",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401872993",
+      "sport": "NFL",
+      "home": "Atlanta Falcons",
+      "away": "Baltimore Ravens",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    }
+  ],
+  "odds_layer_present_in_dom": true
+}
