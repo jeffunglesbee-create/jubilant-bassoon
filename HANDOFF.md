@@ -30,9 +30,9 @@ holds the old literals, but they no longer read out a credential. The ratchet
 stays at 0 anyway, because a dead key in a document is how the free-tier entry
 above it began.
 
-Still open, in the relay rather than here: nothing probes
-`ODDS_API_KEY_FALLBACK`, so the rotation rests on the owner's report rather
-than a measurement. See
+Closed 2026-10-12T18:12Z, in the relay: the owner set
+`ODDS_API_KEY_FALLBACK`, and field-relay-nba run 38289284222 read it VALID
+(500 remaining) and a Secret, so a deploy will not erase it. See
 field-relay-nba/docs/CC-CMD-2026-10-12-starter-key-exposure.md.
 
 ---
