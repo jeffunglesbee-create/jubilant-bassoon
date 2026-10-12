@@ -24,8 +24,15 @@ transfer — the two checkers are different programs.
 `.coderabbit.yaml:26` was a review instruction saying "never hardcode the Starter
 key (&lt;the key&gt;)". The instruction survives; the value is gone.
 
-Redaction is not rotation: the value is in this repo's git history and history
-was not rewritten. Rotating at the provider is the owner's step. See
+Redaction is not rotation — and the rotation happened: the owner rotated the
+key at the provider on 2026-10-12, the same day. This repo's git history still
+holds the old literals, but they no longer read out a credential. The ratchet
+stays at 0 anyway, because a dead key in a document is how the free-tier entry
+above it began.
+
+Still open, in the relay rather than here: nothing probes
+`ODDS_API_KEY_FALLBACK`, so the rotation rests on the owner's report rather
+than a measurement. See
 field-relay-nba/docs/CC-CMD-2026-10-12-starter-key-exposure.md.
 
 ---
