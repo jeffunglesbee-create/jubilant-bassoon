@@ -24,6 +24,13 @@ const BASE = RAW + (RAW.includes('?') ? '&' : '?') + 'pl-verify';
 const OUT = 'outbox';
 const RUN_ID = process.env.GITHUB_RUN_ID || String(Date.now());
 
+// Shared with the crash path below, so a run that dies still leaves a manifest.
+// Runs 2026-10-08 through 10-11 died two seconds in on
+// `Cannot read properties of undefined (reading 'scheduleForDate')` and
+// committed nothing: the workflow promises "commit the manifest either way",
+// and a throw before writeFileSync broke that promise four days running.
+const STATE = { stage: 'start', navigations: [], readFailures: [], errors: [] };
+
 const addDays = (iso, n) => {
   const d = new Date(iso + 'T12:00:00Z');
   d.setUTCDate(d.getUTCDate() + n);
@@ -34,10 +41,38 @@ const addDays = (iso, n) => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 430, height: 932 } });
   const page = await ctx.newPage();
-  const errors = [];
+  const errors = STATE.errors;
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  // A main-frame navigation after the first load destroys the context every
+  // read below runs in, and the new document has no _plVerify until field.js
+  // runs again. Recorded, so whatever navigates is read off the manifest rather
+  // than inferred.
+  const t0 = Date.now();
+  page.on('framenavigated', f => {
+    if (f === page.mainFrame()) STATE.navigations.push({ at_ms: Date.now() - t0, url: f.url() });
+  });
 
+  // Every _plVerify read waits for the API in the CURRENT document first. If a
+  // navigation still lands between the wait and the read, it is retried — at
+  // most three attempts, each failure kept in the manifest. What is asserted
+  // does not change; only when it is read.
+  const readPv = async (fn, arg) => {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await page.waitForFunction(
+          () => !!(window._plVerify && typeof window._plVerify.scheduleForDate === 'function'),
+          null, { timeout: 30000 });
+        return await page.evaluate(fn, arg);
+      } catch (e) {
+        STATE.readFailures.push({ attempt, error: String(e && e.message || e).slice(0, 200) });
+        if (attempt >= 3) throw e;
+      }
+    }
+  };
+
+  STATE.stage = 'goto';
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  STATE.stage = 'meta';
 
   // Wait for the field-data file to be accepted into the cache. If the accept
   // gate rejected it (wrong schema, today outside window_dates) this never
@@ -50,7 +85,12 @@ const addDays = (iso, n) => {
       window_dates: m.window_dates || null,
       by_date: m.games_found_by_date || null,
     } : false;
-  }, { timeout: 30000 }).then(h => h.jsonValue()).catch(() => null);
+  }, { timeout: 30000 }).then(h => h.jsonValue()).catch(e => {
+    // Kept, not swallowed: a fast rejection here is the first thing the
+    // 10-08..10-11 runs did, and the old `catch(() => null)` threw it away.
+    STATE.metaError = String(e && e.message || e).slice(0, 300);
+    return null;
+  });
 
   const today = meta?.for_date || new Date().toISOString().slice(0, 10);
   const isoDays = [1, 2, 3].map(i => addDays(today, i));
@@ -63,10 +103,12 @@ const addDays = (iso, n) => {
   // navigation at all: scheduleForDate is a pure lookup over an already-fetched
   // file. Reading all three first removes the dependency instead of chasing
   // whatever navigates.
-  const windowRead = await page.evaluate((list) => list.map(d => {
+  STATE.stage = 'window-read';
+  const windowRead = await readPv((list) => list.map(d => {
     const sched = window._plVerify.scheduleForDate(d);
     return { iso: d, has: !!sched, mlb: sched && sched.mlb ? sched.mlb.length : 0 };
   }), isoDays);
+  STATE.stage = 'render';
 
   for (const w of windowRead) {
     days.push({ iso: w.iso, windowHasDay: w.has, windowMlbCount: w.mlb,
@@ -118,6 +160,10 @@ const addDays = (iso, n) => {
     totalEnrichMatched: days.reduce((n, d) => n + d.mlbEnrichMatched, 0),
     totalEnrichAvailable: days.reduce((n, d) => n + d.mlbEnrichAvailable, 0),
     consoleErrors: errors.slice(0, 10),
+    mainFrameNavigations: STATE.navigations,
+    readFailures: STATE.readFailures,
+    metaError: STATE.metaError || null,
+    playwrightVersion: require('@playwright/test/package.json').version,
   };
 
   fs.mkdirSync(OUT, { recursive: true });
@@ -143,4 +189,21 @@ const addDays = (iso, n) => {
   console.log(`\nPASS: schema ${manifest.schema}, ${manifest.windowDaysReachingClient}/3 forward days reached the client, ` +
               `${manifest.windowMlbTotal} MLB entries. Rendering (not asserted): ${manifest.renderedCardsTotal} cards, ` +
               `${manifest.totalEnrichMatched}/${manifest.totalEnrichAvailable} enriched.`);
-})().catch(e => { console.error(e); process.exit(1); });
+})().catch(e => {
+  console.error(e);
+  try {
+    fs.mkdirSync(OUT, { recursive: true });
+    fs.writeFileSync(`${OUT}/forward-window-manifest-latest.json`, JSON.stringify({
+      url: BASE, runId: RUN_ID, commit: process.env.GITHUB_SHA || null,
+      timestamp: new Date().toISOString(),
+      fatal: String(e && e.message || e).slice(0, 500),
+      stage: STATE.stage,
+      metaError: STATE.metaError || null,
+      playwrightVersion: (() => { try { return require('@playwright/test/package.json').version; } catch (_) { return null; } })(),
+      mainFrameNavigations: STATE.navigations,
+      readFailures: STATE.readFailures,
+      consoleErrors: STATE.errors.slice(0, 10),
+    }, null, 2));
+  } catch (_) { /* the exit code below still fails the run */ }
+  process.exit(1);
+});
