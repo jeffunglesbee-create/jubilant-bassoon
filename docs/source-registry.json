@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T20:35:00Z",
+  "generatedAt": "2026-10-12T04:30:00Z",
   "sources": {
     "mlb-stats-api-official": {
       "status": "green",
@@ -92,6 +92,41 @@
       },
       "lastTermsCheckedAt": "2026-06-29",
       "notes": "CORS available — client can call directly. Relay proxies for key hiding. Fallback key <redacted 2026-08-25 — see docs/exposed-secrets.sha256> is starter tier (500/mo)."
+    },
+    "osm-nominatim": {
+      "status": "green",
+      "sourceUrl": "https://nominatim.openstreetmap.org/search",
+      "licence": "ODbL 1.0",
+      "allowedUses": [
+        "venue_coordinates_build_time",
+        "wikidata_qid_join",
+        "wikipedia_title_join"
+      ],
+      "rawRedistributionAllowed": false,
+      "commercialUseClass": "open_data_odbl",
+      "corsAvailable": true,
+      "authRequired": false,
+      "rateLimitPerHour": 3600,
+      "runtimeUse": false,
+      "lastTermsCheckedAt": "2026-10-12",
+      "notes": "SHARE-ALIKE IS NOT TRIGGERED, per the OSMF geocoding guideline (board-endorsed 2017-08-24): individual Geocoding Results are insubstantial extracts and 'may be stored and used together with other proprietary or third party data without having a share-alike impact on such other data'. The worked example in that guideline is this exact case — a retail operator geocoding its store locations — and it concludes the geocoded rows are not subject to share-alike and need no OSM attribution attached. TWO BOUNDARIES. (1) The shelter covers only names, addresses and lat/lon, and only while the collection 'is not a systematic attempt to aggregate all or substantially all Primary Features of a given type within a geographic area city-sized or larger'; the test is on FUNCTION, so a collection counts as systematic aggregation if it functions as a general-purpose geodatabase however it was built. ~98 venues across three continents clears this; adding every pitch or car park in a metro area would not. (2) GEOMETRY IS NOT A GEOCODING RESULT — polygon_geojson returns a way's node list, which is raw database content and sits outside this guideline entirely. Do not treat a footprint like a coordinate. ATTRIBUTION follows runtimeUse: the FAQ requires that 'applications that incorporate a geocoder must credit OpenStreetMap', so a runtime call obliges a UI credit, while build-time generation of a frozen constant does not. runtimeUse is false and should stay false. CORS MEASURED 2026-10-12 with a real Origin — GET 200 with access-control-allow-origin:* , OPTIONS preflight 204 with access-control-allow-methods:GET,OPTIONS, and no Origin in the vary header, so the wildcard is unconditional rather than reflected. Artifact: field-playground docs/cors-result-20261012T042548Z.txt. The 2026-07 probe's first run reported no ACAO because it sent no Origin; that false negative nearly justified building a relay proxy. KEY ON osm_id, NEVER place_id: measured 2026-10-12, place_id rotated across three reads in one session (375593567, 374082220, 374509798) while osm_id held at 24772913. The Wikidata QID is stabler still and survives venue renames. ACCURACY 8/8 against hand-verified coordinates at a 0.02 deg (~2km) threshold in the 2026-07 POI probe, scored on distance rather than on whether a result returned. Photon is OSM-derived and carries the SAME ODbL posture — switching to it escapes nothing. USAGE POLICY is operational and separate from the licence: ~1 req/sec absolute maximum, identifying User-Agent required, bulk geocoding discouraged, results cached 30 days. Not a substitute for a licensed geocoder at runtime scale. ROOF TYPE IS NOT SOURCEABLE HERE — roof:shape=* is a catalogue of geometric shapes with no value for 'retractable', because retractability is mechanical rather than geometric, and Lambeau's extratags carry no roof key at all. For NFL, nflverse's per-game roof state supersedes this entirely."
+    },
+    "wikidata": {
+      "status": "green",
+      "sourceUrl": "https://www.wikidata.org/w/api.php",
+      "licence": "CC0 1.0",
+      "allowedUses": [
+        "venue_coordinates_build_time",
+        "entity_identity",
+        "rename_resistant_key"
+      ],
+      "rawRedistributionAllowed": true,
+      "commercialUseClass": "public_domain_cc0",
+      "corsAvailable": null,
+      "authRequired": false,
+      "runtimeUse": false,
+      "lastTermsCheckedAt": "2026-10-12",
+      "notes": "CC0 — public domain. No attribution obligation, no share-alike, nothing to reason about. This is the zero-licence-surface alternative to osm-nominatim and the two COMPOSE rather than compete: OSM returns the QID in extratags on the same call that returns coordinates, so one Nominatim lookup at build time yields a key that Wikidata then answers from in perpetuity under CC0. COORDINATES are property P625 (globe-coordinate). Measured 2026-10-12: Q860790 (Lambeau Field) returns 44.501388888889, -88.062222222222 — about 50 m from Nominatim's 44.5009705, -88.0619681, which is noise against an Open-Meteo grid that snapped 1.2 km at Denver and 1.8 km at Detroit in probes the same night. ACCURACY 7-8 of 8 in the 2026-07 POI probe, deltas 0.0001-0.0032 deg (~10-350 m). The 0/8 recorded in rounds 2-3 of that probe was chat's own unbounded SPARQL UNION branch causing HTTP 504, not a coverage failure — do not inherit that number. corsAvailable IS NULL AND THAT IS NOT false: no Origin-bearing probe has been run against this host, and absent, false and unmeasured are three different claims (Rule 99). Run field-playground's cors-probe-origin.yml against it before any client-side use. ROOF DATA: none, confirmed in the 2026-07 probe even when queried by exact entity ID rather than by label."
     }
   }
 }
