@@ -1,5 +1,16 @@
 # FIELD HANDOFF
 
+## 2026-10-13 — the relay's shared secret left this repo's live code
+
+`retry_telemetry_probe.js`, `scripts/seed-mls-return-2026.py` and
+`scripts/seed-mls-tournaments-2026.py` read `RELAY_SHARED_SECRET` from the
+environment with no default (`0dc9a6fd`). Their three workflows pass it from
+this repo's Actions secret, which the relay's `distribute-relay-secret.yml`
+wrote on 2026-10-13. The 4 literals left are in docs/ and CONTRACTS.md, which
+are redacted after the rotation. The ratchet came down from 9 to 5. The
+rotation itself is one dispatch in field-relay-nba. Session doc:
+field-relay-nba `outbox/cc-session-2026-10-13-rotate-relay-secret.md`.
+
 ## 2026-10-12c — the password nothing could read, and four relay commits chat was allowed to write
 
 The FIELD Handoff connector's OAuth refresh token lapsed. Re-authorizing presents
