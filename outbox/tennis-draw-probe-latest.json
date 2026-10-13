@@ -1,5 +1,5 @@
 {
-  "ts": "2026-10-13T06:51:33.151Z",
+  "ts": "2026-10-13T20:42:42.936Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "relayReachable": true,
@@ -8,10 +8,11 @@
   "relayDrawStatus": 200,
   "relayRounds": [
     "Round of 64=24",
-    "Round of 32=15"
+    "Round of 32=16",
+    "Round of 16=1"
   ],
-  "relayMainDrawMatches": 39,
-  "relayEdges": 15,
+  "relayMainDrawMatches": 41,
+  "relayEdges": 26,
   "relayAnomalies": [
     "cancelledRowsExcluded"
   ],
@@ -19,46 +20,50 @@
   "pageLoaded": true,
   "navLinkVisible": true,
   "sectionVisible": true,
-  "treeMatchCards": 39,
-  "listMatchRows": 39,
+  "treeMatchCards": 41,
+  "listMatchRows": 41,
   "columnHeads": [
     "R64",
     "R32",
+    "R16",
+    "R16",
     "R32",
     "R64"
   ],
   "championOnPage": null,
   "anomalyLineOnPage": true,
   "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()"
   ],
   "failedRequests": [],
-  "renderWaitMs": 1824,
+  "renderWaitMs": 7831,
   "renderTimedOut": null,
-  "relayFetchMs": 2283,
+  "relayFetchMs": 4248,
   "urlLoaded": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt=1",
   "setupOverlayState": "suppressed by ?wpt",
   "treeHeightPx": 855,
   "treeWidthPx": 1440,
-  "pageHeightPx": 3029,
+  "pageHeightPx": 3115,
   "treeDisplay": "block",
   "listDisplay": "none",
   "listHeightPx": 0,
-  "cardsInViewport": 34,
-  "cardsCovered": 0,
-  "cardsCoveredBy": [],
+  "cardsInViewport": 35,
+  "cardsCovered": 1,
+  "cardsCoveredBy": [
+    "legend"
+  ],
   "firstCardVisible": true,
   "firstCardCoveredBy": null,
   "verdict": "PASS",
-  "reason": "177 Wuhan (wta_1000) 2026: 39 matches drawn in 2 round(s), 15 edge(s) joined",
-  "sampleText": "\n    \n      R64R32\n      \n      R32R64\n    \n    \n      \n    \n    A. Kalinina#48\n  \n    \n    S. Kartal#170\n  \n    7-5 6-3\n  \n    \n    E. Alexandrova#24\n  \n    \n    L. Fernandez#25\n  \n    6-4 3-6 6-3\n  \n    \n    D. Parry#32\n  \n    \n    L. Tararudee#60\n  \n    6-4 6-1\n  \n    \n    C. Tauson#53\n  \n    \n    M. Bouzkova#28\n  \n    6-1 2-0\n  \n    \n    J. Tjen#47\n  \n    \n    A. Ito#344\n  \n    6-3 6-1\n  \n    "
+  "reason": "177 Wuhan (wta_1000) 2026: 41 matches drawn in 3 round(s), 26 edge(s) joined",
+  "sampleText": "\n    \n      R64R32R16\n      \n      R16R32R64\n    \n    \n      \n    \n    A. Kalinina#48\n  \n    \n    S. Kartal#170\n  \n    7-5 6-3\n  \n    \n    E. Alexandrova#24\n  \n    \n    L. Fernandez#25\n  \n    6-4 3-6 6-3\n  \n    \n    D. Parry#32\n  \n    \n    L. Tararudee#60\n  \n    6-4 6-1\n  \n    \n    C. Tauson#53\n  \n    \n    M. Bouzkova#28\n  \n    6-1 2-0\n  \n    \n    J. Tjen#47\n  \n    \n    A. Ito#344\n  \n    6-3 6-1\n "
 }
