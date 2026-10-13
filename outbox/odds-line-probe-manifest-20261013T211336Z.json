@@ -1,0 +1,364 @@
+{
+  "probed_at": "2026-10-13T21:13:38.001Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "triggered_by": "schedule",
+  "window": {
+    "cron": "16:10Z European window",
+    "delay_minutes": 303,
+    "trigger": "schedule",
+    "et_hour": 17,
+    "today_likely_complete": false,
+    "step_back_days": 1,
+    "step_back_source": "scheduled-default-1",
+    "reads_complete_slate": true,
+    "zero_debriefs_is_evidence": true
+  },
+  "sw_version": "2026-10-10a",
+  "cards_seen": 0,
+  "odds_slot_present_in_dom": false,
+  "slots_hidden": 0,
+  "slots_visible": 0,
+  "states": {
+    "no_odds": {
+      "game": "nhl:2026020087",
+      "text": "(no movement line — buildOddsMovement returned null; 3 of 3 rendered debriefs)"
+    },
+    "opened_only": null,
+    "unchanged": null,
+    "moved": null
+  },
+  "debriefs_total": 3,
+  "debriefs_with_movement_line": 0,
+  "debriefs_no_movement_line": 3,
+  "date_label": "Yesterday",
+  "stepped_back_days": 1,
+  "setup_overlay_dismissed": false,
+  "date_nav_error": null,
+  "slate_by_step": [
+    {
+      "step": 0,
+      "label": "Today",
+      "cards": 2
+    },
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "cards": 10
+    }
+  ],
+  "slate_settle_series": [
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "series": [
+        {
+          "at_s": 5,
+          "cards": 10
+        },
+        {
+          "at_s": 10,
+          "cards": 10
+        },
+        {
+          "at_s": 15,
+          "cards": 10
+        },
+        {
+          "at_s": 20,
+          "cards": 10
+        }
+      ]
+    }
+  ],
+  "slate_settle_series_step0": [
+    {
+      "at_s": 5,
+      "total": 2,
+      "since_nav_ms": 13030,
+      "by_sport": {
+        "Baseball (MLB)": 1,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 10,
+      "total": 2,
+      "since_nav_ms": 18035,
+      "by_sport": {
+        "Baseball (MLB)": 1,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 15,
+      "total": 2,
+      "since_nav_ms": 23038,
+      "by_sport": {
+        "Baseball (MLB)": 1,
+        "Golf": 1
+      }
+    }
+  ],
+  "slate_by_sport": {
+    "Baseball (MLB)": 1,
+    "Golf": 1
+  },
+  "slate_sections_present": [
+    "Baseball (MLB)",
+    "Golf"
+  ],
+  "slate_sections_present_date_label": "Today",
+  "slate_sections_at_model_read": [
+    "NBA",
+    "NHL",
+    "Baseball (MLB)"
+  ],
+  "slate_sections_at_model_read_date_label": "Yesterday",
+  "gap_compared_on": "Yesterday",
+  "gap_pre_step_census_was": "Today",
+  "slate_read_at_ms": 23038,
+  "slate_settled_at_s": 15,
+  "slate_settle_reached": true,
+  "slate_cards_date_label": "Yesterday",
+  "slate_cards_after_steps": 1,
+  "empty_note": null,
+  "main_state": null,
+  "page_errors": [],
+  "page_error_count": 0,
+  "date_nav_check": {
+    "label": "Sun, Oct 11",
+    "cards": 9,
+    "empty_note": null,
+    "loading_wraps": 0,
+    "loading_wrap_in_main": 0,
+    "main_children": [
+      "section#field-newspaper.field-newspaper",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section"
+    ],
+    "lcp_anchor_anywhere": 0,
+    "lcp_anchor_in_main": 0,
+    "rejections": [],
+    "failure_kind": null,
+    "ok": true
+  },
+  "context_game_requests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020087",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020088",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020089",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/mlbam%3A849812",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/mlbam%3A849820"
+  ],
+  "context_id_forms": {
+    "other": 5
+  },
+  "v2_games_requests": 83,
+  "v2_games_by_sport": {
+    "nba": 3,
+    "nhl": 3,
+    "mlb": 3,
+    "wnba": 3,
+    "mls": 17,
+    "afl": 3,
+    "epl": 3,
+    "ucl": 3,
+    "europa": 3,
+    "conference": 3,
+    "uclqual": 3,
+    "europaqual": 3,
+    "conferencequal": 3,
+    "eflchamp": 3,
+    "eflone": 3,
+    "efltwo": 3,
+    "laliga": 3,
+    "seriea": 3,
+    "bundesliga": 3,
+    "ligue1": 3,
+    "wc26": 3,
+    "nfl": 3,
+    "cfb": 3
+  },
+  "v2_games_dates": {
+    "2026-10-13": 25,
+    "2026-10-14": 23,
+    "2026-10-12": 25,
+    "2026-10-11": 2,
+    "2026-10-10": 2,
+    "2026-10-09": 2,
+    "2026-10-08": 2,
+    "2026-10-07": 2
+  },
+  "espn_scores_by_sport": {
+    "nba": 5,
+    "nhl": 18,
+    "mlb": 2,
+    "(no _sport)": 50
+  },
+  "slate_state": {
+    "renderLedger": {
+      "renders": 6,
+      "lastRenderAt": 1791926042167,
+      "lastPushAt": null,
+      "lastPushSport": null,
+      "pushesSinceLastRender": 0
+    },
+    "allData": {
+      "sportsIsArray": true,
+      "sportsLength": 3,
+      "sportsLabels": [
+        "NBA",
+        "NHL",
+        "Baseball (MLB)"
+      ],
+      "sportsGameCounts": [
+        {
+          "label": "NBA",
+          "sport": "NBA",
+          "games": 5
+        },
+        {
+          "label": "NHL",
+          "sport": "NHL",
+          "games": 3
+        },
+        {
+          "label": "Baseball (MLB)",
+          "sport": "Baseball (MLB)",
+          "games": 2
+        }
+      ]
+    },
+    "v2SectionInjected": {}
+  },
+  "render_after_last_push_ms": null,
+  "sections_model_not_in_dom": [],
+  "gap_split": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "section_key_mismatches": [],
+  "gap_on_dom_key": [],
+  "gap_split_on_dom_key": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "render_trace": {
+    "at": 1791926042179,
+    "outcome": "rendered",
+    "activeFilter": "all",
+    "myTeamsFilter": false,
+    "rivalsFilter": false,
+    "freeOnlyFilter": false,
+    "sportsIn": 3,
+    "visibleCount": 3,
+    "filteredCount": 3,
+    "modelSections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 5
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 3
+      },
+      {
+        "sport": "Baseball (MLB)",
+        "label": "Baseball (MLB)",
+        "games": 2
+      }
+    ],
+    "sections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 5,
+        "emitted": true,
+        "chars": 15374
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 3,
+        "emitted": true,
+        "chars": 9074
+      },
+      {
+        "sport": "Baseball (MLB)",
+        "label": "Baseball (MLB)",
+        "games": 2,
+        "emitted": true,
+        "chars": 6474
+      }
+    ]
+  },
+  "render_trace_age_ms": 19696,
+  "gap_verdicts": [],
+  "gap_verdict_census": {},
+  "field_errors": [
+    {
+      "fn": "scores:find-espn-score-no-match",
+      "err": "no match found: Vegas Golden Knights @ Minnesota Wild",
+      "ts": 1791926042173
+    },
+    {
+      "fn": "scores:fetch-v2-games",
+      "err": "wnba 2026-10-12: HTTP 502",
+      "ts": 1791926042052
+    },
+    {
+      "fn": "user:fetch-state",
+      "err": "HTTP 404",
+      "ts": 1791926022561
+    }
+  ],
+  "field_error_count": 3,
+  "field_errors_by_fn": {
+    "scores:find-espn-score-no-match": 1,
+    "scores:fetch-v2-games": 1,
+    "user:fetch-state": 1
+  },
+  "visible_samples": [],
+  "error": null,
+  "slate_cards": 10,
+  "debrief_injected": 5,
+  "debrief_visible": 3,
+  "existing_odds_layers": 0,
+  "debrief_cards": [
+    {
+      "gameid": "nhl:2026020087",
+      "sport": "NHL",
+      "home": "Buffalo Sabres",
+      "away": "Florida Panthers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020088",
+      "sport": "NHL",
+      "home": "New Jersey Devils",
+      "away": "Ottawa Senators",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020089",
+      "sport": "NHL",
+      "home": "Minnesota Wild",
+      "away": "Vegas Golden Knights",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    }
+  ],
+  "odds_layer_present_in_dom": false
+}
