@@ -36,6 +36,7 @@ jobs:
       - name: Run retry telemetry probe
         run: node retry_telemetry_probe.js
         env:
+          RELAY_SHARED_SECRET: ${{ secrets.RELAY_SHARED_SECRET }}
           FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
           RELAY_URL: https://field-relay-nba.jeffunglesbee.workers.dev
 

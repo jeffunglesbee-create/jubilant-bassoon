@@ -18,6 +18,8 @@ jobs:
         # No API keys needed — stats-api.mlssoccer.com is auth-free.
         # D1 writes go through relay /d1/execute (X-FIELD-Relay header).
         run: python3 scripts/seed-mls-return-2026.py
+        env:
+          RELAY_SHARED_SECRET: ${{ secrets.RELAY_SHARED_SECRET }}
 
       - name: Commit audit JSON
         run: |

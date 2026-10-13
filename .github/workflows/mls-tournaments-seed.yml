@@ -16,6 +16,8 @@ jobs:
 
       - name: Sync MLS-club tournament matches into postseason_games
         run: python3 scripts/seed-mls-tournaments-2026.py
+        env:
+          RELAY_SHARED_SECRET: ${{ secrets.RELAY_SHARED_SECRET }}
 
       - name: Commit audit JSON
         run: |

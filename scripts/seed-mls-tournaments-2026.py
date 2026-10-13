@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 RELAY      = os.environ.get("RELAY_URL", "https://field-relay-nba.jeffunglesbee.workers.dev").rstrip("/")
 ARCHIVE_URL = f"{RELAY}/archive/game"
 UA         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-RELAY_HDR  = {"X-FIELD-Relay": "field-relay-cron-2026", "Content-Type": "application/json", "User-Agent": UA}
+RELAY_HDR  = {"X-FIELD-Relay": os.environ["RELAY_SHARED_SECRET"], "Content-Type": "application/json", "User-Agent": UA}
 
 MLS_API    = "https://stats-api.mlssoccer.com"
 REG_SEASON_COMP = "MLS-COM-000001"

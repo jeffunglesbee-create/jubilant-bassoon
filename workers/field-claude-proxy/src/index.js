@@ -102,7 +102,10 @@ export default {
       return new Response('Method not allowed', { status: 405, headers: version() });
 
     const relayAuth = request.headers.get('X-FIELD-Relay') || '';
-    const isRelay = relayAuth === (env.RELAY_SHARED_SECRET || 'field-relay-cron-2026');
+    // Fail closed, no literal fallback: the same change as the deployed copy in
+    // field-relay-nba (docs/CC-CMD-2026-08-25-rotate-relay-secret.md there).
+    const isRelay = typeof env.RELAY_SHARED_SECRET === 'string' && env.RELAY_SHARED_SECRET.length > 0
+      && relayAuth === env.RELAY_SHARED_SECRET;
     if (!isRelay && !ALLOWED_ORIGINS.includes(origin))
       return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
         status: 403, headers: { 'Content-Type': 'application/json', ...version() },

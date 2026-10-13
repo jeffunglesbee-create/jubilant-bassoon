@@ -34,7 +34,7 @@ function d1Query(sql, params) {
     const body = JSON.stringify({ sql, params: params || [] });
     const req = https.request(
       `${RELAY_URL}/d1/execute`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-FIELD-Relay': 'field-relay-cron-2026', 'Content-Length': Buffer.byteLength(body) } },
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-FIELD-Relay': process.env.RELAY_SHARED_SECRET, 'Content-Length': Buffer.byteLength(body) } },
       res => {
         let data = '';
         res.on('data', c => data += c);
