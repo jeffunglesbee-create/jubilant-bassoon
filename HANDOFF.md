@@ -1,5 +1,16 @@
 # FIELD HANDOFF
 
+## 2026-10-14 — check-exposed-secrets decodes base64
+
+`d991edb9`. field-relay-nba found five shared-secret literals hidden in
+base64-encoded workflow scripts, which its copy of this scanner could not see.
+This copy now decodes base64 the same way. A sweep of every base64 blob in
+all four repos found none here, so no count changed (RELAY_SHARED_SECRET
+stays at 5). Rotation step 3 is still the owner's dispatch in field-relay-nba;
+steps 4-5 then bring this repo's count to 0.
+
+Session doc: field-relay-nba outbox/cc-session-2026-10-14-espn-host-flip.md
+
 ## 2026-10-13 — the relay's shared secret left this repo's live code
 
 `retry_telemetry_probe.js`, `scripts/seed-mls-return-2026.py` and
