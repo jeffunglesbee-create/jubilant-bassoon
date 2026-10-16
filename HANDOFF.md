@@ -1,5 +1,18 @@
 # FIELD HANDOFF
 
+## 2026-10-16 — BDB event frames builder, for the relay's CC-CMD
+
+`scripts/build-bdb-frames.py` and the dispatch-only `build-bdb-frames.yml`
+build `bdb_event_frames.json`: one row per player per `ball_snap` /
+`pass_forward` frame, 7 whole games of 2022 week 2, 1,816,808 bytes, uploaded
+to R2 (`nfl/2026/`), read back by sha256, and committed to `outbox/nfl/` as the
+raw fallback. It refuses to upload if the declared coordinate convention fails
+on the week's own plays; three runs did, before the check measured which ball
+position `passLocationType` describes. The six existing BDB builders are
+untouched. Run it again only if the archive or the week changes.
+
+Session doc: field-relay-nba outbox/cc-session-2026-10-15-build-bdb-frames.md
+
 ## 2026-10-16 — BDB frames Task 0 measured here, for the relay's CC-CMD
 
 `696a2b15` adds `scripts/bdb-frames-task0-probe.py` and the dispatch-only
