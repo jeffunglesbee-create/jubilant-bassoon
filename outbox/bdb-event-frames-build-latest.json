@@ -1,6 +1,6 @@
 {
   "builder": "build-bdb-frames",
-  "generated": "2026-10-16T18:10:17+00:00",
+  "generated": "2026-10-16T18:15:56+00:00",
   "week": 2,
   "ceilingBytes": 2000000,
   "season": 2022,
@@ -23,7 +23,17 @@
             "of": 895
           }
         },
-        "y_pass": {
+        "pass: ball at release (pass_forward)": {
+          "left": {
+            "agree": 53,
+            "of": 53
+          },
+          "right": {
+            "agree": 57,
+            "of": 57
+          }
+        },
+        "pass: ball where it arrives (pass_arrived)": {
           "left": {
             "agree": 33,
             "of": 37
@@ -33,14 +43,14 @@
             "of": 39
           }
         },
-        "y_pass_field_centre": {
+        "run: ball where an outside run ends": {
           "left": {
-            "agree": 33,
-            "of": 37
+            "agree": 131,
+            "of": 142
           },
           "right": {
-            "agree": 37,
-            "of": 39
+            "agree": 122,
+            "of": 148
           }
         }
       },
@@ -55,7 +65,17 @@
             "of": 895
           }
         },
-        "y_pass": {
+        "pass: ball at release (pass_forward)": {
+          "left": {
+            "agree": 0,
+            "of": 53
+          },
+          "right": {
+            "agree": 57,
+            "of": 57
+          }
+        },
+        "pass: ball where it arrives (pass_arrived)": {
           "left": {
             "agree": 4,
             "of": 37
@@ -65,14 +85,14 @@
             "of": 39
           }
         },
-        "y_pass_field_centre": {
+        "run: ball where an outside run ends": {
           "left": {
-            "agree": 4,
-            "of": 37
+            "agree": 11,
+            "of": 142
           },
           "right": {
-            "agree": 37,
-            "of": 39
+            "agree": 122,
+            "of": 148
           }
         }
       },
@@ -87,7 +107,17 @@
             "of": 895
           }
         },
-        "y_pass": {
+        "pass: ball at release (pass_forward)": {
+          "left": {
+            "agree": 0,
+            "of": 53
+          },
+          "right": {
+            "agree": 57,
+            "of": 57
+          }
+        },
+        "pass: ball where it arrives (pass_arrived)": {
           "left": {
             "agree": 4,
             "of": 37
@@ -97,26 +127,31 @@
             "of": 39
           }
         },
-        "y_pass_field_centre": {
+        "run: ball where an outside run ends": {
           "left": {
-            "agree": 4,
-            "of": 37
+            "agree": 11,
+            "of": 142
           },
           "right": {
-            "agree": 37,
-            "of": 39
+            "agree": 122,
+            "of": 148
           }
         }
       }
     },
     "threshold": 0.9,
-    "declared_holds": false
+    "min_plays": 20,
+    "y_reference": "pass: ball at release (pass_forward)",
+    "x_holds": true,
+    "y_holds": true,
+    "declared_holds": true
   },
   "convention_example": {
     "gameId": 2022091500,
     "playId": 1191,
     "playDirection": "left",
-    "passLocationType": "OUTSIDE_RIGHT",
+    "reading": "pass: ball at release (pass_forward)",
+    "label": "OUTSIDE_RIGHT",
     "snap_mean_x": {
       "raw": {
         "offense": 79.17,
@@ -127,14 +162,24 @@
         "defense": 46.99
       }
     },
-    "ball_at_pass_arrived": {
+    "ball_at_snap": {
       "raw": [
-        61.5099983215332,
-        53.3600006103516
+        77.5,
+        29.6800003051758
       ],
       "declared": [
-        58.49,
-        -0.06
+        42.5,
+        23.62
+      ]
+    },
+    "ball_read": {
+      "raw": [
+        81.4199981689453,
+        38.3800010681152
+      ],
+      "declared": [
+        38.58,
+        14.92
       ]
     }
   },
@@ -155,5 +200,35 @@
   },
   "chosen": "b",
   "chosen_reason": "(b) keeps more whole games under the ceiling; no written metric reads a snap frame on a play that is neither a dropback nor a pass",
-  "failure": "the declared coordinate convention is not supported by this week's plays"
+  "artifact": {
+    "bytes": 1816808,
+    "sha256": "6be5a28298239af6a5709929bbd0b52d0d96625d5f3ebfeb6482de0ae3f9d249",
+    "r2_key": "nfl/2026/bdb_event_frames.json",
+    "scope": {
+      "gamesKept": 7,
+      "gamesInWeek": 16,
+      "gameIds": [
+        2022091500,
+        2022091800,
+        2022091801,
+        2022091802,
+        2022091803,
+        2022091804,
+        2022091805
+      ],
+      "teamsKept": 14,
+      "ceilingBytes": 2000000,
+      "cut": "whole games in gameId order; 9 of 16 dropped"
+    },
+    "pass_forward_coverage": {
+      "dropback_plays": 544,
+      "dropback_plays_with_pass_forward": 490,
+      "share": 0.9007
+    },
+    "r2_readback": {
+      "status": 200,
+      "bytes": 1816808,
+      "sha256_matches": true
+    }
+  }
 }
