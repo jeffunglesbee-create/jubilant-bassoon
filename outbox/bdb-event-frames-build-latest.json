@@ -1,6 +1,6 @@
 {
   "builder": "build-bdb-frames",
-  "generated": "2026-10-16T18:07:09+00:00",
+  "generated": "2026-10-16T18:10:17+00:00",
   "week": 2,
   "ceilingBytes": 2000000,
   "season": 2022,
@@ -32,6 +32,16 @@
             "agree": 37,
             "of": 39
           }
+        },
+        "y_pass_field_centre": {
+          "left": {
+            "agree": 33,
+            "of": 37
+          },
+          "right": {
+            "agree": 37,
+            "of": 39
+          }
         }
       },
       "raw (source frame, no transform)": {
@@ -54,6 +64,16 @@
             "agree": 37,
             "of": 39
           }
+        },
+        "y_pass_field_centre": {
+          "left": {
+            "agree": 4,
+            "of": 37
+          },
+          "right": {
+            "agree": 37,
+            "of": 39
+          }
         }
       },
       "mirror x only (flip x on left plays, keep y)": {
@@ -68,6 +88,16 @@
           }
         },
         "y_pass": {
+          "left": {
+            "agree": 4,
+            "of": 37
+          },
+          "right": {
+            "agree": 37,
+            "of": 39
+          }
+        },
+        "y_pass_field_centre": {
           "left": {
             "agree": 4,
             "of": 37
