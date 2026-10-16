@@ -99,6 +99,7 @@ class Week:
         self.frames = defaultdict(list)   # (g, p, event) -> [player rows]
         self.direction = {}               # (g, p) -> playDirection
         self.ball_arrived = {}            # (g, p) -> (x, y) raw, pass_arrived football
+        self.ball_snap = {}               # (g, p) -> (x, y) raw, ball_snap football
         self.rows = 0
 
     def add(self, r):
@@ -112,6 +113,8 @@ class Week:
         if nid in ("", "NA"):
             if ev == "pass_arrived":
                 self.ball_arrived.setdefault(key, (float(r["x"]), float(r["y"])))
+            elif ev == "ball_snap":
+                self.ball_snap.setdefault(key, (float(r["x"]), float(r["y"])))
             return
         if ev == "pass_arrived":
             return
@@ -129,12 +132,18 @@ def convention_check(week):
 
     x: at the snap the offense lines up behind the defense, so its mean x is the
        smaller one in a frame where the offense plays toward +x.
-    y: plays.csv passLocationType names the side of a pass from the offense's
-       view; where the ball arrives (tracking, pass_arrived) must sit on that side.
+    y: plays.csv passLocationType names the side of a pass, outside the tackle
+       box, from the offense's view. The box is centred on the ball at the snap,
+       so the ball where the pass arrives (tracking, pass_arrived) must sit on
+       that side of the ball at the snap. (Measured against the field's centre
+       line instead, run 38944765768 agreed 33 of 37 on left plays: a pass
+       outside right from the left hash can land left of centre. The centre-line
+       figure is still reported, as y_pass_field_centre.)
     Both are split by playDirection: on 'right' plays every candidate frame is the
     same frame, so only 'left' plays can tell them apart."""
     def frames_for(transform):
-        res = {"x_snap": {"left": [0, 0], "right": [0, 0]}, "y_pass": {"left": [0, 0], "right": [0, 0]}}
+        res = {"x_snap": {"left": [0, 0], "right": [0, 0]}, "y_pass": {"left": [0, 0], "right": [0, 0]},
+               "y_pass_field_centre": {"left": [0, 0], "right": [0, 0]}}
         for (g, p, ev), rows in week.frames.items():
             if ev != "ball_snap":
                 continue
@@ -150,8 +159,13 @@ def convention_check(week):
             if loc not in ("OUTSIDE_LEFT", "OUTSIDE_RIGHT") or d not in ("left", "right"):
                 continue
             ty = transform(bx, by, d)[1]
+            res["y_pass_field_centre"][d][1] += 1
+            res["y_pass_field_centre"][d][0] += (ty > FIELD_WIDTH / 2) == (loc == "OUTSIDE_LEFT")
+            if key not in week.ball_snap:
+                continue
+            sy = transform(*week.ball_snap[key], d)[1]
             res["y_pass"][d][1] += 1
-            res["y_pass"][d][0] += (ty > FIELD_WIDTH / 2) == (loc == "OUTSIDE_LEFT")
+            res["y_pass"][d][0] += (ty > sy) == (loc == "OUTSIDE_LEFT")
         return res
 
     candidates = {
@@ -445,6 +459,7 @@ def self_test():
         w.add(row("1", "2", "40", "A", "ball_snap", 45, 20, "right"))
         # play (2,1): moving right, pass to the offense's right: raw y LOW on a right play
         w.add(row("2", "1", "10", "C", "ball_snap", 30, 26, "right"))
+        w.add(row("2", "1", "NA", "football", "ball_snap", 34, 26, "right"))
         w.add(row("2", "1", "20", "D", "ball_snap", 35, 26, "right"))
         w.add(row("2", "1", "10", "C", "pass_forward", 25, 26, "right"))
         w.add(row("2", "1", "20", "D", "pass_forward", 33, 26, "right"))
@@ -452,6 +467,7 @@ def self_test():
         w.add(row("2", "1", "99", "C", "tackle", 1, 1, "right"))
         # play (1,3): a trick pass that is NOT a dropback; its snap stays under (b)
         w.add(row("1", "3", "30", "A", "ball_snap", 60, 20, "right"))
+        w.add(row("1", "3", "NA", "football", "ball_snap", 62, 20, "right"))
         w.add(row("1", "3", "40", "B", "ball_snap", 65, 20, "right"))
         w.add(row("1", "3", "30", "A", "pass_forward", 58, 20, "right"))
         fed = True
@@ -470,7 +486,8 @@ def self_test():
     snap = {r["nflId"]: r for r in w.frames[("1", "1", "ball_snap")]}
     check("rows carry side, pos and the declared frame", snap[10]["side"] == "offense" and snap[10]["pos"] == "QB"
           and (snap[10]["x"], snap[10]["y"]) == (50.0, 23.3) and snap[20]["side"] == "defense")
-    check("the football at pass_arrived is kept raw for the y check", w.ball_arrived[("1", "1")] == (55.0, 10.0))
+    check("the football at pass_arrived and at the snap is kept raw for the y check",
+          w.ball_arrived.get(("1", "1")) == (55.0, 10.0) and w.ball_snap.get(("1", "1")) == (69.0, 30.0))
 
     conv = convention_check(w)
     ag = conv["agreement"]
@@ -483,11 +500,25 @@ def self_test():
     check("mirror-x frame fails y on the left play",
           ag["mirror x only (flip x on left plays, keep y)"]["y_pass"]["left"]["agree"] == 0)
     check("declared holds when every split agrees", conv["declared_holds"] is True)
+    wide = Week(plays, players)
+    wide.frames, wide.direction = w.frames, dict(w.direction)
+    # a pass outside LEFT, thrown from the right hash, that lands right of the field's centre
+    wide.ball_snap = {("2", "1"): (34.0, 10.0)}
+    wide.plays = dict(plays); wide.plays[("2", "1")] = dict(plays[("2", "1")], passLocation="OUTSIDE_LEFT")
+    wide.ball_arrived = {("2", "1"): (45.0, 20.0)}
+    cw = convention_check(wide)["agreement"]["offense-right (declared: rotate left plays 180 degrees)"]
+    check("the y side is judged from the ball at the snap, not the field's centre",
+          cw["y_pass"]["right"] == {"agree": 1, "of": 1} and cw["y_pass_field_centre"]["right"] == {"agree": 0, "of": 1})
+    nosnap = Week(plays, players)
+    nosnap.frames, nosnap.direction, nosnap.ball_arrived = w.frames, dict(w.direction), dict(w.ball_arrived)
+    cn = convention_check(nosnap)["agreement"]["offense-right (declared: rotate left plays 180 degrees)"]
+    check("a pass with no ball at the snap is not judged on y", cn["y_pass"]["left"]["of"] == 0)
     bad = Week(plays, players)
     bad.frames, bad.direction, bad.ball_arrived = w.frames, dict(w.direction), {("1", "1"): (55.0, 50.0)}
+    bad.ball_snap = w.ball_snap
     check("a pass landing on the wrong side breaks the declaration", convention_check(bad)["declared_holds"] is False)
     half = Week(plays, players)
-    half.frames, half.direction = w.frames, dict(w.direction)
+    half.frames, half.direction, half.ball_snap = w.frames, dict(w.direction), w.ball_snap
     half.ball_arrived = {("1", "1"): (55.0, 10.0), ("2", "1"): (45.0, 8.0), ("1", "3"): (50.0, 50.0)}
     half.plays = dict(plays); half.plays[("1", "3")] = dict(plays[("1", "3")], passLocation="OUTSIDE_RIGHT")
     check("agreement of 1 in 2 on one split is below the threshold, so the declaration fails",
