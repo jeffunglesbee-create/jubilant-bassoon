@@ -1,0 +1,918 @@
+{
+  "probe": "bdb-frames-task0",
+  "dataset": "alexandermeau/nfl-big-data-bowl-archived-data-2025",
+  "generated": "2026-10-16T15:47:35+00:00",
+  "creds_present": true,
+  "stages_done": [
+    "A listing",
+    "B tables",
+    "C week"
+  ],
+  "view": {
+    "totalBytesNullable": 8171097577,
+    "lastUpdated": "2026-02-19T09:36:53.95Z",
+    "currentVersionNumberNullable": 1,
+    "subtitleNullable": "Archive Dataset for educational research purpose only.",
+    "licenseNameNullable": "Apache 2.0"
+  },
+  "listing": {
+    "http": 200,
+    "pages": 1,
+    "truncated": false,
+    "files": [
+      {
+        "name": "big-data-bowl-data/games.csv",
+        "bytes": 7128
+      },
+      {
+        "name": "big-data-bowl-data/player_play.csv",
+        "bytes": 52533762
+      },
+      {
+        "name": "big-data-bowl-data/players.csv",
+        "bytes": 104749
+      },
+      {
+        "name": "big-data-bowl-data/plays.csv",
+        "bytes": 6892353
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_1.csv",
+        "bytes": 971403802
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_2.csv",
+        "bytes": 916177128
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_3.csv",
+        "bytes": 975586722
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_4.csv",
+        "bytes": 922169785
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_5.csv",
+        "bytes": 971152971
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_6.csv",
+        "bytes": 852375725
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_7.csv",
+        "bytes": 824474366
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_8.csv",
+        "bytes": 903573224
+      },
+      {
+        "name": "big-data-bowl-data/tracking_week_9.csv",
+        "bytes": 774645862
+      }
+    ]
+  },
+  "tracking_bytes_by_week": {
+    "1": 971403802,
+    "2": 916177128,
+    "3": 975586722,
+    "4": 922169785,
+    "5": 971152971,
+    "6": 852375725,
+    "7": 824474366,
+    "8": 903573224,
+    "9": 774645862
+  },
+  "tracking_weeks": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "games": {
+    "seasons": {
+      "2022": 136
+    },
+    "games_per_week": {
+      "1": 16,
+      "2": 16,
+      "3": 16,
+      "4": 16,
+      "5": 16,
+      "6": 14,
+      "7": 14,
+      "8": 15,
+      "9": 13
+    },
+    "teams_per_week": {
+      "1": 32,
+      "2": 32,
+      "3": 32,
+      "4": 32,
+      "5": 32,
+      "6": 28,
+      "7": 28,
+      "8": 30,
+      "9": 26
+    },
+    "all_teams": 32
+  },
+  "plays_by_week": {
+    "1": {
+      "games": 16,
+      "plays": 1952,
+      "plays_per_game_min": 106,
+      "plays_per_game_median": 116.5,
+      "plays_per_game_max": 156,
+      "dropback_plays": 1219
+    },
+    "2": {
+      "games": 16,
+      "plays": 1809,
+      "plays_per_game_min": 67,
+      "plays_per_game_median": 114.5,
+      "plays_per_game_max": 133,
+      "dropback_plays": 1111
+    },
+    "3": {
+      "games": 16,
+      "plays": 1959,
+      "plays_per_game_min": 108,
+      "plays_per_game_median": 121.0,
+      "plays_per_game_max": 139,
+      "dropback_plays": 1223
+    },
+    "4": {
+      "games": 16,
+      "plays": 1830,
+      "plays_per_game_min": 90,
+      "plays_per_game_median": 115.0,
+      "plays_per_game_max": 133,
+      "dropback_plays": 1051
+    },
+    "5": {
+      "games": 16,
+      "plays": 1906,
+      "plays_per_game_min": 107,
+      "plays_per_game_median": 117.0,
+      "plays_per_game_max": 138,
+      "dropback_plays": 1142
+    },
+    "6": {
+      "games": 14,
+      "plays": 1697,
+      "plays_per_game_min": 106,
+      "plays_per_game_median": 121.0,
+      "plays_per_game_max": 133,
+      "dropback_plays": 1035
+    },
+    "7": {
+      "games": 14,
+      "plays": 1665,
+      "plays_per_game_min": 105,
+      "plays_per_game_median": 118.0,
+      "plays_per_game_max": 128,
+      "dropback_plays": 991
+    },
+    "8": {
+      "games": 15,
+      "plays": 1771,
+      "plays_per_game_min": 93,
+      "plays_per_game_median": 116,
+      "plays_per_game_max": 137,
+      "dropback_plays": 1050
+    },
+    "9": {
+      "games": 13,
+      "plays": 1535,
+      "plays_per_game_min": 109,
+      "plays_per_game_median": 116,
+      "plays_per_game_max": 137,
+      "dropback_plays": 914
+    }
+  },
+  "plays_with_unknown_game": 0,
+  "isDropback_values": {
+    "TRUE": 9736,
+    "FALSE": 6388
+  },
+  "players": {
+    "rows": 1697,
+    "duplicate_nflId": 0,
+    "empty_displayName": 0,
+    "positions": {
+      "WR": 224,
+      "CB": 189,
+      "OLB": 135,
+      "DE": 131,
+      "RB": 126,
+      "TE": 123,
+      "DT": 121,
+      "T": 117,
+      "G": 107,
+      "ILB": 93,
+      "FS": 79,
+      "SS": 65,
+      "QB": 62,
+      "C": 61,
+      "NT": 32,
+      "MLB": 16,
+      "FB": 14,
+      "DB": 1,
+      "LB": 1
+    }
+  },
+  "headers": {
+    "games.csv": [
+      "gameId",
+      "season",
+      "week",
+      "gameDate",
+      "gameTimeEastern",
+      "homeTeamAbbr",
+      "visitorTeamAbbr",
+      "homeFinalScore",
+      "visitorFinalScore"
+    ],
+    "player_play.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "teamAbbr",
+      "hadRushAttempt",
+      "rushingYards",
+      "hadDropback",
+      "passingYards",
+      "sackYardsAsOffense",
+      "hadPassReception",
+      "receivingYards",
+      "wasTargettedReceiver",
+      "yardageGainedAfterTheCatch",
+      "fumbles",
+      "fumbleLost",
+      "fumbleOutOfBounds",
+      "assistedTackle",
+      "forcedFumbleAsDefense",
+      "halfSackYardsAsDefense",
+      "passDefensed",
+      "quarterbackHit",
+      "sackYardsAsDefense",
+      "safetyAsDefense",
+      "soloTackle",
+      "tackleAssist",
+      "tackleForALoss",
+      "tackleForALossYardage",
+      "hadInterception",
+      "interceptionYards",
+      "fumbleRecoveries",
+      "fumbleRecoveryYards",
+      "penaltyYards",
+      "penaltyNames",
+      "wasInitialPassRusher",
+      "causedPressure",
+      "timeToPressureAsPassRusher",
+      "getOffTimeAsPassRusher",
+      "inMotionAtBallSnap",
+      "shiftSinceLineset",
+      "motionSinceLineset",
+      "wasRunningRoute",
+      "routeRan",
+      "blockedPlayerNFLId1",
+      "blockedPlayerNFLId2",
+      "blockedPlayerNFLId3",
+      "pressureAllowedAsBlocker",
+      "timeToPressureAllowedAsBlocker",
+      "pff_defensiveCoverageAssignment",
+      "pff_primaryDefensiveCoverageMatchupNflId",
+      "pff_secondaryDefensiveCoverageMatchupNflId"
+    ],
+    "players.csv": [
+      "nflId",
+      "height",
+      "weight",
+      "birthDate",
+      "collegeName",
+      "position",
+      "displayName"
+    ],
+    "plays.csv": [
+      "gameId",
+      "playId",
+      "playDescription",
+      "quarter",
+      "down",
+      "yardsToGo",
+      "possessionTeam",
+      "defensiveTeam",
+      "yardlineSide",
+      "yardlineNumber",
+      "gameClock",
+      "preSnapHomeScore",
+      "preSnapVisitorScore",
+      "playNullifiedByPenalty",
+      "absoluteYardlineNumber",
+      "preSnapHomeTeamWinProbability",
+      "preSnapVisitorTeamWinProbability",
+      "expectedPoints",
+      "offenseFormation",
+      "receiverAlignment",
+      "playClockAtSnap",
+      "passResult",
+      "passLength",
+      "targetX",
+      "targetY",
+      "playAction",
+      "dropbackType",
+      "dropbackDistance",
+      "passLocationType",
+      "timeToThrow",
+      "timeInTackleBox",
+      "timeToSack",
+      "passTippedAtLine",
+      "unblockedPressure",
+      "qbSpike",
+      "qbKneel",
+      "qbSneak",
+      "rushLocationType",
+      "penaltyYards",
+      "prePenaltyYardsGained",
+      "yardsGained",
+      "homeTeamWinProbabilityAdded",
+      "visitorTeamWinProbilityAdded",
+      "expectedPointsAdded",
+      "isDropback",
+      "pff_runConceptPrimary",
+      "pff_runConceptSecondary",
+      "pff_runPassOption",
+      "pff_passCoverage",
+      "pff_manZone"
+    ],
+    "tracking_week_1.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_2.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_3.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_4.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_5.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_6.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_7.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_8.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ],
+    "tracking_week_9.csv": [
+      "gameId",
+      "playId",
+      "nflId",
+      "displayName",
+      "frameId",
+      "frameType",
+      "time",
+      "jerseyNumber",
+      "club",
+      "playDirection",
+      "x",
+      "y",
+      "s",
+      "a",
+      "dis",
+      "o",
+      "dir",
+      "event"
+    ]
+  },
+  "position_columns": {
+    "games.csv": [],
+    "player_play.csv": [],
+    "players.csv": [
+      "position"
+    ],
+    "plays.csv": [],
+    "tracking_week_1.csv": [],
+    "tracking_week_2.csv": [],
+    "tracking_week_3.csv": [],
+    "tracking_week_4.csv": [],
+    "tracking_week_5.csv": [],
+    "tracking_week_6.csv": [],
+    "tracking_week_7.csv": [],
+    "tracking_week_8.csv": [],
+    "tracking_week_9.csv": []
+  },
+  "position_granularity": {
+    "grain": "per-player",
+    "columns": {
+      "players.csv": [
+        "position"
+      ]
+    }
+  },
+  "team_columns": {
+    "games.csv": [
+      "homeTeamAbbr",
+      "visitorTeamAbbr"
+    ],
+    "player_play.csv": [
+      "teamAbbr"
+    ],
+    "players.csv": [],
+    "plays.csv": [
+      "possessionTeam",
+      "defensiveTeam"
+    ],
+    "tracking_week_1.csv": [
+      "club"
+    ],
+    "tracking_week_2.csv": [
+      "club"
+    ],
+    "tracking_week_3.csv": [
+      "club"
+    ],
+    "tracking_week_4.csv": [
+      "club"
+    ],
+    "tracking_week_5.csv": [
+      "club"
+    ],
+    "tracking_week_6.csv": [
+      "club"
+    ],
+    "tracking_week_7.csv": [
+      "club"
+    ],
+    "tracking_week_8.csv": [
+      "club"
+    ],
+    "tracking_week_9.csv": [
+      "club"
+    ]
+  },
+  "picked_week": 2,
+  "picked_week_rule": "week 2: of the weeks where every team plays ([1, 2, 3, 4, 5]), the fewest plays.csv plays, lowest week on a tie; play count is the size proxy, artifact bytes measured for week 2 only; candidates {\"1\": {\"plays\": 1952, \"tracking_bytes\": 971403802}, \"2\": {\"plays\": 1809, \"tracking_bytes\": 916177128}, \"3\": {\"plays\": 1959, \"tracking_bytes\": 975586722}, \"4\": {\"plays\": 1830, \"tracking_bytes\": 922169785}, \"5\": {\"plays\": 1906, \"tracking_bytes\": 971152971}}",
+  "stream_headers": {
+    "Content-Type": "text/csv",
+    "Content-Length": "916177128",
+    "Content-Encoding": null
+  },
+  "week": {
+    "rows": 6704339,
+    "rows_without_event": 6418656,
+    "games": 16,
+    "plays": 1809,
+    "plays_not_in_plays_csv": 0,
+    "frames": 291493,
+    "frames_per_play": {
+      "min": 31,
+      "median": 162,
+      "max": 489
+    },
+    "frame_interval_seconds": {
+      "0.1": 289684
+    },
+    "unparsed_time_rows": 0,
+    "events": {
+      "ball_snap": {
+        "rows": 41515,
+        "frames": 1805,
+        "plays": 1805,
+        "plays_with_more_than_one_frame": 0
+      },
+      "line_set": {
+        "rows": 41400,
+        "frames": 1800,
+        "plays": 1800,
+        "plays_with_more_than_one_frame": 0
+      },
+      "huddle_break_offense": {
+        "rows": 32430,
+        "frames": 1410,
+        "plays": 1410,
+        "plays_with_more_than_one_frame": 0
+      },
+      "first_contact": {
+        "rows": 26749,
+        "frames": 1163,
+        "plays": 1163,
+        "plays_with_more_than_one_frame": 0
+      },
+      "tackle": {
+        "rows": 26013,
+        "frames": 1131,
+        "plays": 1131,
+        "plays_with_more_than_one_frame": 0
+      },
+      "pass_forward": {
+        "rows": 23092,
+        "frames": 1004,
+        "plays": 1004,
+        "plays_with_more_than_one_frame": 0
+      },
+      "pass_arrived": {
+        "rows": 18538,
+        "frames": 806,
+        "plays": 804,
+        "plays_with_more_than_one_frame": 1
+      },
+      "handoff": {
+        "rows": 14605,
+        "frames": 635,
+        "plays": 633,
+        "plays_with_more_than_one_frame": 2
+      },
+      "pass_outcome_caught": {
+        "rows": 14076,
+        "frames": 612,
+        "plays": 611,
+        "plays_with_more_than_one_frame": 1
+      },
+      "man_in_motion": {
+        "rows": 13386,
+        "frames": 582,
+        "plays": 582,
+        "plays_with_more_than_one_frame": 0
+      },
+      "pass_outcome_incomplete": {
+        "rows": 7659,
+        "frames": 333,
+        "plays": 333,
+        "plays_with_more_than_one_frame": 0
+      },
+      "play_action": {
+        "rows": 6992,
+        "frames": 304,
+        "plays": 304,
+        "plays_with_more_than_one_frame": 0
+      },
+      "shift": {
+        "rows": 5497,
+        "frames": 239,
+        "plays": 231,
+        "plays_with_more_than_one_frame": 8
+      },
+      "out_of_bounds": {
+        "rows": 4278,
+        "frames": 186,
+        "plays": 186,
+        "plays_with_more_than_one_frame": 0
+      },
+      "run": {
+        "rows": 2139,
+        "frames": 93,
+        "plays": 93,
+        "plays_with_more_than_one_frame": 0
+      },
+      "qb_sack": {
+        "rows": 1265,
+        "frames": 55,
+        "plays": 55,
+        "plays_with_more_than_one_frame": 0
+      },
+      "touchdown": {
+        "rows": 920,
+        "frames": 40,
+        "plays": 40,
+        "plays_with_more_than_one_frame": 0
+      },
+      "dropped_pass": {
+        "rows": 782,
+        "frames": 34,
+        "plays": 34,
+        "plays_with_more_than_one_frame": 0
+      },
+      "pass_outcome_touchdown": {
+        "rows": 667,
+        "frames": 29,
+        "plays": 29,
+        "plays_with_more_than_one_frame": 0
+      },
+      "pass_outcome_interception": {
+        "rows": 506,
+        "frames": 22,
+        "plays": 22,
+        "plays_with_more_than_one_frame": 0
+      },
+      "fumble": {
+        "rows": 483,
+        "frames": 21,
+        "plays": 21,
+        "plays_with_more_than_one_frame": 0
+      },
+      "pass_tipped": {
+        "rows": 460,
+        "frames": 20,
+        "plays": 20,
+        "plays_with_more_than_one_frame": 0
+      },
+      "qb_kneel": {
+        "rows": 391,
+        "frames": 17,
+        "plays": 17,
+        "plays_with_more_than_one_frame": 0
+      },
+      "play_submit": {
+        "rows": 322,
+        "frames": 14,
+        "plays": 14,
+        "plays_with_more_than_one_frame": 0
+      },
+      "fumble_offense_recovered": {
+        "rows": 299,
+        "frames": 13,
+        "plays": 13,
+        "plays_with_more_than_one_frame": 0
+      },
+      "qb_slide": {
+        "rows": 299,
+        "frames": 13,
+        "plays": 13,
+        "plays_with_more_than_one_frame": 0
+      },
+      "fumble_defense_recovered": {
+        "rows": 253,
+        "frames": 11,
+        "plays": 11,
+        "plays_with_more_than_one_frame": 0
+      },
+      "qb_strip_sack": {
+        "rows": 161,
+        "frames": 7,
+        "plays": 7,
+        "plays_with_more_than_one_frame": 0
+      },
+      "pass_shovel": {
+        "rows": 115,
+        "frames": 5,
+        "plays": 5,
+        "plays_with_more_than_one_frame": 0
+      },
+      "lateral": {
+        "rows": 115,
+        "frames": 5,
+        "plays": 4,
+        "plays_with_more_than_one_frame": 1
+      },
+      "snap_direct": {
+        "rows": 92,
+        "frames": 4,
+        "plays": 4,
+        "plays_with_more_than_one_frame": 0
+      },
+      "touchback": {
+        "rows": 69,
+        "frames": 3,
+        "plays": 3,
+        "plays_with_more_than_one_frame": 0
+      },
+      "huddle_start_offense": {
+        "rows": 69,
+        "frames": 3,
+        "plays": 3,
+        "plays_with_more_than_one_frame": 0
+      },
+      "qb_spike": {
+        "rows": 23,
+        "frames": 1,
+        "plays": 1,
+        "plays_with_more_than_one_frame": 0
+      },
+      "safety": {
+        "rows": 23,
+        "frames": 1,
+        "plays": 1,
+        "plays_with_more_than_one_frame": 0
+      }
+    },
+    "frames_with_more_than_one_event": 0,
+    "frame_type": {
+      "BEFORE_SNAP": 4418691,
+      "AFTER_SNAP": 2244041,
+      "SNAP": 41607
+    },
+    "play_direction": {
+      "left": 3394685,
+      "right": 3309654
+    },
+    "football_rows": 291493,
+    "players_per_frame": {
+      "22": 291493
+    },
+    "clubs": 32,
+    "club_changes_within_a_play": 0,
+    "nflIds": 1150,
+    "nflIds_resolved_in_players_csv": 1150,
+    "nflIds_with_empty_name_in_players_csv": 0,
+    "nflIds_whose_tracking_name_differs_from_players_csv": 8,
+    "nflIds_with_more_than_one_club_in_week": 0,
+    "x_range": [
+      -2.27,
+      123.52
+    ],
+    "y_range": [
+      -9.57,
+      58.76
+    ],
+    "dropback_plays": 1111,
+    "dropback_plays_with_pass_forward": 1002,
+    "emitted_player_rows_side_unresolved": 0,
+    "emitted_player_rows_pos_unresolved": 0,
+    "bytes_streamed": 916177128,
+    "bytes_listed": 916177128,
+    "plays_in_plays_csv": 1809,
+    "artifact_bytes_full_week": 4919405,
+    "artifact_games_under_ceiling": {
+      "games": 6,
+      "of": 16,
+      "bytes": 2008434,
+      "ceiling": 2097152
+    }
+  },
+  "spec_events": {
+    "ball_snap": {
+      "present": true,
+      "rows": 41515,
+      "frames": 1805,
+      "plays": 1805,
+      "plays_with_more_than_one_frame": 0
+    },
+    "snap": {
+      "present": false
+    },
+    "pass_forward": {
+      "present": true,
+      "rows": 23092,
+      "frames": 1004,
+      "plays": 1004,
+      "plays_with_more_than_one_frame": 0
+    },
+    "pass_arrived": {
+      "present": true,
+      "rows": 18538,
+      "frames": 806,
+      "plays": 804,
+      "plays_with_more_than_one_frame": 1
+    }
+  },
+  "verdict": {
+    "stop_condition": "pass_forward is not an event string present in the data",
+    "population": "week 2, every row of 1 of 9 tracking files",
+    "met": false,
+    "pass_forward_present": true,
+    "near_misses": [],
+    "reading": "pass_forward is present"
+  },
+  "coverage": "event vocabulary, sample rate, resolution and artifact size: week 2, every row of 1 of 9 tracking files. Games and plays per week: games.csv and plays.csv, all weeks. Bytes per week: Kaggle's file listing, all weeks."
+}
