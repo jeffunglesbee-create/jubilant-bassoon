@@ -1,5 +1,18 @@
 # FIELD HANDOFF
 
+## 2026-10-16 — BDB frames Task 0 measured here, for the relay's CC-CMD
+
+`696a2b15` adds `scripts/bdb-frames-task0-probe.py` and the dispatch-only
+`bdb-frames-task0-probe.yml`. They run field-relay-nba
+`docs/CC-CMD-2026-10-15-build-bdb-frames.md` Task 0 here, because the Kaggle
+credentials are this repo's secrets. Run 38926713081 wrote
+`outbox/bdb-frames-task0-latest.json`: weeks 1-9 of 2022, bytes per week,
+and the literal event vocabulary over every row of week 2. `pass_forward`
+is present, so the stop condition is NOT MET. The six existing BDB builders
+and their outputs are untouched.
+
+Session doc: field-relay-nba outbox/cc-session-2026-10-16-build-bdb-frames-task0.md
+
 ## 2026-10-14 — check-exposed-secrets decodes base64
 
 `d991edb9`. field-relay-nba found five shared-secret literals hidden in
