@@ -1,0 +1,129 @@
+{
+  "builder": "build-bdb-frames",
+  "generated": "2026-10-16T18:07:09+00:00",
+  "week": 2,
+  "ceilingBytes": 2000000,
+  "season": 2022,
+  "tracking_rows": 6704339,
+  "plays_in_week": 1809,
+  "frames": {
+    "ball_snap": 1805,
+    "pass_forward": 1004
+  },
+  "convention": {
+    "agreement": {
+      "offense-right (declared: rotate left plays 180 degrees)": {
+        "x_snap": {
+          "left": {
+            "agree": 910,
+            "of": 910
+          },
+          "right": {
+            "agree": 895,
+            "of": 895
+          }
+        },
+        "y_pass": {
+          "left": {
+            "agree": 33,
+            "of": 37
+          },
+          "right": {
+            "agree": 37,
+            "of": 39
+          }
+        }
+      },
+      "raw (source frame, no transform)": {
+        "x_snap": {
+          "left": {
+            "agree": 0,
+            "of": 910
+          },
+          "right": {
+            "agree": 895,
+            "of": 895
+          }
+        },
+        "y_pass": {
+          "left": {
+            "agree": 4,
+            "of": 37
+          },
+          "right": {
+            "agree": 37,
+            "of": 39
+          }
+        }
+      },
+      "mirror x only (flip x on left plays, keep y)": {
+        "x_snap": {
+          "left": {
+            "agree": 910,
+            "of": 910
+          },
+          "right": {
+            "agree": 895,
+            "of": 895
+          }
+        },
+        "y_pass": {
+          "left": {
+            "agree": 4,
+            "of": 37
+          },
+          "right": {
+            "agree": 37,
+            "of": 39
+          }
+        }
+      }
+    },
+    "threshold": 0.9,
+    "declared_holds": false
+  },
+  "convention_example": {
+    "gameId": 2022091500,
+    "playId": 1191,
+    "playDirection": "left",
+    "passLocationType": "OUTSIDE_RIGHT",
+    "snap_mean_x": {
+      "raw": {
+        "offense": 79.17,
+        "defense": 73.01
+      },
+      "declared": {
+        "offense": 40.83,
+        "defense": 46.99
+      }
+    },
+    "ball_at_pass_arrived": {
+      "raw": [
+        61.5099983215332,
+        53.3600006103516
+      ],
+      "declared": [
+        58.49,
+        -0.06
+      ]
+    }
+  },
+  "rows_with_unresolved_side_or_pos": 0,
+  "variants": {
+    "a": {
+      "frames": 2809,
+      "bytes_whole_week": 4922091,
+      "games_under_ceiling": 5,
+      "bytes_kept": 1664979
+    },
+    "b": {
+      "frames": 2117,
+      "bytes_whole_week": 3710699,
+      "games_under_ceiling": 7,
+      "bytes_kept": 1816808
+    }
+  },
+  "chosen": "b",
+  "chosen_reason": "(b) keeps more whole games under the ceiling; no written metric reads a snap frame on a play that is neither a dropback nor a pass",
+  "failure": "the declared coordinate convention is not supported by this week's plays"
+}
