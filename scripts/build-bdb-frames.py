@@ -340,7 +340,8 @@ def main():
         with open("outbox/bdb-event-frames-build-latest.json", "w") as fh:
             json.dump(report, fh, indent=2, default=str)
             fh.write("\n")
-        print(json.dumps({k: report.get(k) for k in ("season", "chosen", "variants", "failure")}, indent=2, default=str))
+        print(json.dumps({k: report.get(k) for k in ("season", "chosen", "variants", "convention", "failure")},
+                         indent=2, default=str))
         sys.exit(code)
 
     if not conv["declared_holds"]:
