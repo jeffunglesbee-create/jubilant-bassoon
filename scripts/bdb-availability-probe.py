@@ -118,6 +118,35 @@ if AUTH:
             "ref": ref, "title": c.get("title"), "deadline": c.get("deadline"),
             "files_status": fst, "files_seen": len(files), "files_sample": files[:25],
             "seasons_in_filenames": seasons_in(" ".join(files)), "seasons_named": seasons_in(f"{ref} {c.get('title')}")})
+    # The competition listing answered 401 to Basic auth on 2026-10-17. Before
+    # that reads as "no access", try the same reads with a Bearer token and with
+    # no auth, and name the BDB 2027 competition directly: the re-uploads' folder
+    # is `nfl-big-data-bowl-2027/`. A 401/403 on its data list is the
+    # rules-acceptance gate, which is a different fact from "does not exist".
+    def get_mode(url, mode):
+        h = {"User-Agent": "FIELD/1.0", "Accept": "application/json"}
+        if mode == "basic" and AUTH: h["Authorization"] = AUTH
+        if mode == "bearer" and K: h["Authorization"] = "Bearer " + K
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=60) as r: return r.status, r.read()
+        except urllib.error.HTTPError as e: return e.code, (e.read() or b"")[:300]
+        except Exception as e: return -1, str(e).encode()[:300]
+    comp = {}
+    for label, url in [("list_search", "https://www.kaggle.com/api/v1/competitions/list?search=big%20data%20bowl"),
+                       ("bdb2027_data_list", "https://www.kaggle.com/api/v1/competitions/data/list/nfl-big-data-bowl-2027"),
+                       ("bdb2026_data_list", "https://www.kaggle.com/api/v1/competitions/data/list/nfl-big-data-bowl-2026-analytics")]:
+        comp[label] = {}
+        for mode in ("none", "basic", "bearer"):
+            st, body = get_mode(url, mode)
+            files = []
+            if st == 200:
+                try:
+                    j = json.loads(body); items = j if isinstance(j, list) else (j.get("files") or j.get("datasetFiles") or [])
+                    files = [(f.get("name") or f.get("ref") or f.get("title")) for f in items]
+                except Exception: st = "unparseable"
+            comp[label][mode] = {"status": st, "items": len(files), "sample": files[:40],
+                                 "body_head": None if st == 200 else body[:160].decode("utf-8", "replace")}
+    out["competition_access"] = comp
     # The second dataset, re-listed.
     st, body = get("https://www.kaggle.com/api/v1/datasets/list/llkh0a/nfl-big-data-bowl-2026-prediction-public", auth=True)
     names = []
@@ -141,6 +170,8 @@ if AUTH:
     print(f"tracking-scale datasets: inspected {t['inspected']} of {t['of_seen']} seen ({t['rule']})")
     for c in t["rows"]:
         print(f"  {c['ref']}  {c['lastUpdated'][:10]}  files {c['files_seen']}  tracking {c['has_tracking']}  plays {c['has_plays_csv']}  player_play {c['has_player_play_csv']}  games.csv seasons {c['games_seasons']} ({c['games_status']})  filename seasons {c['seasons_in_filenames']}")
+    for label, modes in out["competition_access"].items():
+        print(f"competition {label}: " + ", ".join(f"{m} HTTP {v['status']} ({v['items']} items)" for m, v in modes.items()))
     d = out["ds2"]
     print(f"ds2: HTTP {d['status']}, {d['files_seen']} files, seasons {d['seasons_in_filenames']}, plays.csv {d['has_plays_csv']}, player_play.csv {d['has_player_play_csv']}")
 else:
