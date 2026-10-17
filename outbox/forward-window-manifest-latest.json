@@ -1,39 +1,29 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "38923605849",
-  "commit": "5d36606957c5b7d4a95f8245b0ed700f81bc6461",
-  "timestamp": "2026-10-16T15:25:19.427Z",
-  "cacheAccepted": true,
+  "runId": "39039993906",
+  "commit": "4b449b92135f503aa374a28722aa88c0f56ff87c",
+  "timestamp": "2026-10-17T14:17:08.965Z",
+  "cacheAccepted": false,
   "testApi": "pl-verify",
-  "schema": "2.1",
-  "for_date": "2026-10-16",
-  "window_dates": [
-    "2026-10-16",
-    "2026-10-17",
-    "2026-10-18",
-    "2026-10-19"
-  ],
-  "games_found_by_date": {
-    "2026-10-16": 5,
-    "2026-10-17": 2,
-    "2026-10-18": 0,
-    "2026-10-19": 2
-  },
+  "schema": null,
+  "for_date": null,
+  "window_dates": null,
+  "games_found_by_date": null,
   "days": [
     {
-      "iso": "2026-10-17",
-      "windowHasDay": true,
-      "windowMlbCount": 1,
-      "navigated": false,
-      "cardCount": 0,
-      "sectionCount": 0,
+      "iso": "2026-10-18",
+      "windowHasDay": false,
+      "windowMlbCount": 0,
+      "navigated": true,
+      "cardCount": 87,
+      "sectionCount": 99,
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
-      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
+      "error": null
     },
     {
-      "iso": "2026-10-18",
-      "windowHasDay": true,
+      "iso": "2026-10-19",
+      "windowHasDay": false,
       "windowMlbCount": 0,
       "navigated": false,
       "cardCount": 0,
@@ -43,9 +33,9 @@
       "error": null
     },
     {
-      "iso": "2026-10-19",
-      "windowHasDay": true,
-      "windowMlbCount": 1,
+      "iso": "2026-10-20",
+      "windowHasDay": false,
+      "windowMlbCount": 0,
       "navigated": false,
       "cardCount": 0,
       "sectionCount": 0,
@@ -54,30 +44,34 @@
       "error": null
     }
   ],
-  "windowDaysReachingClient": 3,
-  "windowMlbTotal": 2,
-  "renderedCardsTotal": 0,
+  "windowDaysReachingClient": 0,
+  "windowMlbTotal": 0,
+  "renderedCardsTotal": 87,
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
   "consoleErrors": [
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20261017&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
-    "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.trophy/scoreboard?dates=20261017&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
-    "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20261017&limit=50&groups=80' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
-    "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20261017&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
-    "Failed to load resource: net::ERR_FAILED",
-    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261017&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
-    "Failed to load resource: net::ERR_FAILED"
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 502 ()",
+    "Failed to load resource: the server responded with a status of 502 ()"
   ],
   "mainFrameNavigations": [
     {
-      "at_ms": 578,
+      "at_ms": 177,
+      "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
+    },
+    {
+      "at_ms": 587,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     }
   ],
   "readFailures": [],
-  "metaError": null,
+  "metaError": "jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation",
   "playwrightVersion": "1.64.1"
 }
