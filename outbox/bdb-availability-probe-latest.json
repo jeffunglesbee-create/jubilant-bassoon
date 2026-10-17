@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-17T19:26:43.428105+00:00",
+ "ran_at": "2026-10-17T22:36:01.391134+00:00",
  "kaggle_creds": true,
  "nflverse": {
   "status": 200,
@@ -244,6 +244,16 @@
     ]
    },
    {
+    "ref": "dariushafshar/bdb-2027-public-enrichment",
+    "title": "BDB 2027 Public Enrichment: IDs, Snaps, Outcomes",
+    "lastUpdated": "2026-10-08T06:37:27.193Z",
+    "totalBytes": 1237543,
+    "seasons_named": [
+     2023,
+     2027
+    ]
+   },
+   {
     "ref": "karanathrey/nfl-big-data-bowl-2025-ml-dual-prediction-model",
     "title": "NFL Big Data Bowl 2025 - ML Dual Prediction Model",
     "lastUpdated": "2024-12-27T20:14:07.113Z",
@@ -296,13 +306,6 @@
     ]
    },
    {
-    "ref": "thedevastator/sugar-bowl-college-football-data",
-    "title": "Sugar Bowl College Football Data",
-    "lastUpdated": "2023-12-19T07:28:43.547Z",
-    "totalBytes": 12433,
-    "seasons_named": []
-   },
-   {
     "ref": "pauls60r/nfl-2018-weather-data",
     "title": "NFL_2018_Weather_Data",
     "lastUpdated": "2020-12-04T18:26:22.423Z",
@@ -311,6 +314,13 @@
      2018,
      2021
     ]
+   },
+   {
+    "ref": "thedevastator/sugar-bowl-college-football-data",
+    "title": "Sugar Bowl College Football Data",
+    "lastUpdated": "2023-12-19T07:28:43.547Z",
+    "totalBytes": 12433,
+    "seasons_named": []
    },
    {
     "ref": "llkh0a/nfl-big-data-bowl-2026-public",
@@ -366,16 +376,6 @@
     "lastUpdated": "2025-12-13T11:20:02.74Z",
     "totalBytes": 103241098,
     "seasons_named": []
-   },
-   {
-    "ref": "dariushafshar/bdb-2027-public-enrichment",
-    "title": "BDB 2027 Public Enrichment: IDs, Snaps, Outcomes",
-    "lastUpdated": "2026-10-08T06:37:27.193Z",
-    "totalBytes": 1237543,
-    "seasons_named": [
-     2023,
-     2027
-    ]
    },
    {
     "ref": "ashrithanumala/big-data-bowl-data",
@@ -648,6 +648,13 @@
     "seasons_named": []
    },
    {
+    "ref": "ryanadamsai/dejean",
+    "title": "dejean",
+    "lastUpdated": "2025-10-27T22:45:25.983Z",
+    "totalBytes": 6814182,
+    "seasons_named": []
+   },
+   {
     "ref": "jdd1972/joshua-dweck-noah-lichtblau-big-data-bowl-2024-25",
     "title": "Joshua Dweck Noah Lichtblau Big Data Bowl 2024-25",
     "lastUpdated": "2025-01-03T21:28:38.26Z",
@@ -655,13 +662,6 @@
     "seasons_named": [
      2024
     ]
-   },
-   {
-    "ref": "ryanadamsai/dejean",
-    "title": "dejean",
-    "lastUpdated": "2025-10-27T22:45:25.983Z",
-    "totalBytes": 6814182,
-    "seasons_named": []
    },
    {
     "ref": "tomcleary0/big-data-bowl-2025-code",
@@ -908,17 +908,17 @@
     "seasons_named": []
    },
    {
-    "ref": "joedubya/darius-slay-mov",
-    "title": "darius_slay.mov",
-    "lastUpdated": "2025-01-06T06:50:40.607Z",
-    "totalBytes": 143996,
-    "seasons_named": []
-   },
-   {
     "ref": "cebo26033/stanley-cup-rings-plugging-my-ears",
     "title": "stanley_cup_rings_plugging_my_ears",
     "lastUpdated": "2025-11-29T17:17:51.043Z",
     "totalBytes": 332656137,
+    "seasons_named": []
+   },
+   {
+    "ref": "joedubya/darius-slay-mov",
+    "title": "darius_slay.mov",
+    "lastUpdated": "2025-01-06T06:50:40.607Z",
+    "totalBytes": 143996,
     "seasons_named": []
    },
    {
@@ -2181,6 +2181,101 @@
   "pages_read": 0,
   "seen": 0,
   "rows": []
+ },
+ "competition_access": {
+  "list_search": {
+   "none": {
+    "status": 401,
+    "items": 0,
+    "sample": [],
+    "body_head": "{\"code\":401,\"message\":\"Unauthenticated\"}"
+   },
+   "basic": {
+    "status": 401,
+    "items": 0,
+    "sample": [],
+    "body_head": "{\"code\":401,\"message\":\"Unauthenticated\"}"
+   },
+   "bearer": {
+    "status": 200,
+    "items": 1,
+    "sample": [
+     "https://www.kaggle.com/competitions/nfl-big-data-bowl-2027"
+    ],
+    "body_head": null
+   }
+  },
+  "bdb2027_data_list": {
+   "none": {
+    "status": 401,
+    "items": 0,
+    "sample": [],
+    "body_head": "{\"code\":401,\"message\":\"Unauthenticated\"}"
+   },
+   "basic": {
+    "status": 401,
+    "items": 0,
+    "sample": [],
+    "body_head": "{\"code\":401,\"message\":\"Unauthenticated\"}"
+   },
+   "bearer": {
+    "status": 200,
+    "items": 9,
+    "sample": [
+     "nfl-big-data-bowl-2027/combine_results.csv",
+     "nfl-big-data-bowl-2027/combine_tracking.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2023.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2024.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2025.csv",
+     "nfl-big-data-bowl-2027/games.csv",
+     "nfl-big-data-bowl-2027/player_career_successes.csv",
+     "nfl-big-data-bowl-2027/player_play.csv",
+     "nfl-big-data-bowl-2027/players.csv"
+    ],
+    "body_head": null
+   }
+  },
+  "bdb2026_data_list": {
+   "none": {
+    "status": 401,
+    "items": 0,
+    "sample": [],
+    "body_head": "{\"code\":401,\"message\":\"Unauthenticated\"}"
+   },
+   "basic": {
+    "status": 401,
+    "items": 0,
+    "sample": [],
+    "body_head": "{\"code\":401,\"message\":\"Unauthenticated\"}"
+   },
+   "bearer": {
+    "status": 200,
+    "items": 20,
+    "sample": [
+     "114239_nfl_competition_files_published_analytics_final/supplementary_data.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w01.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w02.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w03.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w04.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w05.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w06.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w07.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w08.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w09.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w10.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w11.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w12.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w13.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w14.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w15.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w16.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w17.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w18.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/output_2023_w01.csv"
+    ],
+    "body_head": null
+   }
+  }
  },
  "ds2": {
   "status": 200,
