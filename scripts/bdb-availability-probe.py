@@ -71,6 +71,37 @@ if AUTH:
          "lastUpdated": d.get("lastUpdated"), "totalBytes": d.get("totalBytes") or d.get("totalBytesNullable"),
          "seasons_named": seasons_in(f"{d.get('ref')} {d.get('title') or d.get('titleNullable')} {d.get('subtitle') or d.get('subtitleNullable') or ''}")}
         for d in ds]}
+    # Every tracking-scale dataset (>= 100 MB: BDB tracking weeks run ~40-50 MB
+    # each) gets its file list, and its games.csv read for the seasons it really
+    # holds. Chosen by size, not by name, so a mislabelled copy is not skipped.
+    big = sorted([d for d in ds if (d.get("totalBytes") or d.get("totalBytesNullable") or 0) >= 100_000_000],
+                 key=lambda d: d.get("lastUpdated") or "", reverse=True)
+    cands = []
+    for d in big:
+        owner, slug = (d.get("ref") or "/").split("/", 1)
+        fst, fbody = get(f"https://www.kaggle.com/api/v1/datasets/list/{owner}/{slug}", auth=True)
+        names = []
+        if fst == 200:
+            try: names = [f.get("name") for f in (json.loads(fbody).get("datasetFiles") or [])]
+            except Exception: fst = "unparseable"
+        games = [n for n in names if n and n.endswith("games.csv")]
+        game_seasons, gst = None, None
+        if games:
+            gst, gbody = get(f"https://www.kaggle.com/api/v1/datasets/download/{owner}/{slug}?file_name={urllib.parse.quote(games[0])}", auth=True, timeout=120)
+            if gst == 200 and not gbody.startswith(b"PK"):
+                rows = gbody.decode("utf-8", "replace").splitlines()
+                hdr = [h.strip('"') for h in rows[0].split(",")] if rows else []
+                if "season" in hdr:
+                    i = hdr.index("season")
+                    game_seasons = sorted({r.split(",")[i].strip('"') for r in rows[1:] if r.count(",") >= i})
+            elif gst == 200: gst = "zip (not read)"
+        cands.append({"ref": d.get("ref"), "lastUpdated": d.get("lastUpdated"), "totalBytes": d.get("totalBytes") or d.get("totalBytesNullable"),
+                      "files_status": fst, "files_seen": len(names), "seasons_in_filenames": seasons_in(" ".join(n or "" for n in names)),
+                      "has_tracking": any(n and re.search(r"tracking", n, re.I) for n in names),
+                      "has_plays_csv": any(n and n.endswith("plays.csv") for n in names),
+                      "has_player_play_csv": any(n and n.endswith("player_play.csv") for n in names),
+                      "games_csv": games[0] if games else None, "games_status": gst, "games_seasons": game_seasons})
+    out["tracking_scale_datasets"] = {"of_seen": len(ds), "inspected": len(cands), "rule": ">= 100 MB", "rows": cands}
     st, pages, cs = kaggle_list("competitions", "big data bowl")
     out["kaggle_competitions"] = {"status_last": st, "pages_read": pages, "seen": len(cs), "rows": []}
     for c in cs:
@@ -105,6 +136,10 @@ print(f"nflverse: HTTP {n['status']}, {n['tags_seen']} tags over {n['pages']} pa
 if AUTH:
     for k in ("kaggle_datasets", "kaggle_competitions"):
         print(f"{k}: {out[k]['seen']} seen over {out[k]['pages_read']} page(s), last HTTP {out[k]['status_last']}")
+    t = out["tracking_scale_datasets"]
+    print(f"tracking-scale datasets: inspected {t['inspected']} of {t['of_seen']} seen ({t['rule']})")
+    for c in t["rows"]:
+        print(f"  {c['ref']}  {c['lastUpdated'][:10]}  files {c['files_seen']}  tracking {c['has_tracking']}  plays {c['has_plays_csv']}  player_play {c['has_player_play_csv']}  games.csv seasons {c['games_seasons']} ({c['games_status']})  filename seasons {c['seasons_in_filenames']}")
     d = out["ds2"]
     print(f"ds2: HTTP {d['status']}, {d['files_seen']} files, seasons {d['seasons_in_filenames']}, plays.csv {d['has_plays_csv']}, player_play.csv {d['has_player_play_csv']}")
 else:
