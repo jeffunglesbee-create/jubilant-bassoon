@@ -241,3 +241,33 @@ From the render code (`buildScoutingReport`, NFL branch), with no row cap:
   The files and route stay by ruling, so the comment is stale but harmless.
   Not edited from here (one session, one repo).
 - **`targetYear`** stays in the envelopes, by ruling.
+
+---
+
+# A counter-proposal, tested before any ruling (2026-10-17, later)
+
+The proposal: a knowing proxy implemented as per-row vintage, plus a "free 2026
+time-to-throw swap", plus current-team re-attribution, with nothing dropped. It
+also asked for the BDB 2027 competition to be read first-party before any row
+is retired. Each premise was measured. **Nothing was built**: it reverses
+`4172d95f`, so it waits on the owner.
+
+| premise | measured | holds? |
+|---|---|---|
+| a max only revises upward, so a 2022 top speed is a valid 2026 lower bound for that **player** | true by definition | **yes, per player** |
+| example "≥ 21.4 mph" | 2022 max is **23.77 mph**, median 17.8, n = 1648 | figure wrong |
+| a "free" 2026 time-to-throw swap | BDB value is `plays.csv` `timeToThrow` averaged per `possessionTeam` (`build-bdb-data.py:310-345`). 2026 NGS `ngs-passing.json` is **per QB**, 43 QBs, 32 teams covered. A team value would be a new attempt-weighted aggregate from another provider, so not the same metric. It also puts one 2026 row among 2022 rows: the mixed vintage the same proposal argues destroys comparability. | **no** |
+| current-team re-attribution | of the 2022 player rows, **41-52%** appear in the 2026 snap counts (speed 675/1648, separation 131/250, route entropy 161/354, pass rush 164/321). About **70%** of those changed teams (speed: 468 moved, 205 same, 2 ambiguous). Team abbreviations are identical in both sources, and the moves are real (e.g. Rodgers GB→PIT). | mechanically yes |
+| ...and the re-attributed row still means "top X on this team" | each 2026 team's snap list has a 2022 speed value for **median 38%** of its players (range 19-55%), and 54% of its ≥50%-snap players (24-68%). A team's "Top speed" would rank only players who were in the league in 2022. Every player drafted since is invisible. | **no**: the per-player lower bound does not survive becoming a per-team ranking |
+| the BDB 2027 competition may give the full schema, `plays.csv` included | run 39075687837. The earlier 401 was the auth mode: `competitions/*` answers **Bearer** 200, while None and Basic give 401. `competitions/data/list/nfl-big-data-bowl-2027` lists **the same 9 files** as the re-uploads: `game_tracking_2023/2024/2025`, `player_play`, `players`, `games`, `combine_results`, `combine_tracking`, `player_career_successes`. **No `plays.csv`, first-party either.** Download and the competition terms were not read (Rule 45: the owner's). | **no** |
+
+Copies used: the re-attribution and coverage numbers come from the committed
+`outbox/nfl/` copies (`bdb_speed` and the others, plus `snap-counts.json`,
+season 2026, updated 2026-10-12). The served BDB copies were confirmed
+identical in run 39074302514. The served snap counts were not re-read.
+
+What this leaves for the owner:
+- **Speed** has a sound per-player reading.
+- The **team-ranking** form is the part that fails.
+- **Time-to-throw** has no like-for-like current replacement.
+- First-party access does not reopen the three `plays.csv` metrics.
