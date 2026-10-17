@@ -97,6 +97,20 @@ jobs:
       # Hosted here rather than in deploy-gate.yml because deploy-gate fires on
       # index.html/sw.js/field_utils.js/wrangler.jsonc only. A new workflow is
       # the one change class this exists to catch, and it would never have run.
+      # The absence-collapse ratchet on EVERY push, not only the deploy-gate
+      # paths: a scripts/ change or a relay commit is otherwise unseen until the
+      # next index.html deploy. Same script, same baseline, same requires as
+      # deploy-gate.yml (see the comment there). The mutation harness runs first,
+      # so a ratchet that cannot go red is caught before it reports green.
+      - name: Absence-collapse ratchet (Rule 99) — mutations, then both repos
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --quiet https://github.com/jeffunglesbee-create/field-relay-nba.git "$RUNNER_TEMP/field-relay-nba"
+          node scripts/mutate-absence-collapse-ratchet.mjs "$RUNNER_TEMP/field-relay-nba"
+          node scripts/check-absence-collapse.mjs . "$RUNNER_TEMP/field-relay-nba" \
+            --require=src/legacy/field.js --require=field-relay-nba/src/index.js \
+            --baseline=docs/absence-collapse-baseline.json
+
       - name: Every push-retry loop verifies the push landed
         run: |
           python3 scripts/check-push-lands.py --self-test

@@ -173,17 +173,26 @@ jobs:
           node scripts/check-v2-key-has-card-path.mjs --self-test
           node scripts/check-v2-key-has-card-path.mjs
 
-      # STANDARDS.md Rule 99 (DISTINGUISHABILITY-A). NOT a count gate: the
-      # repo has 266 flagged sites today and most are correct defaults, so
-      # failing on the number would make the gate useless on day one (Rule 97 --
-      # CI as invariant, not error count). What IS asserted is that the check
-      # still works: --self-test proves the classifier can fail, and --require
-      # proves the matcher still reaches the main source file rather than
-      # silently matching nothing. The count is printed for the log.
-      - name: Absence-collapse census (Rule 99) — reports, does not gate on count
+      # STANDARDS.md Rule 99 (DISTINGUISHABILITY-A). A RATCHET since
+      # docs/CC-CMD-2026-10-16-absence-collapse-ratchet.md: it fails when any op's
+      # flagged OR suppressed count rises above docs/absence-collapse-baseline.json,
+      # per repo. Not a count bar -- today's 98 + 332 sites pass; only growth fails
+      # (Rule 97). Suppressions ratchet too, or `// absence-ok:` everywhere passes.
+      #
+      # BOTH repos, one invocation, one script. The motivating instance was in
+      # field-relay-nba, which no CI scanned. The relay is cloned OUTSIDE the
+      # workspace so `.` does not walk it twice. A relay commit that adds a site
+      # turns this red until the baseline is bumped here; that is the intent.
+      #
+      # Each root's --require gates the ratchet: if either misses, the ratchet is
+      # NOT EVALUATED, because a matcher that stopped matching reads as a fall.
+      - name: Absence-collapse ratchet (Rule 99) — both repos, flagged and suppressed
         run: |
-          node scripts/check-absence-collapse.mjs --self-test
-          node scripts/check-absence-collapse.mjs . --require=src/legacy/field.js
+          set -euo pipefail
+          git clone --depth 1 --quiet https://github.com/jeffunglesbee-create/field-relay-nba.git "$RUNNER_TEMP/field-relay-nba"
+          node scripts/check-absence-collapse.mjs . "$RUNNER_TEMP/field-relay-nba" \
+            --require=src/legacy/field.js --require=field-relay-nba/src/index.js \
+            --baseline=docs/absence-collapse-baseline.json
 
       # Two wiring attempts on one feature shipped green in a single session:
       # updateCard (0 callers) and renderCard (2, both NightOwl). Structural
