@@ -11,9 +11,10 @@ cloned and passed as a second root; the script is not copied. Each root's
 could not pass (that collapse was fixed into `readQuotaHeader`), so the relay
 require is path-level. Runs on every push in smoke-static (run 38993272783,
 7/7 mutations caught); the deploy-gate copy is STAGED until the next deploy.
-A relay commit that adds a site turns THIS repo red: bump with
-`--write-baseline`. Relay-side gating is filed as field-relay-nba
-`docs/CC-CMD-2026-10-17-absence-ratchet-on-relay-pushes.md`.
+Each repo now holds its own baseline (`e544e1e9`): this file is
+jubilant-bassoon only, and the relay's is read from the clone. A relay rise is
+red at the relay commit (its deploy.yml/guards.yml, field-relay-nba `fea794c`)
+and bumped there, never here.
 
 Session doc: outbox/cc-session-2026-10-16-absence-collapse-ratchet.md
 
