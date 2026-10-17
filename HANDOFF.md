@@ -1,5 +1,18 @@
 # FIELD HANDOFF
 
+## 2026-10-17 — BDB vintage retrofit: Task 0 done, BLOCKED on the owner
+
+`docs/CC-CMD-2026-10-16-bdb-vintage-retrofit.md` Task 0 only; nothing served
+changed. All SIX BDB files have a live client consumer (scout rows in
+`src/legacy/field.js`, keyed by each player's 2022 team, no season shown), not
+two. Nothing reads `targetYear`. No computation joins BDB with NGS; the two
+vintages share the scout panel unlabelled. A 2023-2025 tracking set now exists
+on Kaggle (third-party re-uploads, `nfl-big-data-bowl-2027/`) but has no
+`plays.csv`, so separation, tendency and time-to-throw have no newer source;
+terms unassessed. Proxy vs staleness is the owner's call; Task 1 waits on it.
+
+Session doc: outbox/cc-session-2026-10-17-bdb-vintage-task0.md
+
 ## 2026-10-16 — absence-collapse census is now a ratchet over both repos
 
 `scripts/check-absence-collapse.mjs` fails when any op's flagged OR suppressed
