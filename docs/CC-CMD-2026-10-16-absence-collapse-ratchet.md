@@ -4,7 +4,7 @@
 **Repo:** jubilant-bassoon
 **Confidence gate:** >= 95 before any commit
 **Filed:** 2026-10-16 by chat
-**Status:** NOT STARTED — not dispatched.
+**Status:** DONE 2026-10-17 — `67e7cd79`, `758447c6`; per-repo baselines since `e544e1e9`. Session doc: `outbox/cc-session-2026-10-16-absence-collapse-ratchet.md`.
 
 Rule 99 (DISTINGUISHABILITY-A) names the class that nine separate defects
 instantiated in the week of 2026-10-10 alone: `/bsd/contract` declaring a frame
