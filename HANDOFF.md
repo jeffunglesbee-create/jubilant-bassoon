@@ -1,5 +1,22 @@
 # FIELD HANDOFF
 
+## 2026-10-16 — absence-collapse census is now a ratchet over both repos
+
+`scripts/check-absence-collapse.mjs` fails when any op's flagged OR suppressed
+count rises above `docs/absence-collapse-baseline.json`, per repo
+(jubilant-bassoon 98/0, field-relay-nba 332/18 at `0dcd504`). The relay is
+cloned and passed as a second root; the script is not copied. Each root's
+`--require` gates the ratchet, so a matcher that stops matching reads
+`RATCHET NOT EVALUATED`, not a pass. The CC-CMD's `src/index.js:6503` require
+could not pass (that collapse was fixed into `readQuotaHeader`), so the relay
+require is path-level. Runs on every push in smoke-static (run 38993272783,
+7/7 mutations caught); the deploy-gate copy is STAGED until the next deploy.
+A relay commit that adds a site turns THIS repo red: bump with
+`--write-baseline`. Relay-side gating is filed as field-relay-nba
+`docs/CC-CMD-2026-10-17-absence-ratchet-on-relay-pushes.md`.
+
+Session doc: outbox/cc-session-2026-10-16-absence-collapse-ratchet.md
+
 ## 2026-10-16 — BDB event frames builder, for the relay's CC-CMD
 
 `scripts/build-bdb-frames.py` and the dispatch-only `build-bdb-frames.yml`
