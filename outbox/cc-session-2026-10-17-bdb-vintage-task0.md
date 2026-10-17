@@ -146,3 +146,98 @@ a competition. As of 2026-10-17 a 2023-2025 tracking set exists, but without
 | `425b3879` | record file names, not only counts |
 
 The probe and its workflow change nothing served.
+
+---
+
+# Owner ruling and Task 2 (2026-10-17, same day)
+
+## The ruling, verbatim in substance
+
+The answer differs by metric because the key differs by metric:
+
+- **Team-keyed, keep and label:** `bdb_time_to_throw`, `bdb_tendency_fingerprint`.
+  32 rows each, no player names, no roster join to go stale. A 2022 franchise
+  tendency is an honest historical note once it says 2022, so it is a genuine
+  knowing proxy.
+- **Player-keyed, drop from the panel:** `bdb_speed`, `bdb_separation`,
+  `bdb_route_entropy`, `bdb_xblock_pass_rush`.
+- **Do not re-source from the 2023-25 datasets:**
+  - the `plays.csv` metrics have no newer source;
+  - the datasets are third-party re-uploads with unassessed terms (Rule 45);
+  - coverage is partial.
+
+  The route to newer tracking is the BDB 2027 competition under its own
+  terms, which is unmeasured (the listing returned 401).
+- **Keep the files, R2 and the relay route.** The envelopes already carry
+  `season: 2022`; the client parse ignored it. So **Task 1 (envelope changes)
+  is superseded by the ruling**: no envelope was changed.
+
+## Premises re-measured before building
+
+- **The committed copies** (`outbox/nfl/*.json`) show the split above:
+  time-to-throw and tendency have 32 rows and 0 named; speed has 1648 named,
+  separation 250, route entropy 354 and pass rush 321.
+- **The served copies match:** `bdb-serve-probe.mjs`, extended in `b68e382b`
+  to print `season` and named-row counts, gave run 39074302514: `season=2022`
+  on all six, named counts identical.
+
+## The change — `4172d95f`
+
+`src/legacy/field.js`, synced into `index.html`. `SW_VERSION 2026-10-17a`.
+
+- **Four player-keyed tables gone:** no longer fetched. Their parse blocks,
+  tables and getters were removed; a grep found no other caller.
+- **Two team-keyed rows labelled from the data:** they read
+  `Tendencies (2022)` and `Time to throw (2022)`. The label comes from the
+  envelope's own `season` via `_bdbSeason(j)`.
+- **No season, no row:** a table whose envelope has no four-digit season is
+  not loaded and renders nothing (Rule 99).
+- **`smoke.js`:** 1055 → 1053, six assertions replaced by four.
+  - `A-NFLBDB-1` **inverted**: none of the four fetches, tables, getters or
+    labels may reappear.
+  - `A-NFLTEND-1` and `A-NFLTTT-1` require the season label.
+  - `A-NFLBDB-2` requires the no-season gate.
+
+  Mutations, 4 of 4 caught: re-add a player-keyed fetch; unlabelled
+  Tendencies; time-to-throw season hard-coded; render without a season.
+- **`nfl_bdb_scout_probe.js`** asserts the new contract on **every** live NFL
+  game: no dropped row, and both kept rows carrying `(YYYY)`. It also records
+  each panel's total row count. Verified on local fixture pages:
+  - correct panel → PASS;
+  - a dropped row back → FAIL;
+  - an unlabelled kept row → FAIL;
+  - no NFL game → SKIP, not PASS.
+- **CI:** deploy-gate 39074888633 and smoke-and-verify 39074888618 green.
+  Live probe run 39075358271 read `SW_VERSION 2026-10-17a` on the deployed
+  site, so the deploy landed.
+
+## Does the panel read thin without the four? (the owner's unmeasured item)
+
+From the render code (`buildScoutingReport`, NFL branch), with no row cap:
+- **Before:** up to 16 rows. Eight NGS/pbp rows (QB CPOE, QB szn EPA,
+  Start QB, two WR rows, RB RYOE, Team EPA, Pass pro), six BDB, two injury.
+- **After:** up to 12.
+- **The four were always present:** on 2026-10-04 they rendered on 15 of 15
+  live NFL games (`outbox/nfl-bdb-scout-manifest-2026-10-04T23-52-42-842Z.json`),
+  so every NFL panel loses exactly four rows.
+- The live per-panel count is below.
+
+## Live NFL verification — LIVE_NFL_PENDING
+
+**STAGED (Rule 74).** No NFL game was on the 2026-10-17 slate: the probe saw
+1 game, MLB, and 0 NFL. Details:
+- **Unblocked by:** the scheduled `nfl-bdb-scout-probe.yml` run, 2026-10-18
+  21:00 UTC (cron `0 21 * * 0`), during the Sunday slate.
+- **Verify:** in the newest `outbox/nfl-bdb-scout-manifest-*.json`,
+  `nflGameCount > 0` and `contractHoldsOnEveryNFLGame === true`;
+  `nflRowCount` gives the panel size.
+- **Automated:** a check-in on this session fires at 2026-10-18 21:45 UTC to
+  read it and close this section.
+
+## Left as is, deliberately
+
+- **The relay's allow-list comment** (`field-relay-nba src/index.js:1027-1029`)
+  still says route entropy and separation "have builders + client consumers".
+  The files and route stay by ruling, so the comment is stale but harmless.
+  Not edited from here (one session, one repo).
+- **`targetYear`** stays in the envelopes, by ruling.

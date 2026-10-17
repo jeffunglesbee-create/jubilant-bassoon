@@ -1,5 +1,16 @@
 # FIELD HANDOFF
 
+## 2026-10-17 — BDB vintage: owner ruling applied, live NFL check STAGED
+
+`4172d95f`: the NFL scout panel no longer shows the four player-keyed BDB rows
+(2022 players under their 2022 teams); Tendencies and Time to throw stay,
+labelled "(2022)" from the envelope's own `season`, and render nothing without
+one. Files, R2 and relay route unchanged by ruling. SW_VERSION 2026-10-17a,
+deploy landed (probe run 39075358271). Live NFL verification: the scheduled
+scout probe on 2026-10-18 21:00 UTC; a session check-in reads it at 21:45.
+
+Session doc: outbox/cc-session-2026-10-17-bdb-vintage-task0.md
+
 ## 2026-10-17 — BDB vintage retrofit: Task 0 done, BLOCKED on the owner
 
 `docs/CC-CMD-2026-10-16-bdb-vintage-retrofit.md` Task 0 only; nothing served

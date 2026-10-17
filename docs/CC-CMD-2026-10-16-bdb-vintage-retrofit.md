@@ -4,7 +4,7 @@
 **Repo:** jubilant-bassoon
 **Confidence gate:** >= 95 before any commit
 **Filed:** 2026-10-16 by chat
-**Status:** BLOCKED 2026-10-17 — Task 0 done, owner decision needed before Task 1. Report: `outbox/cc-session-2026-10-17-bdb-vintage-task0.md`.
+**Status:** STAGED 2026-10-17 — owner ruling applied in `4172d95f` (4 player-keyed rows dropped, 2 team-keyed rows labelled with their season; envelopes unchanged by ruling). Live NFL verification waits on the 2026-10-18 21:00 UTC scout probe. Report: `outbox/cc-session-2026-10-17-bdb-vintage-task0.md`.
 **Related:** codex `incident-2026-10-15-bdb-tables-2022-season-served-as-2026`, OPEN.
 
 ## The state, measured 2026-10-15/16
