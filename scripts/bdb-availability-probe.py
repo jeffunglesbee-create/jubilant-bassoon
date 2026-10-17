@@ -100,7 +100,8 @@ if AUTH:
                       "has_tracking": any(n and re.search(r"tracking", n, re.I) for n in names),
                       "has_plays_csv": any(n and n.endswith("plays.csv") for n in names),
                       "has_player_play_csv": any(n and n.endswith("player_play.csv") for n in names),
-                      "games_csv": games[0] if games else None, "games_status": gst, "games_seasons": game_seasons})
+                      "games_csv": games[0] if games else None, "games_status": gst, "games_seasons": game_seasons,
+                      "files": names})
     out["tracking_scale_datasets"] = {"of_seen": len(ds), "inspected": len(cands), "rule": ">= 100 MB", "rows": cands}
     st, pages, cs = kaggle_list("competitions", "big data bowl")
     out["kaggle_competitions"] = {"status_last": st, "pages_read": pages, "seen": len(cs), "rows": []}
