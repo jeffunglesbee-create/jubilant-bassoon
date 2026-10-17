@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-17T19:25:21.165233+00:00",
+ "ran_at": "2026-10-17T19:26:43.428105+00:00",
  "kaggle_creds": true,
  "nflverse": {
   "status": 200,
@@ -648,13 +648,6 @@
     "seasons_named": []
    },
    {
-    "ref": "ryanadamsai/dejean",
-    "title": "dejean",
-    "lastUpdated": "2025-10-27T22:45:25.983Z",
-    "totalBytes": 6814182,
-    "seasons_named": []
-   },
-   {
     "ref": "jdd1972/joshua-dweck-noah-lichtblau-big-data-bowl-2024-25",
     "title": "Joshua Dweck Noah Lichtblau Big Data Bowl 2024-25",
     "lastUpdated": "2025-01-03T21:28:38.26Z",
@@ -662,6 +655,13 @@
     "seasons_named": [
      2024
     ]
+   },
+   {
+    "ref": "ryanadamsai/dejean",
+    "title": "dejean",
+    "lastUpdated": "2025-10-27T22:45:25.983Z",
+    "totalBytes": 6814182,
+    "seasons_named": []
    },
    {
     "ref": "tomcleary0/big-data-bowl-2025-code",
@@ -908,17 +908,17 @@
     "seasons_named": []
    },
    {
-    "ref": "cebo26033/stanley-cup-rings-plugging-my-ears",
-    "title": "stanley_cup_rings_plugging_my_ears",
-    "lastUpdated": "2025-11-29T17:17:51.043Z",
-    "totalBytes": 332656137,
-    "seasons_named": []
-   },
-   {
     "ref": "joedubya/darius-slay-mov",
     "title": "darius_slay.mov",
     "lastUpdated": "2025-01-06T06:50:40.607Z",
     "totalBytes": 143996,
+    "seasons_named": []
+   },
+   {
+    "ref": "cebo26033/stanley-cup-rings-plugging-my-ears",
+    "title": "stanley_cup_rings_plugging_my_ears",
+    "lastUpdated": "2025-11-29T17:17:51.043Z",
+    "totalBytes": 332656137,
     "seasons_named": []
    },
    {
@@ -1104,6 +1104,17 @@
      "2023",
      "2024",
      "2025"
+    ],
+    "files": [
+     "nfl-big-data-bowl-2027/combine_results.csv",
+     "nfl-big-data-bowl-2027/combine_tracking.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2023.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2024.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2025.csv",
+     "nfl-big-data-bowl-2027/games.csv",
+     "nfl-big-data-bowl-2027/player_career_successes.csv",
+     "nfl-big-data-bowl-2027/player_play.csv",
+     "nfl-big-data-bowl-2027/players.csv"
     ]
    },
    {
@@ -1127,6 +1138,17 @@
      "2023",
      "2024",
      "2025"
+    ],
+    "files": [
+     "nfl-big-data-bowl-2027/combine_results.csv",
+     "nfl-big-data-bowl-2027/combine_tracking.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2023.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2024.csv",
+     "nfl-big-data-bowl-2027/game_tracking_2025.csv",
+     "nfl-big-data-bowl-2027/games.csv",
+     "nfl-big-data-bowl-2027/player_career_successes.csv",
+     "nfl-big-data-bowl-2027/player_play.csv",
+     "nfl-big-data-bowl-2027/players.csv"
     ]
    },
    {
@@ -1143,6 +1165,21 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "big-data-bowl-data/games.csv",
+     "big-data-bowl-data/player_play.csv",
+     "big-data-bowl-data/players.csv",
+     "big-data-bowl-data/plays.csv",
+     "big-data-bowl-data/tracking_week_1.csv",
+     "big-data-bowl-data/tracking_week_2.csv",
+     "big-data-bowl-data/tracking_week_3.csv",
+     "big-data-bowl-data/tracking_week_4.csv",
+     "big-data-bowl-data/tracking_week_5.csv",
+     "big-data-bowl-data/tracking_week_6.csv",
+     "big-data-bowl-data/tracking_week_7.csv",
+     "big-data-bowl-data/tracking_week_8.csv",
+     "big-data-bowl-data/tracking_week_9.csv"
     ]
    },
    {
@@ -1159,7 +1196,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "kaggle_evaluation/__init__.py",
+     "kaggle_evaluation/core/__init__.py",
+     "kaggle_evaluation/core/base_gateway.py",
+     "kaggle_evaluation/core/generated/__init__.py",
+     "kaggle_evaluation/core/generated/kaggle_evaluation_pb2.py",
+     "kaggle_evaluation/core/generated/kaggle_evaluation_pb2_grpc.py",
+     "kaggle_evaluation/core/kaggle_evaluation.proto",
+     "kaggle_evaluation/core/relay.py",
+     "kaggle_evaluation/core/templates.py",
+     "kaggle_evaluation/nfl_gateway.py",
+     "kaggle_evaluation/nfl_inference_server.py",
+     "test.csv",
+     "test_input.csv",
+     "train/input_2023_w01.csv",
+     "train/input_2023_w02.csv",
+     "train/input_2023_w03.csv",
+     "train/input_2023_w04.csv",
+     "train/input_2023_w05.csv",
+     "train/input_2023_w06.csv",
+     "train/input_2023_w07.csv"
+    ]
    },
    {
     "ref": "sarthakteli18/nfl-big-bowl-data",
@@ -1173,7 +1232,10 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "combined_input_training.csv"
+    ]
    },
    {
     "ref": "shefalibarde/nfl-big-data-bowl-2026-analytics",
@@ -1189,7 +1251,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "114239_nfl_competition_files_published_analytics_final/supplementary_data.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w01.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w02.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w03.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w04.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w05.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w06.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w07.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w08.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w09.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w10.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w11.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w12.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w13.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w14.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w15.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w16.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w17.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w18.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/output_2023_w01.csv"
+    ]
    },
    {
     "ref": "tomschubert/model-weights-query-centric",
@@ -1203,7 +1287,23 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "config.json",
+     "fold1/bestModel_epoch_87.pth",
+     "fold1/bestModel_epoch_92.pth",
+     "fold1/train_eval_info.json",
+     "fold5/bestModel_epoch_100.pth",
+     "fold5/bestModel_epoch_114.pth",
+     "fold5/train_eval_info.json",
+     "loss_base_val_loss.png",
+     "loss_rmse.png",
+     "loss_total_coverage_loss.png",
+     "loss_total_out_of_bound_loss.png",
+     "loss_train_loss.png",
+     "loss_val_loss.png",
+     "scaler_fraction_1.0.joblib"
+    ]
    },
    {
     "ref": "cebo26033/stanley-cup-rings-plugging-my-ears",
@@ -1217,7 +1317,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "royXGB/fold_0_d_chaser_dx.json",
+     "royXGB/fold_0_d_chaser_dy.json",
+     "royXGB/fold_0_d_zone_dx.json",
+     "royXGB/fold_0_d_zone_dy.json",
+     "royXGB/fold_0_offense_dx.json",
+     "royXGB/fold_0_offense_dy.json",
+     "royXGB/fold_1_d_chaser_dx.json",
+     "royXGB/fold_1_d_chaser_dy.json",
+     "royXGB/fold_1_d_zone_dx.json",
+     "royXGB/fold_1_d_zone_dy.json",
+     "royXGB/fold_1_offense_dx.json",
+     "royXGB/fold_1_offense_dy.json",
+     "royXGB/fold_2_d_chaser_dx.json",
+     "royXGB/fold_2_d_chaser_dy.json",
+     "royXGB/fold_2_d_zone_dx.json",
+     "royXGB/fold_2_d_zone_dy.json",
+     "royXGB/fold_2_offense_dx.json",
+     "royXGB/fold_2_offense_dy.json",
+     "royXGB/fold_3_d_chaser_dx.json",
+     "royXGB/fold_3_d_chaser_dy.json"
+    ]
    },
    {
     "ref": "girrajjangid/nfl-big-dataset-bowl-2026",
@@ -1233,7 +1355,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "sample_submission.csv",
+     "test.csv",
+     "test_input.csv",
+     "train/input_2023_w01.csv",
+     "train/input_2023_w02.csv",
+     "train/input_2023_w03.csv",
+     "train/input_2023_w04.csv",
+     "train/input_2023_w05.csv",
+     "train/input_2023_w06.csv",
+     "train/input_2023_w07.csv",
+     "train/input_2023_w08.csv",
+     "train/input_2023_w09.csv",
+     "train/input_2023_w10.csv",
+     "train/input_2023_w11.csv",
+     "train/input_2023_w12.csv",
+     "train/input_2023_w13.csv",
+     "train/input_2023_w14.csv",
+     "train/input_2023_w15.csv",
+     "train/input_2023_w16.csv",
+     "train/input_2023_w17.csv"
+    ]
    },
    {
     "ref": "girrajjangid/nfl-big-data-bowl-2026",
@@ -1249,7 +1393,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "sample_submission.csv",
+     "test.csv",
+     "test_input.csv",
+     "train/input_2023_w01.csv",
+     "train/input_2023_w02.csv",
+     "train/input_2023_w03.csv",
+     "train/input_2023_w04.csv",
+     "train/input_2023_w05.csv",
+     "train/input_2023_w06.csv",
+     "train/input_2023_w07.csv",
+     "train/input_2023_w08.csv",
+     "train/input_2023_w09.csv",
+     "train/input_2023_w10.csv",
+     "train/input_2023_w11.csv",
+     "train/input_2023_w12.csv",
+     "train/input_2023_w13.csv",
+     "train/input_2023_w14.csv",
+     "train/input_2023_w15.csv",
+     "train/input_2023_w16.csv",
+     "train/input_2023_w17.csv"
+    ]
    },
    {
     "ref": "ryanadamsai/weaponxnfl",
@@ -1263,7 +1429,17 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "catboost_info/catboost_training.json",
+     "catboost_info/learn/events.out.tfevents",
+     "catboost_info/learn_error.tsv",
+     "catboost_info/test/events.out.tfevents",
+     "catboost_info/test_error.tsv",
+     "catboost_info/time_left.tsv",
+     "submission.csv",
+     "winning_models.pkl"
+    ]
    },
    {
     "ref": "llkh0a/nfl-big-data-bowl-2026-public",
@@ -1277,7 +1453,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "12win_lstm_sequences_targets_ids.joblib",
+     "59-ft-lstm_sequences_targets_ids.joblib",
+     "bigru-public/fold_1/axis_x.pt",
+     "bigru-public/fold_1/axis_y.pt",
+     "bigru-public/fold_1/lstm_feature_scaler_fold.joblib",
+     "bigru-public/fold_2/axis_x.pt",
+     "bigru-public/fold_2/axis_y.pt",
+     "bigru-public/fold_2/lstm_feature_scaler_fold.joblib",
+     "bigru-public/fold_3/axis_x.pt",
+     "bigru-public/fold_3/axis_y.pt",
+     "bigru-public/fold_3/lstm_feature_scaler_fold.joblib",
+     "bigru-public/fold_4/axis_x.pt",
+     "bigru-public/fold_4/axis_y.pt",
+     "bigru-public/fold_4/lstm_feature_scaler_fold.joblib",
+     "bigru-public/fold_5/axis_x.pt",
+     "bigru-public/fold_5/axis_y.pt",
+     "bigru-public/fold_5/lstm_feature_scaler_fold.joblib",
+     "bigru-public/fold_cache.csv",
+     "bigru-public/submission.csv",
+     "fold_cache.csv"
+    ]
    },
    {
     "ref": "felipef2/nfl-big-data-bowl-2026",
@@ -1293,7 +1491,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "sample_submission.csv",
+     "test.csv",
+     "test_input.csv",
+     "train/input_2023_w01.csv",
+     "train/input_2023_w02.csv",
+     "train/input_2023_w03.csv",
+     "train/input_2023_w04.csv",
+     "train/input_2023_w05.csv",
+     "train/input_2023_w06.csv",
+     "train/input_2023_w07.csv",
+     "train/input_2023_w08.csv",
+     "train/input_2023_w09.csv",
+     "train/input_2023_w10.csv",
+     "train/input_2023_w11.csv",
+     "train/input_2023_w12.csv",
+     "train/input_2023_w13.csv",
+     "train/input_2023_w14.csv",
+     "train/input_2023_w15.csv",
+     "train/input_2023_w16.csv",
+     "train/input_2023_w17.csv"
+    ]
    },
    {
     "ref": "jayasreeselvam/nfl-big-data-bowl",
@@ -1309,7 +1529,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "sample_submission.csv",
+     "test.csv",
+     "test_input.csv",
+     "train/input_2023_w01.csv",
+     "train/input_2023_w02.csv",
+     "train/input_2023_w03.csv",
+     "train/input_2023_w04.csv",
+     "train/input_2023_w05.csv",
+     "train/input_2023_w06.csv",
+     "train/input_2023_w07.csv",
+     "train/input_2023_w08.csv",
+     "train/input_2023_w09.csv",
+     "train/input_2023_w10.csv",
+     "train/input_2023_w11.csv",
+     "train/input_2023_w12.csv",
+     "train/input_2023_w13.csv",
+     "train/input_2023_w14.csv",
+     "train/input_2023_w15.csv",
+     "train/input_2023_w16.csv",
+     "train/input_2023_w17.csv"
+    ]
    },
    {
     "ref": "ahnafhaidar/nfl-big-data-bowl-2026-analytics",
@@ -1325,7 +1567,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "114239_nfl_competition_files_published_analytics_final/supplementary_data.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w01.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w02.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w03.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w04.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w05.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w06.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w07.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w08.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w09.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w10.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w11.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w12.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w13.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w14.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w15.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w16.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w17.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/input_2023_w18.csv",
+     "114239_nfl_competition_files_published_analytics_final/train/output_2023_w01.csv"
+    ]
    },
    {
     "ref": "navneetkumarjha/nfl-big-data-bowl-2026-prediction",
@@ -1341,7 +1605,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "sample_submission.csv",
+     "test.csv",
+     "test_input.csv",
+     "train/input_2023_w01.csv",
+     "train/input_2023_w02.csv",
+     "train/input_2023_w03.csv",
+     "train/input_2023_w04.csv",
+     "train/input_2023_w05.csv",
+     "train/input_2023_w06.csv",
+     "train/input_2023_w07.csv",
+     "train/input_2023_w08.csv",
+     "train/input_2023_w09.csv",
+     "train/input_2023_w10.csv",
+     "train/input_2023_w11.csv",
+     "train/input_2023_w12.csv",
+     "train/input_2023_w13.csv",
+     "train/input_2023_w14.csv",
+     "train/input_2023_w15.csv",
+     "train/input_2023_w16.csv",
+     "train/input_2023_w17.csv"
+    ]
    },
    {
     "ref": "ameau01/nfl-big-data-bowl-2025-archived-data",
@@ -1357,6 +1643,21 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "games.csv",
+     "player_play.csv",
+     "players.csv",
+     "plays.csv",
+     "tracking_week_1.csv",
+     "tracking_week_2.csv",
+     "tracking_week_3.csv",
+     "tracking_week_4.csv",
+     "tracking_week_5.csv",
+     "tracking_week_6.csv",
+     "tracking_week_7.csv",
+     "tracking_week_8.csv",
+     "tracking_week_9.csv"
     ]
    },
    {
@@ -1371,7 +1672,22 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "competition_data/games.parq",
+     "competition_data/players.parq",
+     "competition_data/plays.parq",
+     "competition_data/tackles.parq",
+     "competition_data/tracking_all_weeks.parq",
+     "external/combine_data.csv",
+     "external/ftn_charting.csv",
+     "external/injuries.csv",
+     "external/rush.csv",
+     "external/tackle_nfl.csv",
+     "external/team_rosters.csv",
+     "nflcom_punts.csv",
+     "nflcom_scrims.csv"
+    ]
    },
    {
     "ref": "nathanawright24/bigdatabowl25dataset",
@@ -1389,6 +1705,26 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "NFL Big Data Bowl 2025.pdf",
+     "drive-download-20250106T232343Z-001/games.csv",
+     "drive-download-20250106T232343Z-001/important_frames.csv",
+     "drive-download-20250106T232343Z-001/importantframes.csv",
+     "drive-download-20250106T232343Z-001/mdsample.csv",
+     "drive-download-20250106T232343Z-001/mdsample_w_prob.csv",
+     "drive-download-20250106T232343Z-001/mdsample_w_test_prob.csv",
+     "drive-download-20250106T232343Z-001/offensivemotion.csv",
+     "drive-download-20250106T232343Z-001/offensivemotion.xlsx",
+     "drive-download-20250106T232343Z-001/pbp22wks1_9.csv",
+     "drive-download-20250106T232343Z-001/player_play.csv",
+     "drive-download-20250106T232343Z-001/playerassignments.csv",
+     "drive-download-20250106T232343Z-001/players.csv",
+     "drive-download-20250106T232343Z-001/plays.csv",
+     "drive-download-20250106T232343Z-001/plays_with_pbp.csv",
+     "drive-download-20250106T232343Z-001/team_tendencies.xlsx",
+     "drive-download-20250106T232343Z-001/updated_plays.csv",
+     "drive-download-20250106T232343Z-001/updated_plays_w_prob.csv"
     ]
    },
    {
@@ -1407,6 +1743,28 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "Big Data Bowl 2025/data/games.csv",
+     "Big Data Bowl 2025/data/model data/model_df_final.csv",
+     "Big Data Bowl 2025/data/model data/week_1_model.csv",
+     "Big Data Bowl 2025/data/model data/week_2_model.csv",
+     "Big Data Bowl 2025/data/model data/week_3_model.csv",
+     "Big Data Bowl 2025/data/model data/week_4_model.csv",
+     "Big Data Bowl 2025/data/model data/week_5_model.csv",
+     "Big Data Bowl 2025/data/model data/week_6_model.csv",
+     "Big Data Bowl 2025/data/model data/week_7_model.csv",
+     "Big Data Bowl 2025/data/model data/week_8_model.csv",
+     "Big Data Bowl 2025/data/model data/week_9_model.csv",
+     "Big Data Bowl 2025/data/player_play.csv",
+     "Big Data Bowl 2025/data/players.csv",
+     "Big Data Bowl 2025/data/plays.csv",
+     "Big Data Bowl 2025/data/plays_final.csv",
+     "Big Data Bowl 2025/data/tracking_week_1.csv",
+     "Big Data Bowl 2025/data/tracking_week_2.csv",
+     "Big Data Bowl 2025/data/tracking_week_3.csv",
+     "Big Data Bowl 2025/data/tracking_week_4.csv",
+     "Big Data Bowl 2025/data/tracking_week_5.csv"
     ]
    },
    {
@@ -1423,6 +1781,21 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "games.csv",
+     "player_play.csv",
+     "players.csv",
+     "plays.csv",
+     "tracking_week_1.csv",
+     "tracking_week_2.csv",
+     "tracking_week_3.csv",
+     "tracking_week_4.csv",
+     "tracking_week_5.csv",
+     "tracking_week_6.csv",
+     "tracking_week_7.csv",
+     "tracking_week_8.csv",
+     "tracking_week_9.csv"
     ]
    },
    {
@@ -1441,6 +1814,21 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "nfl-big-data-bowl-2025/games.csv",
+     "nfl-big-data-bowl-2025/player_play.csv",
+     "nfl-big-data-bowl-2025/players.csv",
+     "nfl-big-data-bowl-2025/plays.csv",
+     "nfl-big-data-bowl-2025/tracking_week_1.csv",
+     "nfl-big-data-bowl-2025/tracking_week_2.csv",
+     "nfl-big-data-bowl-2025/tracking_week_3.csv",
+     "nfl-big-data-bowl-2025/tracking_week_4.csv",
+     "nfl-big-data-bowl-2025/tracking_week_5.csv",
+     "nfl-big-data-bowl-2025/tracking_week_6.csv",
+     "nfl-big-data-bowl-2025/tracking_week_7.csv",
+     "nfl-big-data-bowl-2025/tracking_week_8.csv",
+     "nfl-big-data-bowl-2025/tracking_week_9.csv"
     ]
    },
    {
@@ -1459,6 +1847,21 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "nfl-big-data-bowl-2024/games.csv",
+     "nfl-big-data-bowl-2024/players.csv",
+     "nfl-big-data-bowl-2024/plays.csv",
+     "nfl-big-data-bowl-2024/tackles.csv",
+     "nfl-big-data-bowl-2024/tracking_week_1.csv",
+     "nfl-big-data-bowl-2024/tracking_week_2.csv",
+     "nfl-big-data-bowl-2024/tracking_week_3.csv",
+     "nfl-big-data-bowl-2024/tracking_week_4.csv",
+     "nfl-big-data-bowl-2024/tracking_week_5.csv",
+     "nfl-big-data-bowl-2024/tracking_week_6.csv",
+     "nfl-big-data-bowl-2024/tracking_week_7.csv",
+     "nfl-big-data-bowl-2024/tracking_week_8.csv",
+     "nfl-big-data-bowl-2024/tracking_week_9.csv"
     ]
    },
    {
@@ -1475,6 +1878,21 @@
     "games_status": 200,
     "games_seasons": [
      "2022"
+    ],
+    "files": [
+     "games.csv",
+     "players.csv",
+     "plays.csv",
+     "tackles.csv",
+     "tracking_week_1.csv",
+     "tracking_week_2.csv",
+     "tracking_week_3.csv",
+     "tracking_week_4.csv",
+     "tracking_week_5.csv",
+     "tracking_week_6.csv",
+     "tracking_week_7.csv",
+     "tracking_week_8.csv",
+     "tracking_week_9.csv"
     ]
    },
    {
@@ -1489,7 +1907,21 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "stock_info.json",
+     "stocks data files/stocks data files/stocks_data_1.csv",
+     "stocks data files/stocks data files/stocks_data_10.csv",
+     "stocks data files/stocks data files/stocks_data_11.csv",
+     "stocks data files/stocks data files/stocks_data_2.csv",
+     "stocks data files/stocks data files/stocks_data_3.csv",
+     "stocks data files/stocks data files/stocks_data_4.csv",
+     "stocks data files/stocks data files/stocks_data_5.csv",
+     "stocks data files/stocks data files/stocks_data_6.csv",
+     "stocks data files/stocks data files/stocks_data_7.csv",
+     "stocks data files/stocks data files/stocks_data_8.csv",
+     "stocks data files/stocks data files/stocks_data_9.csv"
+    ]
    },
    {
     "ref": "mkdc761/nfl-big-data-bowl-2023",
@@ -1505,6 +1937,22 @@
     "games_status": 200,
     "games_seasons": [
      "2021"
+    ],
+    "files": [
+     "games.csv",
+     "histo_avg_pen.png",
+     "players.csv",
+     "plays.csv",
+     "scatter1.png",
+     "scatter2.png",
+     "week1.csv",
+     "week2.csv",
+     "week3.csv",
+     "week4.csv",
+     "week5.csv",
+     "week6.csv",
+     "week7.csv",
+     "week8.csv"
     ]
    },
    {
@@ -1519,7 +1967,19 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "pffScoutingData.csv",
+     "team_information.csv",
+     "tracking_parquets/week1.parquet",
+     "tracking_parquets/week2.parquet",
+     "tracking_parquets/week3.parquet",
+     "tracking_parquets/week4.parquet",
+     "tracking_parquets/week5.parquet",
+     "tracking_parquets/week6.parquet",
+     "tracking_parquets/week7.parquet",
+     "tracking_parquets/week8.parquet"
+    ]
    },
    {
     "ref": "vingkan/big-data-bowl-2022-supplementals",
@@ -1533,7 +1993,21 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "Bail_plot.png",
+     "Clement Return Decision.gif",
+     "Clement Return Muff.gif",
+     "Return_plot.png",
+     "clement_map.png",
+     "fc_plot.png",
+     "mix_plot.png",
+     "model_scores.png",
+     "player_plot.png",
+     "player_ranks.png",
+     "team_plot.png",
+     "team_ranks.png"
+    ]
    },
    {
     "ref": "cdjarrell/big-data-bowl-2022-jarrell",
@@ -1549,7 +2023,13 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "2020_punts_tracking.xlsx",
+     "NEW_ALL (1).xlsx",
+     "PUNTS_v2.xlsx",
+     "plays_rev.xlsx"
+    ]
    },
    {
     "ref": "charliezimmerman/nfl-play-data-2010-2020",
@@ -1570,7 +2050,20 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "play_by_play_2010.csv",
+     "play_by_play_2011.csv",
+     "play_by_play_2012.csv",
+     "play_by_play_2013.csv",
+     "play_by_play_2014.csv",
+     "play_by_play_2015.csv",
+     "play_by_play_2016.csv",
+     "play_by_play_2017.csv",
+     "play_by_play_2018.csv",
+     "play_by_play_2019.csv",
+     "play_by_play_2020.csv"
+    ]
    },
    {
     "ref": "jaiglazer/nfl-big-data-bowl",
@@ -1592,6 +2085,15 @@
      "2018",
      "2019",
      "2020"
+    ],
+    "files": [
+     "PFFScoutingData.csv",
+     "games.csv",
+     "players.csv",
+     "plays.csv",
+     "tracking2018.csv",
+     "tracking2019.csv",
+     "tracking2020.csv"
     ]
    },
    {
@@ -1606,7 +2108,11 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "play_processed_data.npy",
+     "processed_play_data_labels.csv"
+    ]
    },
    {
     "ref": "robikscube/nfl-big-data-bowl-2021-pp",
@@ -1620,7 +2126,17 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "coverage.parquet",
+     "coverage_tracking.parquet",
+     "deep_coverage_tracking.parquet",
+     "games.parquet",
+     "players.parquet",
+     "plays.parquet",
+     "targeted.parquet",
+     "tracking.parquet"
+    ]
    },
    {
     "ref": "mathurinache/nflbigdatabowl2021-feather-files",
@@ -1634,7 +2150,29 @@
     "has_player_play_csv": false,
     "games_csv": null,
     "games_status": null,
-    "games_seasons": null
+    "games_seasons": null,
+    "files": [
+     "games.feather",
+     "players.feather",
+     "plays.feather",
+     "week1.feather",
+     "week10.feather",
+     "week11.feather",
+     "week12.feather",
+     "week13.feather",
+     "week14.feather",
+     "week15.feather",
+     "week16.feather",
+     "week17.feather",
+     "week2.feather",
+     "week3.feather",
+     "week4.feather",
+     "week5.feather",
+     "week6.feather",
+     "week7.feather",
+     "week8.feather",
+     "week9.feather"
+    ]
    }
   ]
  },
