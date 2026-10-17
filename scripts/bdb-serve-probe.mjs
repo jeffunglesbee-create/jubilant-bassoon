@@ -19,7 +19,12 @@ for (const [file, field] of CHECKS) {
     const rows = Object.keys(j.data || {}).length;
     const sample = Object.values(j.data || {})[0] || {};
     const ok = rows > 0 && sample[field] != null;
-    console.log(`  ${ok ? 'PASS' : 'FAIL'} ${file}  HTTP 200  src=${src}  rows=${rows}  metric=${j.metric}  sample.${field}=${sample[field]}`);
+    // The SERVED envelope's season, and how many rows name a player: the client
+    // labels team-keyed rows with this season and drops player-keyed ones
+    // (docs/CC-CMD-2026-10-16-bdb-vintage-retrofit.md), so both are read from
+    // the route, not from the outbox copy.
+    const named = Object.values(j.data || {}).filter(p => p && p.name != null).length;
+    console.log(`  ${ok ? 'PASS' : 'FAIL'} ${file}  HTTP 200  src=${src}  rows=${rows}  season=${j.season}  named=${named}  metric=${j.metric}  sample.${field}=${sample[field]}`);
     if (!ok) bad++;
   } catch (e) { console.log(`  FAIL ${file}  ${e.message}`); bad++; }
 }
