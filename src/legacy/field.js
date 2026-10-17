@@ -4589,25 +4589,31 @@ const NFL_TEAM_EPA = {};  // abbr -> {off, def, succ}
 const NFL_SNAP     = {};  // "TEAM|Full Name" -> offense snap share (0..1)
 const NFL_DEPTH    = {};  // abbr -> { pos_abb: player_name }
 const NFL_PART     = {};  // abbr -> {shotgunRate, avgBoxFaced, pressFacedRate, blitzFacedRate} (P3, pbp_participation)
-const NFL_BDB_SPEED = {};  // abbr -> [{name, mph}] desc (P3, BDB tracking max speed)
-const NFL_BDB_SEP   = {};  // abbr -> [{name, sep, pos}] desc (P3, BDB avg separation at pass_arrived)
-const NFL_BDB_ROUTE = {};  // abbr -> [{name, ent, routes}] desc (P3, BDB route entropy)
-const NFL_BDB_RUSH  = {};  // abbr -> [{name, prs, pos}] desc (P3, BDB pass-rush pressure generated)
+// BDB tracking is the 2022 season (docs/CC-CMD-2026-10-16-bdb-vintage-retrofit.md;
+// owner ruling 2026-10-17). Only the two TEAM-keyed tables are shown, labelled
+// with the season their own envelope declares: a 2022 franchise tendency is an
+// honest historical note once it says 2022. The four PLAYER-keyed tables (top
+// speed, separation, route tree, pass rush) are no longer fetched: they filed
+// each player under his 2022 team and showed him in a current game, and a label
+// cannot fix a stale roster. Their files and route stay; nothing about the data
+// was wrong, only this panel's claim about it.
 const NFL_BDB_TEND  = {};  // abbr -> {pa, db, form} (P3, BDB team tendency fingerprint)
 const NFL_BDB_TTT   = {};  // abbr -> {ttt, db} (P3, BDB team avg time-to-throw seconds)
+// The season each table's envelope declares, or null. A table whose season is
+// not a four-digit year is not loaded at all: no row is better than an
+// unlabelled one (Rule 99).
+let NFL_BDB_TEND_SEASON = null;
+let NFL_BDB_TTT_SEASON  = null;
+const _bdbSeason = j => (Number.isInteger(j?.season) && j.season >= 2000 && j.season <= 2100) ? j.season : null;
 let _nflTeamTablesLoaded = false;
 async function nflTeamTablesInit() {
   if (_nflTeamTablesLoaded) return;
   try {
-    const [epaR, snapR, depthR, partR, spdR, sepR, rteR, rushR, tendR, tttR] = await Promise.all([
+    const [epaR, snapR, depthR, partR, tendR, tttR] = await Promise.all([
       fetch(`${_NFL_NGS_RELAY}/team_epa.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/snap-counts.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/depth-charts.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/team-participation.json`, { signal: AbortSignal.timeout(8000) }),
-      fetch(`${_NFL_NGS_RELAY}/bdb_speed.json`, { signal: AbortSignal.timeout(8000) }),
-      fetch(`${_NFL_NGS_RELAY}/bdb_separation.json`, { signal: AbortSignal.timeout(8000) }),
-      fetch(`${_NFL_NGS_RELAY}/bdb_route_entropy.json`, { signal: AbortSignal.timeout(8000) }),
-      fetch(`${_NFL_NGS_RELAY}/bdb_xblock_pass_rush.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/bdb_tendency_fingerprint.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/bdb_time_to_throw.json`, { signal: AbortSignal.timeout(8000) }),
     ]);
@@ -4636,49 +4642,10 @@ async function nflTeamTablesInit() {
       }
       loaded++;
     }
-    if (spdR.ok) {
-      const j = await spdR.json();
-      for (const [, p] of Object.entries(j.data || {})) {
-        const t = (p.team || '').toUpperCase();
-        if (!t || p.maxSpeedMph == null) continue;
-        (NFL_BDB_SPEED[t] = NFL_BDB_SPEED[t] || []).push({ name: p.name, mph: p.maxSpeedMph });
-      }
-      for (const t in NFL_BDB_SPEED) NFL_BDB_SPEED[t].sort((a, b) => b.mph - a.mph);
-      loaded++;
-    }
-    if (sepR.ok) {
-      const j = await sepR.json();
-      for (const [, p] of Object.entries(j.data || {})) {
-        const t = (p.team || '').toUpperCase();
-        if (!t || p.avgSepYds == null) continue;
-        (NFL_BDB_SEP[t] = NFL_BDB_SEP[t] || []).push({ name: p.name, sep: p.avgSepYds, pos: p.pos });
-      }
-      for (const t in NFL_BDB_SEP) NFL_BDB_SEP[t].sort((a, b) => b.sep - a.sep);
-      loaded++;
-    }
-    if (rteR.ok) {
-      const j = await rteR.json();
-      for (const [, p] of Object.entries(j.data || {})) {
-        const t = (p.team || '').toUpperCase();
-        if (!t || p.entropyBits == null) continue;
-        (NFL_BDB_ROUTE[t] = NFL_BDB_ROUTE[t] || []).push({ name: p.name, ent: p.entropyBits, routes: p.distinctRoutes });
-      }
-      for (const t in NFL_BDB_ROUTE) NFL_BDB_ROUTE[t].sort((a, b) => b.ent - a.ent);
-      loaded++;
-    }
-    if (rushR.ok) {
-      const j = await rushR.json();
-      for (const [, p] of Object.entries(j.data || {})) {
-        const t = (p.team || '').toUpperCase();
-        if (!t || p.pressureRate == null) continue;
-        (NFL_BDB_RUSH[t] = NFL_BDB_RUSH[t] || []).push({ name: p.name, prs: p.pressureRate, pos: p.pos });
-      }
-      for (const t in NFL_BDB_RUSH) NFL_BDB_RUSH[t].sort((a, b) => b.prs - a.prs);
-      loaded++;
-    }
     if (tendR.ok) {
       const j = await tendR.json();
-      for (const [, p] of Object.entries(j.data || {})) {
+      NFL_BDB_TEND_SEASON = _bdbSeason(j);
+      for (const [, p] of Object.entries(NFL_BDB_TEND_SEASON ? (j.data || {}) : {})) {
         const t = (p.team || '').toUpperCase();
         if (!t || p.playActionRate == null) continue;
         NFL_BDB_TEND[t] = { pa: p.playActionRate, db: p.dropbackRate, form: p.topFormation };
@@ -4687,7 +4654,8 @@ async function nflTeamTablesInit() {
     }
     if (tttR.ok) {
       const j = await tttR.json();
-      for (const [, p] of Object.entries(j.data || {})) {
+      NFL_BDB_TTT_SEASON = _bdbSeason(j);
+      for (const [, p] of Object.entries(NFL_BDB_TTT_SEASON ? (j.data || {}) : {})) {
         const t = (p.team || '').toUpperCase();
         if (!t || p.avgTimeToThrow == null) continue;
         NFL_BDB_TTT[t] = { ttt: p.avgTimeToThrow, db: p.dropbacks };
@@ -4703,10 +4671,6 @@ function getTeamEPA(teamAbbr) { return NFL_TEAM_EPA[(teamAbbr || '').toUpperCase
 function getSnapShare(teamAbbr, fullName) { return NFL_SNAP[`${(teamAbbr || '').toUpperCase()}|${fullName}`] ?? null; }
 function getDepthStarter(teamAbbr, posAbb) { return NFL_DEPTH[(teamAbbr || '').toUpperCase()]?.[posAbb] || null; }
 function getTeamParticipation(teamAbbr) { return NFL_PART[(teamAbbr || '').toUpperCase()] || null; }
-function getTeamTopSpeed(teamAbbr) { return NFL_BDB_SPEED[(teamAbbr || '').toUpperCase()]?.[0] || null; }
-function getTeamTopSep(teamAbbr) { return NFL_BDB_SEP[(teamAbbr || '').toUpperCase()]?.[0] || null; }
-function getTeamTopRoute(teamAbbr) { return NFL_BDB_ROUTE[(teamAbbr || '').toUpperCase()]?.[0] || null; }
-function getTeamTopRusher(teamAbbr) { return NFL_BDB_RUSH[(teamAbbr || '').toUpperCase()]?.[0] || null; }
 function getTeamTendency(teamAbbr) { return NFL_BDB_TEND[(teamAbbr || '').toUpperCase()] || null; }
 function getTeamTimeToThrow(teamAbbr) { return NFL_BDB_TTT[(teamAbbr || '').toUpperCase()] || null; }
 
@@ -18071,42 +18035,20 @@ function buildScoutingReport(game, sport) {
       };
       rows.push({ lbl: 'Pass pro', val: `${fmtPart(hPart, teamNick(game.home||''))} | ${fmtPart(aPart, teamNick(game.away||''))}` });
     }
-    // Fastest tracked player per team (BDB tracking top speed, mph — commodity/NGS-style).
-    const hSpd = getTeamTopSpeed(ha), aSpd = getTeamTopSpeed(aa);
-    if (hSpd || aSpd) {
-      const fmtSpd = (p, team) => p ? `${team} ${(p.name||'').replace(/^(\w)\w+\s+/, '$1.')} <em>${p.mph} mph</em>` : (team || '—');
-      rows.push({ lbl: 'Top speed', val: `${fmtSpd(hSpd, teamNick(game.home||''))} | ${fmtSpd(aSpd, teamNick(game.away||''))}` });
-    }
-    // Most-open targeted receiver (BDB avg separation at pass_arrived, yd — commodity/NGS 'separation').
-    const hSep = getTeamTopSep(ha), aSep = getTeamTopSep(aa);
-    if (hSep || aSep) {
-      const fmtSep = (p, team) => p ? `${team} ${(p.name||'').replace(/^(\w)\w+\s+/, '$1.')} <em>${p.sep} yd</em>` : (team || '—');
-      rows.push({ lbl: 'Top separation', val: `${fmtSep(hSep, teamNick(game.home||''))} | ${fmtSep(aSep, teamNick(game.away||''))}` });
-    }
-    // Most route-diverse receiver (BDB route entropy, bits — commodity route-mix diversity).
-    const hRte = getTeamTopRoute(ha), aRte = getTeamTopRoute(aa);
-    if (hRte || aRte) {
-      const fmtRte = (p, team) => p ? `${team} ${(p.name||'').replace(/^(\w)\w+\s+/, '$1.')} <em>${p.ent} bits</em>` : (team || '—');
-      rows.push({ lbl: 'Route tree', val: `${fmtRte(hRte, teamNick(game.home||''))} | ${fmtRte(aRte, teamNick(game.away||''))}` });
-    }
-    // Top pressure-generating pass rusher (BDB pressure rate — commodity/PFF-style).
-    const hPrsh = getTeamTopRusher(ha), aPrsh = getTeamTopRusher(aa);
-    if (hPrsh || aPrsh) {
-      const fmtPrsh = (p, team) => p ? `${team} ${(p.name||'').replace(/^(\w)\w+\s+/, '$1.')} <em>${Math.round(p.prs * 100)}% prs</em>` : (team || '—');
-      rows.push({ lbl: 'Pass rush', val: `${fmtPrsh(hPrsh, teamNick(game.home||''))} | ${fmtPrsh(aPrsh, teamNick(game.away||''))}` });
-    }
-    // Team offensive tendency fingerprint (BDB play-action % + top formation — factual).
+    // Team offensive tendency fingerprint (BDB play-action % + top formation — factual),
+    // from the season its envelope declares, and labelled with it: these rows sit
+    // beside current-season rows, and without the year they read as this season.
     const hTend = getTeamTendency(ha), aTend = getTeamTendency(aa);
-    if (hTend || aTend) {
+    if ((hTend || aTend) && NFL_BDB_TEND_SEASON) {
       const fmtTend = (p, team) => p ? `${team} <em>${Math.round(p.pa * 100)}% PA</em> · ${p.form}` : (team || '—');
-      rows.push({ lbl: 'Tendencies', val: `${fmtTend(hTend, teamNick(game.home||''))} | ${fmtTend(aTend, teamNick(game.away||''))}` });
+      rows.push({ lbl: `Tendencies (${NFL_BDB_TEND_SEASON})`, val: `${fmtTend(hTend, teamNick(game.home||''))} | ${fmtTend(aTend, teamNick(game.away||''))}` });
     }
-    // Avg time-to-throw (BDB, seconds — commodity/NGS 'time to throw'). Completes the
-    // pocket story alongside Pass pro (pressure faced) + Pass rush (pressure generated).
+    // Avg time-to-throw (BDB, seconds — commodity/NGS 'time to throw'), team-level,
+    // labelled with its envelope's season for the same reason as Tendencies.
     const hTtt = getTeamTimeToThrow(ha), aTtt = getTeamTimeToThrow(aa);
-    if (hTtt || aTtt) {
+    if ((hTtt || aTtt) && NFL_BDB_TTT_SEASON) {
       const fmtTtt = (p, team) => p ? `${team} <em>${p.ttt}s</em>` : (team || '—');
-      rows.push({ lbl: 'Time to throw', val: `${fmtTtt(hTtt, teamNick(game.home||''))} | ${fmtTtt(aTtt, teamNick(game.away||''))}` });
+      rows.push({ lbl: `Time to throw (${NFL_BDB_TTT_SEASON})`, val: `${fmtTtt(hTtt, teamNick(game.home||''))} | ${fmtTtt(aTtt, teamNick(game.away||''))}` });
     }
     // Injury designations (official Out/Doubtful/Questionable only — Rule 1).
     // ● marks a starter (offense snap share ≥ 50% — snap-counts table): a starter
@@ -23357,7 +23299,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-10a';
+  const SW_VERSION = '2026-10-17a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

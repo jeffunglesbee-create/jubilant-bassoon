@@ -1123,35 +1123,36 @@ assert('A-NFLTEAM-1 — NFL: team EPA + snap + depth-chart tables wired (init + 
   html.includes("lbl: 'Team EPA'") && html.includes("lbl: 'Start QB'"),
   'NFL team tables must be wired: nflTeamTablesInit, team_epa/snap-counts/depth-charts fetches, getTeamEPA/getSnapShare/getDepthStarter, Team EPA + Start QB rows');
 
-assert('A-NFLBDB-1 — NFL P3: BDB tracking top speed wired (fetch + accessor + row)',
-  html.includes('/bdb_speed.json') && html.includes('getTeamTopSpeed') &&
-  html.includes('NFL_BDB_SPEED') && html.includes("lbl: 'Top speed'"),
-  'NFL BDB speed must be wired: bdb_speed.json fetch, getTeamTopSpeed, NFL_BDB_SPEED, Top speed scout row');
+// docs/CC-CMD-2026-10-16-bdb-vintage-retrofit.md, owner ruling 2026-10-17. BDB
+// tracking is the 2022 season. The four PLAYER-keyed rows filed each player under
+// his 2022 team in a current game and are gone; INVERTED from the old wiring
+// assertions, so they cannot come back by accident. The two TEAM-keyed rows stay,
+// labelled with the season their envelope declares, and are not rendered at all
+// when the envelope declares none.
+assert('A-NFLBDB-1 — NFL BDB player-keyed rows are NOT shown (2022 rosters in a current game)',
+  ['/bdb_speed.json', '/bdb_separation.json', '/bdb_route_entropy.json', '/bdb_xblock_pass_rush.json']
+    .every(f => !html.includes(f)) &&
+  ['getTeamTopSpeed', 'getTeamTopSep', 'getTeamTopRoute', 'getTeamTopRusher',
+   'NFL_BDB_SPEED', 'NFL_BDB_SEP', 'NFL_BDB_ROUTE', 'NFL_BDB_RUSH'].every(t => !html.includes(t)) &&
+  ["lbl: 'Top speed'", "lbl: 'Top separation'", "lbl: 'Route tree'", "lbl: 'Pass rush'"].every(t => !html.includes(t)),
+  'a player-keyed BDB row is back: it shows a 2022 player under his 2022 team in a current game');
 
-assert('A-NFLSEP-1 — NFL P3: BDB separation wired (fetch + accessor + row)',
-  html.includes('/bdb_separation.json') && html.includes('getTeamTopSep') &&
-  html.includes('NFL_BDB_SEP') && html.includes("lbl: 'Top separation'"),
-  'NFL BDB separation must be wired: bdb_separation.json fetch, getTeamTopSep, NFL_BDB_SEP, Top separation scout row');
-
-assert('A-NFLRTE-1 — NFL P3: BDB route entropy wired (fetch + accessor + row)',
-  html.includes('/bdb_route_entropy.json') && html.includes('getTeamTopRoute') &&
-  html.includes('NFL_BDB_ROUTE') && html.includes("lbl: 'Route tree'"),
-  'NFL BDB route entropy must be wired: bdb_route_entropy.json fetch, getTeamTopRoute, NFL_BDB_ROUTE, Route tree scout row');
-
-assert('A-NFLRUSH2-1 — NFL P3: BDB pass-rush pressure wired (fetch + accessor + row)',
-  html.includes('/bdb_xblock_pass_rush.json') && html.includes('getTeamTopRusher') &&
-  html.includes('NFL_BDB_RUSH') && html.includes("lbl: 'Pass rush'"),
-  'NFL BDB pass-rush must be wired: bdb_xblock_pass_rush.json fetch, getTeamTopRusher, NFL_BDB_RUSH, Pass rush scout row');
-
-assert('A-NFLTEND-1 — NFL P3: BDB tendency fingerprint wired (fetch + accessor + row)',
+assert('A-NFLTEND-1 — NFL BDB tendency: fetched, and labelled with its envelope season',
   html.includes('/bdb_tendency_fingerprint.json') && html.includes('getTeamTendency') &&
-  html.includes('NFL_BDB_TEND') && html.includes("lbl: 'Tendencies'"),
-  'NFL BDB tendency must be wired: bdb_tendency_fingerprint.json fetch, getTeamTendency, NFL_BDB_TEND, Tendencies scout row');
+  html.includes('NFL_BDB_TEND_SEASON = _bdbSeason(j)') &&
+  html.includes('lbl: `Tendencies (${NFL_BDB_TEND_SEASON})`') && !html.includes("lbl: 'Tendencies'"),
+  'the Tendencies row must be labelled with the season its envelope declares');
 
-assert('A-NFLTTT-1 — NFL P3: BDB time-to-throw wired (fetch + accessor + row)',
+assert('A-NFLTTT-1 — NFL BDB time-to-throw: fetched, and labelled with its envelope season',
   html.includes('/bdb_time_to_throw.json') && html.includes('getTeamTimeToThrow') &&
-  html.includes('NFL_BDB_TTT') && html.includes("lbl: 'Time to throw'"),
-  'NFL BDB time-to-throw must be wired: bdb_time_to_throw.json fetch, getTeamTimeToThrow, NFL_BDB_TTT, Time to throw scout row');
+  html.includes('NFL_BDB_TTT_SEASON = _bdbSeason(j)') &&
+  html.includes('lbl: `Time to throw (${NFL_BDB_TTT_SEASON})`') && !html.includes("lbl: 'Time to throw'"),
+  'the Time to throw row must be labelled with the season its envelope declares');
+
+assert('A-NFLBDB-2 — a BDB table whose envelope declares no season renders no row',
+  html.includes('(hTend || aTend) && NFL_BDB_TEND_SEASON') && html.includes('(hTtt || aTtt) && NFL_BDB_TTT_SEASON') &&
+  /const _bdbSeason = j => \(Number\.isInteger\(j\?\.season\)/.test(html),
+  'a BDB row would render with no season, which reads as the current one');
 
 assert('A-NFLSEED-1 — NFL playoff tracker wired (gated init + store + Stats-tab consumer)',
   html.includes('nflPlayoffSeedsInit') && html.includes('NFL_PLAYOFF_SEEDS') &&
