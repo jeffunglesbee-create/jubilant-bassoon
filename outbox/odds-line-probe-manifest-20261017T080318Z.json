@@ -1,0 +1,715 @@
+{
+  "probed_at": "2026-10-17T08:03:18.329Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "triggered_by": "schedule",
+  "window": {
+    "cron": "03:45Z US window",
+    "delay_minutes": 258,
+    "trigger": "schedule",
+    "et_hour": 4,
+    "today_likely_complete": false,
+    "step_back_days": 1,
+    "step_back_source": "scheduled-default-1",
+    "reads_complete_slate": true,
+    "zero_debriefs_is_evidence": true
+  },
+  "sw_version": "2026-10-10a",
+  "cards_seen": 0,
+  "odds_slot_present_in_dom": true,
+  "slots_hidden": 0,
+  "slots_visible": 1,
+  "states": {
+    "no_odds": {
+      "game": "nba:0012600008",
+      "text": "(no movement line — buildOddsMovement returned null; 16 of 17 rendered debriefs)"
+    },
+    "opened_only": null,
+    "unchanged": {
+      "game": "espn:401874959",
+      "text": "Home moneyline +130 (43% implied), unchanged from open"
+    },
+    "moved": null
+  },
+  "debriefs_total": 17,
+  "debriefs_with_movement_line": 1,
+  "debriefs_no_movement_line": 16,
+  "date_label": "Yesterday",
+  "stepped_back_days": 1,
+  "setup_overlay_dismissed": false,
+  "date_nav_error": null,
+  "slate_by_step": [
+    {
+      "step": 0,
+      "label": "Today",
+      "cards": 54
+    },
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "cards": 23
+    }
+  ],
+  "slate_settle_series": [
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "series": [
+        {
+          "at_s": 5,
+          "cards": 23
+        },
+        {
+          "at_s": 10,
+          "cards": 23
+        },
+        {
+          "at_s": 15,
+          "cards": 23
+        },
+        {
+          "at_s": 20,
+          "cards": 23
+        }
+      ]
+    }
+  ],
+  "slate_settle_series_step0": [
+    {
+      "at_s": 5,
+      "total": 54,
+      "since_nav_ms": 17816,
+      "by_sport": {
+        "Baseball (MLB)": 1,
+        "Tennis": 50,
+        "Canadian Football (CFL)": 2,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 10,
+      "total": 54,
+      "since_nav_ms": 22821,
+      "by_sport": {
+        "Baseball (MLB)": 1,
+        "Tennis": 50,
+        "Canadian Football (CFL)": 2,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 15,
+      "total": 54,
+      "since_nav_ms": 27825,
+      "by_sport": {
+        "Baseball (MLB)": 1,
+        "Tennis": 50,
+        "Canadian Football (CFL)": 2,
+        "Golf": 1
+      }
+    }
+  ],
+  "slate_by_sport": {
+    "Baseball (MLB)": 1,
+    "Tennis": 50,
+    "Canadian Football (CFL)": 2,
+    "Golf": 1
+  },
+  "slate_sections_present": [
+    "Baseball (MLB)",
+    "Tennis",
+    "Canadian Football (CFL)",
+    "Golf"
+  ],
+  "slate_sections_present_date_label": "Today",
+  "slate_sections_at_model_read": [
+    "NBA",
+    "NHL",
+    "Baseball (MLB)",
+    "EFL Championship",
+    "La Liga",
+    "Serie A",
+    "Bundesliga",
+    "Ligue 1",
+    "College Football"
+  ],
+  "slate_sections_at_model_read_date_label": "Yesterday",
+  "gap_compared_on": "Yesterday",
+  "gap_pre_step_census_was": "Today",
+  "slate_read_at_ms": 27825,
+  "slate_settled_at_s": 15,
+  "slate_settle_reached": true,
+  "slate_cards_date_label": "Yesterday",
+  "slate_cards_after_steps": 1,
+  "empty_note": null,
+  "main_state": null,
+  "page_errors": [],
+  "page_error_count": 0,
+  "date_nav_check": {
+    "label": "Thu, Oct 15",
+    "cards": 149,
+    "empty_note": null,
+    "loading_wraps": 0,
+    "loading_wrap_in_main": 0,
+    "main_children": [
+      "section#field-newspaper.field-newspaper",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section"
+    ],
+    "lcp_anchor_anywhere": 0,
+    "lcp_anchor_in_main": 0,
+    "rejections": [],
+    "failure_kind": null,
+    "ok": true
+  },
+  "context_game_requests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600008",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600018",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600021",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600056",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600057",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600058",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600059",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600060",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600061",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600019",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600062",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nba%3A0012600063",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020119",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020120",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401880218",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401882844",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401874959",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401884770",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401876437",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401862801",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401858493",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401869844"
+  ],
+  "context_id_forms": {
+    "other": 14,
+    "espn_prefixed": 8
+  },
+  "v2_games_requests": 62,
+  "v2_games_by_sport": {
+    "nba": 2,
+    "nhl": 2,
+    "mlb": 2,
+    "wnba": 2,
+    "mls": 18,
+    "afl": 2,
+    "epl": 2,
+    "ucl": 2,
+    "europa": 2,
+    "conference": 2,
+    "uclqual": 2,
+    "europaqual": 2,
+    "conferencequal": 2,
+    "eflchamp": 2,
+    "eflone": 2,
+    "efltwo": 2,
+    "laliga": 2,
+    "seriea": 2,
+    "bundesliga": 2,
+    "ligue1": 2,
+    "wc26": 2,
+    "nfl": 2,
+    "cfb": 2
+  },
+  "v2_games_dates": {
+    "2026-10-17": 27,
+    "2026-10-16": 27,
+    "2026-10-15": 4,
+    "2026-10-14": 4
+  },
+  "espn_scores_by_sport": {
+    "nba": 8,
+    "nhl": 14,
+    "mlb": 1,
+    "wnba": 1,
+    "seriea": 3,
+    "mls": 14,
+    "bundesliga": 6,
+    "laliga": 4,
+    "epl": 5,
+    "efltwo": 12,
+    "cfb": 52,
+    "ligue1": 3,
+    "(no _sport)": 50,
+    "eflchamp": 11,
+    "eflone": 11
+  },
+  "slate_state": {
+    "renderLedger": {
+      "renders": 9,
+      "lastRenderAt": 1792224227578,
+      "lastPushAt": 1792224200560,
+      "lastPushSport": "efltwo",
+      "pushesSinceLastRender": 0
+    },
+    "allData": {
+      "sportsIsArray": true,
+      "sportsLength": 9,
+      "sportsLabels": [
+        "NBA",
+        "NHL",
+        "Baseball (MLB)",
+        "EFL Championship",
+        "La Liga",
+        "Serie A",
+        "Bundesliga",
+        "Ligue 1",
+        "College Football"
+      ],
+      "sportsGameCounts": [
+        {
+          "label": "NBA",
+          "sport": "NBA",
+          "games": 12
+        },
+        {
+          "label": "NHL",
+          "sport": "NHL",
+          "games": 2
+        },
+        {
+          "label": "Baseball (MLB)",
+          "sport": "Baseball (MLB)",
+          "games": 1
+        },
+        {
+          "label": "EFL Championship",
+          "sport": "EFL Championship",
+          "games": 1
+        },
+        {
+          "label": "La Liga",
+          "sport": "La Liga",
+          "games": 1
+        },
+        {
+          "label": "Serie A",
+          "sport": "Serie A",
+          "games": 1
+        },
+        {
+          "label": "Bundesliga",
+          "sport": "Bundesliga",
+          "games": 1
+        },
+        {
+          "label": "Ligue 1",
+          "sport": "Ligue 1",
+          "games": 1
+        },
+        {
+          "label": "College Football",
+          "sport": "College Football",
+          "games": 3
+        }
+      ]
+    },
+    "v2SectionInjected": {
+      "cfb": true,
+      "wnba": true,
+      "mls": true,
+      "epl": true,
+      "laliga": true,
+      "seriea": true,
+      "bundesliga": true,
+      "ligue1": true,
+      "eflchamp": true,
+      "eflone": true,
+      "efltwo": true
+    }
+  },
+  "render_after_last_push_ms": 27018,
+  "sections_model_not_in_dom": [],
+  "gap_split": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "section_key_mismatches": [],
+  "gap_on_dom_key": [],
+  "gap_split_on_dom_key": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "render_trace": {
+    "at": 1792224227754,
+    "outcome": "rendered",
+    "activeFilter": "all",
+    "myTeamsFilter": false,
+    "rivalsFilter": false,
+    "freeOnlyFilter": false,
+    "sportsIn": 9,
+    "visibleCount": 9,
+    "filteredCount": 9,
+    "modelSections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 12
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 2
+      },
+      {
+        "sport": "Baseball (MLB)",
+        "label": "Baseball (MLB)",
+        "games": 1
+      },
+      {
+        "sport": "EFL Championship",
+        "label": "EFL Championship",
+        "games": 1
+      },
+      {
+        "sport": "La Liga",
+        "label": "La Liga",
+        "games": 1
+      },
+      {
+        "sport": "Serie A",
+        "label": "Serie A",
+        "games": 1
+      },
+      {
+        "sport": "Bundesliga",
+        "label": "Bundesliga",
+        "games": 1
+      },
+      {
+        "sport": "Ligue 1",
+        "label": "Ligue 1",
+        "games": 1
+      },
+      {
+        "sport": "College Football",
+        "label": "College Football",
+        "games": 3
+      }
+    ],
+    "sections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 12,
+        "emitted": true,
+        "chars": 39360
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 2,
+        "emitted": true,
+        "chars": 6583
+      },
+      {
+        "sport": "Baseball (MLB)",
+        "label": "Baseball (MLB)",
+        "games": 1,
+        "emitted": true,
+        "chars": 3545
+      },
+      {
+        "sport": "EFL Championship",
+        "label": "EFL Championship",
+        "games": 1,
+        "emitted": true,
+        "chars": 3151
+      },
+      {
+        "sport": "La Liga",
+        "label": "La Liga",
+        "games": 1,
+        "emitted": true,
+        "chars": 3205
+      },
+      {
+        "sport": "Serie A",
+        "label": "Serie A",
+        "games": 1,
+        "emitted": true,
+        "chars": 3214
+      },
+      {
+        "sport": "Bundesliga",
+        "label": "Bundesliga",
+        "games": 1,
+        "emitted": true,
+        "chars": 3335
+      },
+      {
+        "sport": "Ligue 1",
+        "label": "Ligue 1",
+        "games": 1,
+        "emitted": true,
+        "chars": 3201
+      },
+      {
+        "sport": "College Football",
+        "label": "College Football",
+        "games": 3,
+        "emitted": true,
+        "chars": 7921
+      }
+    ]
+  },
+  "render_trace_age_ms": 19285,
+  "gap_verdicts": [],
+  "gap_verdict_census": {},
+  "field_errors": [
+    {
+      "fn": "scores:find-espn-score-no-match",
+      "err": "no match found: App State Mountaineers @ Coastal Carolina Chanticleers",
+      "ts": 1792224227730
+    },
+    {
+      "fn": "standings:nba-parsed",
+      "err": "all 3 fallback sources failed (ESPN, NBA CDN relay, BDL)",
+      "ts": 1792224201583
+    },
+    {
+      "fn": "journalism:prerendered-fetch",
+      "err": "relay 200 but no usable data.brief",
+      "ts": 1792224201974
+    },
+    {
+      "fn": "user:fetch-state",
+      "err": "HTTP 404",
+      "ts": 1792224202798
+    }
+  ],
+  "field_error_count": 4,
+  "field_errors_by_fn": {
+    "scores:find-espn-score-no-match": 1,
+    "standings:nba-parsed": 1,
+    "journalism:prerendered-fetch": 1,
+    "user:fetch-state": 1
+  },
+  "visible_samples": [
+    {
+      "id": "espn:401874959",
+      "label": "Sassuolo @ Frosinone",
+      "hidden": false,
+      "text": "Home moneyline +130 (43% implied), unchanged from open"
+    }
+  ],
+  "error": null,
+  "slate_cards": 23,
+  "debrief_injected": 22,
+  "debrief_visible": 17,
+  "existing_odds_layers": 1,
+  "debrief_cards": [
+    {
+      "gameid": "nba:0012600008",
+      "sport": "NBA",
+      "home": "Dallas Mavericks",
+      "away": "Atlanta Hawks",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600018",
+      "sport": "NBA",
+      "home": "Philadelphia 76ers",
+      "away": "Boston Celtics",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600021",
+      "sport": "NBA",
+      "home": "Orlando Magic",
+      "away": "Miami Heat",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600056",
+      "sport": "NBA",
+      "home": "Detroit Pistons",
+      "away": "Toronto Raptors",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600057",
+      "sport": "NBA",
+      "home": "Indiana Pacers",
+      "away": "Milwaukee Bucks",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600058",
+      "sport": "NBA",
+      "home": "Chicago Bulls",
+      "away": "Minnesota Timberwolves",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600059",
+      "sport": "NBA",
+      "home": "Memphis Grizzlies",
+      "away": "Charlotte Hornets",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600060",
+      "sport": "NBA",
+      "home": "New Orleans Pelicans",
+      "away": "Washington Wizards",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600061",
+      "sport": "NBA",
+      "home": "San Antonio Spurs",
+      "away": "Sacramento Kings",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nba:0012600062",
+      "sport": "NBA",
+      "home": "Phoenix Suns",
+      "away": "Utah Jazz",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401882844",
+      "sport": "La Liga",
+      "home": "Deportivo",
+      "away": "Levante",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401874959",
+      "sport": "Serie A",
+      "home": "Frosinone",
+      "away": "Sassuolo",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401884770",
+      "sport": "Bundesliga",
+      "home": "Eintracht Frankfurt",
+      "away": "FC Cologne",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401876437",
+      "sport": "Ligue 1",
+      "home": "Le Mans",
+      "away": "Toulouse",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401862801",
+      "sport": "College Football",
+      "home": "Tulane Green Wave",
+      "away": "Memphis Tigers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401858493",
+      "sport": "College Football",
+      "home": "Purdue Boilermakers",
+      "away": "Washington Huskies",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401869844",
+      "sport": "College Football",
+      "home": "Coastal Carolina Chanticleers",
+      "away": "App State Mountaineers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    }
+  ],
+  "odds_layer_present_in_dom": true
+}
