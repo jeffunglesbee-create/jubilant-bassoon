@@ -27,6 +27,13 @@
 // hide inside `catch-collapse` shrinkage; per repo, because a shared number
 // lets one repo's improvement pay for the other's regression.
 //
+// ONE BASELINE PER REPO, HELD BY THAT REPO. --baseline may be given once per
+// file; their `repos` are merged, and a repo named by two files fails. So
+// field-relay-nba keeps its own docs/absence-collapse-baseline.json, a relay
+// rise is red at the relay commit and bumped there, and this repo's gate reads
+// the relay's file out of the same clone it scans. Regenerate a repo's file by
+// scanning that repo's root alone with --write-baseline.
+//
 // --require GATES the ratchet. Under a ratchet a matcher that stopped matching
 // reads as improvement, so with --baseline every scanned root must carry a
 // --require that hits a flagged site in that root, and if any --require
@@ -200,6 +207,17 @@ export function summarise(flagged, suppressed, repos = []) {
     return out;
 }
 
+/** Merge several baseline files' `repos`. A repo in two files is an error:
+ *  two owners for one number is how one quietly overrides the other. */
+export function mergeBaselines(files) {
+    const repos = {}, problems = [];
+    for (const { file, repos: r } of files) for (const [name, v] of Object.entries(r ?? {})) {
+        if (repos[name]) problems.push(`repo ${name} is in two baselines (${repos[name].file}, ${file})`);
+        else repos[name] = { ...v, file };
+    }
+    return { repos, problems };
+}
+
 /** Compare a summary against a baseline of the same shape. Returns every rise,
  *  every fall, and every structural problem; a run fails on any rise or problem. */
 export function compareToBaseline(now, base) {
@@ -242,6 +260,8 @@ function ratchetSelfTest() {
         ['a scanned repo that reached zero is still scanned', compareToBaseline(summarise([], [], ['a', 'b']), base).ok === true],
         ['a baselined repo that was not scanned fails', !compareToBaseline(summarise([r('a', '|| []', 'a/x.js:1', 'x || []')], []), base).ok],
         ['a scanned repo with no baseline fails', !compareToBaseline({ ...base, c: { flagged: {}, suppressed: {} } }, base).ok],
+        ['two baseline files merge, one repo each', (() => { const m = mergeBaselines([{ file: 'x', repos: { a: base.a } }, { file: 'y', repos: { b: base.b } }]); return m.problems.length === 0 && compareToBaseline(base, m.repos).ok; })()],
+        ['a repo in two baseline files is refused', mergeBaselines([{ file: 'x', repos: { a: base.a } }, { file: 'y', repos: { a: base.a } }]).problems.length === 1],
     ];
     const bad = cases.filter(([, ok]) => !ok);
     for (const [n] of bad) console.error(`RATCHET SELF-TEST FAILED: ${n}`);
@@ -331,7 +351,8 @@ for (const need of requires) {
     else { console.error(`\nrequire FAILED: no flagged site matches "${need}" — the check does not work`); failed = true; }
 }
 
-const baselineArg = args.find(a => a.startsWith('--baseline='));
+const baselineArgs = args.filter(a => a.startsWith('--baseline='));
+const baselineArg = baselineArgs[0];
 const writeArg = args.find(a => a.startsWith('--write-baseline='));
 if (baselineArg || writeArg) {
     // Every scanned root must be proven reachable by its own --require, or an
@@ -360,16 +381,22 @@ if (writeArg) {
     console.log(`\nbaseline written to ${file}`);
 }
 if (baselineArg) {
-    const file = baselineArg.slice('--baseline='.length);
-    let base;
-    try { base = JSON.parse(readFileSync(file, 'utf8')).repos; } catch (e) { console.error(`\nRATCHET FAILED: cannot read baseline ${file}: ${e.message}`); process.exit(1); }
-    const c = compareToBaseline(summary, base ?? {});
+    const files = [];
+    for (const a of baselineArgs) {
+        const file = a.slice('--baseline='.length);
+        try { files.push({ file, repos: JSON.parse(readFileSync(file, 'utf8')).repos }); }
+        catch (e) { console.error(`\nRATCHET FAILED: cannot read baseline ${file}: ${e.message}`); process.exit(1); }
+    }
+    const merged = mergeBaselines(files);
+    const file = files.map(f => f.file).join(' + ');
+    const c = compareToBaseline(summary, merged.repos);
+    c.problems.unshift(...merged.problems); if (merged.problems.length) c.ok = false;
     for (const p of c.problems) console.error(`\nRATCHET FAILED: ${p}`);
     for (const r of c.rises) {
         console.error(`\nRATCHET FAILED: ${r.repo} ${r.kind} [${r.op}] ${r.count} > baseline ${r.baseline}. New site(s):`);
         for (const k of r.added) console.error(`    ${k}`);
     }
-    for (const f of c.falls) console.log(`\nbelow baseline: ${f.repo} ${f.kind} [${f.op}] ${f.count} < ${f.baseline} — lower it with --write-baseline=${file}`);
+    for (const f of c.falls) console.log(`\nbelow baseline: ${f.repo} ${f.kind} [${f.op}] ${f.count} < ${f.baseline} — lower it: scan ${f.repo} alone with --write-baseline=${merged.repos[f.repo]?.file}`);
     if (c.ok) console.log(`\nratchet OK: no op in ${Object.keys(summary).join(', ')} rose above ${file}, flagged or suppressed`);
     process.exit(c.ok ? 0 : 1);
 }
