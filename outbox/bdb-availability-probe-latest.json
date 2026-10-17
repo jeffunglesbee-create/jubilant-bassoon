@@ -1,5 +1,5 @@
 {
- "ran_at": "2026-10-17T19:24:00.342174+00:00",
+ "ran_at": "2026-10-17T19:25:21.165233+00:00",
  "kaggle_creds": true,
  "nflverse": {
   "status": 200,
@@ -723,21 +723,21 @@
     "seasons_named": []
    },
    {
-    "ref": "girrajjangid/nfl-big-dataset-bowl-2026",
-    "title": "NFL Big Dataset Bowl 2026",
-    "lastUpdated": "2025-11-01T04:26:08.98Z",
-    "totalBytes": 107052694,
-    "seasons_named": [
-     2026
-    ]
-   },
-   {
     "ref": "ethanwchen/the-speed-tax-code",
     "title": "The Speed Tax: code and cached results",
     "lastUpdated": "2026-10-10T17:20:15.477Z",
     "totalBytes": 53021564,
     "seasons_named": [
      2027
+    ]
+   },
+   {
+    "ref": "girrajjangid/nfl-big-dataset-bowl-2026",
+    "title": "NFL Big Dataset Bowl 2026",
+    "lastUpdated": "2025-11-01T04:26:08.98Z",
+    "totalBytes": 107052694,
+    "seasons_named": [
+     2026
     ]
    },
    {
@@ -777,13 +777,11 @@
     ]
    },
    {
-    "ref": "maxlem23/nflbigdatabowl2023maximilienlemelin",
-    "title": "nfl big data bowl 2023 maximilien lemelin",
-    "lastUpdated": "2023-01-09T21:52:04.87Z",
-    "totalBytes": 117152,
-    "seasons_named": [
-     2023
-    ]
+    "ref": "thedevastator/super-bowl-players-and-census-data",
+    "title": "Super Bowl Players and Census Data",
+    "lastUpdated": "2023-12-20T11:37:13.75Z",
+    "totalBytes": 740810,
+    "seasons_named": []
    },
    {
     "ref": "matthieusibert/nfl-players-with-birthday-except-one",
@@ -795,11 +793,13 @@
     ]
    },
    {
-    "ref": "thedevastator/super-bowl-players-and-census-data",
-    "title": "Super Bowl Players and Census Data",
-    "lastUpdated": "2023-12-20T11:37:13.75Z",
-    "totalBytes": 740810,
-    "seasons_named": []
+    "ref": "maxlem23/nflbigdatabowl2023maximilienlemelin",
+    "title": "nfl big data bowl 2023 maximilien lemelin",
+    "lastUpdated": "2023-01-09T21:52:04.87Z",
+    "totalBytes": 117152,
+    "seasons_named": [
+     2023
+    ]
    },
    {
     "ref": "ryanadamsai/sumergobirds",
@@ -908,17 +908,17 @@
     "seasons_named": []
    },
    {
-    "ref": "joedubya/darius-slay-mov",
-    "title": "darius_slay.mov",
-    "lastUpdated": "2025-01-06T06:50:40.607Z",
-    "totalBytes": 143996,
-    "seasons_named": []
-   },
-   {
     "ref": "cebo26033/stanley-cup-rings-plugging-my-ears",
     "title": "stanley_cup_rings_plugging_my_ears",
     "lastUpdated": "2025-11-29T17:17:51.043Z",
     "totalBytes": 332656137,
+    "seasons_named": []
+   },
+   {
+    "ref": "joedubya/darius-slay-mov",
+    "title": "darius_slay.mov",
+    "lastUpdated": "2025-01-06T06:50:40.607Z",
+    "totalBytes": 143996,
     "seasons_named": []
    },
    {
@@ -1075,6 +1075,566 @@
     "lastUpdated": "2023-09-07T05:30:46.423Z",
     "totalBytes": 694314869,
     "seasons_named": []
+   }
+  ]
+ },
+ "tracking_scale_datasets": {
+  "of_seen": 125,
+  "inspected": 34,
+  "rule": ">= 100 MB",
+  "rows": [
+   {
+    "ref": "kvinguemnengfotso/dataset-ideathon",
+    "lastUpdated": "2026-10-15T13:33:02.09Z",
+    "totalBytes": 512718566,
+    "files_status": 200,
+    "files_seen": 9,
+    "seasons_in_filenames": [
+     2023,
+     2024,
+     2025,
+     2027
+    ],
+    "has_tracking": true,
+    "has_plays_csv": false,
+    "has_player_play_csv": true,
+    "games_csv": "nfl-big-data-bowl-2027/games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2023",
+     "2024",
+     "2025"
+    ]
+   },
+   {
+    "ref": "jeevanreddyvaka/nfl-bowl",
+    "lastUpdated": "2026-10-08T06:02:08.337Z",
+    "totalBytes": 512718566,
+    "files_status": 200,
+    "files_seen": 9,
+    "seasons_in_filenames": [
+     2023,
+     2024,
+     2025,
+     2027
+    ],
+    "has_tracking": true,
+    "has_plays_csv": false,
+    "has_player_play_csv": true,
+    "games_csv": "nfl-big-data-bowl-2027/games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2023",
+     "2024",
+     "2025"
+    ]
+   },
+   {
+    "ref": "alexandermeau/nfl-big-data-bowl-archived-data-2025",
+    "lastUpdated": "2026-02-19T09:36:53.95Z",
+    "totalBytes": 1219840421,
+    "files_status": 200,
+    "files_seen": 13,
+    "seasons_in_filenames": [],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": true,
+    "games_csv": "big-data-bowl-data/games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "llkh0a/nfl-big-data-bowl-2026-prediction-public",
+    "lastUpdated": "2026-01-08T05:41:05.233Z",
+    "totalBytes": 107074944,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "sarthakteli18/nfl-big-bowl-data",
+    "lastUpdated": "2025-12-13T11:20:02.74Z",
+    "totalBytes": 103241098,
+    "files_status": 200,
+    "files_seen": 1,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "shefalibarde/nfl-big-data-bowl-2026-analytics",
+    "lastUpdated": "2025-12-08T17:26:17.263Z",
+    "totalBytes": 107953117,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "tomschubert/model-weights-query-centric",
+    "lastUpdated": "2025-12-03T23:28:07.383Z",
+    "totalBytes": 249222509,
+    "files_status": 200,
+    "files_seen": 14,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "cebo26033/stanley-cup-rings-plugging-my-ears",
+    "lastUpdated": "2025-11-29T17:17:51.043Z",
+    "totalBytes": 332656137,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "girrajjangid/nfl-big-dataset-bowl-2026",
+    "lastUpdated": "2025-11-01T04:26:08.98Z",
+    "totalBytes": 107052694,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "girrajjangid/nfl-big-data-bowl-2026",
+    "lastUpdated": "2025-10-29T03:34:11.513Z",
+    "totalBytes": 107052694,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "ryanadamsai/weaponxnfl",
+    "lastUpdated": "2025-10-15T17:56:10.71Z",
+    "totalBytes": 618709173,
+    "files_status": 200,
+    "files_seen": 8,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "llkh0a/nfl-big-data-bowl-2026-public",
+    "lastUpdated": "2025-10-15T10:20:34.483Z",
+    "totalBytes": 617667890,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "felipef2/nfl-big-data-bowl-2026",
+    "lastUpdated": "2025-10-13T01:32:02.873Z",
+    "totalBytes": 107052694,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "jayasreeselvam/nfl-big-data-bowl",
+    "lastUpdated": "2025-10-09T09:09:52.173Z",
+    "totalBytes": 107052694,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "ahnafhaidar/nfl-big-data-bowl-2026-analytics",
+    "lastUpdated": "2025-10-05T08:05:02.017Z",
+    "totalBytes": 107953117,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "navneetkumarjha/nfl-big-data-bowl-2026-prediction",
+    "lastUpdated": "2025-09-30T06:21:23.847Z",
+    "totalBytes": 107052694,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2023
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "ameau01/nfl-big-data-bowl-2025-archived-data",
+    "lastUpdated": "2025-08-18T20:17:24.297Z",
+    "totalBytes": 1219839927,
+    "files_status": 200,
+    "files_seen": 13,
+    "seasons_in_filenames": [],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": true,
+    "games_csv": "games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "jpmiller/nfl-competition-data",
+    "lastUpdated": "2025-08-08T23:26:23.073Z",
+    "totalBytes": 144957750,
+    "files_status": 200,
+    "files_seen": 13,
+    "seasons_in_filenames": [],
+    "has_tracking": true,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "nathanawright24/bigdatabowl25dataset",
+    "lastUpdated": "2025-01-06T23:54:59.85Z",
+    "totalBytes": 240528360,
+    "files_status": 200,
+    "files_seen": 18,
+    "seasons_in_filenames": [
+     2025
+    ],
+    "has_tracking": false,
+    "has_plays_csv": true,
+    "has_player_play_csv": true,
+    "games_csv": "drive-download-20250106T232343Z-001/games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "tomcleary0/big-data-bowl-2025-code",
+    "lastUpdated": "2025-01-05T22:31:24.307Z",
+    "totalBytes": 1221500931,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [
+     2025
+    ],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": true,
+    "games_csv": "Big Data Bowl 2025/data/games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "swifty10/big-data-bowl-data",
+    "lastUpdated": "2025-01-03T06:01:09.347Z",
+    "totalBytes": 1219839927,
+    "files_status": 200,
+    "files_seen": 13,
+    "seasons_in_filenames": [],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": true,
+    "games_csv": "games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "marriottgiftmumba/nfl-big-data-bowl-2025",
+    "lastUpdated": "2024-12-06T17:13:29.347Z",
+    "totalBytes": 1219840525,
+    "files_status": 200,
+    "files_seen": 13,
+    "seasons_in_filenames": [
+     2025
+    ],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": true,
+    "games_csv": "nfl-big-data-bowl-2025/games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "anis105/database",
+    "lastUpdated": "2024-01-08T14:42:26.143Z",
+    "totalBytes": 292800377,
+    "files_status": 200,
+    "files_seen": 13,
+    "seasons_in_filenames": [
+     2024
+    ],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": false,
+    "games_csv": "nfl-big-data-bowl-2024/games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "ashrithanumala/big-data-bowl-data",
+    "lastUpdated": "2024-01-07T06:16:42.63Z",
+    "totalBytes": 292765000,
+    "files_status": 200,
+    "files_seen": 13,
+    "seasons_in_filenames": [],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": false,
+    "games_csv": "games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2022"
+    ]
+   },
+   {
+    "ref": "sachingupta26/yfinance-stock-data",
+    "lastUpdated": "2023-09-07T05:30:46.423Z",
+    "totalBytes": 694314869,
+    "files_status": 200,
+    "files_seen": 12,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "mkdc761/nfl-big-data-bowl-2023",
+    "lastUpdated": "2023-01-08T22:14:23.72Z",
+    "totalBytes": 179585771,
+    "files_status": 200,
+    "files_seen": 14,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": true,
+    "has_player_play_csv": false,
+    "games_csv": "games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2021"
+    ]
+   },
+   {
+    "ref": "dmay01/usefuldata",
+    "lastUpdated": "2023-01-06T04:58:16.907Z",
+    "totalBytes": 166467348,
+    "files_status": 200,
+    "files_seen": 10,
+    "seasons_in_filenames": [],
+    "has_tracking": true,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "vingkan/big-data-bowl-2022-supplementals",
+    "lastUpdated": "2022-01-07T00:14:40.763Z",
+    "totalBytes": 123541793,
+    "files_status": 200,
+    "files_seen": 12,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "cdjarrell/big-data-bowl-2022-jarrell",
+    "lastUpdated": "2022-01-07T00:08:14.37Z",
+    "totalBytes": 124173061,
+    "files_status": 200,
+    "files_seen": 4,
+    "seasons_in_filenames": [
+     2020
+    ],
+    "has_tracking": true,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "charliezimmerman/nfl-play-data-2010-2020",
+    "lastUpdated": "2021-11-26T18:04:38.03Z",
+    "totalBytes": 221184857,
+    "files_status": 200,
+    "files_seen": 11,
+    "seasons_in_filenames": [
+     2015,
+     2016,
+     2017,
+     2018,
+     2019,
+     2020
+    ],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "jaiglazer/nfl-big-data-bowl",
+    "lastUpdated": "2021-09-30T01:20:08.4Z",
+    "totalBytes": 820735763,
+    "files_status": 200,
+    "files_seen": 7,
+    "seasons_in_filenames": [
+     2018,
+     2019,
+     2020
+    ],
+    "has_tracking": true,
+    "has_plays_csv": true,
+    "has_player_play_csv": false,
+    "games_csv": "games.csv",
+    "games_status": 200,
+    "games_seasons": [
+     "2018",
+     "2019",
+     "2020"
+    ]
+   },
+   {
+    "ref": "ijcrook/nfl-big-data-bowl-c2v-processed-data",
+    "lastUpdated": "2021-01-07T10:44:24.04Z",
+    "totalBytes": 457398841,
+    "files_status": 200,
+    "files_seen": 2,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "robikscube/nfl-big-data-bowl-2021-pp",
+    "lastUpdated": "2021-01-06T22:33:49.503Z",
+    "totalBytes": 266174531,
+    "files_status": 200,
+    "files_seen": 8,
+    "seasons_in_filenames": [],
+    "has_tracking": true,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
+   },
+   {
+    "ref": "mathurinache/nflbigdatabowl2021-feather-files",
+    "lastUpdated": "2020-10-15T18:34:49.09Z",
+    "totalBytes": 475231363,
+    "files_status": 200,
+    "files_seen": 20,
+    "seasons_in_filenames": [],
+    "has_tracking": false,
+    "has_plays_csv": false,
+    "has_player_play_csv": false,
+    "games_csv": null,
+    "games_status": null,
+    "games_seasons": null
    }
   ]
  },
