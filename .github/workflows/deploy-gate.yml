@@ -181,8 +181,10 @@ jobs:
       #
       # BOTH repos, one invocation, one script. The motivating instance was in
       # field-relay-nba, which no CI scanned. The relay is cloned OUTSIDE the
-      # workspace so `.` does not walk it twice. A relay commit that adds a site
-      # turns this red until the baseline is bumped here; that is the intent.
+      # workspace so `.` does not walk it twice. Each repo holds its own
+      # baseline: the relay's is read out of the same clone, so a relay rise is
+      # red at the relay commit (its deploy.yml/guards.yml run this script) and
+      # bumped there, never here.
       #
       # Each root's --require gates the ratchet: if either misses, the ratchet is
       # NOT EVALUATED, because a matcher that stopped matching reads as a fall.
@@ -192,7 +194,8 @@ jobs:
           git clone --depth 1 --quiet https://github.com/jeffunglesbee-create/field-relay-nba.git "$RUNNER_TEMP/field-relay-nba"
           node scripts/check-absence-collapse.mjs . "$RUNNER_TEMP/field-relay-nba" \
             --require=src/legacy/field.js --require=field-relay-nba/src/index.js \
-            --baseline=docs/absence-collapse-baseline.json
+            --baseline=docs/absence-collapse-baseline.json \
+            --baseline="$RUNNER_TEMP/field-relay-nba/docs/absence-collapse-baseline.json"
 
       # Two wiring attempts on one feature shipped green in a single session:
       # updateCard (0 callers) and renderCard (2, both NightOwl). Structural

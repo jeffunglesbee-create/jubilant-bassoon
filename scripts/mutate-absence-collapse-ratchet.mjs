@@ -24,7 +24,7 @@ const SCRIPT = 'scripts/check-absence-collapse.mjs';
 const BASELINE = 'docs/absence-collapse-baseline.json';
 const gate = (relay = RELAY) => spawnSync('node', [SCRIPT, '.', relay,
     '--require=src/legacy/field.js', '--require=field-relay-nba/src/index.js',
-    `--baseline=${BASELINE}`], { encoding: 'utf8' });
+    `--baseline=${BASELINE}`, `--baseline=${join(relay, BASELINE)}`], { encoding: 'utf8' });
 
 // The clean tree must pass first, or every "caught" below is meaningless.
 const clean = gate();

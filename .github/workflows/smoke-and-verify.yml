@@ -109,7 +109,8 @@ jobs:
           node scripts/mutate-absence-collapse-ratchet.mjs "$RUNNER_TEMP/field-relay-nba"
           node scripts/check-absence-collapse.mjs . "$RUNNER_TEMP/field-relay-nba" \
             --require=src/legacy/field.js --require=field-relay-nba/src/index.js \
-            --baseline=docs/absence-collapse-baseline.json
+            --baseline=docs/absence-collapse-baseline.json \
+            --baseline="$RUNNER_TEMP/field-relay-nba/docs/absence-collapse-baseline.json"
 
       - name: Every push-retry loop verifies the push landed
         run: |
