@@ -8,7 +8,7 @@ const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const BASE = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 const URL = BASE + (BASE.includes('?') ? '&' : '?') + 'wpt=1';
-const SAMPLE_S = Number(process.env.SAMPLE_S || 180);
+const SAMPLE_S = Number(process.env.SAMPLE_S || 60);
 const TS = new Date().toISOString().replace(/[:.]/g, '-');
 
 (async () => {
@@ -19,12 +19,14 @@ const TS = new Date().toISOString().replace(/[:.]/g, '-');
   const net = [];
   page.on('response', async (r) => {
     const u = r.url();
-    if (!/\/v2\/games\?sport=(nfl|mls)|tennis/i.test(u)) return;
+    if (!/\/v2\/games\?sport=(nfl|mls)|tennis|\/nflverse\//i.test(u)) return;
     let n = null;
-    try { const j = await r.json(); n = Array.isArray(j?.games) ? j.games.length : (Array.isArray(j) ? j.length : null); } catch (_) {}
+    try { const j = await r.json(); n = Array.isArray(j?.games) ? j.games.length : (Array.isArray(j) ? j.length : (j?.data ? `data:${Object.keys(j.data).length} season:${j.season}` : null)); } catch (e) { n = `unparsed: ${e.message}`; }
     net.push({ t: at(), status: r.status(), url: u.replace(/^https?:\/\/[^/]+/, ''), games: n });
   });
-  const out = { url: URL, ts: TS, sampleSeconds: SAMPLE_S, samples: [], net };
+  const failed = [];
+  page.on('requestfailed', (r) => { if (/nflverse|v2\/games/.test(r.url())) failed.push({ t: at(), url: r.url().replace(/^https?:\/\/[^/]+/, ''), why: r.failure()?.errorText }); });
+  const out = { url: URL, ts: TS, sampleSeconds: SAMPLE_S, samples: [], net, failed };
   try {
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     for (let s = 0; s <= SAMPLE_S; s += 10) {
