@@ -1,0 +1,41 @@
+# Captures the four NFL files the relay SERVES for field-laboratory's BDB scout
+# mirror (field-laboratory docs/CC-CMD-2026-10-18-bdb-scout-mirror.md, Task 1).
+# The served bytes are the source; outbox/nfl/ is this repo's committed copy and
+# can lag the route. The sandbox cannot reach *.workers.dev; a runner can.
+# Dispatch-only. Writes outbox/lab-bdb-capture/ with a sha256 manifest.
+name: lab-bdb-capture
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture the served files
+        run: |
+          set -euo pipefail
+          R=https://field-relay-nba.jeffunglesbee.workers.dev/nflverse
+          D=outbox/lab-bdb-capture
+          mkdir -p "$D"
+          curl -fsS "$R/bdb_speed.json"                -o "$D/bdb-speed-2022.json"
+          curl -fsS "$R/bdb_tendency_fingerprint.json" -o "$D/bdb-tendency-fingerprint-2022.json"
+          curl -fsS "$R/bdb_time_to_throw.json"        -o "$D/bdb-time-to-throw-2022.json"
+          curl -fsS "$R/depth-charts.json"             -o "$D/depth-charts-2026.json"
+          { echo "captured $(date -u +%Y-%m-%dT%H:%M:%SZ) run ${GITHUB_RUN_ID} from $R"
+            for f in "$D"/*.json; do echo "$(basename "$f") $(wc -c < "$f") bytes sha256 $(sha256sum "$f" | cut -d' ' -f1)"; done
+          } | tee "$D/MANIFEST.txt" >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit
+        run: |
+          git config user.email "claude@field.dev"; git config user.name "FIELD CI"
+          git add outbox/lab-bdb-capture
+          git diff --cached --quiet && exit 0
+          git commit -m "capture: served NFL files for the laboratory's BDB mirror [skip ci]"
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: push did not land after retries"; exit 1; }
