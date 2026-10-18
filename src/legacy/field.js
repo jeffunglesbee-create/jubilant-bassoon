@@ -4592,11 +4592,11 @@ const NFL_PART     = {};  // abbr -> {shotgunRate, avgBoxFaced, pressFacedRate, 
 // BDB tracking is the 2022 season (docs/CC-CMD-2026-10-16-bdb-vintage-retrofit.md;
 // owner ruling 2026-10-17). Only the two TEAM-keyed tables are shown, labelled
 // with the season their own envelope declares: a 2022 franchise tendency is an
-// honest historical note once it says 2022. The four PLAYER-keyed tables (top
-// speed, separation, route tree, pass rush) are no longer fetched: they filed
+// honest historical note once it says 2022. The four PLAYER-keyed tables filed
 // each player under his 2022 team and showed him in a current game, and a label
-// cannot fix a stale roster. Their files and route stay; nothing about the data
-// was wrong, only this panel's claim about it.
+// cannot fix a stale roster. Separation, route tree and pass rush are not
+// fetched. Top speed returned 2026-10-18 in a different form (below): per
+// player, on the current depth chart, as a floor. Files and route stay.
 const NFL_BDB_TEND  = {};  // abbr -> {pa, db, form} (P3, BDB team tendency fingerprint)
 const NFL_BDB_TTT   = {};  // abbr -> {ttt, db} (P3, BDB team avg time-to-throw seconds)
 // The season each table's envelope declares, or null. A table whose season is
@@ -4604,18 +4604,31 @@ const NFL_BDB_TTT   = {};  // abbr -> {ttt, db} (P3, BDB team avg time-to-throw 
 // unlabelled one (Rule 99).
 let NFL_BDB_TEND_SEASON = null;
 let NFL_BDB_TTT_SEASON  = null;
+// Top speed returns PER PLAYER, never per team (owner, 2026-10-18). A 2022 max is
+// a floor on what that player can reach, so it is shown as "≥" beside his own
+// name, for players on the CURRENT depth chart only. Keyed by name, because the
+// depth chart carries no BDB nflId. A name two 2022 players share (Josh Allen
+// BUF/JAX, Lamar Jackson BAL/CHI) maps to null: no row beats the wrong man's.
+const NFL_BDB_SPEED_BY_NAME = {};  // _bdbNameKey(name) -> mph | null (ambiguous)
+let NFL_BDB_SPEED_SEASON = null;
+const _bdbNameKey = name => {
+  const parts = String(name || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (parts.length > 1 && _MLB_SUFFIX_TOKENS.has(parts[parts.length - 1])) parts.pop();
+  return parts.join('').replace(/[^a-z]/g, '');
+};
 const _bdbSeason = j => (Number.isInteger(j?.season) && j.season >= 2000 && j.season <= 2100) ? j.season : null;
 let _nflTeamTablesLoaded = false;
 async function nflTeamTablesInit() {
   if (_nflTeamTablesLoaded) return;
   try {
-    const [epaR, snapR, depthR, partR, tendR, tttR] = await Promise.all([
+    const [epaR, snapR, depthR, partR, tendR, tttR, spdR] = await Promise.all([
       fetch(`${_NFL_NGS_RELAY}/team_epa.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/snap-counts.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/depth-charts.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/team-participation.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/bdb_tendency_fingerprint.json`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${_NFL_NGS_RELAY}/bdb_time_to_throw.json`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${_NFL_NGS_RELAY}/bdb_speed.json`, { signal: AbortSignal.timeout(8000) }),
     ]);
     let loaded = 0;
     if (epaR.ok) {
@@ -4662,6 +4675,16 @@ async function nflTeamTablesInit() {
       }
       loaded++;
     }
+    if (spdR.ok) {
+      const j = await spdR.json();
+      NFL_BDB_SPEED_SEASON = _bdbSeason(j);
+      for (const [, p] of Object.entries(NFL_BDB_SPEED_SEASON ? (j.data || {}) : {})) {
+        const k = _bdbNameKey(p.name);
+        if (!k || p.maxSpeedMph == null) continue;
+        NFL_BDB_SPEED_BY_NAME[k] = k in NFL_BDB_SPEED_BY_NAME ? null : p.maxSpeedMph;
+      }
+      loaded++;
+    }
     _nflTeamTablesLoaded = true;
     _recordRelayInit('nflTeamTablesInit', loaded > 0, loaded > 0 ? null : 'all team tables failed');
     if (FIELD_DEBUG) console.log(`[FIELD] NFL team tables: epa=${Object.keys(NFL_TEAM_EPA).length} snap=${Object.keys(NFL_SNAP).length} depth=${Object.keys(NFL_DEPTH).length}`);
@@ -4673,6 +4696,18 @@ function getDepthStarter(teamAbbr, posAbb) { return NFL_DEPTH[(teamAbbr || '').t
 function getTeamParticipation(teamAbbr) { return NFL_PART[(teamAbbr || '').toUpperCase()] || null; }
 function getTeamTendency(teamAbbr) { return NFL_BDB_TEND[(teamAbbr || '').toUpperCase()] || null; }
 function getTeamTimeToThrow(teamAbbr) { return NFL_BDB_TTT[(teamAbbr || '').toUpperCase()] || null; }
+// The current depth chart's QB/RB/WR/TE starters who have a 2022 max speed, in
+// that position order (not ranked: a ranking over the subset tracked in 2022
+// would leave out everyone who arrived since).
+function getStarterSpeedFloors(teamAbbr) {
+  const out = [];
+  for (const pos of ['QB', 'RB', 'WR', 'TE']) {
+    const name = getDepthStarter(teamAbbr, pos);
+    const mph = name ? NFL_BDB_SPEED_BY_NAME[_bdbNameKey(name)] : null;
+    if (mph != null) out.push({ name, mph });
+  }
+  return out;
+}
 
 // ── NFL playoff seeding tracker (data-gated) ────────────────────────────────
 // Conference seeds 1-7 + ESPN's own clinch markers. Consumed synchronously by
@@ -18050,6 +18085,15 @@ function buildScoutingReport(game, sport) {
       const fmtTtt = (p, team) => p ? `${team} <em>${p.ttt}s</em>` : (team || '—');
       rows.push({ lbl: `Time to throw (${NFL_BDB_TTT_SEASON})`, val: `${fmtTtt(hTtt, teamNick(game.home||''))} | ${fmtTtt(aTtt, teamNick(game.away||''))}` });
     }
+    // Speed floor: each current starter's 2022 tracked max, as "≥" — he reached
+    // it then, so he can reach at least that. Per player, beside his own name.
+    const hSpd = getStarterSpeedFloors(ha), aSpd = getStarterSpeedFloors(aa);
+    if ((hSpd.length || aSpd.length) && NFL_BDB_SPEED_SEASON) {
+      const fmtSpd = (list, team) => `${team} ` + (list.length
+        ? list.map(p => `${p.name.replace(/^(\w)\w+\s+/, '$1.')} <em>≥${p.mph.toFixed(1)}</em>`).join(' · ')
+        : '—');
+      rows.push({ lbl: `Speed floor mph (${NFL_BDB_SPEED_SEASON})`, val: `${fmtSpd(hSpd, teamNick(game.home||''))} | ${fmtSpd(aSpd, teamNick(game.away||''))}` });
+    }
     // Injury designations (official Out/Doubtful/Questionable only — Rule 1).
     // ● marks a starter (offense snap share ≥ 50% — snap-counts table): a starter
     // ruled Out matters more than a backup.
@@ -23299,7 +23343,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-17a';
+  const SW_VERSION = '2026-10-18a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

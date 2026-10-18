@@ -1130,10 +1130,10 @@ assert('A-NFLTEAM-1 — NFL: team EPA + snap + depth-chart tables wired (init + 
 // labelled with the season their envelope declares, and are not rendered at all
 // when the envelope declares none.
 assert('A-NFLBDB-1 — NFL BDB player-keyed rows are NOT shown (2022 rosters in a current game)',
-  ['/bdb_speed.json', '/bdb_separation.json', '/bdb_route_entropy.json', '/bdb_xblock_pass_rush.json']
+  ['/bdb_separation.json', '/bdb_route_entropy.json', '/bdb_xblock_pass_rush.json']
     .every(f => !html.includes(f)) &&
   ['getTeamTopSpeed', 'getTeamTopSep', 'getTeamTopRoute', 'getTeamTopRusher',
-   'NFL_BDB_SPEED', 'NFL_BDB_SEP', 'NFL_BDB_ROUTE', 'NFL_BDB_RUSH'].every(t => !html.includes(t)) &&
+   'NFL_BDB_SPEED =', 'NFL_BDB_SEP', 'NFL_BDB_ROUTE', 'NFL_BDB_RUSH'].every(t => !html.includes(t)) &&
   ["lbl: 'Top speed'", "lbl: 'Top separation'", "lbl: 'Route tree'", "lbl: 'Pass rush'"].every(t => !html.includes(t)),
   'a player-keyed BDB row is back: it shows a 2022 player under his 2022 team in a current game');
 
@@ -1149,8 +1149,21 @@ assert('A-NFLTTT-1 — NFL BDB time-to-throw: fetched, and labelled with its env
   html.includes('lbl: `Time to throw (${NFL_BDB_TTT_SEASON})`') && !html.includes("lbl: 'Time to throw'"),
   'the Time to throw row must be labelled with the season its envelope declares');
 
+// Owner, 2026-10-18: top speed returns per player, never per team. A 2022 max is
+// a floor ("≥") for that player, shown beside his name, only for players on the
+// CURRENT depth chart; a name two 2022 players share maps to null, not to one.
+assert('A-NFLSPD-1 — NFL BDB speed: per current starter, as a floor, season-labelled, ambiguous names dropped',
+  html.includes('/bdb_speed.json') && html.includes('NFL_BDB_SPEED_SEASON = _bdbSeason(j)') &&
+  html.includes('NFL_BDB_SPEED_BY_NAME[k] = k in NFL_BDB_SPEED_BY_NAME ? null : p.maxSpeedMph') &&
+  html.includes('const name = getDepthStarter(teamAbbr, pos)') &&
+  html.includes('<em>≥${p.mph.toFixed(1)}</em>') &&
+  html.includes('lbl: `Speed floor mph (${NFL_BDB_SPEED_SEASON})`') &&
+  !/getStarterSpeedFloors[\s\S]{0,600}\.sort\(/.test(html.slice(html.indexOf('function getStarterSpeedFloors'))),
+  'the speed row must be per current starter, shown as a floor with its season, with ambiguous 2022 names dropped and no ranking');
+
 assert('A-NFLBDB-2 — a BDB table whose envelope declares no season renders no row',
   html.includes('(hTend || aTend) && NFL_BDB_TEND_SEASON') && html.includes('(hTtt || aTtt) && NFL_BDB_TTT_SEASON') &&
+  html.includes('(hSpd.length || aSpd.length) && NFL_BDB_SPEED_SEASON') &&
   /const _bdbSeason = j => \(Number\.isInteger\(j\?\.season\)/.test(html),
   'a BDB row would render with no season, which reads as the current one');
 
