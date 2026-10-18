@@ -26963,7 +26963,7 @@ async function fetchSchedule(){
     };
     // MLS proof mode: inject fixture section into allData.sports so cards render.
     // Also push into `verified` (in scope from fetchSchedule closure) so the
-    // section survives fetchSupplemental's allData={sports:[...verified,...supplemental]}.
+    // section survives the supplemental merge below.
     if (_proofAdapter === 'mls-stats-api') {
       const _mlsFix = _MLS_PROOF_FIXTURES[_proofFixture] || _MLS_PROOF_FIXTURES.ok;
       const _mlsProofGames = (_mlsFix.games || []).map(g => ({
@@ -27021,7 +27021,14 @@ async function fetchSchedule(){
     const supplemental=[...(supp||[]),...(tennis||[])];
     if(supplemental && supplemental.length){
       try { performance.mark('field:supplemental'); } catch(_) {}
-      allData={sports:[...verified,...supplemental]};
+      // Merge into what allData holds NOW, not into the boot-time `verified`.
+      // The V2 poll pushes NFL/MLS/EPL… into allData.sports after boot, and the
+      // first poll lands before this does. Rebuilding from `verified` dropped
+      // them until the next poll, 30-60s later: measured 2026-10-18 on a live
+      // NFL Sunday (outbox/sport-section-timeline-*.json), NFL fetched at 2.5s,
+      // gone when tennis landed at 7.2s, back at 34s.
+      const _suppSports = new Set(supplemental.map(s => s.sport));
+      allData={sports:[...(allData?.sports || verified).filter(s => !_suppSports.has(s.sport)),...supplemental]};
       buildFilters(allData.sports);
       scheduleRenderAll(); // debounced — collapses with soccer
   injectDramaBadges();
@@ -28404,7 +28411,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-17a';
+  const SW_VERSION = '2026-10-18a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

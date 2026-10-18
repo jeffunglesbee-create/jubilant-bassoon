@@ -1161,6 +1161,14 @@ assert('A-NFLSPD-1 — NFL BDB speed: per current starter, as a floor, season-la
   !/getStarterSpeedFloors[\s\S]{0,600}\.sort\(/.test(html.slice(html.indexOf('function getStarterSpeedFloors'))),
   'the speed row must be per current starter, shown as a floor with its season, with ambiguous 2022 names dropped and no ranking');
 
+// 2026-10-18: the tennis/rugby merge rebuilt allData from the boot-time
+// `verified` list and dropped every V2-injected section (NFL, MLS, EPL…) for
+// the 30-60s until the next poll. It must merge into the current allData.
+assert('A-SUPPMERGE-1 — the supplemental merge keeps sections the V2 poll injected since boot',
+  html.includes('allData={sports:[...(allData?.sports || verified).filter(s => !_suppSports.has(s.sport)),...supplemental]}') &&
+  !html.includes('allData={sports:[...verified,...supplemental]}'),
+  'the supplemental merge rebuilds from the boot-time list and drops NFL/MLS/EPL until the next V2 poll');
+
 assert('A-NFLBDB-2 — a BDB table whose envelope declares no season renders no row',
   html.includes('(hTend || aTend) && NFL_BDB_TEND_SEASON') && html.includes('(hTtt || aTtt) && NFL_BDB_TTT_SEASON') &&
   html.includes('(hSpd.length || aSpd.length) && NFL_BDB_SPEED_SEASON') &&
