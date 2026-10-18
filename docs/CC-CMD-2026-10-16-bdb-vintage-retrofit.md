@@ -4,7 +4,7 @@
 **Repo:** jubilant-bassoon
 **Confidence gate:** >= 95 before any commit
 **Filed:** 2026-10-16 by chat
-**Status:** STAGED 2026-10-17 — owner ruling applied in `4172d95f` (4 player-keyed rows dropped, 2 team-keyed rows labelled with their season; envelopes unchanged by ruling). Live NFL verification waits on the 2026-10-18 21:00 UTC scout probe. Report: `outbox/cc-session-2026-10-17-bdb-vintage-task0.md`.
+**Status:** DONE 2026-10-18 — owner rulings applied in `4172d95f` (4 player-keyed rows dropped, 2 team-keyed rows labelled with their season) and `b615d5b8` (speed returns per current starter, as a floor). Live: probe run 39127795082, 12/12 NFL games hold the contract, speed floor on 12/12, rows per panel 11–13. Report: `outbox/cc-session-2026-10-17-bdb-vintage-task0.md`.
 **Related:** codex `incident-2026-10-15-bdb-tables-2022-season-served-as-2026`, OPEN.
 
 ## The state, measured 2026-10-15/16

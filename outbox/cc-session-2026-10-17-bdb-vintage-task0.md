@@ -222,17 +222,41 @@ From the render code (`buildScoutingReport`, NFL branch), with no row cap:
   so every NFL panel loses exactly four rows.
 - The live per-panel count is below.
 
-## Live NFL verification — LIVE_NFL_PENDING
+## Live NFL verification — DONE 2026-10-18
 
-**STAGED (Rule 74).** No NFL game was on the 2026-10-17 slate: the probe saw
-1 game, MLB, and 0 NFL. Details:
-- **Unblocked by:** the scheduled `nfl-bdb-scout-probe.yml` run, 2026-10-18
-  21:00 UTC (cron `0 21 * * 0`), during the Sunday slate.
-- **Verify:** in the newest `outbox/nfl-bdb-scout-manifest-*.json`,
-  `nflGameCount > 0` and `contractHoldsOnEveryNFLGame === true`;
-  `nflRowCount` gives the panel size.
-- **Automated:** a check-in on this session fires at 2026-10-18 21:45 UTC to
-  read it and close this section.
+Probe run **39127795082** (dispatched 12:35 UTC on the Sunday slate, not
+waiting for the 21:00 cron). Manifest:
+`outbox/nfl-bdb-scout-manifest-2026-10-18T12-35-03-548Z.json`.
+
+- `nflGameCount` **12** of 18 games. `contractHoldsOnEveryNFLGame` **true**.
+  - None of the four dropped rows appears.
+  - Tendencies and Time to throw carry "(2022)".
+- **The panel does not read thin:** `nflRowCount` min 11, median 12, max 13
+  (it was up to 16 before `4172d95f`).
+- **Speed floor:** rendered on **12/12** games, every value marked `≥`.
+  - Spot checks against `outbox/nfl/bdb_speed.json`: Metcalf ≥19.6
+    (19.64), Kenneth Walker III ≥22.1 (22.09).
+  - **The ambiguity guard holds live:** the Bills side reads
+    `J.Cook III ≥18.9 · D.Moore ≥20.5`, with no Josh Allen. The Ravens side
+    reads `D.Henry ≥20.6 · M.Andrews ≥19.4`, with no Lamar Jackson.
+  - The Browns side reads `—`, as measured on the copies.
+- The games were scheduled, not yet live. The rows come from static tables, so
+  game state does not change them. The 21:00 UTC scheduled run still goes red
+  on a regression.
+
+### One defect of mine, corrected by the deploy gate
+
+The manifest reports `swVersion` **2026-10-17a**, not the `2026-10-18a` I
+committed.
+- **Cause:** I dated the version by UTC. The rule is ET: the push was at
+  01:43 UTC, which is 21:43 ET on 10-17. The deploy gate's A190 step re-dated
+  it in `435c819b`.
+- **Cost:** it kept my suffix `a`, so this deploy has the same version as the
+  previous one. `sw.js` is stale-while-revalidate on the shell, so a returning
+  user sees the old panel for one load and the new one on the next.
+- **What was right:** `2026-10-17b`.
+- **Not changed:** the gate taking the suffix from `sw.js` unchanged is how it
+  is meant to work. The defect was my input.
 
 ## Left as is, deliberately
 

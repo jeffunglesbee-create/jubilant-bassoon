@@ -8,8 +8,10 @@ his own name, in position order, unranked. A name two 2022 players share
 (Josh Allen, Lamar Jackson, and 9 more) shows nothing. The team-ranked
 "Top speed" stays gone, and so do separation, route tree and pass rush.
 
-Smoke 1054/1054, 7/7 mutations caught, SW_VERSION 2026-10-18a. Live check: the
-2026-10-18 21:00 UTC scout probe; the 21:45 check-in reads it.
+Smoke 1054/1054, 7/7 mutations caught. SW_VERSION shipped as 2026-10-17a: I
+dated it by UTC and the deploy gate re-dated it to ET. **Live, DONE:** probe run
+39127795082 found 12/12 NFL games holding the contract, with the speed floor on
+12/12 and 11–13 rows per panel. The CC-CMD is DONE.
 
 Session doc: outbox/cc-session-2026-10-17-bdb-vintage-task0.md
 
