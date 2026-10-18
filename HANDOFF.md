@@ -1,5 +1,14 @@
 # FIELD HANDOFF
 
+## 2026-10-18 — BDB and NGS envelopes carry sourceDataset (laboratory mirror)
+
+`39305c07`: both builders write `sourceDataset`. The laboratory's
+`Vintage.decodeEnvelope` refused every BDB and NGS file without it. Both
+builders were rebuilt the same day; the served files are verified (capture run
+39143837171). The client is unaffected.
+
+Session doc: outbox/cc-session-2026-10-18-lab-bdb-mirror-producer.md
+
 ## 2026-10-18 — NFL rows missing on a live game: two fixes, both verified live
 
 - `cc66dcec`: the tennis/rugby merge no longer drops the NFL, MLS and EPL
