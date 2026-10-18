@@ -1,30 +1,40 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "39039993906",
-  "commit": "4b449b92135f503aa374a28722aa88c0f56ff87c",
-  "timestamp": "2026-10-17T14:17:08.965Z",
-  "cacheAccepted": false,
+  "runId": "39136957065",
+  "commit": "48a86f9ca3ff665339bd6277279325b23a39e04e",
+  "timestamp": "2026-10-18T14:40:19.437Z",
+  "cacheAccepted": true,
   "testApi": "pl-verify",
-  "schema": null,
-  "for_date": null,
-  "window_dates": null,
-  "games_found_by_date": null,
+  "schema": "2.1",
+  "for_date": "2026-10-18",
+  "window_dates": [
+    "2026-10-18",
+    "2026-10-19",
+    "2026-10-20",
+    "2026-10-21"
+  ],
+  "games_found_by_date": {
+    "2026-10-18": 3,
+    "2026-10-19": 2,
+    "2026-10-20": 1,
+    "2026-10-21": 1
+  },
   "days": [
     {
-      "iso": "2026-10-18",
-      "windowHasDay": false,
-      "windowMlbCount": 0,
-      "navigated": true,
-      "cardCount": 87,
-      "sectionCount": 99,
+      "iso": "2026-10-19",
+      "windowHasDay": true,
+      "windowMlbCount": 1,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
-      "error": null
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
     },
     {
-      "iso": "2026-10-19",
-      "windowHasDay": false,
-      "windowMlbCount": 0,
+      "iso": "2026-10-20",
+      "windowHasDay": true,
+      "windowMlbCount": 1,
       "navigated": false,
       "cardCount": 0,
       "sectionCount": 0,
@@ -33,8 +43,8 @@
       "error": null
     },
     {
-      "iso": "2026-10-20",
-      "windowHasDay": false,
+      "iso": "2026-10-21",
+      "windowHasDay": true,
       "windowMlbCount": 0,
       "navigated": false,
       "cardCount": 0,
@@ -44,34 +54,19 @@
       "error": null
     }
   ],
-  "windowDaysReachingClient": 0,
-  "windowMlbTotal": 0,
-  "renderedCardsTotal": 87,
+  "windowDaysReachingClient": 3,
+  "windowMlbTotal": 2,
+  "renderedCardsTotal": 0,
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
-  "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 502 ()",
-    "Failed to load resource: the server responded with a status of 502 ()"
-  ],
+  "consoleErrors": [],
   "mainFrameNavigations": [
     {
-      "at_ms": 177,
-      "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
-    },
-    {
-      "at_ms": 587,
+      "at_ms": 201,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     }
   ],
   "readFailures": [],
-  "metaError": "jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation",
+  "metaError": null,
   "playwrightVersion": "1.64.1"
 }
