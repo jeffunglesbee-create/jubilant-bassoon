@@ -1,0 +1,34 @@
+name: Sport section timeline probe
+# Dispatch-only. Samples the live slate every 10s after boot to record when
+# V2-injected sections (NFL, MLS) appear, disappear and return, against the
+# timestamps of the nfl/mls/tennis responses. Diagnostic for the 2026-10-18
+# report: no NFL rows during the live Texans @ Jaguars game.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+      - name: Run timeline probe
+        run: node scripts/sport-section-timeline-probe.js
+      - name: Commit result
+        if: always()
+        run: |
+          git config user.email "timeline-probe@field"; git config user.name "Timeline-Probe"
+          git add outbox/sport-section-timeline-*.json || true
+          git diff --cached --quiet && echo nothing && exit 0
+          git commit -m "sport section timeline probe [skip ci]"
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: push did not land after retries"; exit 1; }
