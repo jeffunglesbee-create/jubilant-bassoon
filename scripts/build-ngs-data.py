@@ -560,6 +560,10 @@ def emit(results, name, filename, data, season, source, year, updated):
         # two can never be conflated again.
         "targetYear": year,
         "source": source,
+        # The name field-laboratory's Vintage.decodeEnvelope requires, and refuses
+        # an envelope without (NoSourceDataset). Same text as `source`; `source`
+        # stays for the existing readers.
+        "sourceDataset": source,
         "data": data,
     }
     upload_to_r2(f"nfl/{year}/{filename}", payload)

@@ -372,7 +372,7 @@ def main():
     if not data:
         print("⛔ bdb_speed: 0 rows — refusing to overwrite"); return
     payload = {"updated": now.isoformat(), "season": season, "targetYear": year,
-               "source": f"kaggle {OWNER}/{SLUG} (BDB tracking)", "metric": "max_speed_mph", "data": data}
+               "source": f"kaggle {OWNER}/{SLUG} (BDB tracking)", "sourceDataset": f"kaggle {OWNER}/{SLUG}", "metric": "max_speed_mph", "data": data}
     upload_to_r2(f"nfl/{year}/bdb_speed.json", payload)
     write_outbox("bdb_speed.json", payload)
     # top-5 log, human-readable proof
@@ -387,7 +387,7 @@ def main():
     ent = build_bdb_route_entropy(players)
     if ent:
         ep = {"updated": now.isoformat(), "season": season, "targetYear": year,
-              "source": f"kaggle {OWNER}/{SLUG} (BDB player_play)", "metric": "route_entropy_bits", "data": ent}
+              "source": f"kaggle {OWNER}/{SLUG} (BDB player_play)", "sourceDataset": f"kaggle {OWNER}/{SLUG}", "metric": "route_entropy_bits", "data": ent}
         upload_to_r2(f"nfl/{year}/bdb_route_entropy.json", ep)
         write_outbox("bdb_route_entropy.json", ep)
         for p in sorted(ent.values(), key=lambda p: -p["entropyBits"])[:5]:
@@ -400,7 +400,7 @@ def main():
     sep = build_bdb_separation(players)
     if sep:
         sp = {"updated": now.isoformat(), "season": season, "targetYear": year,
-              "source": f"kaggle {OWNER}/{SLUG} (BDB tracking)", "metric": "avg_separation_yds", "data": sep}
+              "source": f"kaggle {OWNER}/{SLUG} (BDB tracking)", "sourceDataset": f"kaggle {OWNER}/{SLUG}", "metric": "avg_separation_yds", "data": sep}
         upload_to_r2(f"nfl/{year}/bdb_separation.json", sp)
         write_outbox("bdb_separation.json", sp)
         for p in sorted(sep.values(), key=lambda p: -p["avgSepYds"])[:5]:
@@ -413,7 +413,7 @@ def main():
     rush = build_bdb_pass_rush(players)
     if rush:
         rp = {"updated": now.isoformat(), "season": season, "targetYear": year,
-              "source": f"kaggle {OWNER}/{SLUG} (BDB player_play)", "metric": "pass_rush_pressure", "data": rush}
+              "source": f"kaggle {OWNER}/{SLUG} (BDB player_play)", "sourceDataset": f"kaggle {OWNER}/{SLUG}", "metric": "pass_rush_pressure", "data": rush}
         upload_to_r2(f"nfl/{year}/bdb_xblock_pass_rush.json", rp)
         write_outbox("bdb_xblock_pass_rush.json", rp)
         for p in sorted(rush.values(), key=lambda p: -p["pressureRate"])[:5]:
@@ -426,7 +426,7 @@ def main():
     tend = build_bdb_tendency()
     if tend:
         tp = {"updated": now.isoformat(), "season": season, "targetYear": year,
-              "source": f"kaggle {OWNER}/{SLUG} (BDB plays)", "metric": "tendency_fingerprint", "data": tend}
+              "source": f"kaggle {OWNER}/{SLUG} (BDB plays)", "sourceDataset": f"kaggle {OWNER}/{SLUG}", "metric": "tendency_fingerprint", "data": tend}
         upload_to_r2(f"nfl/{year}/bdb_tendency_fingerprint.json", tp)
         write_outbox("bdb_tendency_fingerprint.json", tp)
         for p in sorted(tend.values(), key=lambda p: -p["playActionRate"])[:5]:
@@ -439,7 +439,7 @@ def main():
     ttt = build_bdb_time_to_throw()
     if ttt:
         ttp = {"updated": now.isoformat(), "season": season, "targetYear": year,
-               "source": f"kaggle {OWNER}/{SLUG} (BDB plays)", "metric": "time_to_throw", "data": ttt}
+               "source": f"kaggle {OWNER}/{SLUG} (BDB plays)", "sourceDataset": f"kaggle {OWNER}/{SLUG}", "metric": "time_to_throw", "data": ttt}
         upload_to_r2(f"nfl/{year}/bdb_time_to_throw.json", ttp)
         write_outbox("bdb_time_to_throw.json", ttp)
         for p in sorted(ttt.values(), key=lambda p: p["avgTimeToThrow"])[:5]:
