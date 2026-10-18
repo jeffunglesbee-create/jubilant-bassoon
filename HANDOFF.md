@@ -1,5 +1,18 @@
 # FIELD HANDOFF
 
+## 2026-10-18 — BDB speed returns as a per-player floor (owner: "add speed line")
+
+NFL scout panel gains `Speed floor mph (2022)`. It lists the current depth
+chart's QB/RB/WR/TE starters who were tracked in 2022, each as "≥ mph" beside
+his own name, in position order, unranked. A name two 2022 players share
+(Josh Allen, Lamar Jackson, and 9 more) shows nothing. The team-ranked
+"Top speed" stays gone, and so do separation, route tree and pass rush.
+
+Smoke 1054/1054, 7/7 mutations caught, SW_VERSION 2026-10-18a. Live check: the
+2026-10-18 21:00 UTC scout probe; the 21:45 check-in reads it.
+
+Session doc: outbox/cc-session-2026-10-17-bdb-vintage-task0.md
+
 ## 2026-10-17 — BDB vintage: owner ruling applied, live NFL check STAGED
 
 `4172d95f`: the NFL scout panel no longer shows the four player-keyed BDB rows

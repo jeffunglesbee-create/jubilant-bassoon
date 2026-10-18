@@ -271,3 +271,92 @@ What this leaves for the owner:
 - The **team-ranking** form is the part that fails.
 - **Time-to-throw** has no like-for-like current replacement.
 - First-party access does not reopen the three `plays.csv` metrics.
+
+---
+
+# Owner ruling 2: "add speed line" (2026-10-18)
+
+Of the counter-proposal, only the per-player speed reading survived (table
+above). The owner chose to add it as one line. `4172d95f` otherwise stands:
+separation, route tree and pass rush stay unfetched, and no team-ranked
+"Top speed" returns.
+
+## The change
+
+`src/legacy/field.js` (synced to `index.html`), SW_VERSION `2026-10-18a`.
+
+- `bdb_speed.json` is fetched again and loaded only when its envelope declares a
+  season (`_bdbSeason`), like the two team rows.
+- It is keyed by **name**, because the depth chart carries no BDB `nflId`.
+  The key lowercases the name, drops one trailing suffix token
+  (`_MLB_SUFFIX_TOKENS`: Jr/Sr/II/III/IV) and strips non-letters, so
+  `DJ Moore` = `D.J. Moore` and `Kyle Pitts Sr.` = `Kyle Pitts`.
+- **A name two 2022 players share maps to null.** That is 11 names in the file,
+  among them Josh Allen (BUF/JAX), Lamar Jackson (BAL/CHI) and Michael Carter
+  (two on NYJ). Those starters get no value, because the right one cannot be
+  chosen.
+- `getStarterSpeedFloors(team)` takes the **current** depth chart's QB, RB, WR
+  and TE starters (`getDepthStarter`) and returns those with a 2022 value, in
+  position order. It does not sort by speed: a ranking over the subset tracked
+  in 2022 is exactly what failed above.
+- Row: `Speed floor mph (2022)`, value e.g.
+  `Steelers A.Rodgers ≥18.1 · J.Warren ≥19.0 · D.Metcalf ≥19.6 | ...`. A side
+  with no value shows `—`. The row is absent when neither side has one, or when
+  the envelope has no season.
+
+## Measured before building
+
+All of these use the committed `outbox/nfl/` copies (`bdb_speed.json` season
+2022; `depth-charts.json` season 2026, updated 2026-10-12). The served depth
+chart was not re-read; the live probe below reads the served one.
+
+- **Coverage:** 71 of 128 QB/RB/WR/TE starters match a 2022 name. 30 of 32
+  teams show at least one; SEA and CLE show `—`.
+- **Correction:** the WR row does not name its receivers (it shows AYS/YAC
+  only), so "players named elsewhere on the panel" was wrong for WRs. The depth
+  chart is what supplies current-team names.
+- **Identity, residual:** a name match is not an ID match. A 2023+ player with
+  the same name as a different 2022 player would show the 2022 player's speed.
+  - All 71 current matches were read by eye, and each is the same player.
+  - The ambiguity guard catches collisions within 2022 only.
+  - A cross-era ID join needs a BDB `nflId` ↔ gsis mapping, which the builders
+    do not carry and which was not probed.
+
+## Verification
+
+- `node smoke.js index.html`: **1054 passed, 0 failed** (from 1053).
+  - New assertion: `A-NFLSPD-1`.
+  - `A-NFLBDB-1` now allows `/bdb_speed.json` but still forbids the team table
+    (`NFL_BDB_SPEED =`), `getTeamTopSpeed` and `lbl: 'Top speed'`.
+  - `A-NFLBDB-2` adds the speed season gate.
+- **Mutations, 7 of 7 applied and caught** (each anchor unique):
+  - an ambiguous name kept;
+  - ranked by speed;
+  - season label dropped;
+  - `≥` dropped;
+  - season gate dropped;
+  - team table back;
+  - names not from the depth chart.
+- **Render logic on the real fixtures**, extracted from `field.js`:
+  - season 2022 is read;
+  - 11 names are ambiguous;
+  - `BUF J.Cook III ≥18.9 · D.Moore ≥20.5` (no Josh Allen);
+  - an envelope with no season gives no values.
+- `nfl_bdb_scout_probe.js` learns the row as **optional**. When it is present it
+  must carry `(YYYY)`, and every number in its value must be marked `≥`.
+  `speedRowGames` is recorded. The fixture results are below.
+- **Live:** the Sunday scout probe (2026-10-18 21:00 UTC) now also checks this
+  row. The existing check-in at 21:45 UTC reads it.
+
+**Probe fixtures** (local `file://` pages, same Playwright path), 7 of 7 as
+intended:
+
+| fixture | result |
+|---|---|
+| row present, all `≥` | PASS |
+| row absent | PASS, `speedRowGames` 0/1 |
+| one side `—` | PASS |
+| no season in the label | **FAIL** |
+| no `≥` anywhere | **FAIL** |
+| one of two entries without `≥` | **FAIL** |
+| row present with no entries | **FAIL** |
