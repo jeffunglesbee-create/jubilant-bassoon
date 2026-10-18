@@ -1,5 +1,19 @@
 # FIELD HANDOFF
 
+## 2026-10-18 — NFL rows missing on a live game: two fixes, both verified live
+
+- `cc66dcec`: the tennis/rugby merge no longer drops the NFL, MLS and EPL
+  sections for about 35 s after every load.
+- `fa24e59c`: the speed floor survives `nflTeamTablesInit` running twice. It
+  had gone to 0/12 games.
+- The scout probe now fails when the page shows fewer NFL games than the relay,
+  or no game shows the speed row.
+- Live run 39139761152: 12/12 games, speed on 12/12.
+- Open, owner decision: `fetchSchedule` runs twice on boot, so every R2 init
+  double-fetches.
+
+Session doc: outbox/cc-session-2026-10-18-nfl-live-missing-rows.md
+
 ## 2026-10-18 — BDB speed returns as a per-player floor (owner: "add speed line")
 
 NFL scout panel gains `Speed floor mph (2022)`. It lists the current depth
