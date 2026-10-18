@@ -115,6 +115,11 @@ const SPEED_ROW = 'Speed floor mph';
     await browser.close();
   }
 
+  // The relay has NFL games and the page shows none, or fewer: not a SKIP.
+  // null (relay unreadable) is also not a SKIP, because an empty page could
+  // not then be told from an empty slate.
+  manifest.pageMissesRelayGames = manifest.relayNflGameCount == null
+    || (manifest.nflGameCount || 0) < manifest.relayNflGameCount;
   fs.mkdirSync('outbox', { recursive: true });
   fs.writeFileSync(`outbox/nfl-bdb-scout-manifest-${TS}.json`, JSON.stringify(manifest, null, 2));
   console.log(JSON.stringify(manifest, null, 2));
@@ -125,13 +130,14 @@ const SPEED_ROW = 'Speed floor mph';
   // failure or missing every row despite NFL games present is fatal.
   const nflOnSlate = (manifest.nflGameCount || 0) > 0;
   const regression = nflOnSlate && manifest.contractHoldsOnEveryNFLGame !== true;
-  // The relay has NFL games and the page shows none, or fewer: not a SKIP.
-  // null (relay unreadable) is also not a SKIP, because an empty page could
-  // not then be told from an empty slate.
-  manifest.pageMissesRelayGames = manifest.relayNflGameCount == null
-    || (manifest.nflGameCount || 0) < manifest.relayNflGameCount;
-  if (manifest.error || regression || manifest.pageMissesRelayGames) {
-    console.error(`[FAIL] error=${manifest.error || ''} nflGames=${manifest.nflGameCount} relayNflGames=${manifest.relayNflGameCount} holding=${(manifest.gamesHoldingContract || []).length}`);
+  // The speed row is optional PER GAME (a game whose starters were all
+  // untracked in 2022 has none: SEA and CLE alone, on the 2026-10-12 depth
+  // chart). It is not optional across a slate: on none of them means the table
+  // never loaded. Measured 2026-10-18: 12/12 at 12:35 UTC, then 0/12 from
+  // 14:55, and this probe passed both.
+  const speedTableMissing = nflOnSlate && manifest.nflGameCount >= 2 && !(manifest.speedRowGames > 0);
+  if (manifest.error || regression || manifest.pageMissesRelayGames || speedTableMissing) {
+    console.error(`[FAIL] error=${manifest.error || ''} nflGames=${manifest.nflGameCount} relayNflGames=${manifest.relayNflGameCount} holding=${(manifest.gamesHoldingContract || []).length} speedRowGames=${manifest.speedRowGames}`);
     process.exit(1);
   }
   console.log(nflOnSlate
