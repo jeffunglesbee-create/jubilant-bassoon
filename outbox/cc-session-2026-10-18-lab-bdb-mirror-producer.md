@@ -55,3 +55,5 @@ laboratory had none.
   it. Any caller asking about a busy day is blind past the first 50 events.
   Filed for the relay owner: field-relay-nba
   `docs/CC-CMD-2026-10-18-bsd-by-date-offset-and-cache.md`.
+  **Fixed the same day:** relay `b492e58` and `10916f5`, verified live by run
+  39169712056 (disjoint pages, X-Cache HIT, TTL 300 s past and 25 s today).
