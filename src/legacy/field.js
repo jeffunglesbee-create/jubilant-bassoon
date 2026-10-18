@@ -4678,11 +4678,18 @@ async function nflTeamTablesInit() {
     if (spdR.ok) {
       const j = await spdR.json();
       NFL_BDB_SPEED_SEASON = _bdbSeason(j);
+      // Built in a local map, then published. The ambiguity test ("seen this
+      // name before?") must only see THIS file. fetchSchedule runs twice on
+      // boot, so this init runs twice, and testing against the shared table
+      // marked every name ambiguous on the second pass: 1626 values → 0.
+      // Measured live 2026-10-18 (12/12 games at 12:35 UTC, 0/12 from 14:55).
+      const byName = {};
       for (const [, p] of Object.entries(NFL_BDB_SPEED_SEASON ? (j.data || {}) : {})) {
         const k = _bdbNameKey(p.name);
         if (!k || p.maxSpeedMph == null) continue;
-        NFL_BDB_SPEED_BY_NAME[k] = k in NFL_BDB_SPEED_BY_NAME ? null : p.maxSpeedMph;
+        byName[k] = k in byName ? null : p.maxSpeedMph;
       }
+      Object.assign(NFL_BDB_SPEED_BY_NAME, byName);
       loaded++;
     }
     _nflTeamTablesLoaded = true;
@@ -23350,7 +23357,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-18a';
+  const SW_VERSION = '2026-10-18b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

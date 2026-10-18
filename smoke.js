@@ -1154,12 +1154,13 @@ assert('A-NFLTTT-1 — NFL BDB time-to-throw: fetched, and labelled with its env
 // CURRENT depth chart; a name two 2022 players share maps to null, not to one.
 assert('A-NFLSPD-1 — NFL BDB speed: per current starter, as a floor, season-labelled, ambiguous names dropped',
   html.includes('/bdb_speed.json') && html.includes('NFL_BDB_SPEED_SEASON = _bdbSeason(j)') &&
-  html.includes('NFL_BDB_SPEED_BY_NAME[k] = k in NFL_BDB_SPEED_BY_NAME ? null : p.maxSpeedMph') &&
+  html.includes('byName[k] = k in byName ? null : p.maxSpeedMph') && html.includes('Object.assign(NFL_BDB_SPEED_BY_NAME, byName)') &&
+  !html.includes('k in NFL_BDB_SPEED_BY_NAME') &&
   html.includes('const name = getDepthStarter(teamAbbr, pos)') &&
   html.includes('<em>≥${p.mph.toFixed(1)}</em>') &&
   html.includes('lbl: `Speed floor mph (${NFL_BDB_SPEED_SEASON})`') &&
   !/getStarterSpeedFloors[\s\S]{0,600}\.sort\(/.test(html.slice(html.indexOf('function getStarterSpeedFloors'))),
-  'the speed row must be per current starter, shown as a floor with its season, with ambiguous 2022 names dropped and no ranking');
+  'the speed row must be per current starter, shown as a floor with its season, with ambiguous 2022 names dropped (within ONE load: the init runs twice) and no ranking');
 
 // 2026-10-18: the tennis/rugby merge rebuilt allData from the boot-time
 // `verified` list and dropped every V2-injected section (NFL, MLS, EPL…) for
