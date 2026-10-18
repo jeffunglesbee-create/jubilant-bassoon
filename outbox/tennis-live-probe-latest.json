@@ -1,12 +1,12 @@
 {
-  "ts": "2026-10-18T00:54:56.890Z",
+  "ts": "2026-10-18T17:14:36.864Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
-  "sw": "2026-10-17a",
+  "sw": "2026-10-18b",
   "triggered_by": "schedule",
   "relayReachable": true,
   "relayLiveMatches": 33,
-  "relayLiveMatchesAllTiers": 121,
+  "relayLiveMatchesAllTiers": 137,
   "tiersSeen": [
     "atp_250",
     "challenger",
@@ -16,8 +16,8 @@
     "wta_250",
     "wta_500"
   ],
-  "startedCards": 0,
-  "dayFeedCount": 116,
+  "startedCards": 33,
+  "dayFeedCount": 136,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "ATP Brussels, Belgium Singles",
@@ -32,152 +32,277 @@
     "Wuhan"
   ],
   "pageLoaded": true,
-  "tennisSectionPresent": false,
-  "tennisCardCount": 0,
-  "cardsWithSetScore": 0,
-  "cardsWithOpponent": 0,
+  "tennisSectionPresent": true,
+  "tennisCardCount": 33,
+  "cardsWithSetScore": 33,
+  "cardsWithOpponent": 33,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
-  "chips": [],
-  "consoleErrors": [
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()"
+  "chips": [
+    {
+      "home": "M. Stoiana v S. Ishii",
+      "chip": "6-4 7-5"
+    },
+    {
+      "home": "M. Joint v K. Day",
+      "chip": "6-3 3-6 6-3"
+    },
+    {
+      "home": "T. Preston v E. Jones",
+      "chip": "0-6 ○"
+    },
+    {
+      "home": "D. Snigur v K. Kawa",
+      "chip": "1-6 0-2 ○"
+    },
+    {
+      "home": "A. Zakharova v P. Kudermetova",
+      "chip": "3-6 3-6"
+    },
+    {
+      "home": "C. Liu v M. Inglis",
+      "chip": "6-4 6-3"
+    },
+    {
+      "home": "A. Parks v Y. Putintseva",
+      "chip": "2-6 2-6"
+    },
+    {
+      "home": "H. Dart v A. Ito",
+      "chip": "6-3 6-7(6) 6-3"
+    },
+    {
+      "home": "A. Kalinina v A. Sasnovich",
+      "chip": "3-5 ○"
+    },
+    {
+      "home": "S. Kraus v S. Kenin",
+      "chip": "7-6(4) 6-4"
+    },
+    {
+      "home": "H. Shi v A. Korneeva",
+      "chip": "7-6(4) 6-0"
+    },
+    {
+      "home": "G. Diallo v R. Sakamoto",
+      "chip": "6-2 4-6 4-6"
+    },
+    {
+      "home": "A. Walton v N. Basilashvili",
+      "chip": "4-6 6-7(4)"
+    },
+    {
+      "home": "T. Prozorova v K. Rakhimova",
+      "chip": "6-7(4) 6-4 4-6"
+    },
+    {
+      "home": "R. Safiullin v I. Simakin",
+      "chip": "7-6(2) 6-1"
+    },
+    {
+      "home": "A. Geerlings v L. Samson",
+      "chip": "6-2 6-2"
+    },
+    {
+      "home": "A. Davidovich Fokina v R. Jódar",
+      "chip": "1-6 7-6(5) 6-4"
+    },
+    {
+      "home": "J. Rodionov v P. Herbert",
+      "chip": "7-6(5) 5-7 0-6"
+    },
+    {
+      "home": "O. Virtanen v V. Sachko",
+      "chip": "4-6 4-6"
+    },
+    {
+      "home": "C. Burel v L. Romero Gormaz",
+      "chip": "6-4 6-3"
+    },
+    {
+      "home": "A. Shevchenko v S. Sakellaridis",
+      "chip": "6-7(4) 4-6"
+    },
+    {
+      "home": "M. Chwalinska v S. Kartal",
+      "chip": "2-6 6-4 6-2"
+    },
+    {
+      "home": "R. Bertola v F. Cinà",
+      "chip": "6-3 6-7(6) 6-7(4)"
+    },
+    {
+      "home": "M. Mrva v D. Lajović",
+      "chip": "7-6(4) 7-6(5)"
+    },
+    {
+      "home": "K. Jacquet v S. Gueymard Wayenburg",
+      "chip": "6-3 7-5"
+    },
+    {
+      "home": "B. Andreescu v D. Salkova",
+      "chip": "7-6(2) 6-2"
+    },
+    {
+      "home": "N. Basavareddy v A. Dougaz",
+      "chip": "6-4 7-5"
+    },
+    {
+      "home": "F. Maestrelli v B. Gojo",
+      "chip": "6-4 3-6 6-7(6)"
+    },
+    {
+      "home": "C. Chidekh v G. Onclin",
+      "chip": "6-2 7-6(3)"
+    },
+    {
+      "home": "V. Royer v C. Tabur",
+      "chip": "6-7(2) 7-6(3) 2-6"
+    },
+    {
+      "home": "M. Damm Jr v A. Guerrieri",
+      "chip": "6-7(6) 5-6 · 0-0 ●"
+    },
+    {
+      "home": "J. Kumstat v M. Mmoh",
+      "chip": "1-6 6-5 · 0-0 ○"
+    },
+    {
+      "home": "U. Blanchet v N. Budkov Kjaer",
+      "chip": "4-0 · 15-15 ●"
+    }
   ],
-  "failedRequests": [],
+  "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()",
+    "error: Access to fetch at 'https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/premier%20league/401878769' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "error: Failed to load resource: net::ERR_FAILED"
+  ],
+  "failedRequests": [
+    "POST https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/premier%20league/401878769 — net::ERR_FAILED",
+    "POST https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/ligue%201/401876433 — net::ERR_FAILED",
+    "POST https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/bundesliga/401884768 — net::ERR_FAILED",
+    "POST https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/premier%20league/401878769 — net::ERR_FAILED",
+    "POST https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/bundesliga/401884768 — net::ERR_FAILED",
+    "POST https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/ligue%201/401876433 — net::ERR_FAILED"
+  ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-18",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-18"
   ],
-  "renderedTournaments": [],
-  "missingTournaments": null,
+  "renderedTournaments": [
+    "ATP Brussels, Belgium Singles",
+    "Almaty",
+    "Lisbon, Portugal",
+    "Lyon",
+    "Mallorca, Spain",
+    "Ningbo, China",
+    "Osaka",
+    "Rovereto, Italy",
+    "Shanghai",
+    "Wuhan"
+  ],
+  "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "unparseable",
-  "feedByDateOutcome": "unparseable",
-  "rowsBeforeTier": 0,
-  "rowsAfterTier": null,
-  "sectionReturned": null,
-  "sectionInAllData": false,
+  "feedLiveOutcome": "ok:17",
+  "feedByDateOutcome": "ok:136",
+  "rowsBeforeTier": 137,
+  "rowsAfterTier": 33,
+  "sectionReturned": 33,
+  "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 7,
-    "structuralRenders": 4,
-    "skippedStructuralRenders": 1
+    "scheduled": 6,
+    "structuralRenders": 3,
+    "skippedStructuralRenders": 0
   },
-  "tennisSectionCount": 0,
-  "tennisSectionParent": null,
-  "tennisSectionHtmlLength": null,
+  "tennisSectionCount": 1,
+  "tennisSectionParent": "main#main.main",
+  "tennisSectionHtmlLength": 138211,
   "sectionsInModel": [
     "Baseball (MLB)",
     "Bundesliga",
-    "Canadian Football (CFL)",
-    "College Football",
-    "EFL Championship",
-    "EFL League One",
-    "EFL League Two",
-    "Golf",
     "La Liga",
     "Ligue 1",
     "MLS Soccer",
     "NFL",
     "Premier League",
     "Serie A",
-    "WNBA"
+    "Tennis"
   ],
   "sectionsInDom": [
     "Baseball (MLB)",
     "Bundesliga",
-    "Canadian Football (CFL)",
-    "College Football",
-    "EFL Championship",
-    "EFL League One",
-    "EFL League Two",
-    "Golf",
     "La Liga",
     "Ligue 1",
     "MLS Soccer",
     "NFL",
     "Premier League",
     "Serie A",
-    "WNBA"
+    "Tennis"
   ],
-  "tennisGamesInModel": 0,
-  "tennisSectionAnatomy": null,
+  "tennisGamesInModel": 33,
+  "tennisSectionAnatomy": {
+    "tag": "div",
+    "className": "sport-section",
+    "id": "(none)",
+    "heading": "(no heading)",
+    "childTags": [
+      "div.section-head",
+      "div.games-list"
+    ],
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">33 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late\" data-gameid=\"g3\" data-sport=\"Tennis\" data-home=\"M. Stoiana v S. Ishii\" data-away=\"\" data-starttim"
+  },
   "domSectionCardCounts": [
     {
       "sport": "Baseball (MLB)",
       "cards": 1
     },
     {
-      "sport": "College Football",
-      "cards": 16
-    },
-    {
       "sport": "NFL",
-      "cards": 13
-    },
-    {
-      "sport": "WNBA",
-      "cards": 1
-    },
-    {
-      "sport": "MLS Soccer",
-      "cards": 15
-    },
-    {
-      "sport": "Premier League",
-      "cards": 10
-    },
-    {
-      "sport": "La Liga",
-      "cards": 9
-    },
-    {
-      "sport": "Serie A",
-      "cards": 9
-    },
-    {
-      "sport": "Bundesliga",
-      "cards": 8
-    },
-    {
-      "sport": "Ligue 1",
-      "cards": 8
-    },
-    {
-      "sport": "EFL Championship",
-      "cards": 11
-    },
-    {
-      "sport": "EFL League One",
-      "cards": 11
-    },
-    {
-      "sport": "EFL League Two",
       "cards": 12
     },
     {
-      "sport": "Golf",
+      "sport": "MLS Soccer",
       "cards": 1
     },
     {
-      "sport": "Canadian Football (CFL)",
+      "sport": "Premier League",
+      "cards": 4
+    },
+    {
+      "sport": "La Liga",
+      "cards": 4
+    },
+    {
+      "sport": "Serie A",
+      "cards": 4
+    },
+    {
+      "sport": "Bundesliga",
       "cards": 2
+    },
+    {
+      "sport": "Ligue 1",
+      "cards": 5
+    },
+    {
+      "sport": "Tennis",
+      "cards": 33
     }
   ],
-  "sampleCardText": null,
-  "verdict": "FAIL",
-  "reason": "relay reports 33 live match(es), page renders 0 tennis cards and no section is present; NEITHER FEED DELIVERED: feeds live=unparseable by-date=unparseable — the page never got rows to render; page made 4 /bsd/tennis/ call(s): 200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live | 200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live | 200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-18 | 200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-18; console: error: Failed to load resource: the server responded with a status of 404 ()"
+  "sampleCardText": "📌★ M. Stoiana v S. Ishii6-4 7-5 Osaka · Qualification Final · hard + Multiview Osaka Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 10:30 PM Tennis ChannelTV loginCable/",
+  "verdict": "PASS",
+  "reason": "relay 33 live, page 33 card(s), 33 of 33 STARTED with a set score (0 not yet under way, correctly chipless), 33 with an opponent; tournaments proven on the page: ATP Brussels, Belgium Singles, Almaty, Lisbon, Portugal, Lyon, Mallorca, Spain, Ningbo, China, Osaka, Rovereto, Italy, Shanghai, Wuhan"
 }
