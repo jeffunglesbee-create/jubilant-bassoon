@@ -21,11 +21,15 @@ const URL = BASE + (BASE.includes('?') ? '&' : '?') + 'wpt=1';
 const TS = new Date().toISOString().replace(/[:.]/g, '-');
 const DROPPED_ROWS = ['Top speed', 'Top separation', 'Route tree', 'Pass rush'];
 const KEPT_ROWS = ['Tendencies', 'Time to throw'];          // base label; must carry "(YYYY)"
+// Owner, 2026-10-18: speed returns per current starter, as a floor. OPTIONAL — a
+// game whose four starters were all untracked in 2022 has no row — but when it
+// renders it must carry its season and mark every value as a floor ("≥").
+const SPEED_ROW = 'Speed floor mph';
 
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 3200 } });
-  const manifest = { url: URL, ts: TS, droppedRows: DROPPED_ROWS, keptRows: KEPT_ROWS };
+  const manifest = { url: URL, ts: TS, droppedRows: DROPPED_ROWS, keptRows: KEPT_ROWS, speedRow: SPEED_ROW };
 
   try {
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -38,7 +42,7 @@ const KEPT_ROWS = ['Tendencies', 'Time to throw'];          // base label; must 
     await page.click('#stats-nav-link', { timeout: 15000 });
     await page.waitForTimeout(6000);
 
-    const data = await page.evaluate(([DROPPED_ROWS, KEPT_ROWS]) => {
+    const data = await page.evaluate(([DROPPED_ROWS, KEPT_ROWS, SPEED_ROW]) => {
       const sec = document.getElementById('stats-section');
       if (!sec) return { statsSectionPresent: false };
       const blocks = [...sec.querySelectorAll('.stats-sport-block')];
@@ -48,11 +52,12 @@ const KEPT_ROWS = ['Tendencies', 'Time to throw'];          // base label; must 
 
       const games = [...tg.querySelectorAll('.stats-subsection')].map((sub) => {
         const header = sub.querySelector('.stats-subsection-label')?.textContent?.trim() || '';
-        const labels = [...sub.querySelectorAll('.bs-scout-lbl')].map((s) => s.textContent.trim());
+        const labelEls = [...sub.querySelectorAll('.bs-scout-lbl')];
+        const labels = labelEls.map((s) => s.textContent.trim());
         // NFL games carry NFL-only scout labels. Matched on the base label so a
         // kept row is recognised whatever season it carries, or none.
         const base = (l) => l.replace(/ \(\d{4}\)$/, '');
-        const nflMarkers = ['Team EPA', 'Pass pro', 'QB CPOE', ...DROPPED_ROWS, ...KEPT_ROWS];
+        const nflMarkers = ['Team EPA', 'Pass pro', 'QB CPOE', ...DROPPED_ROWS, ...KEPT_ROWS, SPEED_ROW];
         const isNFL = labels.some((l) => nflMarkers.includes(base(l)));
         const droppedPresent = DROPPED_ROWS.filter((r) => labels.includes(r));
         const kept = {};
@@ -60,18 +65,29 @@ const KEPT_ROWS = ['Tendencies', 'Time to throw'];          // base label; must 
           const l = labels.find((x) => base(x) === r);
           kept[r] = { present: !!l, label: l || null, season: l ? (l.match(/\((\d{4})\)$/) || [])[1] || null : null };
         }
-        return { header, scoutLabels: labels, rowCount: labels.length, isNFL, droppedPresent, kept,
-                 contractHolds: droppedPresent.length === 0 && KEPT_ROWS.every((r) => kept[r].present && kept[r].season) };
+        // The value is the label's next sibling (.bs-scout-val); each player entry
+        // "X.Name ≥19.6" must carry the floor mark, and an entry without one fails.
+        const si = labels.findIndex((x) => base(x) === SPEED_ROW);
+        const sval = si >= 0 ? (labelEls[si].nextElementSibling?.textContent || '').trim() : null;
+        const entries = sval ? (sval.match(/\d+\.\d/g) || []) : [];
+        const floors = sval ? (sval.match(/≥\d+\.\d/g) || []) : [];
+        const speed = { present: si >= 0, label: si >= 0 ? labels[si] : null,
+                        season: si >= 0 ? (labels[si].match(/\((\d{4})\)$/) || [])[1] || null : null,
+                        value: sval, entries: entries.length, floorMarked: floors.length };
+        const speedHolds = !speed.present || (!!speed.season && entries.length > 0 && floors.length === entries.length);
+        return { header, scoutLabels: labels, rowCount: labels.length, isNFL, droppedPresent, kept, speed,
+                 contractHolds: droppedPresent.length === 0 && KEPT_ROWS.every((r) => kept[r].present && kept[r].season) && speedHolds };
       });
       return { statsSectionPresent: true, todayGamesBlockPresent: true,
                todayGameCount: games.length, games };
-    }, [DROPPED_ROWS, KEPT_ROWS]);
+    }, [DROPPED_ROWS, KEPT_ROWS, SPEED_ROW]);
     Object.assign(manifest, data);
 
     const nfl = (manifest.games || []).filter((g) => g.isNFL);
     manifest.nflGameCount = nfl.length;
     manifest.nflGames = nfl.map((g) => ({ header: g.header, rowCount: g.rowCount, scoutLabels: g.scoutLabels,
-                                          droppedPresent: g.droppedPresent, kept: g.kept, contractHolds: g.contractHolds }));
+                                          droppedPresent: g.droppedPresent, kept: g.kept, speed: g.speed, contractHolds: g.contractHolds }));
+    manifest.speedRowGames = nfl.filter((g) => g.speed?.present).length;
     manifest.gamesHoldingContract = nfl.filter((g) => g.contractHolds).map((g) => g.header);
     const counts = nfl.map((g) => g.rowCount).sort((a, b) => a - b);
     manifest.nflRowCount = counts.length ? { min: counts[0], median: counts[Math.floor(counts.length / 2)], max: counts[counts.length - 1] } : null;
@@ -102,7 +118,7 @@ const KEPT_ROWS = ['Tendencies', 'Time to throw'];          // base label; must 
     process.exit(1);
   }
   console.log(nflOnSlate
-    ? `[PASS] ${manifest.gamesHoldingContract.length}/${manifest.nflGameCount} NFL games: no player-keyed BDB row, both team rows season-labelled; rows per game ${JSON.stringify(manifest.nflRowCount)}`
+    ? `[PASS] ${manifest.gamesHoldingContract.length}/${manifest.nflGameCount} NFL games: no team-keyed player row, both team rows season-labelled, speed floor on ${manifest.speedRowGames}/${manifest.nflGameCount} and marked "≥" where shown; rows per game ${JSON.stringify(manifest.nflRowCount)}`
     : `[SKIP] no NFL game on slate this window — nothing to verify`);
   process.exit(0);
 })();
