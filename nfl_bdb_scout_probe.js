@@ -31,6 +31,18 @@ const SPEED_ROW = 'Speed floor mph';
   const page = await browser.newPage({ viewport: { width: 1280, height: 3200 } });
   const manifest = { url: URL, ts: TS, droppedRows: DROPPED_ROWS, keptRows: KEPT_ROWS, speedRow: SPEED_ROW };
 
+  // The relay's own NFL count for today (ET), read from the runner, not the page.
+  // 2026-10-18: the page showed no NFL section while the relay served 12 games,
+  // and this probe printed SKIP ("no NFL game on slate") and exited 0. A slate
+  // the relay says exists is not an empty slate.
+  try {
+    const etDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+    const r = await fetch(`https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nfl&date=${etDate}`);
+    const j = await r.json();
+    manifest.relayNflGameCount = Array.isArray(j?.games) ? j.games.length : null;
+    manifest.relayNflDate = etDate;
+  } catch (e) { manifest.relayNflGameCount = null; manifest.relayError = String(e?.message || e); }
+
   try {
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForSelector('.game-card', { timeout: 45000 }).catch(() => {});
@@ -113,12 +125,17 @@ const SPEED_ROW = 'Speed floor mph';
   // failure or missing every row despite NFL games present is fatal.
   const nflOnSlate = (manifest.nflGameCount || 0) > 0;
   const regression = nflOnSlate && manifest.contractHoldsOnEveryNFLGame !== true;
-  if (manifest.error || regression) {
-    console.error(`[FAIL] error=${manifest.error || ''} nflGames=${manifest.nflGameCount} holding=${(manifest.gamesHoldingContract || []).length}`);
+  // The relay has NFL games and the page shows none, or fewer: not a SKIP.
+  // null (relay unreadable) is also not a SKIP, because an empty page could
+  // not then be told from an empty slate.
+  manifest.pageMissesRelayGames = manifest.relayNflGameCount == null
+    || (manifest.nflGameCount || 0) < manifest.relayNflGameCount;
+  if (manifest.error || regression || manifest.pageMissesRelayGames) {
+    console.error(`[FAIL] error=${manifest.error || ''} nflGames=${manifest.nflGameCount} relayNflGames=${manifest.relayNflGameCount} holding=${(manifest.gamesHoldingContract || []).length}`);
     process.exit(1);
   }
   console.log(nflOnSlate
     ? `[PASS] ${manifest.gamesHoldingContract.length}/${manifest.nflGameCount} NFL games: no team-keyed player row, both team rows season-labelled, speed floor on ${manifest.speedRowGames}/${manifest.nflGameCount} and marked "≥" where shown; rows per game ${JSON.stringify(manifest.nflRowCount)}`
-    : `[SKIP] no NFL game on slate this window — nothing to verify`);
+    : `[SKIP] no NFL game on slate this window (relay agrees: ${manifest.relayNflGameCount}) — nothing to verify`);
   process.exit(0);
 })();
