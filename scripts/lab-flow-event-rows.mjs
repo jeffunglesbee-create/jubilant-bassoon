@@ -7,13 +7,19 @@
 // docs/CC-CMD-2026-10-17-metrics-tab-render-path.md, TASK 2.
 import { writeFileSync, mkdirSync } from 'node:fs'
 const RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev'
-const WANT = [213708, 601226]
+// id -> BSD league_id. The relay's by-date ignores `offset` (measured
+// 2026-10-18: offset=50 returned page one, `previous` null), so a day with more
+// than 50 events hides the rest; filtering by league keeps each answer to one
+// page. The first run of this script paged anyway and re-requested page one on
+// every busy day; it is not paged now.
+const LEAGUE = { 213708: 5, 601226: 83 }
+const WANT = [213708, 601226].filter(id => !process.argv.includes(`--skip=${id}`))
 const day = (d) => d.toISOString().slice(0, 10)
 const found = {}
 const start = new Date('2026-08-01T00:00:00Z'), end = new Date('2026-10-18T00:00:00Z')
 for (let d = new Date(end); d >= start && Object.keys(found).length < WANT.length; d.setUTCDate(d.getUTCDate() - 1)) {
-  for (let offset = 0; offset < 1000; offset += 50) {
-    const url = `${RELAY}/bsd/events/by-date?date=${day(d)}${offset ? `&offset=${offset}` : ''}`
+  for (const league of [...new Set(WANT.filter(id => !found[id]).map(id => LEAGUE[id]))]) {
+    const url = `${RELAY}/bsd/events/by-date?date=${day(d)}&league_id=${league}`
     const r = await fetch(url)
     if (!r.ok) { console.log(`${url}: HTTP ${r.status}`); break }
     const text = await r.text()
@@ -34,7 +40,6 @@ for (let d = new Date(end); d >= start && Object.keys(found).length < WANT.lengt
       if (JSON.parse(raw).id !== e.id) throw new Error(`slice for ${e.id} is not its row`)
       found[e.id] = { date: day(d), url, raw, event_date: e.event_date, status: e.status }
     }
-    if (!body.next || (body.results || []).length < 50) break
   }
 }
 mkdirSync('outbox/lab-flow-event-rows', { recursive: true })
