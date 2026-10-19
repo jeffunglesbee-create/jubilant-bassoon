@@ -1,0 +1,40 @@
+# Lands LAB-FIRST-A in this repo's CLAUDE.md by a runner commit to main, no PR.
+# field-laboratory docs/CC-CMD-2026-10-18-lab-first.md, TASK 2.
+#
+# The laboratory's own runners cannot write here: its SIBLING_REPO_TOKEN is not
+# set (field-laboratory drift-sentinel run 39141664126: "GH_TOKEN not set"). So
+# this repo's runner commits with its own token. The client smoke gate runs
+# before the commit, and the commit is refused if smoke fails.
+# Dispatch-only.
+name: lab-first-rule
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Self-test the insertion
+        run: node scripts/apply-lab-first-rule.mjs --self-test
+      - name: Insert the rule
+        run: node scripts/apply-lab-first-rule.mjs CLAUDE.md
+      - name: Client smoke gate
+        run: |
+          set -o pipefail
+          node smoke.js index.html 2>&1 | tail -3 | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit to main
+        run: |
+          git config user.email "claude@field.dev"; git config user.name "FIELD CI"
+          git add CLAUDE.md
+          git diff --cached --quiet && echo "already present" && exit 0
+          git commit -m "docs: LAB-FIRST-A, build in field-laboratory, not the client (owner order 2026-10-18)" \
+                     -m "Unnumbered by order: this file's rules end at 90 and Rule 91 already means two things elsewhere. Runner commit, no PR. field-laboratory docs/CC-CMD-2026-10-18-lab-first.md, TASK 2."
+          for i in 1 2 3; do git pull --rebase --autostash origin main && git push origin main && break; sleep $((i*5)); done
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: push did not land after retries"; exit 1; }
+          echo "landed $(git rev-parse --short HEAD)" | tee -a "$GITHUB_STEP_SUMMARY"
