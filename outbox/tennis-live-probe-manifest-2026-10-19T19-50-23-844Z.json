@@ -1,0 +1,131 @@
+{
+  "ts": "2026-10-19T19:50:23.844Z",
+  "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "sw": "2026-10-18b",
+  "triggered_by": "schedule",
+  "relayReachable": true,
+  "relayLiveMatches": 28,
+  "relayLiveMatchesAllTiers": 138,
+  "tiersSeen": [
+    "atp_250",
+    "challenger",
+    "utr",
+    "wta_250",
+    "wta_500"
+  ],
+  "startedCards": 0,
+  "dayFeedCount": 136,
+  "dayFeedTruncated": false,
+  "expectedTournaments": [
+    "ATP Brussels, Belgium Singles",
+    "Almaty",
+    "Lyon",
+    "Ningbo, China",
+    "Osaka"
+  ],
+  "pageLoaded": true,
+  "tennisSectionPresent": false,
+  "tennisCardCount": 0,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 0,
+  "cardsMissingScore": [],
+  "cardsMissingOpponent": [],
+  "chips": [],
+  "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()",
+    "error: Failed to load resource: the server responded with a status of 502 ()"
+  ],
+  "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-19 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-19 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/nba-stats/leaguedashplayerclutch?LeagueID=00&Season=2025-26&SeasonType=Playoffs&PerMode=PerGame&MeasureType=Ba — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/nba-stats/leaguedashplayerclutch?LeagueID=00&Season=2025-26&SeasonType=Playoffs&PerMode=PerGame&MeasureType=Ba — net::ERR_ABORTED"
+  ],
+  "relayCallsFromPage": [
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live"
+  ],
+  "renderedTournaments": [],
+  "missingTournaments": null,
+  "diagRan": true,
+  "feedLiveOutcome": "unparseable",
+  "feedByDateOutcome": "timeout",
+  "rowsBeforeTier": 0,
+  "rowsAfterTier": null,
+  "sectionReturned": null,
+  "sectionInAllData": false,
+  "producerThrew": null,
+  "renderPipeline": {
+    "absent": false,
+    "scheduled": 5,
+    "structuralRenders": 4,
+    "skippedStructuralRenders": 0
+  },
+  "tennisSectionCount": 0,
+  "tennisSectionParent": null,
+  "tennisSectionHtmlLength": null,
+  "sectionsInModel": [
+    "Baseball (MLB)",
+    "Golf",
+    "La Liga",
+    "NFL",
+    "Premier League",
+    "Serie A",
+    "WNBA"
+  ],
+  "sectionsInDom": [
+    "Baseball (MLB)",
+    "Golf",
+    "La Liga",
+    "NFL",
+    "Premier League",
+    "Serie A",
+    "WNBA"
+  ],
+  "tennisGamesInModel": 0,
+  "tennisSectionAnatomy": null,
+  "domSectionCardCounts": [
+    {
+      "sport": "Baseball (MLB)",
+      "cards": 1
+    },
+    {
+      "sport": "NFL",
+      "cards": 1
+    },
+    {
+      "sport": "WNBA",
+      "cards": 1
+    },
+    {
+      "sport": "Premier League",
+      "cards": 1
+    },
+    {
+      "sport": "La Liga",
+      "cards": 1
+    },
+    {
+      "sport": "Serie A",
+      "cards": 2
+    },
+    {
+      "sport": "Golf",
+      "cards": 1
+    }
+  ],
+  "sampleCardText": null,
+  "verdict": "FAIL",
+  "reason": "relay reports 28 live match(es), page renders 0 tennis cards and no section is present; NEITHER FEED DELIVERED: feeds live=unparseable by-date=timeout — the page never got rows to render; page made 2 /bsd/tennis/ call(s): 200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live | 200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live; console: error: Failed to load resource: the server responded with a status of 404 ()"
+}
