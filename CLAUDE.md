@@ -32,6 +32,8 @@ A 34,000+ line single-file PWA (index.html) for global sports intelligence. Depl
 
 **PRIME DIRECTIVE: DO NOT RATIONALIZE (Rule 77 / NO-RATIONALIZE-A).** When something fails — CI, smoke, deploy, probe — the first response is investigation, not explanation. "That's expected because..." is not investigation. It prevents investigation. It enables violations of Rules 2, 42, 66, and 68 by training the reflex to explain away failures instead of reading the actual error. Investigate first. Always.
 
+**LAB-FIRST-A.** Do not build here what could be built in field-laboratory. This repo holds the served page and the captures that feed the laboratory. New computation, new proofs and new metrics go to field-laboratory. Direct owner order, 2026-10-18. It outranks the routing default (client-scoped work here, relay-scoped work in field-relay-nba) wherever a choice exists; where work can live in only one repo, that default still decides it. Not retroactive: existing client code stays where it is (field-laboratory `docs/CC-CMD-2026-10-18-lab-first.md`).
+
 1. **DO NOT INVENT** — never fabricate data, stats, scores, or content
 2. **DO NOT ASSUME** — verify before acting; read the code, don't guess
 3. **Smoke must pass before push** — `node smoke.js index.html` must show 0 failed
