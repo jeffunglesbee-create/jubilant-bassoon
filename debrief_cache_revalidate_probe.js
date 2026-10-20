@@ -37,14 +37,17 @@ const HOLD_MS = 4000;
 
 const ctxId = u => decodeURIComponent((u.split('/context/game/')[1] || '').split('?')[0]);
 
+// Returns the date label it landed on and whether today's slate had rendered
+// cards before the step (a timeout there is recorded, not swallowed).
 async function stepToYesterday(page) {
   const skip = page.locator('#setup-skip');
-  if (await skip.isVisible().catch(() => false)) await skip.click().catch(() => {});
-  await page.waitForFunction(() => document.querySelectorAll('.game-card[data-gameid]').length > 0,
-    null, { timeout: 60000 }).catch(() => {});
+  if (await skip.isVisible()) await skip.click();
+  const todayHadCards = await page.waitForFunction(
+    () => document.querySelectorAll('.game-card[data-gameid]').length > 0,
+    null, { timeout: 60000 }).then(() => true, () => false);
   await page.click('#date-prev', { timeout: 15000 });
-  const label = () => page.evaluate(() => document.getElementById('date-label')?.textContent.trim() || null);
-  return label();
+  const label = await page.evaluate(() => document.getElementById('date-label')?.textContent.trim() || null);
+  return { label, todayHadCards };
 }
 
 const debriefsWithMarker = (page) => page.evaluate(m =>
@@ -53,9 +56,10 @@ const debriefsWithMarker = (page) => page.evaluate(m =>
 (async () => {
   const m = { probed_at: new Date().toISOString(), url: URL, run_id: RUN_ID, marker: MARKER, hold_ms: HOLD_MS,
     served_sw_version: null, served_page_has_revalidate: null,
-    first_visit: { date_label: null, context_responses: 0, context_ok: 0, debriefs: 0, cached_entries: 0 },
+    first_visit: { date_label: null, today_had_cards: null, debriefs_appeared: null,
+      context_responses: 0, context_ok: 0, debriefs: 0, cached_entries: 0 },
     target: null, planted: false,
-    after_reload: { date_label: null, target_requested: false, target_requested_at_ms: null,
+    after_reload: { date_label: null, today_had_cards: null, target_requested: false, target_requested_at_ms: null,
       target_answered_at_ms: null, target_status: null, marker_first_seen_ms: null,
       marker_seen_while_held: false, debriefs_with_marker_at_end: null, cache_holds_marker_at_end: null,
       debriefs_at_end: null },
@@ -79,9 +83,12 @@ const debriefsWithMarker = (page) => page.evaluate(m =>
     const onFirst = r => { if (r.url().includes('/context/game/')) first.push({ id: ctxId(r.url()), status: r.status() }); };
     page.on('response', onFirst);
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    m.first_visit.date_label = await stepToYesterday(page);
-    await page.waitForFunction(() => document.querySelectorAll('.card-debrief').length > 0,
-      null, { timeout: 60000 }).catch(() => {});
+    const s1 = await stepToYesterday(page);
+    m.first_visit.date_label = s1.label;
+    m.first_visit.today_had_cards = s1.todayHadCards;
+    m.first_visit.debriefs_appeared = await page.waitForFunction(
+      () => document.querySelectorAll('.card-debrief').length > 0,
+      null, { timeout: 60000 }).then(() => true, () => false);
     await page.waitForTimeout(5000);   // let the Cache API writes land
     page.off('response', onFirst);
     m.first_visit.context_responses = first.length;
@@ -125,7 +132,9 @@ const debriefsWithMarker = (page) => page.evaluate(m =>
       await route.fulfill({ response: resp });
     });
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
-    m.after_reload.date_label = await stepToYesterday(page);
+    const s2 = await stepToYesterday(page);
+    m.after_reload.date_label = s2.label;
+    m.after_reload.today_had_cards = s2.todayHadCards;
     const deadline = Date.now() + 60000;
     while (Date.now() < deadline) {
       const n = await debriefsWithMarker(page);
