@@ -24,7 +24,9 @@ for (let d = new Date(end); d >= start && Object.keys(found).length < WANT.lengt
     if (!r.ok) { console.log(`${url}: HTTP ${r.status}`); break }
     const text = await r.text()
     const body = JSON.parse(text)
-    for (const e of body.results || []) {
+    // A 200 without a results array is not an empty day: say so, as for a non-2xx.
+    if (!Array.isArray(body.results)) { console.log(`${url}: no results array`); break }
+    for (const e of body.results) {
       if (!WANT.includes(e.id) || found[e.id]) continue
       // The row's own bytes: find `{"id":<id>,` and walk to its matching brace.
       const at = text.indexOf(`{"id":${e.id},`)
