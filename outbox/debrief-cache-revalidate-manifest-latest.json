@@ -1,11 +1,11 @@
 {
-  "probed_at": "2026-10-20T16:21:14.500Z",
+  "probed_at": "2026-10-20T17:47:30.563Z",
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
-  "run_id": "39456471138",
-  "marker": "PROBE-STALE-39456471138",
+  "run_id": "39468966102",
+  "marker": "PROBE-STALE-39468966102",
   "hold_ms": 4000,
-  "served_sw_version": "2026-10-18b",
-  "served_page_has_revalidate": false,
+  "served_sw_version": "2026-10-20a",
+  "served_page_has_revalidate": true,
   "first_visit": {
     "date_label": "Yesterday",
     "today_had_cards": true,
@@ -15,29 +15,24 @@
     "debriefs": 11,
     "cached_entries": 11
   },
-  "target": "espn:401873008",
+  "target": "espn:401874762",
   "planted": true,
   "second_visit": {
     "date_label": "Yesterday",
     "today_had_cards": true,
-    "context_requests": 0,
-    "target_requested": false,
-    "target_requested_at_ms": null,
-    "target_answered_at_ms": null,
-    "target_status": null,
-    "marker_first_seen_ms": 3751,
-    "marker_seen_while_held": false,
-    "debriefs_with_marker_at_end": 1,
-    "cache_holds_marker_at_end": true,
+    "context_requests": 11,
+    "target_requested": true,
+    "target_requested_at_ms": 2714,
+    "target_answered_at_ms": 6829,
+    "target_status": 200,
+    "marker_first_seen_ms": 2779,
+    "marker_seen_while_held": true,
+    "debriefs_with_marker_at_end": 0,
+    "cache_holds_marker_at_end": false,
     "debriefs_at_end": 11,
-    "cards_at_end": 57
+    "cards_at_end": 93
   },
   "page_errors": [],
-  "pass": false,
-  "problems": [
-    "the relay was not asked for the cached game on the second visit",
-    "the cached copy did not render while the relay request was held",
-    "the MARKER is still on the page at the end (1 debriefs)",
-    "the Cache API entry still holds the MARKER (true)"
-  ]
+  "pass": true,
+  "problems": []
 }
