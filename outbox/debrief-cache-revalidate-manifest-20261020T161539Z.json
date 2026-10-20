@@ -1,0 +1,37 @@
+{
+  "probed_at": "2026-10-20T16:15:39.994Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "run_id": "39455640076",
+  "marker": "PROBE-STALE-39455640076",
+  "hold_ms": 4000,
+  "served_sw_version": "2026-10-18b",
+  "served_page_has_revalidate": false,
+  "first_visit": {
+    "date_label": "Yesterday",
+    "context_responses": 11,
+    "context_ok": 11,
+    "debriefs": 11,
+    "cached_entries": 11
+  },
+  "target": "espn:401873008",
+  "planted": true,
+  "after_reload": {
+    "date_label": "Yesterday",
+    "target_requested": false,
+    "target_requested_at_ms": null,
+    "target_answered_at_ms": null,
+    "target_status": null,
+    "marker_first_seen_ms": null,
+    "marker_seen_while_held": false,
+    "debriefs_with_marker_at_end": 0,
+    "cache_holds_marker_at_end": true,
+    "debriefs_at_end": 0
+  },
+  "page_errors": [],
+  "pass": false,
+  "problems": [
+    "the relay was not asked for the cached game after the reload",
+    "the cached copy never rendered after the reload (MARKER never seen)",
+    "the Cache API entry still holds the MARKER (true)"
+  ]
+}
