@@ -1,0 +1,84 @@
+name: Debrief Cache Revalidate Probe
+# Proves against the LIVE deploy that a debrief cached by Gap 12 is replaced
+# when the relay's payload differs (docs/CC-CMD-2026-10-20-debrief-cache-
+# outlives-archive-repair.md). Trigger: push to
+# outbox/.trigger-debrief-cache-revalidate-probe OR dispatch. On demand only:
+# scripts/check-debrief-cache-revalidates.mjs gates every deploy on the same
+# behaviour, and this run is the live confirmation of it.
+
+on:
+  push:
+    paths: ['outbox/.trigger-debrief-cache-revalidate-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Same reason as drama-arc-amnesty-probe.yml: a probe that throws on an
+      # undeclared binding before writing its manifest proves nothing.
+      - name: Static check the probe (no-undef)
+        run: |
+          npm install eslint@8
+          npx eslint --no-eslintrc --env es2022,node,browser \
+            --parser-options ecmaVersion:2022,sourceType:script \
+            --rule '{"no-undef":"error"}' debrief_cache_revalidate_probe.js
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      # Exits 1 unless the relay was asked, the cached copy rendered while that
+      # request was held, and afterwards neither the page nor the Cache API
+      # holds the planted MARKER. The manifest is committed either way.
+      - name: Run debrief cache revalidate probe
+        id: probe
+        continue-on-error: true
+        run: node debrief_cache_revalidate_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Debrief Cache Revalidate Probe"
+          git add outbox/debrief-cache-revalidate-manifest-*.json || true
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "debrief cache revalidate probe result [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push origin main && break
+              sleep $((i * 5))
+            done
+            # The loop exits 0 when every attempt fails (its last command is
+            # sleep), so confirm the push landed. is-ancestor, not equality:
+            # another bot pushing after us is routine here.
+            git fetch -q origin main
+            git merge-base --is-ancestor HEAD origin/main \
+              || { echo "FAIL: push did not land after retries"; exit 1; }
+          fi
+
+      - name: Fail the run if the probe failed
+        if: steps.probe.outcome != 'success'
+        run: |
+          echo "Probe failed — see the manifest committed to outbox/."
+          exit 1
