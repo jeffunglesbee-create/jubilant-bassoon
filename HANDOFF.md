@@ -1,5 +1,38 @@
 # FIELD HANDOFF
 
+## 2026-10-20 — a cached debrief now revalidates against the relay
+
+`1f3d2d04` (SW 2026-10-20a, deploy gate run 39468343572).
+
+**What changed.** Gap 12's field-debriefs Cache API used to serve a game's
+context with no request. A browser that cached one of the 211 games repaired
+that day kept the old odds for about 7 days. The live probe showed it before
+the fix (run 39456471138).
+
+**Now:**
+- a hit renders, then the relay is asked;
+- a changed body re-renders that game;
+- a partial answer (200 + `_errors`) or a failure keeps the cached copy.
+
+**Proof:**
+- `scripts/check-debrief-cache-revalidates.mjs` in deploy-gate: 24 cases,
+  33 mutations; the base passes 6 of 24.
+- Live after deploy: run 39468966102 (SW 2026-10-20a, served page carries `_revalidateDebriefContext`): PASS. The planted copy of espn:401874762 rendered at 2.8 s while its relay request was held; the relay was asked at 2.7 s and answered 200 at 6.8 s; afterwards 0 debriefs show the MARKER and the Cache API no longer holds it. The second visit asked the relay once per cached final (11 requests for 11 cached entries).
+
+**Also:**
+- `3de79e6e` fixed the absence-collapse ratchet, red since 10-18. It would
+  have refused this deploy.
+- CONTRACTS.md is identical in both repos again.
+
+**Filed:**
+- two relay CC-CMDs: partial answers cached, with `findBracketDelta` hiding
+  its failure; and 17,468 D1 rows read per answer;
+- two client CC-CMDs: `hydrateMissedRecaps` reads a shape the relay never
+  sends; and a same-tab reload, then a step back to yesterday, rendered 0
+  debriefs (seen once, not yet reproduced).
+
+Session doc: outbox/cc-session-2026-10-20-debrief-cache.md
+
 ## 2026-10-18 — BDB and NGS envelopes carry sourceDataset (laboratory mirror)
 
 `39305c07`: both builders write `sourceDataset`. The laboratory's

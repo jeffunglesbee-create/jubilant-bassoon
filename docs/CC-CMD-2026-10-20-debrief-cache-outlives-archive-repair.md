@@ -4,7 +4,7 @@
 **Repo:** jubilant-bassoon
 **Branch:** main. Commit directly; no feature branch, no PR.
 **Confidence gate:** >= 95 before any commit
-**Status:** FILED, not dispatched
+**Status:** DONE 2026-10-20 (dispatched by the owner: "next approved"; TASK 1 owner-delegated). Results at the end.
 **Filed by:** CC, from the adversarial review of
 field-relay-nba `docs/CC-CMD-2026-10-19-odds-history-american-converted-twice.md`
 (Rule 87.4: found there, out of that repo's scope).
@@ -80,3 +80,56 @@ Smoke must pass, and SW_VERSION is bumped in both files.
 
 - No change to the relay's `/context/game` contract without the paired relay CC-CMD (Rule 70).
 - Do not change layout or the ambient panel; the edit is confined to the cache read/write path.
+
+---
+
+## Results (2026-10-20)
+
+Session doc: `outbox/cc-session-2026-10-20-debrief-cache.md`. Proof log:
+`outbox/debrief-cache-revalidate-2026-10-20.log`.
+
+**TASK 0** (log §0):
+1. field-debriefs has one reader, one writer and one evictor. It is the only
+   store of a relay archive payload that outlives the session with no
+   read-time age check.
+2. Every other archive copy is sessionStorage with a 30-minute TTL, or nothing.
+3. `/context/game` carries no change signal. The body was byte-stable across
+   34 minutes. A failed D1 sub-query answers 200 with `_errors`; review round 1
+   found this.
+
+**TASK 1, option (b), owner-delegated:** revalidate on read (`1f3d2d04`).
+- A hit renders at once. Then the relay is asked with `cache: 'no-cache'`.
+- If the body changed, it is kept and that game's cards re-run. If the
+  corrected payload draws nothing, the old debrief is cleared.
+- If the body is unchanged, nothing is written.
+- A non-2xx, an offline fetch, or a body with `_errors` changes nothing.
+- Overlapping passes share one resolve.
+
+(a) was rejected because an age check cannot tell a corrected row from an
+unchanged one. (c) fixes only this incident.
+
+**Done conditions:**
+1. TASK 0 outputs: committed in the log, §0.
+2. The reload test, red before and green after, with mutations:
+   `scripts/check-debrief-cache-revalidates.mjs`.
+   - base `ff4239e2`: 6 of 24;
+   - fix: 24 of 24;
+   - mutations: 33 of 33 caught after a green baseline (log §1-§2);
+   - wired into deploy-gate.
+3. Deploy gate run 39468343572: success. Smoke 1055/1055. SW_VERSION 2026-10-20a.
+
+**Live (Rule 90, CI-as-proxy Playwright against the deployed site):**
+`debrief_cache_revalidate_probe.js` plants a MARKER in a real cached entry and
+checks a second visit in a new tab.
+- Before the fix, run 39456471138 (SW 2026-10-18b) was red:
+  - 0 relay requests;
+  - the MARKER stayed on the page and in the cache.
+- After the fix: run 39468966102 (SW 2026-10-20a, served page carries `_revalidateDebriefContext`): PASS. The planted copy of espn:401874762 rendered at 2.8 s while its relay request was held; the relay was asked at 2.7 s and answered 200 at 6.8 s; afterwards 0 debriefs show the MARKER and the Cache API no longer holds it. The second visit asked the relay once per cached final (11 requests for 11 cached entries).
+
+**Filed (Rule 87.4):**
+- relay `docs/CC-CMD-2026-10-20-context-game-caches-partial-answers.md`
+  (`findBracketDelta` hides its failure; partial answers are KV-cached);
+- relay `docs/CC-CMD-2026-10-20-context-game-scans-17k-rows-per-answer.md`;
+- client `docs/CC-CMD-2026-10-20-missed-recap-reads-a-shape-the-relay-never-sends.md`;
+- client `docs/CC-CMD-2026-10-20-reload-on-a-past-date-renders-no-debriefs.md`
+  (observed once by the live probe, not yet reproduced).

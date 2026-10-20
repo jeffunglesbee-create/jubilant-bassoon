@@ -1,0 +1,334 @@
+# Proof log: the debrief cache revalidates against the relay, 2026-10-20
+# CC-CMD: docs/CC-CMD-2026-10-20-debrief-cache-outlives-archive-repair.md
+# Base: ff4239e2 (jubilant-bassoon main)
+
+## §0 TASK 0 — premises, one command each (Rule 100)
+
+### T0.1 every reader and writer of field-debriefs
+
+$ grep -n "field-debriefs" src/legacy/field.js sw.js index.html
+src/legacy/field.js:2665:        // Gap 12: cache-first read from field-debriefs Cache API
+src/legacy/field.js:2669:            const _dc = await caches.open('field-debriefs');
+src/legacy/field.js:2683:              const _dc = await caches.open('field-debriefs');
+sw.js:42:      // Gap 12: evict field-debriefs entries older than 7 days
+sw.js:43:      caches.open('field-debriefs').then(dc => dc.keys().then(keys =>
+index.html:7726:        // Gap 12: cache-first read from field-debriefs Cache API
+index.html:7730:            const _dc = await caches.open('field-debriefs');
+index.html:7744:              const _dc = await caches.open('field-debriefs');
+
+- One reader: injectDebriefCards, field.js line 2669 ("const _hit = await _dc.match(_debriefCacheKey);").
+  On a hit it uses the payload and never asks the relay. It does not check the
+  entry's age.
+- One writer: injectDebriefCards, field.js line 2683, after a relay fetch on a miss.
+- One evictor: the sw.js activate handler ("evict field-debriefs entries older
+  than 7 days"). It deletes an entry only when X-Cache-Time is more than 7 days old.
+- index.html lines 7726-7744 are the pre-commit hook's copy of field.js.
+  Nothing else opens the cache: 3 of the 6 caches.open calls in field.js and
+  sw.js name it (field.js lines 2669 and 2683, sw.js line 43); the other 3 are
+  sw.js's SHELL_CACHE and API_CACHE.
+  (Corrected after review: the first draft said 2 of 6.)
+
+### T0.2 every other client store of relay archive payloads, with its eviction
+
+Command: grep -n "caches.open\|localStorage.setItem\|sessionStorage.setItem\|indexedDB.open" src/legacy/field.js sw.js
+The CC-CMD's grep named only caches.open and localStorage. sessionStorage and
+IndexedDB were added because the first archive reader found
+(fetchSeriesArchive) writes sessionStorage.
+
+Archive reads: every fetch of /archive/* or /context/* in field.js (19 call sites:
+17 with the route on the fetch( line, 2 with it on the next line, the
+bracket-replay and last-meeting reads), and what each one persists:
+
+| reader | route | stored in | read-time age check |
+|---|---|---|---|
+| injectDebriefCards | /context/game/{id} | Cache API field-debriefs (persists across reloads) | **none** |
+| hydrateMissedRecaps | /context/game/{id} | nothing; and it reads `data.briefs`, a key the body never has, so it never finds a recap (filed: docs/CC-CMD-2026-10-20-missed-recap-reads-a-shape-the-relay-never-sends.md) | n/a |
+| brief-quality health panel | /archive/query | sessionStorage | 30 min |
+| archive timeline | /archive/query | sessionStorage | 30 min |
+| upsets | /archive/upsets, /archive/query | sessionStorage | 30 min |
+| journalism archive | /archive/query | sessionStorage | 30 min |
+| broadcast archaeology | /archive/date/{iso} | sessionStorage | 30 min |
+| fetchSeriesArchive | /archive/series/{key} | sessionStorage | 30 min |
+| fetchLastMeeting, fetchArchiveDate, drama-missing, bracket-replay | /archive/* (GET) | nothing | n/a |
+| archive writers: /archive/brief x2, /archive/game x1, /archive/drama x3 | POST | n/a | n/a |
+
+  19 = 13 readers + 6 writers. (Corrected after review: the first draft also
+  listed bracket-replay as a writer; it is a GET reader only.)
+
+- localStorage: 57 setItem calls in field.js (59 matching lines, 2 of them the
+  `// Usage: localStorage.setItem('FIELD_DEBUG','1')` comments). 13 sit in a function that talks
+  to the relay. None of those 13 stores an /archive or /context payload. They
+  hold BDL player data (24 h and 4 h TTL), FIFA rank (TTL), the playoff leaders
+  (TTL), journalism scout picks, live soccer stats (date-keyed), and the
+  client's own finals list (date-keyed).
+- IndexedDB:
+  - field-snapshots holds `main.innerHTML`, rendered debriefs included,
+    saved on visibilitychange/beforeunload and painted at boot when under
+    6 h old. The first renderAll replaces it, and that render's debriefs go
+    through injectDebriefCards, so a stale debrief in a snapshot lasts until
+    the first render of the next load;
+  - field_prefs (sw.js) holds preferences.
+- sw.js fetch handler: no relay host in isAPI, so no relay response is cached by
+  the service worker (API_CACHE holds espn, open-meteo, sportsdb, the-odds, fpl,
+  statsapi only).
+
+Result: field-debriefs is the only store of a relay archive payload that
+outlives the browser session and has no read-time age check. Every sessionStorage
+copy dies with the tab and expires after 30 minutes.
+
+### T0.3 does /context/game/{id} carry a change signal?
+
+Relay route source (field-relay-nba src/index.js at 7829082c, the /context/game handler):
+  const cacheKey = `ctx:${id}`
+  KV hit:   headers 'Cache-Control': 'public,max-age=60', 'X-Cache': 'HIT'
+  fresh:    headers 'Cache-Control': `public,max-age=${isFinal ? 300 : 60}`
+  KV write: expirationTtl: isFinal ? 300 : 60
+No ETag, no Last-Modified, no digest header.
+(Corrected after review: the first draft quoted max-age=60 for the fresh path;
+for a final it is 300. A revalidation within 300 s of the previous fetch can be
+answered from the browser's HTTP cache.)
+
+A failed D1 sub-query does not produce a non-2xx. findGame and the four
+fan-out lookups are settled; a rejection becomes null for that section and an
+entry in `_errors`, and the body is still `ok: true`, HTTP 200, KV-cached
+(300 s for a final). `_errors` is present only when non-empty. Found by the
+review, not by this TASK 0's first pass, and it decides what a revalidation may
+accept (§0.4). The relay's caching of such a body is filed separately:
+field-relay-nba docs/CC-CMD-2026-10-20-context-game-caches-partial-answers.md.
+
+Probe (mcp FIELD_Handoff probe_relay_route, relay self-fetch), 2026-10-20:
+  ~16:00Z  GET /context/game/espn:401866408 -> 200 application/json, 3105 bytes
+  ~16:00Z  GET /context/game/espn:401866408 -> 200 application/json, 3105 bytes
+  16:33:58Z GET /context/game/espn:401866408 -> 200 application/json, 3105 bytes
+  bodies byte-identical: yes, all three (the third compared with node against
+  the first, saved; the first is outbox/fixtures/context-game-espn-401866408-2026-10-20.json
+  `repaired`, whose JSON.stringify is the same 3105 bytes)
+  The two ~16:00Z reads cannot refute determinism: the second is a KV hit of
+  the first (review finding). The 16:34Z read is 34 minutes later, past the
+  300 s KV TTL, so it was computed again unless another reader refreshed
+  `ctx:espn:401866408` in between. The self-probe does not return X-Cache, so
+  that cannot be excluded; it is the remaining limit of this check.
+  top-level keys: ok, id, resolved, id_form, game, archive, series, enrichment, bracketDelta
+  game.* time fields: created_at "2026-08-29 10:01:28", finalized_at "2026-08-30 02:00:38",
+    start_time "2026-08-29T22:30Z". None changed when the odds were repaired
+    on 2026-10-20 (closing_odds_parsed.moneyline now {home:-345, away:275}).
+  No field is computed per request: no generated_at, no now, no request id.
+
+Result:
+- The body carries no field that changes when the archive row changes. The
+  client cannot cheaply tell a corrected row from an unchanged one: it has to
+  fetch the body and compare it.
+- No field is computed per request: findGame, findBriefs, findSeries,
+  findEnrichment and findBracketDelta read D1 only (no Date.now, random value
+  or request id). The body therefore changes when the game row, its joined
+  briefs/series/enrichment/bracket rows change, or when a D1 sub-query fails
+  (`_errors`). The first two are corrections; the third is not, and a
+  revalidation must refuse it.
+- The relay's own copies clear within 300 s for a final (KV) plus 60 s
+  (browser HTTP cache).
+
+## §0.4 TASK 1 decision (owner-delegated: "next approved", 2026-10-20)
+
+Chosen: (b) revalidate on read, with three rules the review added:
+- a non-2xx, a network failure, or a 200 carrying `_errors` is not a
+  correction: the cached copy and its render stay, and debrief:revalidate is
+  recorded. A body with `_errors` is never written to the Cache API, on a miss
+  either.
+- an unchanged body writes nothing, so X-Cache-Time keeps dating the copy for
+  sw.js's 7-day eviction (the first version rewrote it on every load).
+- a changed body re-runs the injection for that game's cards only. The first
+  version re-ran the whole pass, which re-requested every card still waiting
+  on its own first answer (K corrected games x M pending cards).
+- (a) an age check cannot tell a corrected row from an unchanged one (T0.3).
+  Whatever N is chosen, a correction stays invisible for up to N hours.
+- (c) fixes the entries from this incident only. The CC-CMD says so itself.
+- (b) bounds a correction at the next page load. It keeps Gap 12's offline
+  render: a failed revalidation leaves the cached render in place. It follows
+  sw.js's own staleWhileRevalidate, the shell cache's pattern.
+- Cost: one /context/game request per cached final card per page load,
+  issued alongside the cached render. Within 300 s of the previous fetch the
+  browser's HTTP cache may answer it. Otherwise the relay answers from KV
+  (`ctx:{id}`, 300 s for a final), or computes the body: 7 D1 statements for
+  espn:401866408 (findGame 4, findBriefs 1, findSeries 1, findBracketDelta 1;
+  findEnrichment returns before querying with no date in the id), read from the
+  branches at relay 7829082c; a game with a series_key adds 2, plus one KV get
+  and one put. Within a load, the in-memory
+  Map serves every later renderAll.
+
+## §1 The reload test, red before and green after (Rule 90)
+
+scripts/check-debrief-cache-revalidates.mjs at 1f3d2d04 (24 cases). The same check run
+against each earlier field.js with --src:
+
+  ff4239e2 (base, pre-fix)           6 of 24 cases pass exit 1
+  5439feea (first version)           13 of 24 cases pass exit 1
+  8dce5e7e (after review round 1)    18 of 24 cases pass exit 1
+  789224f2 (after review round 2)    23 of 24 cases pass exit 1
+
+Base, full output:
+$ node --experimental-strip-types --no-warnings scripts/check-debrief-cache-revalidates.mjs --src=<ff4239e2 field.js>
+source: <ff4239e2 field.js>
+renders: damaged "E Michigan null · Sacramento St +27400" | repaired "E Michigan -345 · Sacramento St +275"
+  ok    C1  first load, empty cache: one fetch, the relay payload renders and is stored
+  FAIL  C2  reload after the archive is corrected: the corrected payload renders and replaces the cached one
+        rendered "E Michigan null · Sacramento St +27400"
+        X-Cache-Time 1792518146020 is not a later millisecond time than the seed's 1792518146020
+        fetches 1, expected 2 (one per load)
+        the Cache API still holds the damaged payload
+  FAIL  C3  the cached copy renders before the relay answers
+        no request to the relay on a cache hit
+        after the answer the card showed "E Michigan null · Sacramento St +27400"
+  FAIL  C4  later renders in the same load use the corrected payload without another fetch
+        rendered "E Michigan null · Sacramento St +27400"
+        fetches 1, expected 2
+  ok    C5  offline reload: the cached copy still renders (Gap 12)
+  FAIL  C6  a relay error on revalidation leaves the cached copy and its render
+        errors []
+  FAIL  C6b a 200 carrying _errors (archive) is not a correction: cached copy, render and Map stay
+        errors []
+  FAIL  C6c a 200 carrying _errors (game) is not a correction either
+        errors []
+  ok    C7  an unchanged payload is rendered once and leaves the stored copy and its date alone
+  ok    C8  a miss the relay cannot answer renders nothing and leaves the card unstamped
+  FAIL  C8b a partial answer on a miss renders once and is kept nowhere: the next pass gets the healed answer
+        the partial answer was written to the Cache API
+        fetches 1, expected 2 (the partial answer must not be pinned in the session Map)
+        the next pass shows "(nothing)"
+        the healed answer was not stored
+  FAIL  C9  a card that leaves the DOM before rendering still refreshes the session copy
+        no request to the relay
+        the next card rendered "E Michigan null · Sacramento St +27400"
+        fetches 1, expected 2
+        the Cache API still holds the damaged payload
+  FAIL  C10 a replacement card rendered while the relay is pending is corrected when it answers
+        the replacement shows "E Michigan null · Sacramento St +27400" after the answer
+  FAIL  C11 an offline revalidation is recorded once, as debrief:revalidate
+        errors []
+  FAIL  C12 offline, later renders in the same load ask the relay once in all
+        fetches 1, expected 2 (seed + one revalidation)
+        0 errors recorded, expected 1
+  FAIL  C13 every relay request carries AbortSignal.timeout(8000)
+        fetches 1
+        the revalidation used cache: undefined, so the browser HTTP cache (max-age=300) can answer it with the old body
+  FAIL  C14 a corrected game re-runs only its own cards: pending and failing games are not touched
+        A 1, B 1 requests, expected 2 each
+        3 renders, expected 5 (A, B, C once; A, B again after their correction)
+        rendered ["E Michigan null · Sacramento St +27400","E Michigan null · Sacramento St +27400","E Michigan -345 · Sacramento St +275"]
+  FAIL  C15 a correction that leaves nothing to draw clears the old debrief
+        the card still shows "E Michigan -345 · Sacramento St +275" after the correction
+        the correction was not stored
+  FAIL  C16 two passes overlapping on a cache hit revalidate once
+        fetches 1, expected 2 (seed + one revalidation)
+        rendered "E Michigan null · Sacramento St +27400"
+  FAIL  C17 a pass during a held revalidation does not render the stamped card again
+        no request to the relay
+  FAIL  C18 a miss that fails while two passes await it: both settle, nothing is pinned, the next pass asks again
+        fetches 3, expected 2 (the failed miss must not stay in flight)
+  ok    C19 a Cache API that rejects (open, then put) still lets a miss render from the relay
+  ok    C20 a corrupt cached entry falls through to the relay and is replaced
+  FAIL  C21 a partial entry an older build stored renders, is revalidated, and is not pinned when that fails
+        the first pass asked the relay 0 times, expected 1 (a revalidation)
+        fetches 0, expected 2 (the partial must not be pinned in the session Map)
+        the next pass shows "E Michigan -345 · Sacramento St +275"
+        the healed answer did not replace the partial entry
+checked 24 cases on the measured game espn:401866408 (C14 adds three synthetic ids carrying its payload); DOM, Cache API and relay are fakes; 6 of 24 cases pass; unhandled rejections: 0
+
+HEAD 1f3d2d04:
+$ node --experimental-strip-types --no-warnings scripts/check-debrief-cache-revalidates.mjs
+source: src/legacy/field.js
+renders: damaged "E Michigan null · Sacramento St +27400" | repaired "E Michigan -345 · Sacramento St +275"
+  ok    C1  first load, empty cache: one fetch, the relay payload renders and is stored
+  ok    C2  reload after the archive is corrected: the corrected payload renders and replaces the cached one
+  ok    C3  the cached copy renders before the relay answers
+  ok    C4  later renders in the same load use the corrected payload without another fetch
+  ok    C5  offline reload: the cached copy still renders (Gap 12)
+  ok    C6  a relay error on revalidation leaves the cached copy and its render
+  ok    C6b a 200 carrying _errors (archive) is not a correction: cached copy, render and Map stay
+  ok    C6c a 200 carrying _errors (game) is not a correction either
+  ok    C7  an unchanged payload is rendered once and leaves the stored copy and its date alone
+  ok    C8  a miss the relay cannot answer renders nothing and leaves the card unstamped
+  ok    C8b a partial answer on a miss renders once and is kept nowhere: the next pass gets the healed answer
+  ok    C9  a card that leaves the DOM before rendering still refreshes the session copy
+  ok    C10 a replacement card rendered while the relay is pending is corrected when it answers
+  ok    C11 an offline revalidation is recorded once, as debrief:revalidate
+  ok    C12 offline, later renders in the same load ask the relay once in all
+  ok    C13 every relay request carries AbortSignal.timeout(8000)
+  ok    C14 a corrected game re-runs only its own cards: pending and failing games are not touched
+  ok    C15 a correction that leaves nothing to draw clears the old debrief
+  ok    C16 two passes overlapping on a cache hit revalidate once
+  ok    C17 a pass during a held revalidation does not render the stamped card again
+  ok    C18 a miss that fails while two passes await it: both settle, nothing is pinned, the next pass asks again
+  ok    C19 a Cache API that rejects (open, then put) still lets a miss render from the relay
+  ok    C20 a corrupt cached entry falls through to the relay and is replaced
+  ok    C21 a partial entry an older build stored renders, is revalidated, and is not pinned when that fails
+checked 24 cases on the measured game espn:401866408 (C14 adds three synthetic ids carrying its payload); DOM, Cache API and relay are fakes; 24 of 24 cases pass; unhandled rejections: 0
+exit 0
+
+## §2 Mutations of the fix, each must turn a case red
+
+$ node --experimental-strip-types --no-warnings scripts/check-debrief-cache-revalidates.mjs --mutate
+baseline: 24 of 24 cases pass on the unmutated source
+  caught      M1  the revalidation is never started  (C2, C3, C4, C6, C6b, C6c, C9, C10, C11, C12, C13, C14, C15, C16, C17, C21)
+  caught      M2  the comparison always says "unchanged"  (C2, C3, C4, C9, C10, C14, C15, C16, C21)
+  caught      M3  a changed payload does not clear the stamp  (C2, C3, C10, C14, C15, C16, C21)
+  caught      M4  a kept answer is not written to the Cache API  (C1, C2, C3, C5, C6, C6b, C6c, C7, C8b, C9, C10, C11, C12, C13, C14, C15, C17, C20, C21)
+  caught      M5  the render waits for the relay  (C2, C3, C9, C14, C15, C17, C21)
+  caught      M6  an unchanged answer is treated as a change  (C7)
+  caught      M7  a non-2xx answer is used  (C6, C8)
+  caught      M8  a failed revalidation escapes as an injection error  (C11)
+  caught      M9  a kept answer does not reach the session Map  (C2, C3, C4, C9, C10, C14, C15, C16, C21)
+  caught      M10 every overlapping pass revalidates, not only the first  (C16)
+  caught      M11 a partial answer (200 + _errors) replaces the cached copy  (C6b, C6c)
+  caught      M12 a partial answer is kept on a miss (Map and Cache API)  (C8b)
+  caught      M27 a failed miss stays in flight (cleanup on success only)  (C18)
+  caught      M28 a failed miss leaves an unhandled rejection and stays in flight  (C18, 1 unhandled)
+  caught      M29 a Cache API read failure is not contained  (C19, C20)
+  caught      M30 a Cache API write failure is not contained  (C19)
+  caught      M31 a corrupt cached entry ends the pass instead of asking the relay  (C20)
+  caught      M32 a legacy partial entry is pinned in the session Map  (C21)
+  caught      M33 a legacy partial entry is never revalidated  (C21)
+  caught      M26 a partial answer is pinned in the session Map  (C8b)
+  caught      M13 the re-run covers every card, not the corrected game's  (C14)
+  caught      M14 a Cache API hit is not put in the session Map  (C6b, C12)
+  caught      M15 a non-2xx answer is treated as a correction  (C6)
+  caught      M16 the request timeout is dropped  (C13)
+  caught      M17 the request timeout is lengthened  (C13)
+  caught      M18 an unchanged answer rewrites the stored copy and its date  (C7)
+  caught      M19 the revalidation can be answered by the HTTP cache  (C13)
+  caught      M20 overlapping passes do not share the pending resolve  (C16, C18)
+  caught      M21 a correction with nothing to draw leaves the old debrief  (C15)
+  caught      M22 the card is stamped only after its revalidation  (C17)
+  caught      M23 X-Cache-Time is written in seconds  (C1, C2)
+  caught      M24 X-Cache-Time is not written  (C1, C2, C7)
+  caught      M25 the timeout signal is created and then discarded  (C13)
+mutations: 33 of 33 caught, each anchor unique and applied
+exit 0
+
+Under CPU starvation (12 busy loops on 4 cores, the check at nice -n 19), at the
+20-case version: 20 of 20 three times, and 25 of 25 mutations. The waits count
+event-loop turns, not milliseconds.
+
+## §3 Live, CI-as-proxy Playwright against the deployed site (Rule 90)
+
+debrief_cache_revalidate_probe.js, .github/workflows/debrief-cache-revalidate-probe.yml.
+It steps to yesterday, then plants a MARKER in one real field-debriefs entry. It
+opens a second tab in the same profile and holds that game's /context/game
+request for 4 s.
+
+| run | build | target | relay asked | MARKER seen while held | MARKER on page after | MARKER in cache after | verdict |
+|---|---|---|---|---|---|---|---|
+| 39455640076 | 2026-10-18b (pre-fix) | espn:401873008 | no | never (same-tab reload rendered 0 debriefs) | 0 | true | FAIL, inconclusive: the reload path, see §3.1 |
+| 39456471138 | 2026-10-18b (pre-fix) | espn:401873008 | no (0 requests) | no request to hold; MARKER rendered at 3.75 s | 1 | true | FAIL, the defect |
+| 39468966102 | 2026-10-20a (fix) | espn:401874762 | yes, at 2.7 s; 200 at 6.8 s | yes, at 2.8 s | 0 | false | PASS |
+
+Manifests: outbox/debrief-cache-revalidate-manifest-*.json (committed by the
+workflow). The post-fix run's second visit made 11 /context/game requests,
+one for each of the 11 cached entries.
+
+§3.1 The first red run reloaded the same tab. A reload keeps sessionStorage
+(field_sched_<iso>), and that path rendered 0 debriefs for yesterday in 60 s,
+against 11 on the first visit. The probe was changed to open a new tab
+(9c8591c3) before its result was counted. The same-tab reload rendering no
+debriefs was observed once and is filed for investigation:
+docs/CC-CMD-2026-10-20-reload-on-a-past-date-renders-no-debriefs.md.
+
