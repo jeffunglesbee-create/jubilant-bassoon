@@ -4,7 +4,7 @@
 > If you update one, update the other. Both CC sessions read their own
 > repo's copy. A mismatch causes silent failures at system boundaries.
 
-Last synced: 2026-08-22 (short-code scoping rule — relay + client copies)
+Last synced: 2026-10-20 (relay copy → client: the `_errors` partial-answer marker, and three relay sections the client copy had missed since 2026-09-12)
 
 ---
 
@@ -205,6 +205,27 @@ Renders only when `espnGame.state === 'in'`
 Producer: odds-backfill.js sync step + relay live capture
 Consumer: jubilant-bassoon buildOddsStory()
 
+**`_kickoff` — whether the blob may call itself a closing line.**
+`closing_odds` means the last price before kickoff, and MEASURED 2026-09-14 no
+writer had ever enforced it: 91 of 877 askable rows were captured at or after
+kickoff, one by 64 days. All three writers now stamp `_kickoff` from one shared
+rule (`src/odds-kickoff.js`), comparing instants rather than text — `start_time`
+arrives as both `2026-07-25T20:05Z` and `2026-06-06T23:00:00+00:00`, and as
+strings `'Z'` sorts above `':'`.
+
+- `verified: true` — the capture provably precedes kickoff.
+- `verified: false, late_minutes: n` — captured n minutes after kickoff. An
+  in-play price, not a close. `closing_odds_capture` is here by construction:
+  it fires on the pre-to-live transition, measured 0-25 min late.
+- `verified: false, late_minutes: null` — kickoff unknown or unreadable.
+  Unverified, NOT on time (Rule 99).
+- **`_kickoff` absent entirely** — written before 2026-09-14, when nothing
+  checked. That is every row in the archive as of that date, and it is the
+  honest answer for all of them. A consumer must not read absence as verified.
+
+Consumers may treat an unverified closing line as they choose; the relay states
+the fact and does not decide (Rule 60, ADR-002 pull-only).
+
 ```
 opening_odds: JSON string
 closing_odds: JSON string
@@ -212,6 +233,11 @@ closing_odds: JSON string
 {
   source:      string    // "draftkings", "odds-api-historical", etc.
   captured_at: string    // ISO timestamp
+  _kickoff: {            // added 2026-09-14 — see below. ABSENT on every row
+    at:           string|null   // written before 2026-09-14.
+    verified:     boolean
+    late_minutes: number|null
+  }
   moneyline: {
     home: number         // American format (-150, +130)
     away: number
@@ -255,6 +281,61 @@ Rows written before that deploy carry no price keys. Absent is not zero and not
 even money — it is "not captured", and the three states must stay distinct.
 
 ---
+
+## briefs.sport — POST /archive/brief and the queue consumer
+
+**The relay owns this column (Rule 60).** Callers may send any string; the relay
+canonicalises it at the boundary with `canonicalizeBriefSport` (src/index.js).
+Client code must NOT normalise before sending, and must not be relied on to.
+
+**The authority is the games tables**, not this document: 28 distinct labels
+across `regular_season_games` and `postseason_games`, measured 2026-09-09 by
+`scripts/brief-sport-authority-census.mjs`. A brief whose `sport` matches no
+games-table label is unreachable by every sport-filtered read, including
+`/archive/query?sport=`.
+
+Two of the 28 are **lowercase and correct** — `golf` and `wnba`. The games tables
+carry those exact forms. A "fix the lowercase values" pass breaks working joins;
+this is CC-CMD-2026-08-20's central warning.
+
+### `game.league` is a CAPTION, not a label — and it means two different things
+
+jubilant-bassoon passes `game.league` as `sport` at
+`src/legacy/field.js:31075` (`epl_match`) and `:41603` (`night_owl`). Both call
+sites carry a comment saying `league` "carries the competition's real declared
+label (the relay sets it from its LEAGUES table)". That is true **only for
+relay-sourced soccer**, where the deploy's "Soccer league label contract check"
+asserts it.
+
+It is false for the client's own hardcoded fixture tables, where `league` is a
+display caption:
+
+```
+src/legacy/field.js:9461   league: 'CFL – 2026 Season · ' + (round.name || '')
+src/legacy/field.js:9326   league: "WNBA – 2026 Season"
+```
+
+So the non-conforming set was never a fixed list of variants — it is whatever
+`game.league` happens to hold. Measured accumulation, all four from these
+producers:
+
+| value | rows | producer |
+|---|---|---|
+| `MLS Soccer` | 7 | client `game.league` (section label, field.js:9206) |
+| `CFL – 2026 Season · Week 14` | 2 | client `game.league` (caption, field.js:9461) |
+| `PGA TOUR` | 2 | relay, golf per-round enqueue (index.js ~8540) |
+| `wc` | 1 | relay, BracketDO (bracket-do.js ~409) |
+
+Counted 2026-08-24: 2 rows. 2026-08-31: 7. 2026-09-07: 10. 2026-09-09: 12.
+
+**The client was deliberately NOT changed.** The relay owns the contract and now
+enforces it; a client-side normalisation would be the band-aid Rule 64 names.
+Both relay producers were fixed at source anyway, so the canonicaliser is their
+safety net rather than their mechanism.
+
+`scripts/check-sport-canonicaliser.mjs` guards both halves: the static mappings
+in the deploy gate, and `--live` in the verify job asserting the declared set
+still covers what the games tables hold.
 
 ## /d1/execute endpoint
 
@@ -1071,7 +1152,7 @@ key spaces with separate coverage; a claim about one says nothing about the othe
 
 **If FIELD ever mints its own EPL short codes, Sunderland must not be `SUN`.**
 Use **`SND`** (or `SUND` where four characters are acceptable). The live hazard
-is `resolveAbbr()` at `src/context-assembler.js:119`, which passes any
+is `resolveAbbr()` at `src/context-assembler.js:123`, which passes any
 `/^[A-Z]{2,4}$/` string through unchanged — so an EPL code added to that table
 would inherit the collision silently. That resolver currently covers MLB, NHL
 and NBA only.
@@ -1175,6 +1256,63 @@ judgement, and a linter guessing it would be worse than none.
 label, add a `Sport` case matching it verbatim in field-laboratory, and make sure
 `detectSportClass` recognises it. The third was invisible until it wasn't.
 
+## A failed D1 read is a 503, never `ok: true` with empty data (relay-owned)
+
+**Added 2026-09-12, Rule 99 (DISTINGUISHABILITY-A).**
+
+Eight D1 reads in `src/index.js` used `.all().catch(() => ({ results: [] }))`.
+A query *failure* became an empty result set, and each consumer then published
+it as a successful answer about the data:
+
+| route / caller | what it said when the query threw |
+|---|---|
+| postseason cron helper | `{ok:false, skipped:true, reason:'no active postseason series'}` |
+| `GET /archive/drama/leaderboard` | HTTP 200 `{ok:true, games:[]}` |
+| `GET /archive/drama-missing` | HTTP 200 `{ok:true, games:[]}` |
+| `GET /archive/score-missing` | HTTP 200 `{ok:true, games:[], count:0}` |
+| `GET /integrity/briefs` | `slateCount: 0` → `divergence: true` → offers a repair |
+| `GET /integrity/games` | a gap reported for every league |
+| `POST /backfill/brief-scores` | `{ok:true, dry_run:true, found:0}` |
+
+### The contract
+
+A D1 read failure on any of these routes now answers:
+
+```
+HTTP 503
+{ "ok": false, "error": "query_failed", "detail": "<label>: <message>" }
+```
+
+`d1AllOrError(stmt, label)` returns `{ results, error }` where `results` is
+`null` on failure and an array on success — a sibling of the value, not a member
+of it. Callers branch on `error`, never on `results.length`.
+
+### Consumer position: no change needed, verified not assumed
+
+Checked 2026-09-12 before choosing this shape. Every consumer of every affected
+route already branches on `res.ok` and none reads a body field on failure:
+
+| consumer | what it does |
+|---|---|
+| jubilant-bassoon `src/legacy/field.js:35370` (`runDramaBackfillDiscovery`) | `if (!r.ok) return 0;` |
+| `scripts/drama-backfill.mjs:302` | `if (!res.ok) { console.error(...); break; }` |
+| `scripts/score-fill.mjs:31` | `if (!listRes.ok) throw` |
+| `scripts/verify-drama-leaderboard.mjs:10` | logs the HTTP status |
+| `scripts/check-seed-coverage.mjs`, `jq-pre-game-*.mjs` | relay-side, same repo |
+
+`/archive/drama/leaderboard`, `/archive/score-missing`, `/integrity/briefs`,
+`/integrity/games` and `/backfill/brief-scores` have **no** jubilant-bassoon
+consumer at all. `/archive/drama-missing` is the only one, and it was already
+correct.
+
+So this is a behaviour change that no consumer has to absorb: they were all
+written to distrust a non-2xx and were simply never given one. **jubilant-bassoon
+needs no matching change** (Rule 91 SCOPE-LEGIBLE-A, cross-repo radius).
+
+`scripts/check-d1-failure-distinguishable.mjs` blocks the deploy if the banned
+catch returns, or if any `d1AllOrError` result has `.results` read before
+`.error` is checked.
+
 ## GET /context/game/{id} — `resolved` and `id_form` (relay-owned)
 
 **Added 2026-09-12.** The response previously carried `game: null` for two
@@ -1270,3 +1408,61 @@ the field-debriefs Cache API. It never replaces a cached copy on
 revalidation. `docs/CC-CMD-2026-10-20-debrief-cache-outlives-archive-repair.md`.
 Gate: `scripts/check-debrief-cache-revalidates.mjs` (cases C6b, C6c, C8b),
 which models the relay's two shapes.
+
+## `game.winProb` — two models, one shape
+
+**Producer:** `src/index.js` — the soccer/WC path (`computeLiveWP`,
+`src/soccer-wp.js`) and, from 2026-10-11, the NHL path
+(`winProbFromPlayByPlay`, `src/hockey-wp.js`).
+**Consumer:** jubilant-bassoon, on the `/v2/games` payload.
+
+Both producers emit the SAME shape, so no consumer needs to branch on sport:
+
+```
+winProb: { homeWin: number, draw: number, awayWin: number, source: string }
+```
+
+NHL adds three fields, all additive:
+
+```
+           label: 'FIELD model probability'   // never 'Market estimate'
+           state: 'modelled' | 'prior'
+```
+
+### `draw` is 0 for hockey, and that is a fact
+
+An NHL game cannot end level — a tie after regulation is decided in overtime
+or a shootout. `draw: 0` is therefore the true probability, not a placeholder
+for an unmodelled outcome. It is also the reason the hockey model is a separate
+file: `soccer-wp.js`'s `DC_RHO = -0.130` is a low-score DRAW inflation
+correction, and porting it to a sport without draws would be a category error
+dressed as reuse.
+
+### A refusal is NOT a number
+
+`winProb` is **absent** when the model declined to score, and the reason is on
+the game object instead:
+
+| field | when |
+|---|---|
+| `winProbState: 'refused'` + `winProbProblems: [...]` | score, clock, strength or goalie state unreadable |
+| `winProbState: 'prior'` | no shots taken yet — `winProb.homeWin` is the measured home-win base rate, labelled `'FIELD pre-game prior'`, NOT a read of this game |
+| `winProbState: 'upstream-failed'` | the gamecenter play-by-play call did not answer |
+| `winProbCaveats: [...]` | scored, but an input was not reported (e.g. `goalieInNetId` absent — goalie quality is not a model input, so nothing was substituted) |
+
+A consumer that reads `winProb.homeWin` without checking `winProbState` gets
+`undefined` rather than a wrong number, which is the intended failure.
+
+### Labels are reserved and must not be reused
+
+`src/wp-resolver.js` serves two other probability labels and the hockey model
+must never carry either: `'Market estimate'` (a de-vigged book price, line 511)
+and `'Statistical probability'` (a vendor's own published model). These are
+three different kinds of number and conflating them is the substitution this
+repository keeps finding. Both reserved strings are exported as constants from
+`src/hockey-wp.js` so a check can assert the distinction rather than a spelling.
+
+Gate: `scripts/check-hockey-wp.mjs` (39 checks) and
+`scripts/mutate-hockey-wp.mjs` (13 mutations, all caught), both in `guards.yml`.
+The calibration that earned the model its place is
+`outbox/hockey-wp-calibration-latest.json`.
