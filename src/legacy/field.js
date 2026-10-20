@@ -2602,17 +2602,112 @@ function updateCard(cardEl, enrichedGame) {
 // buildDramaUnsealed, buildFieldWasWatching, buildOddsStory, buildSeriesArc,
 // buildBracketDeltaLayer, buildDebrief extracted to src/debrief/index.ts (Phase 4 — Debrief domain).
 
-// Session-level cache for Context Graph responses (final games are immutable)
+// Session-level cache for Context Graph responses. Final games are NOT
+// immutable: the archive corrects them (2026-10-20 repaired the odds of 211
+// games), so a copy read back from Gap 12's Cache API is revalidated below.
 const _debriefContextCache = new Map();
+
+const _debriefCacheKeyOf = contextId => `https://field-local/debrief/${encodeURIComponent(contextId)}`;
+
+// contextId -> the pending _resolveDebriefContext of the first pass to miss
+// the Map. Injection passes overlap (renderAll, the SSE final, _gameId
+// propagation); later passes await this one, and only the first revalidates.
+const _debriefResolving = new Map();
+
+// Asks the relay for one game's Context Graph. Returns the body of a 2xx
+// answer, or null; a network failure throws. Keeps nothing: the caller does.
+// `init` adds fetch options (the revalidation passes cache: 'no-cache').
+async function _fetchDebriefContext(base, contextId, init = {}) {
+  const r = await fetch(`${base}/context/game/${encodeURIComponent(contextId)}`,
+    { signal: AbortSignal.timeout(8000), ...init });
+  if (!r.ok) return null;
+  return r.json();
+}
+
+// Gap 12's Cache API copy if there is one, else the relay's answer (kept).
+// Resolves to { ctx, cachedJson }: cachedJson is the stored text of a Cache
+// API hit and null otherwise; ctx is null when the relay answers a miss with a
+// non-2xx. A network failure on a miss rejects.
+async function _resolveDebriefContext(base, contextId) {
+  // Gap 12: cache-first read from field-debriefs Cache API
+  try {
+    if (typeof caches !== 'undefined') {
+      const _dc = await caches.open('field-debriefs');
+      const _hit = await _dc.match(_debriefCacheKeyOf(contextId));
+      if (_hit) {
+        const cachedJson = await _hit.text();
+        const ctx = JSON.parse(cachedJson);
+        // Builds before 2026-10-20 stored partial answers too: render one and
+        // revalidate it, but never pin it in the session Map.
+        if (!ctx._errors) _debriefContextCache.set(contextId, ctx);
+        return { ctx, cachedJson };
+      }
+    }
+  } catch(_) {}
+  const ctx = await _fetchDebriefContext(base, contextId);
+  if (ctx) await _keepDebriefContext(contextId, ctx);
+  return { ctx, cachedJson: null };
+}
+
+// Keeps a complete relay answer for the session (the Map) and across sessions
+// (Gap 12's Cache API). The relay answers a failed D1 sub-query with a 200
+// whose body carries `_errors` (field-relay-nba /context/game). Such a body is
+// a partial answer: it may render once, but it is kept nowhere, so the next
+// pass asks again instead of showing it for the rest of the session.
+async function _keepDebriefContext(contextId, ctx) {
+  if (ctx._errors) return;
+  _debriefContextCache.set(contextId, ctx);
+  // Gap 12: write to Cache API with timestamp for 7-day eviction
+  try {
+    if (typeof caches !== 'undefined') {
+      const _dc = await caches.open('field-debriefs');
+      await _dc.put(_debriefCacheKeyOf(contextId), new Response(JSON.stringify(ctx), {
+        headers: { 'Content-Type': 'application/json', 'X-Cache-Time': String(Date.now()) }
+      }));
+    }
+  } catch(_) {}
+}
+
+// field-debriefs outlives the session, so a hit can predate an archive
+// correction. The relay's /context/game carries no ETag or updated_at (probed
+// 2026-10-20), so the body is the only test. A non-2xx or partial answer says
+// nothing about the row and leaves the cached copy and its render alone, as a
+// failed fetch does (Gap 12's offline case). A changed body is kept, the
+// game's stamp is cleared, and the injection re-runs for THIS game's cards
+// only, reading the Map just updated. An unchanged body writes nothing, so
+// X-Cache-Time still dates the copy for sw.js's 7-day eviction. The request
+// bypasses the browser's HTTP cache (a final's answer carries max-age=300),
+// so a correction waits only on the relay's own KV copy (ctx:{id}, 300 s),
+// not on that plus a browser copy of it.
+async function _revalidateDebriefContext(base, contextId, gameId, cachedJson) {
+  try {
+    const fresh = await _fetchDebriefContext(base, contextId, { cache: 'no-cache' });
+    if (!fresh || fresh._errors) {
+      captureFieldError('debrief:revalidate', new Error(fresh
+        ? `partial answer (${fresh._errors.map(e => e.source).join(', ')})` : 'non-2xx answer'), true);
+      return;
+    }
+    if (JSON.stringify(fresh) === cachedJson) return;
+    await _keepDebriefContext(contextId, fresh);
+    document.querySelectorAll(`.game-card[data-gameid="${gameId}"][data-debrief-injected]`)
+      .forEach(c => c.removeAttribute('data-debrief-injected'));
+    await injectDebriefCards(gameId);
+  } catch (_e) {
+    captureFieldError('debrief:revalidate', _e, true);
+  }
+}
 
 // Post-render pass: replaces string-rendered final-game cards with DOM cards via
 // renderCard (which wires the debrief slot). Fires ~600ms after every renderAll.
 // Fetches Context Graph per final game, cached after first fetch.
-async function injectDebriefCards() {
+// onlyGameId limits the pass to one game's cards (the revalidation's re-run).
+async function injectDebriefCards(onlyGameId) {
   const base = (typeof V2_RELAY_BASE !== 'undefined')
     ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
   const cards = Array.from(
-    document.querySelectorAll('.game-card[data-gameid]:not([data-debrief-injected])')
+    document.querySelectorAll(onlyGameId === undefined
+      ? '.game-card[data-gameid]:not([data-debrief-injected])'
+      : `.game-card[data-gameid="${onlyGameId}"]:not([data-debrief-injected])`)
   );
   await Promise.allSettled(cards.map(async cardEl => {
     if (!cardEl.isConnected) return;
@@ -2661,33 +2756,26 @@ async function injectDebriefCards() {
     if (!contextId) return;
     try {
       let ctx = _debriefContextCache.get(contextId);
+      // The JSON text of a Cache API hit, kept for the revalidation to compare.
+      let _cachedJson = null;
       if (!ctx) {
-        // Gap 12: cache-first read from field-debriefs Cache API
-        const _debriefCacheKey = `https://field-local/debrief/${encodeURIComponent(contextId)}`;
-        try {
-          if (typeof caches !== 'undefined') {
-            const _dc = await caches.open('field-debriefs');
-            const _hit = await _dc.match(_debriefCacheKey);
-            if (_hit) { ctx = await _hit.json(); _debriefContextCache.set(contextId, ctx); }
-          }
-        } catch(_) {}
-        if (!ctx) {
-          const r = await fetch(`${base}/context/game/${encodeURIComponent(contextId)}`,
-            { signal: AbortSignal.timeout(8000) });
-          if (!r.ok) return;
-          ctx = await r.json();
-          _debriefContextCache.set(contextId, ctx);
-          // Gap 12: write to Cache API with timestamp for 7-day eviction
-          try {
-            if (typeof caches !== 'undefined') {
-              const _dc = await caches.open('field-debriefs');
-              await _dc.put(_debriefCacheKey, new Response(JSON.stringify(ctx), {
-                headers: { 'Content-Type': 'application/json', 'X-Cache-Time': String(Date.now()) }
-              }));
-            }
-          } catch(_) {}
+        let _resolving = _debriefResolving.get(contextId);
+        const _first = !_resolving;
+        if (_first) {
+          _resolving = _resolveDebriefContext(base, contextId);
+          _debriefResolving.set(contextId, _resolving);
+          const _done = () => _debriefResolving.delete(contextId);
+          _resolving.then(_done, _done);
         }
+        const _got = await _resolving;
+        ctx = _got.ctx;
+        if (_first) _cachedJson = _got.cachedJson;
+        if (!ctx) return;
       }
+      // Started before the render so a card that has left the DOM still
+      // refreshes the Map; awaited after it so the cached copy renders first.
+      const _revalidation = _cachedJson === null ? null
+        : _revalidateDebriefContext(base, contextId, gameId, _cachedJson);
       if (!cardEl.isConnected) return;
       const enriched = buildEnrichedGame(rawGame, {
         espnScore:   typeof findESPNScore === 'function' ? findESPNScore(rawGame) : null,
@@ -2703,8 +2791,13 @@ async function injectDebriefCards() {
         }
         debriefDiv.replaceChildren(debriefEl);
         cardEl.classList.add('is-final');
+      } else {
+        // A corrected payload can leave nothing to draw (a repair that NULLs
+        // the odds); what an earlier render drew must not stay behind it.
+        cardEl.querySelector('.card-debrief')?.replaceChildren();
       }
       cardEl.dataset.debriefInjected = '1';
+      await _revalidation;
     } catch (_e) {
       captureFieldError('debrief:inject', _e, true);
     }
@@ -23357,7 +23450,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-18b';
+  const SW_VERSION = '2026-10-20a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

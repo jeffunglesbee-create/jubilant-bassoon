@@ -1,0 +1,216 @@
+{
+ "meta": {
+  "what": "One relay /context/game payload before and after the 2026-10-20 odds repair, for scripts/check-debrief-cache-revalidates.mjs.",
+  "repaired": "GET /context/game/espn:401866408 through the relay self-probe (FIELD_Handoff probe_relay_route), 2026-10-20 ~16:00Z: 200, 3105 bytes, byte-identical on two reads. Stored as parsed; JSON.stringify of it reproduces the 3105 bytes.",
+  "damaged": "The body just before the repair: the same body with moneyline {home:null, away:27400} in opening_odds, closing_odds and both _parsed copies: the values D1 held for CFB_2026-08-29_emichigan_sacramentost from 2026-09-16 until the repair (field-relay-nba outbox/fixture-odds-american-targeted-2026-10-20.json, row CFB_2026-08-29_emichigan_sacramentost_targeted: blob_home null, blob_away 27400, opening_equals_closing 1). The repair changed only those two keys (json_set on $.moneyline.home and $.moneyline.away), so everything else is unchanged.",
+  "contextId": "espn:401866408"
+ },
+ "repaired": {
+  "ok": true,
+  "id": "espn:401866408",
+  "resolved": true,
+  "id_form": "resolved",
+  "game": {
+   "id": "CFB_2026-08-29_emichigan_sacramentost",
+   "sport": "CFB",
+   "league": "CFB",
+   "date": "2026-08-29",
+   "home": "E Michigan",
+   "away": "Sacramento St",
+   "home_score": 28,
+   "away_score": 17,
+   "venue": "Rynearson Stadium",
+   "streams": "ESPN+",
+   "note": null,
+   "tags": null,
+   "crew": null,
+   "local_note": null,
+   "created_at": "2026-08-29 10:01:28",
+   "opening_odds": "{\"source\":\"draftkings\",\"captured_at\":\"2026-08-29T11:55:38Z\",\"moneyline\":{\"home\":-345,\"away\":275},\"_kickoff\":{\"at\":\"2026-08-29T22:30Z\",\"verified\":true,\"late_minutes\":null}}",
+   "closing_odds": "{\"source\":\"draftkings\",\"captured_at\":\"2026-08-29T11:55:38Z\",\"moneyline\":{\"home\":-345,\"away\":275},\"_kickoff\":{\"at\":\"2026-08-29T22:30Z\",\"verified\":true,\"late_minutes\":null}}",
+   "drama_peak": 0,
+   "drama_arc": "null",
+   "espn_event_id": "401866408",
+   "went_to_ot": null,
+   "finalized_at": "2026-08-30 02:00:38",
+   "start_time": "2026-08-29T22:30Z",
+   "importance": null,
+   "inplay_odds": null,
+   "opening_odds_parsed": {
+    "source": "draftkings",
+    "captured_at": "2026-08-29T11:55:38Z",
+    "moneyline": {
+     "home": -345,
+     "away": 275
+    },
+    "_kickoff": {
+     "at": "2026-08-29T22:30Z",
+     "verified": true,
+     "late_minutes": null
+    }
+   },
+   "closing_odds_parsed": {
+    "source": "draftkings",
+    "captured_at": "2026-08-29T11:55:38Z",
+    "moneyline": {
+     "home": -345,
+     "away": 275
+    },
+    "_kickoff": {
+     "at": "2026-08-29T22:30Z",
+     "verified": true,
+     "late_minutes": null
+    }
+   },
+   "drama_arc_parsed": null,
+   "lineMovement": {
+    "spreadOpen": null,
+    "spreadClose": null,
+    "moved": false
+   }
+  },
+  "archive": {
+   "gameBriefs": [
+    {
+     "id": "game_recap_cfb_401866408",
+     "brief_type": "game_recap",
+     "brief_text": "Eastern Michigan defeated Sacramento State 28-17 tonight at Rynearson Stadium. The Eagles moved to 1-0 this season, while the Hornets fell to 0-1 this season. Eastern Michigan relied on a balanced offensive effort to secure the win tonight, holding Sacramento State to 17 points tonight on ESPN+.",
+     "quality_score": 177,
+     "source": "cron",
+     "model": null,
+     "word_count": 47,
+     "created_at": "2026-08-30 02:00:38"
+    },
+    {
+     "id": "game_live_cfb_401866408",
+     "brief_type": "game_live",
+     "brief_text": "Eastern Michigan leads Sacramento State 28-17 with 8:23 remaining in the fourth quarter at Rynearson Stadium. The Eagles currently hold an 11-point advantage tonight while broadcasting on ESPN+. Both teams entered this contest with 0-0 records this season. The game remains active as the final period progresses toward the conclusion.",
+     "quality_score": 174,
+     "source": "cron",
+     "model": "claude-haiku-4-5-20251001",
+     "word_count": 50,
+     "created_at": "2026-08-29 10:03:10"
+    },
+    {
+     "id": "pre_game_CFB_2026-08-29_emichigan_sacramentost",
+     "brief_type": "pre_game",
+     "brief_text": "Eastern Michigan defeated Sacramento State 28-17 tonight at Rynearson Stadium. The Eagles moved to 1-0 this season, while the Hornets fell to 0-1 this season. Eastern Michigan relied on a balanced offensive effort to secure the win tonight, holding Sacramento State to 17 points tonight on ESPN+.",
+     "quality_score": 177,
+     "source": "cron",
+     "model": "gemini-3.1-flash-lite",
+     "word_count": 47,
+     "created_at": "2026-08-29 10:02:38"
+    }
+   ],
+   "slateBrief": null,
+   "priorBrief": null
+  },
+  "series": null,
+  "enrichment": null,
+  "bracketDelta": null
+ },
+ "damaged": {
+  "ok": true,
+  "id": "espn:401866408",
+  "resolved": true,
+  "id_form": "resolved",
+  "game": {
+   "id": "CFB_2026-08-29_emichigan_sacramentost",
+   "sport": "CFB",
+   "league": "CFB",
+   "date": "2026-08-29",
+   "home": "E Michigan",
+   "away": "Sacramento St",
+   "home_score": 28,
+   "away_score": 17,
+   "venue": "Rynearson Stadium",
+   "streams": "ESPN+",
+   "note": null,
+   "tags": null,
+   "crew": null,
+   "local_note": null,
+   "created_at": "2026-08-29 10:01:28",
+   "opening_odds": "{\"source\":\"draftkings\",\"captured_at\":\"2026-08-29T11:55:38Z\",\"moneyline\":{\"home\":null,\"away\":27400},\"_kickoff\":{\"at\":\"2026-08-29T22:30Z\",\"verified\":true,\"late_minutes\":null}}",
+   "closing_odds": "{\"source\":\"draftkings\",\"captured_at\":\"2026-08-29T11:55:38Z\",\"moneyline\":{\"home\":null,\"away\":27400},\"_kickoff\":{\"at\":\"2026-08-29T22:30Z\",\"verified\":true,\"late_minutes\":null}}",
+   "drama_peak": 0,
+   "drama_arc": "null",
+   "espn_event_id": "401866408",
+   "went_to_ot": null,
+   "finalized_at": "2026-08-30 02:00:38",
+   "start_time": "2026-08-29T22:30Z",
+   "importance": null,
+   "inplay_odds": null,
+   "opening_odds_parsed": {
+    "source": "draftkings",
+    "captured_at": "2026-08-29T11:55:38Z",
+    "moneyline": {
+     "home": null,
+     "away": 27400
+    },
+    "_kickoff": {
+     "at": "2026-08-29T22:30Z",
+     "verified": true,
+     "late_minutes": null
+    }
+   },
+   "closing_odds_parsed": {
+    "source": "draftkings",
+    "captured_at": "2026-08-29T11:55:38Z",
+    "moneyline": {
+     "home": null,
+     "away": 27400
+    },
+    "_kickoff": {
+     "at": "2026-08-29T22:30Z",
+     "verified": true,
+     "late_minutes": null
+    }
+   },
+   "drama_arc_parsed": null,
+   "lineMovement": {
+    "spreadOpen": null,
+    "spreadClose": null,
+    "moved": false
+   }
+  },
+  "archive": {
+   "gameBriefs": [
+    {
+     "id": "game_recap_cfb_401866408",
+     "brief_type": "game_recap",
+     "brief_text": "Eastern Michigan defeated Sacramento State 28-17 tonight at Rynearson Stadium. The Eagles moved to 1-0 this season, while the Hornets fell to 0-1 this season. Eastern Michigan relied on a balanced offensive effort to secure the win tonight, holding Sacramento State to 17 points tonight on ESPN+.",
+     "quality_score": 177,
+     "source": "cron",
+     "model": null,
+     "word_count": 47,
+     "created_at": "2026-08-30 02:00:38"
+    },
+    {
+     "id": "game_live_cfb_401866408",
+     "brief_type": "game_live",
+     "brief_text": "Eastern Michigan leads Sacramento State 28-17 with 8:23 remaining in the fourth quarter at Rynearson Stadium. The Eagles currently hold an 11-point advantage tonight while broadcasting on ESPN+. Both teams entered this contest with 0-0 records this season. The game remains active as the final period progresses toward the conclusion.",
+     "quality_score": 174,
+     "source": "cron",
+     "model": "claude-haiku-4-5-20251001",
+     "word_count": 50,
+     "created_at": "2026-08-29 10:03:10"
+    },
+    {
+     "id": "pre_game_CFB_2026-08-29_emichigan_sacramentost",
+     "brief_type": "pre_game",
+     "brief_text": "Eastern Michigan defeated Sacramento State 28-17 tonight at Rynearson Stadium. The Eagles moved to 1-0 this season, while the Hornets fell to 0-1 this season. Eastern Michigan relied on a balanced offensive effort to secure the win tonight, holding Sacramento State to 17 points tonight on ESPN+.",
+     "quality_score": 177,
+     "source": "cron",
+     "model": "gemini-3.1-flash-lite",
+     "word_count": 47,
+     "created_at": "2026-08-29 10:02:38"
+    }
+   ],
+   "slateBrief": null,
+   "priorBrief": null
+  },
+  "series": null,
+  "enrichment": null,
+  "bracketDelta": null
+ }
+}

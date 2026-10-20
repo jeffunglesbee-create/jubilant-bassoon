@@ -231,6 +231,19 @@ jobs:
           node scripts/check-debrief-postgame-only.mjs
           node scripts/mutate-debrief-postgame-only.mjs
 
+      # Gap 12's field-debriefs Cache API outlives the session, and until
+      # 2026-10-20 a hit was rendered with no request to the relay, so a game
+      # the archive corrected kept its old debrief for ~7 days (measured: the
+      # odds repair of 211 games). This runs field.js's own injectDebriefCards
+      # across simulated page loads: red on the pre-fix source (6 of 24 pass),
+      # green after, and 33 mutations each turn a case red (--mutate first
+      # proves the unmutated source green). It includes the relay's partial
+      # answer (HTTP 200 with _errors), which must never replace or pin a copy.
+      - name: A corrected archive row reaches a browser that cached the old one
+        run: |
+          node --experimental-strip-types --no-warnings scripts/check-debrief-cache-revalidates.mjs
+          node --experimental-strip-types --no-warnings scripts/check-debrief-cache-revalidates.mjs --mutate
+
       - name: The odds scenario never claims an outcome without a score
         run: |
           node --experimental-strip-types --no-warnings scripts/check-odds-story-scenario.mjs
