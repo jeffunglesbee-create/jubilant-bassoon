@@ -114,6 +114,35 @@ immutability guard, CC-CMD-2026-07-06-drama-peak-immutability-guard.md,
 field-relay-nba), has no second value to have "changed" from — not
 that the event is over.
 
+### Amendment 2026-10-21: finished-game narrative for the empowerment metrics (owner ruling)
+
+The ruling of 2026-10-15 (field-laboratory
+`docs/CC-CMD-2026-10-15-empowerment-metrics.md`, "The ruling") cleared Flow,
+Tactical Lock, Second Wind and Gravity Well as **live** composite verdicts about
+named teams and players, on the condition that they reach the page only as
+geometry, colour or opacity, with "no narrative strings".
+
+Ruled by the owner, 2026-10-21: **narrative strings are permitted for a
+FINISHED or ARCHIVED game, and only there.** The basis is Defense 4 above: post-
+game content is outside the patents' scope. The owner's reason: without a plain-
+English narrative the metrics are "largely, perhaps completely, useless".
+
+The conditions, enforced at the type level and not by review:
+
+- A narrative string is produced only by a function that takes the same witness
+  the metric's visual projection already demands: `Flow.Finished`,
+  `Stamina.FinishedGame`, `Gravity.Archived`. No witness, no sentence. A live
+  game cannot produce one, and the compiler refuses the attempt (field-laboratory
+  `docs/AMNESTY-PROOF.md`).
+- Every number in a sentence is generated from the value. The only words used
+  for an outcome are the metric's defined outcome names. No vendor commentary,
+  no adjectives of excitement, and nothing that says or implies "watch this".
+- **Live is unchanged.** A game in progress still shows geometry, colour and
+  opacity only.
+
+This was not a legal opinion. It is the owner's ruling, recorded here. Counsel
+was not consulted for this amendment.
+
 ---
 
 ## ADR-002 Rules
