@@ -1,0 +1,188 @@
+{
+  "ts": "2026-10-22T18:28:17.442Z",
+  "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "sw": "2026-10-20a",
+  "triggered_by": "schedule",
+  "relayReachable": true,
+  "relayLiveMatches": 21,
+  "relayLiveMatchesAllTiers": 95,
+  "tiersSeen": [
+    "atp_250",
+    "challenger",
+    "utr",
+    "wta_250",
+    "wta_500"
+  ],
+  "startedCards": 18,
+  "dayFeedCount": 95,
+  "dayFeedTruncated": false,
+  "expectedTournaments": [
+    "ATP Brussels, Belgium Singles",
+    "Almaty",
+    "Lyon",
+    "Ningbo, China",
+    "Osaka"
+  ],
+  "pageLoaded": true,
+  "tennisSectionPresent": true,
+  "tennisCardCount": 21,
+  "cardsWithSetScore": 18,
+  "cardsWithOpponent": 21,
+  "cardsMissingScore": [],
+  "cardsMissingOpponent": [],
+  "chips": [
+    {
+      "home": "A. Li v Z. Sönmez",
+      "chip": "6-3 6-1"
+    },
+    {
+      "home": "A. Ružić v K. Day",
+      "chip": "6-4"
+    },
+    {
+      "home": "M. Stoiana v M. Uchijima",
+      "chip": "6-2 2-6 6-3"
+    },
+    {
+      "home": "I. Jović v J. Paolini",
+      "chip": "6-4 6-3"
+    },
+    {
+      "home": "M. Linette v K. Siniakova",
+      "chip": "4-6 1-6"
+    },
+    {
+      "home": "T. Atmane v M. Bellucci",
+      "chip": "6-7(4) 7-6(2) 7-6(5)"
+    },
+    {
+      "home": "K. Kawa v B. Bencic",
+      "chip": "7-5 6-2"
+    },
+    {
+      "home": "A. Eala v D. Shnaider",
+      "chip": "5-7 4-6"
+    },
+    {
+      "home": "A. Fils v J. Munar",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "T. Machač v K. Khachanov",
+      "chip": "2-6 6-4 6-7(7)"
+    },
+    {
+      "home": "E. Rybakina v P. Kudermetova",
+      "chip": "5-0 ○"
+    },
+    {
+      "home": "R. Collignon v J. Lehečka",
+      "chip": "4-6 2-6"
+    },
+    {
+      "home": "B. Gojo v D. Altmaier",
+      "chip": "3-6 4-6"
+    },
+    {
+      "home": "V. Vacherot v L. Van Assche",
+      "chip": "6-2 4-6 4-6"
+    },
+    {
+      "home": "D. Medvedev v S. Shimabukuro",
+      "chip": "6-2 6-1"
+    },
+    {
+      "home": "D. Goffin v A. Michelsen",
+      "chip": "3-6 4-6"
+    },
+    {
+      "home": "P. Herbert v T. Fritz",
+      "chip": "2-6 5-7"
+    },
+    {
+      "home": "A. Bublik v F. Marozsán",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "D. Džumhur v Z. Bergs",
+      "chip": "2-6 4-6"
+    },
+    {
+      "home": "F. Cobolli v S. Wawrinka",
+      "chip": "6-2 6-4"
+    },
+    {
+      "home": "K. Jacquet v B. Nakashima",
+      "chip": "(no chip)"
+    }
+  ],
+  "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "failedRequests": [],
+  "relayCallsFromPage": [
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-22",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-22",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live"
+  ],
+  "renderedTournaments": [
+    "ATP Brussels, Belgium Singles",
+    "Almaty",
+    "Lyon",
+    "Ningbo, China",
+    "Osaka"
+  ],
+  "missingTournaments": [],
+  "diagRan": true,
+  "feedLiveOutcome": "ok:8",
+  "feedByDateOutcome": "ok:95",
+  "rowsBeforeTier": 95,
+  "rowsAfterTier": 21,
+  "sectionReturned": 21,
+  "sectionInAllData": true,
+  "producerThrew": null,
+  "renderPipeline": {
+    "absent": false,
+    "scheduled": 2,
+    "structuralRenders": 1,
+    "skippedStructuralRenders": 0
+  },
+  "tennisSectionCount": 1,
+  "tennisSectionParent": "main#main.main",
+  "tennisSectionHtmlLength": 86951,
+  "sectionsInModel": [
+    "Tennis"
+  ],
+  "sectionsInDom": [
+    "Tennis"
+  ],
+  "tennisGamesInModel": 21,
+  "tennisSectionAnatomy": {
+    "tag": "div",
+    "className": "sport-section",
+    "id": "(none)",
+    "heading": "(no heading)",
+    "childTags": [
+      "div.section-head",
+      "div.games-list"
+    ],
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">21 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Li v Z. Sönmez\" data-away=\"\" data-"
+  },
+  "domSectionCardCounts": [
+    {
+      "sport": "Tennis",
+      "cards": 21
+    }
+  ],
+  "sampleCardText": "📌★ A. Li v Z. Sönmez6-3 6-1 Osaka · Round of 16 · hard + Multiview Osaka $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 10:35 PM Tennis ChannelTV loginCable/satellite login requiredT",
+  "verdict": "PASS",
+  "reason": "relay 21 live, page 21 card(s), 18 of 18 STARTED with a set score (3 not yet under way, correctly chipless), 21 with an opponent; tournaments proven on the page: ATP Brussels, Belgium Singles, Almaty, Lyon, Ningbo, China, Osaka"
+}

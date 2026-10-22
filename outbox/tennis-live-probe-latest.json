@@ -1,12 +1,12 @@
 {
-  "ts": "2026-10-22T01:27:20.588Z",
+  "ts": "2026-10-22T18:28:17.442Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-10-20a",
   "triggered_by": "schedule",
   "relayReachable": true,
   "relayLiveMatches": 21,
-  "relayLiveMatchesAllTiers": 91,
+  "relayLiveMatchesAllTiers": 95,
   "tiersSeen": [
     "atp_250",
     "challenger",
@@ -14,8 +14,8 @@
     "wta_250",
     "wta_500"
   ],
-  "startedCards": 0,
-  "dayFeedCount": 91,
+  "startedCards": 18,
+  "dayFeedCount": 95,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "ATP Brussels, Belgium Singles",
@@ -27,78 +27,78 @@
   "pageLoaded": true,
   "tennisSectionPresent": true,
   "tennisCardCount": 21,
-  "cardsWithSetScore": 0,
+  "cardsWithSetScore": 18,
   "cardsWithOpponent": 21,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
       "home": "A. Li v Z. Sönmez",
-      "chip": "(no chip)"
+      "chip": "6-3 6-1"
     },
     {
       "home": "A. Ružić v K. Day",
-      "chip": "(no chip)"
+      "chip": "6-4"
     },
     {
       "home": "M. Stoiana v M. Uchijima",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "M. Linette v K. Siniakova",
-      "chip": "(no chip)"
+      "chip": "6-2 2-6 6-3"
     },
     {
       "home": "I. Jović v J. Paolini",
-      "chip": "(no chip)"
+      "chip": "6-4 6-3"
     },
     {
-      "home": "K. Kawa v B. Bencic",
-      "chip": "(no chip)"
+      "home": "M. Linette v K. Siniakova",
+      "chip": "4-6 1-6"
     },
     {
       "home": "T. Atmane v M. Bellucci",
-      "chip": "(no chip)"
+      "chip": "6-7(4) 7-6(2) 7-6(5)"
+    },
+    {
+      "home": "K. Kawa v B. Bencic",
+      "chip": "7-5 6-2"
     },
     {
       "home": "A. Eala v D. Shnaider",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "T. Machač v K. Khachanov",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "D. Medvedev v S. Shimabukuro",
-      "chip": "(no chip)"
+      "chip": "5-7 4-6"
     },
     {
       "home": "A. Fils v J. Munar",
       "chip": "(no chip)"
     },
     {
-      "home": "E. Rybakina v P. Kudermetova",
-      "chip": "(no chip)"
+      "home": "T. Machač v K. Khachanov",
+      "chip": "2-6 6-4 6-7(7)"
     },
     {
-      "home": "B. Gojo v D. Altmaier",
-      "chip": "(no chip)"
+      "home": "E. Rybakina v P. Kudermetova",
+      "chip": "5-0 ○"
     },
     {
       "home": "R. Collignon v J. Lehečka",
-      "chip": "(no chip)"
+      "chip": "4-6 2-6"
+    },
+    {
+      "home": "B. Gojo v D. Altmaier",
+      "chip": "3-6 4-6"
     },
     {
       "home": "V. Vacherot v L. Van Assche",
-      "chip": "(no chip)"
+      "chip": "6-2 4-6 4-6"
+    },
+    {
+      "home": "D. Medvedev v S. Shimabukuro",
+      "chip": "6-2 6-1"
     },
     {
       "home": "D. Goffin v A. Michelsen",
-      "chip": "(no chip)"
+      "chip": "3-6 4-6"
     },
     {
       "home": "P. Herbert v T. Fritz",
-      "chip": "(no chip)"
+      "chip": "2-6 5-7"
     },
     {
       "home": "A. Bublik v F. Marozsán",
@@ -106,11 +106,11 @@
     },
     {
       "home": "D. Džumhur v Z. Bergs",
-      "chip": "(no chip)"
+      "chip": "2-6 4-6"
     },
     {
       "home": "F. Cobolli v S. Wawrinka",
-      "chip": "(no chip)"
+      "chip": "6-2 6-4"
     },
     {
       "home": "K. Jacquet v B. Nakashima",
@@ -120,13 +120,18 @@
   "consoleErrors": [
     "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
     "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 403 ()"
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 ()"
   ],
   "failedRequests": [],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-22"
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-22",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-22",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live"
   ],
   "renderedTournaments": [
     "ATP Brussels, Belgium Singles",
@@ -137,9 +142,9 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:3",
-  "feedByDateOutcome": "ok:91",
-  "rowsBeforeTier": 91,
+  "feedLiveOutcome": "ok:8",
+  "feedByDateOutcome": "ok:95",
+  "rowsBeforeTier": 95,
   "rowsAfterTier": 21,
   "sectionReturned": 21,
   "sectionInAllData": true,
@@ -152,23 +157,9 @@
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 123022,
+  "tennisSectionHtmlLength": 86951,
   "sectionsInModel": [
-    "Bundesliga",
-    "College Football",
-    "EFL Championship",
-    "EFL League One",
-    "La Liga",
-    "Ligue 1",
-    "MLS Soccer",
-    "NFL",
-    "Premier League",
-    "Serie A",
-    "Tennis",
-    "UEFA Champions League",
-    "UEFA Conference League",
-    "UEFA Europa League",
-    "WNBA"
+    "Tennis"
   ],
   "sectionsInDom": [
     "Tennis"
@@ -183,7 +174,7 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">21 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Li v Z. Sönmez\" data-away=\"\" da"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">21 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Li v Z. Sönmez\" data-away=\"\" data-"
   },
   "domSectionCardCounts": [
     {
@@ -191,7 +182,7 @@
       "cards": 21
     }
   ],
-  "sampleCardText": "📌★ A. Li v Z. Sönmez Osaka · Round of 16 · hard + Multiview Tip-off in 63 min · Tennis Channel Osaka $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 10:30 PM Tennis ChannelTV loginCab",
+  "sampleCardText": "📌★ A. Li v Z. Sönmez6-3 6-1 Osaka · Round of 16 · hard + Multiview Osaka $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 10:35 PM Tennis ChannelTV loginCable/satellite login requiredT",
   "verdict": "PASS",
-  "reason": "relay 21 live, page 21 card(s), 0 of 0 STARTED with a set score (21 not yet under way, correctly chipless), 21 with an opponent; tournaments proven on the page: ATP Brussels, Belgium Singles, Almaty, Lyon, Ningbo, China, Osaka"
+  "reason": "relay 21 live, page 21 card(s), 18 of 18 STARTED with a set score (3 not yet under way, correctly chipless), 21 with an opponent; tournaments proven on the page: ATP Brussels, Belgium Singles, Almaty, Lyon, Ningbo, China, Osaka"
 }
