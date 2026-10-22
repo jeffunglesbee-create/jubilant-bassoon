@@ -918,6 +918,18 @@ function isAmnestyState(state) {
   return state === 'post' || state === 'final';
 }
 
+// ── FIELD's "today": the ET date, held until 4am ET ───────────────────────────
+// Before 4am ET the slate is the previous ET calendar day, stepped back on the
+// date rather than 24 hours on the instant (the spring-forward day is 23 hours
+// long). Verbatim copy of src/legacy/field.js's; tested in field_unit.js.
+function fieldTodayIso(now) {
+  const etHour = parseInt(now.toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', hour12:false}), 10);
+  const etDay = now.toLocaleDateString('en-CA', {timeZone:'America/New_York'});
+  if (etHour >= 4) return etDay;
+  const [y, m, d] = etDay.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
+}
+
 // ── Forward schedule window ───────────────────────────────────────────────────
 // Schedules for one ISO date from a parsed field-data-today.json, or null.
 // Schema 2.1 carries schedules_by_date (day 0 plus 3 forward, matching the date
@@ -940,7 +952,7 @@ if (typeof module !== 'undefined' && module.exports) {
     gameNetwork, shiftTime, parseMatchweek, espnPeriodLabel,
     isOutdoorVenue, getVenueCoords,
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
-    toImpliedNum, dramaTier, isAmnestyState, scheduleForDate,
+    toImpliedNum, dramaTier, isAmnestyState, scheduleForDate, fieldTodayIso,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
     espnTeamMatch,
     // WC Permutations Engine

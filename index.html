@@ -8204,14 +8204,22 @@ function getNewspaperVoice(games) {
 // AFL carveout: AFL games use AEST date (Australia/Sydney) for isToday() checks
 // because Australian rounds run on the Australian calendar day, not ET. A 7am
 // AEST Saturday game is a "Saturday AFL game" regardless of what the US clock says.
-(function() {
-  const _etNow = new Date();
-  const _etHour = parseInt(_etNow.toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', hour12:false}), 10);
-  // Before 4am ET: roll back to previous ET day
-  const _etDate = new Date(_etNow);
-  if (_etHour < 4) _etDate.setTime(_etDate.getTime() - 24*60*60*1000);
-  window.TODAY_ISO = _etDate.toLocaleDateString('en-CA', {timeZone:'America/New_York'});
-})();
+// The previous day is one CALENDAR day back, not 24 hours back on the instant:
+// the spring-forward day is 23 hours long, so from 00:00 to 00:59 EDT on the
+// Monday after it, 24 hours back named the Saturday. The relay's
+// getFieldDateKey() (field-relay-nba src/field-date.js) steps back the same
+// way, so the two name the same slate at every instant (field-relay-nba
+// docs/CC-CMD-2026-10-22-ambient-capture-coverage-gaps.md, review finding G2).
+// Duplicated verbatim in field_utils.js, which is where field_unit.js requires
+// it from; smoke A-SLATE-1 pins the body and the TODAY_ISO assignment.
+function fieldTodayIso(now) {
+  const etHour = parseInt(now.toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', hour12:false}), 10);
+  const etDay = now.toLocaleDateString('en-CA', {timeZone:'America/New_York'});
+  if (etHour >= 4) return etDay;
+  const [y, m, d] = etDay.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
+}
+window.TODAY_ISO = fieldTodayIso(new Date());
 
 // ── Drama Dial — user-controlled sensitivity (Patent Defense Layer 2) ────────
 // All drama thresholds read from this. Server CANNOT see or set this value.
@@ -28511,7 +28519,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-20a';
+  const SW_VERSION = '2026-10-22a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

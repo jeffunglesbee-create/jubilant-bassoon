@@ -26,6 +26,7 @@ const {
   wcPoissonExpectedGoals,
   wcMakePRNG,
   isAmnestyState,
+  fieldTodayIso,
   scheduleForDate,
 } = require('./field_utils.js');
 
@@ -809,6 +810,26 @@ test('scheduleForDate: 2.0 file answers for its own for_date and nothing else', 
   assertEqual(scheduleForDate(legacy, '2026-09-05'), null, '2.0 must not serve a forward day');
   assertEqual(scheduleForDate(null, '2026-09-04'), null, 'no file -> null');
   assertEqual(scheduleForDate({}, '2026-09-04'), null, 'empty file -> null');
+});
+
+test('fieldTodayIso: the ET date until 4am ET, a calendar day back before it, across DST', () => {
+  // [instant, ET wall clock, expected]. The spring-forward Monday (2027-03-15,
+  // 00:30 EDT) is where 24 hours back on the instant named the Saturday.
+  const cases = [
+    ['2026-10-20T03:30:00Z', '23:30 EDT 10-19', '2026-10-19'],
+    ['2026-10-20T07:59:00Z', '03:59 EDT 10-20', '2026-10-19'],
+    ['2026-10-20T08:00:00Z', '04:00 EDT 10-20', '2026-10-20'],
+    ['2026-11-01T06:30:00Z', '01:30 EST, the second', '2026-10-31'],
+    ['2026-11-01T09:00:00Z', '04:00 EST 11-01', '2026-11-01'],
+    ['2027-01-01T05:30:00Z', '00:30 EST 01-01', '2026-12-31'],
+    ['2027-03-14T07:30:00Z', '03:30 EDT 03-14', '2027-03-13'],
+    ['2027-03-15T04:30:00Z', '00:30 EDT 03-15', '2027-03-14'],
+    ['2028-03-01T05:30:00Z', '00:30 EST 03-01', '2028-02-29'],
+  ];
+  for (const [at, wall, want] of cases) {
+    assertEqual(fieldTodayIso(new Date(at)), want, `fieldTodayIso at ${at} (${wall})`);
+  }
+  assertEqual(cases.length, 9, 'all 9 enumerated instants must run');
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────
