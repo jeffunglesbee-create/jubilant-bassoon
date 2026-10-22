@@ -1,5 +1,22 @@
 # FIELD HANDOFF
 
+## 2026-10-22 — TODAY_ISO steps back a calendar day before 4am ET
+
+`3e489fd5` (SW 2026-10-22a, deploy gate run 39838828451, live 19:19:56Z).
+
+**What changed.** `window.TODAY_ISO` held the ET date until 4am ET by moving
+the instant back 24 hours, which named the Saturday from 00:00 to 00:59 EDT on
+the Monday after spring-forward (next: 2027-03-15). It is now
+`fieldTodayIso(now)`, one calendar day back, the same rule as the relay's
+`getFieldDateKey()` (field-relay-nba `86363b7`, deployed first). Every other
+instant is unchanged.
+
+**Proof:** `field_unit.js` (9 instants; the old body fails at 2027-03-15T04:30Z
+only) and smoke A-SLATE-1 (pins the body; a changed body fails it). Smoke 1056,
+units 70.
+
+Session doc: outbox/cc-session-2026-10-22-slate-date.md
+
 ## 2026-10-20 — a cached debrief now revalidates against the relay
 
 `1f3d2d04` (SW 2026-10-20a, deploy gate run 39468343572).
