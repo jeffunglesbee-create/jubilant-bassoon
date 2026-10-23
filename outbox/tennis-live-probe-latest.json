@@ -1,12 +1,12 @@
 {
-  "ts": "2026-10-23T01:26:38.968Z",
+  "ts": "2026-10-23T18:14:58.014Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-10-22a",
   "triggered_by": "schedule",
   "relayReachable": true,
   "relayLiveMatches": 20,
-  "relayLiveMatchesAllTiers": 96,
+  "relayLiveMatchesAllTiers": 101,
   "tiersSeen": [
     "atp_250",
     "challenger",
@@ -14,8 +14,8 @@
     "wta_250",
     "wta_500"
   ],
-  "startedCards": 0,
-  "dayFeedCount": 95,
+  "startedCards": 18,
+  "dayFeedCount": 100,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "ATP Brussels, Belgium Singles",
@@ -24,85 +24,85 @@
     "Ningbo, China",
     "Osaka"
   ],
-  "pageLoaded": true,
+  "pageLoaded": false,
   "tennisSectionPresent": true,
   "tennisCardCount": 20,
-  "cardsWithSetScore": 0,
+  "cardsWithSetScore": 18,
   "cardsWithOpponent": 20,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
       "home": "A. Li v L. Tagger",
-      "chip": "(no chip)"
+      "chip": "6-4 3-6 7-6(0)"
     },
     {
       "home": "T. Gibson v A. Krueger",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "M. Stoiana v K. Siniakova",
-      "chip": "(no chip)"
+      "chip": "1-6 3-6"
     },
     {
       "home": "S. Bejlek v M. Bouzkova",
-      "chip": "(no chip)"
+      "chip": "3-6 4-6"
     },
     {
-      "home": "K. Boulter v A. Ružić",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "L. Fernandez v E. Alexandrova",
-      "chip": "(no chip)"
+      "home": "M. Stoiana v K. Siniakova",
+      "chip": "1-6 2-6"
     },
     {
       "home": "N. Basilashvili v A. Mannarino",
-      "chip": "(no chip)"
+      "chip": "6-3 6-1"
+    },
+    {
+      "home": "L. Fernandez v E. Alexandrova",
+      "chip": "4-6 6-2 6-1"
+    },
+    {
+      "home": "K. Boulter v A. Ružić",
+      "chip": "3-6 6-3 6-3"
     },
     {
       "home": "S. Tsitsipas v J. Duckworth",
-      "chip": "(no chip)"
+      "chip": "6-3 6-4"
     },
     {
       "home": "I. Jović v D. Shnaider",
-      "chip": "(no chip)"
+      "chip": "3-6 6-4 1-6"
     },
     {
       "home": "D. Medvedev v T. Atmane",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "E. Rybakina v K. Kawa",
-      "chip": "(no chip)"
+      "chip": "6-4 6-4"
     },
     {
       "home": "C. Chidekh v F. Cerundolo",
-      "chip": "(no chip)"
+      "chip": "2-6 4-6"
     },
     {
       "home": "C. Moutet v T. Paul",
-      "chip": "(no chip)"
+      "chip": "4-6 6-3 3-6"
     },
     {
-      "home": "D. Altmaier v T. Fritz",
-      "chip": "(no chip)"
+      "home": "E. Rybakina v K. Kawa",
+      "chip": "6-1 3-6 6-1"
     },
     {
       "home": "T. Griekspoor v J. Lehečka",
-      "chip": "(no chip)"
+      "chip": "4-6 6-4 6-3"
     },
     {
       "home": "A. Bublik v K. Khachanov",
-      "chip": "(no chip)"
+      "chip": "4-6 7-6(5) 7-6(5)"
+    },
+    {
+      "home": "D. Altmaier v T. Fritz",
+      "chip": "6-7(5) 2-6"
     },
     {
       "home": "A. Fils v A. Michelsen",
-      "chip": "(no chip)"
+      "chip": "6-4 5-5 · 40-A ○"
     },
     {
       "home": "F. Cobolli v B. Nakashima",
-      "chip": "(no chip)"
+      "chip": "4-6 3-1 · 30-40 ○"
     },
     {
       "home": "J. Struff v Z. Bergs",
@@ -115,20 +115,24 @@
   ],
   "consoleErrors": [
     "error: Failed to load resource: the server responded with a status of 400 ()",
+    "error: Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-10-23&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "error: Failed to load resource: net::ERR_FAILED",
     "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-10-23&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "error: Failed to load resource: net::ERR_FAILED",
     "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 ()"
+    "error: Failed to load resource: the server responded with a status of 403 ()"
   ],
-  "failedRequests": [],
+  "failedRequests": [
+    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-10-23&session_type=Race,Qualifying,Sprint — net::ERR_FAILED",
+    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-10-23&session_type=Race,Qualifying,Sprint — net::ERR_FAILED"
+  ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-23",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-23",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live"
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-10-23"
   ],
   "renderedTournaments": [
     "ATP Brussels, Belgium Singles",
@@ -137,28 +141,44 @@
     "Ningbo, China",
     "Osaka"
   ],
-  "missingTournaments": [],
+  "missingTournaments": null,
   "diagRan": true,
-  "feedLiveOutcome": "ok:4",
-  "feedByDateOutcome": "ok:95",
-  "rowsBeforeTier": 96,
+  "feedLiveOutcome": "ok:18",
+  "feedByDateOutcome": "ok:100",
+  "rowsBeforeTier": 101,
   "rowsAfterTier": 20,
   "sectionReturned": 20,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 2,
+    "scheduled": 5,
     "structuralRenders": 2,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 122496,
+  "tennisSectionHtmlLength": 91774,
   "sectionsInModel": [
+    "Baseball (MLB)",
+    "Bundesliga",
+    "College Football",
+    "EFL Championship",
+    "La Liga",
+    "Ligue 1",
+    "Premier League",
+    "Serie A",
     "Tennis"
   ],
   "sectionsInDom": [
+    "Baseball (MLB)",
+    "Bundesliga",
+    "College Football",
+    "EFL Championship",
+    "La Liga",
+    "Ligue 1",
+    "Premier League",
+    "Serie A",
     "Tennis"
   ],
   "tennisGamesInModel": 20,
@@ -171,15 +191,47 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">20 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Li v L. Tagger\" data-away=\"\" da"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">20 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late scout-pick-card\" data-gameid=\"g3\" data-sport=\"Tennis\" data-home=\"A. Li v L. Tagger\" data-away=\"\" d"
   },
   "domSectionCardCounts": [
+    {
+      "sport": "Baseball (MLB)",
+      "cards": 1
+    },
+    {
+      "sport": "College Football",
+      "cards": 5
+    },
+    {
+      "sport": "Premier League",
+      "cards": 1
+    },
+    {
+      "sport": "La Liga",
+      "cards": 1
+    },
+    {
+      "sport": "Serie A",
+      "cards": 1
+    },
+    {
+      "sport": "Bundesliga",
+      "cards": 1
+    },
+    {
+      "sport": "Ligue 1",
+      "cards": 1
+    },
+    {
+      "sport": "EFL Championship",
+      "cards": 1
+    },
     {
       "sport": "Tennis",
       "cards": 20
     }
   ],
-  "sampleCardText": "📌★ A. Li v L. Tagger Osaka · Quarterfinals · hard + Multiview Tip-off in 63 min · Tennis Channel Osaka ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 10:",
-  "verdict": "PASS",
-  "reason": "relay 20 live, page 20 card(s), 0 of 0 STARTED with a set score (20 not yet under way, correctly chipless), 20 with an opponent; tournaments proven on the page: ATP Brussels, Belgium Singles, Almaty, Lyon, Ningbo, China, Osaka"
+  "sampleCardText": "📌★ A. Li v L. Tagger6-4 3-6 7-6(0) Osaka · Quarterfinals · hard + Multiview Osaka ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › Scout's Pick 10:30 PM Te",
+  "verdict": "UNKNOWN",
+  "reason": "page: elementHandle.screenshot: Element is not attached to the DOM\nCall log:\n  - taking element screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n  - attempting scroll into view action\n    2 × waiting for element to be stable\n      - element is not stable\n    - retrying scroll into view action\n    - waiting 20ms\n    - waiting for element to be stable\n"
 }
