@@ -21251,6 +21251,20 @@ function _v2SectionGame({ home, away, id, sectionLabel, start_time, state, round
 
 function injectV2SportSection(sportKey, sectionLabel) {
   try {
+    // Not while another date is on screen (CC-CMD-2026-10-24-nhl-nba-today-
+    // sections). goToDate stops the ESPN poll, not this one, and a past-date
+    // slate from fetchRelayDateSections uses the same section labels, so the
+    // merge branch below fed it today's games.
+    //
+    // There is deliberately NO day filter on the games themselves. One was
+    // built (isToday against TODAY_ISO) and the review reproduced why it
+    // cannot stand alone: fieldDatesToQuery asks for the ET CALENDAR date,
+    // while TODAY_ISO rolls over at 4am ET and is assigned once at load. From
+    // 00:00 to 04:00 ET it asked for tomorrow's board and the filter then
+    // rejected all of it, so every injected sport rendered no cards. The three
+    // notions of "the slate day" need one owner first
+    // (docs/CC-CMD-2026-10-24-slate-day-has-three-owners.md).
+    if (viewingISO !== TODAY_ISO) return;
     const keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey);
     if (!keys.length) return;
     const games = keys.map(k => {
@@ -28519,7 +28533,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-22a';
+  const SW_VERSION = '2026-10-24a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

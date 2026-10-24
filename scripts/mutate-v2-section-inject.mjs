@@ -34,6 +34,14 @@ const MUTATIONS = [
     anchor: '    const existing = allData?.sports?.find(s => s.section === sectionLabel || s.sport === sectionLabel);',
     replace: '    const existing = null;',
     expect: 'no duplicate section' },
+  { name: 'I5  a day filter on TODAY_ISO is back — 00:00-04:00 ET renders no cards',
+    anchor: "    const keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey);\n    if (!keys.length) return;",
+    replace: "    const keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey)\n      .filter(k => !espnScores[k].start_time || isToday(espnScores[k].start_time));\n    if (!keys.length) return;",
+    expect: 'games of the polled day are injected' },
+  { name: 'I6  the viewing-date guard is dropped — a past-date slate takes today\'s games',
+    anchor: '    if (viewingISO !== TODAY_ISO) return;',
+    replace: '    if (false && viewingISO !== TODAY_ISO) return;',
+    expect: 'viewing another date injects nothing' },
 ];
 
 let bad = 0;

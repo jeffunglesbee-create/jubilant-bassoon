@@ -27,8 +27,9 @@ function extract(name, re) {
 }
 const srcGame   = extract('_v2SectionGame',        /function _v2SectionGame\([\s\S]*?\n\}/g);
 const srcInject = extract('injectV2SportSection',  /function injectV2SportSection\(sportKey, sectionLabel\) \{[\s\S]*?\n\}/g);
+const srcIsToday = extract('isToday',              /function isToday\(iso, opts\) \{[\s\S]*?\n\}/g);
 
-const make = (espnScores, allData) => {
+const make = (espnScores, allData, { viewingISO = '2026-10-24', TODAY_ISO = '2026-10-24' } = {}) => {
   const errors = [];
   const captureFieldError = (tag, err) => errors.push({ tag, msg: String(err?.message ?? err) });
   const injected = {};
@@ -42,8 +43,9 @@ const make = (espnScores, allData) => {
   const _renderLedger = { renders: 0, lastRenderAt: null, lastPushAt: null,
                           lastPushSport: null, pushesSinceLastRender: 0 };
   const fn = new Function('espnScores', 'allData', 'captureFieldError', '_v2SectionInjected', 'buildFilters', '_renderLedger',
-    `${srcGame}\n${srcInject}\nreturn injectV2SportSection;`
-  )(espnScores, allData, captureFieldError, injected, buildFilters, _renderLedger);
+    'viewingISO', 'TODAY_ISO',
+    `${srcIsToday}\n${srcGame}\n${srcInject}\nreturn injectV2SportSection;`
+  )(espnScores, allData, captureFieldError, injected, buildFilters, _renderLedger, viewingISO, TODAY_ISO);
   return { fn, errors, injected, ledger: _renderLedger };
 };
 
@@ -130,7 +132,35 @@ for (const [label, allData] of [
   check('4c and is not memoed as injected', injected.cfb !== true);
 }
 
-console.log(`\nchecked 4 branch(es) of injectV2SportSection across ${ran} assertions against extracted `
+{
+  // 5. The 00:00-04:00 ET window. fieldDatesToQuery asks for the ET CALENDAR date
+  // (10-25 from 04:00Z), while TODAY_ISO still holds the previous slate day
+  // (10-24 until 08:00Z) and is assigned once at load. The poll then writes only
+  // 10-25 games into espnScores. A day filter on TODAY_ISO rejected every one of
+  // them and rendered no cards for any injected sport (the 2026-10-24 review,
+  // reproduced on the real boards). The injector must keep them.
+  const es = {
+    'A|B': { _sport: 'nhl', _gameId: 'n1', state: 'pre', start_time: '2026-10-25T23:00:00Z' },
+    'C|D': { _sport: 'nhl', _gameId: 'n2', state: 'pre', start_time: '2026-10-26T01:00:00Z' },
+  };
+  const allData = { sports: [] };
+  const { fn } = make(es, allData, { viewingISO: '2026-10-24', TODAY_ISO: '2026-10-24' });
+  fn('nhl', 'NHL');
+  const ids = (allData.sports[0]?.games || []).map(g => g._id).sort().join(',');
+  check("5 games of the polled day are injected while TODAY_ISO is the previous slate day", ids === 'n1,n2', ids);
+}
+{
+  // 6. Another date on screen: its section must not take today's games.
+  const allData = { sports: [{ sport: 'NHL', section: 'NHL', games: [{ home: 'X', away: 'Y', _id: 'past' }] }] };
+  const { fn, injected } = make({ 'A|B': { _sport: 'nhl', _gameId: 'n1', state: 'pre', start_time: '2026-10-24T23:00:00Z' } },
+                                allData, { viewingISO: '2026-10-23' });
+  fn('nhl', 'NHL');
+  check('6 viewing another date injects nothing into its slate',
+        allData.sports.length === 1 && allData.sports[0].games.length === 1 && injected.nhl !== true,
+        JSON.stringify(allData.sports.map(s => [s.sport, s.games.length])));
+}
+
+console.log(`\nchecked 6 branch(es) of injectV2SportSection across ${ran} assertions against extracted `
           + `source (not a copy); allData and espnScores are stubs, so this says nothing about `
           + `whether the live app ever reaches the no-target branch`);
 if (failed) { console.error(`FAIL — ${failed} assertion(s).`); process.exit(1); }
