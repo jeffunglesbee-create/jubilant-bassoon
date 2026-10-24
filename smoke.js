@@ -7301,6 +7301,10 @@ assert('A-NHLNBA-4 — injectV2SportSection stays off other dates\' slates and p
   html.includes("    if (viewingISO !== TODAY_ISO) return;\n    const keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey);\n    if (!keys.length) return;"),
   'without the guard a past-date slate takes today\'s games; with a TODAY_ISO day filter, 00:00-04:00 ET (the poll asks for the calendar date, TODAY_ISO is still the previous day) renders no cards in any injected sport');
 
+assert('A-NHLNBA-5 — the NBA brief lands on the section that holds the game, not the first /NBA/i match (WNBA)',
+  html.includes("&& (s.games||[]).some(gg => (gg._id||gg.sourceId||'') === gId));"),
+  'with WNBA ahead of NBA in allData.sports, an NBA brief reached espnScores and never the NBA card');
+
 // ── Card badges: isPlayoffGame BUG-09 fix + stat-of-day badge (A-CARDBADGE — 2026-07-15) ──
 assert('A-CARDBADGE-1 — importance-badge condition uses isPlayoffGame(g), not raw g._gameImportance (BUG-09 fix)',
   /\$\{isPlayoffGame\(g\)\?`<div class="importance-badge/.test(html) &&

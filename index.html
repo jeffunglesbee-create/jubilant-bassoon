@@ -21901,7 +21901,11 @@ async function fetchV2AllScores() {
           if (!brief) return;
           if (espnScores[gKey]) espnScores[gKey].matchupNote = brief;
           // Also update allData game object
-          const nbaSec = (allData?.sports||[]).find(s => /NBA/i.test(s.sport||'') || /NBA/i.test(s.section||''));
+          // The section that HOLDS this game. /NBA/i also matches WNBA, and this
+          // consumer fetches WNBA briefs too (its key filter is /nba/i on
+          // _sport), so first-match put NBA briefs on the WNBA section.
+          const nbaSec = (allData?.sports||[]).find(s => (/NBA/i.test(s.sport||'') || /NBA/i.test(s.section||''))
+            && (s.games||[]).some(gg => (gg._id||gg.sourceId||'') === gId));
           if (nbaSec) {
             const g = (nbaSec.games||[]).find(gg => (gg._id||gg.sourceId||'') === gId);
             if (g) g.matchupNote = brief;
@@ -28543,7 +28547,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-24b';
+  const SW_VERSION = '2026-10-24c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
