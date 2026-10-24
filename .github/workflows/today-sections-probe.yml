@@ -1,0 +1,72 @@
+name: Today Sections Probe
+# Does today's live slate give each watched sport a section of cards when its
+# scores arrive? CC-CMD-2026-10-24-nhl-nba-today-sections, done condition 3.
+# Trigger: push to outbox/.trigger-today-sections-probe OR workflow_dispatch.
+# No schedule: it answers a question after a deploy, it is not a monitor.
+
+on:
+  push:
+    paths: ['outbox/.trigger-today-sections-probe']
+  workflow_dispatch:
+    inputs:
+      watch:
+        description: 'Comma-separated V2 keys to judge. Default nhl,nba.'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run today sections probe
+        id: probe
+        continue-on-error: true
+        run: node today_sections_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+          WATCH: ${{ inputs.watch || 'nhl,nba' }}
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Today Sections Probe"
+          git add outbox/today-sections-probe-*.png outbox/today-sections-probe-manifest-*.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "today sections probe result [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push origin main && break
+              sleep $((i * 5))
+            done
+            # is-ancestor, not HEAD equality: another bot pushing after us is routine.
+            git fetch -q origin main
+            git merge-base --is-ancestor HEAD origin/main \
+              || { echo "FAIL: push did not land after retries"; exit 1; }
+          fi
+
+      - name: The probe's verdict decides the job
+        if: steps.probe.outcome != 'success'
+        run: |
+          echo "today_sections_probe.js failed: a watched sport had games today and no cards, or the probe crashed"
+          exit 1
