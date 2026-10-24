@@ -8963,80 +8963,13 @@ function buildTodaySchedule(){
   // Helper: is this ISO timestamp local-today?
   // isToday() is defined at top-level utility block — accessible here and in Squiggle/AFL functions
 
-  // ── NBA Playoffs — May 31 2026 ──────────────────────────────────────
-  // Source: ESPN / NBA.com / NBC Sports verified May 31, 2026
-  //   ECF OVER: NYK sweeps CLE 4-0 (G4: NYK 130, CLE 93) — Brunson ECF MVP
-  //     NYK to NBA Finals for first time since 1999.
-  //   WCF G6 RESULT (May 28): SAS 118, OKC 91 — Series tied 3-3
-  //     Wembanyama 28pts/10reb/3blk. SGA 15pts (6-18 FG). SAS dominant 32-13 Q3 (20-0 run).
-  //   TONIGHT: WCF G7 — SAS @ OKC — Sat May 30, 8pm ET — NBC/Peacock
-  //     OKC win probability 58.4%. Jalen Williams ruled out (hamstring).
-  //     Road teams have won 4 straight + 6 of last 9 conference final G7s.
-  //     Winner faces NYK in NBA Finals starting June 3 on ABC.
-  //   NHL ECF OVER: CAR beats MTL 4-1 (G5: CAR 6, MTL 1 Fri May 29)
-  //     Stanley Cup Final: VGK @ CAR — G1 Tue June 2, 8pm ET, ABC — Lenovo Center, Raleigh
-  // ── NBA Finals 2026 — All on ABC, 8:30pm ET ─────────────────────────
-  //   NYK vs WCF winner (SAS or OKC). G1 June 3 at Western champion's arena.
-  const nbaGames=[
-    // ── NBA Finals 2026 — All games ABC, 8:30pm ET ─────────────────────
-    {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G1 \u00b7 NYK wins 105-95",  start_time:"2026-06-04T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 105-95", crew:"Mike Breen · Richard Jefferson · Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:95, awayScore:105, seriesMargins:[10,-1,-1,-1,-1,-1,-1], matchupNote:"NYK wins G1 105-95 at Frost Bank Center. Brunson 30pts (13 in Q4) — hit clutch shots to erase a 14-point Q3 deficit, then closed an 11-0 run after SAS briefly led 95-94 late in Q4. KAT 18pts. Wembanyama 26pts/12reb but 6-21 FG (2-9 from 3) in Finals debut — SAS couldn't hold the lead. NYK's 12th straight playoff win (3rd team in NBA history). Knicks steal home-court advantage."},
-    {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G2 \u00b7 NYK wins 105-104, leads 2-0",  start_time:"2026-06-06T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 105-104", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:104, awayScore:105, seriesMargins:[10,1,-1,-1,-1,-1,-1], matchupNote:"NYK wins G2 105-104 at Frost Bank Center — series 2-0. KAT 21pts/13reb (double-double), Bridges 20pts (8-13 FG, 4-6 from 3). Brunson 20pts/6ast but 7-25 FG. Wembanyama 29pts (11-21 FG) — efficient but SAS couldn't hold the lead. NYK wins both San Antonio games to seize full home-court control. First Finals team to win G1+G2 on road since 2016. G3 Mon Jun 8 at MSG, 8:30pm ET, ABC."},
-    {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G3 \u00b7 SAS wins 115-111",  start_time:"2026-06-09T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"SAS wins 115-111 \u00b7 NYK leads 2-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:111, awayScore:115, seriesMargins:[10,1,4,-1,-1,-1,-1],matchupNote:"NYK leads 2-0. Brunson averaged 29.0 PPG this series but shot 7-of-25 in G2. Wembanyama 23.2 PPG this series across G1-G2 — efficient but not dominant. The matchup beneath the stars: Stephon Castle (7.4 APG this postseason) guarding Brunson in pick-and-roll; Castle forced 3 turnovers in G2. OG Anunoby held Harrison Barnes to 4 points in G1 but Barnes posted +12 in G2 — that adjustment is critical. Miles McBride is 44% from 3 this series off the bench; NYK second unit has outscored SAS reserves by 14 across both games. NYK\'s 107.7 DRTG (best in NBA this postseason) has held SAS to 2-of-12 from 3 when Wembanyama is off the floor."},
-    {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G4 \u00b7 NYK wins 107-106, leads 3-1",  start_time:"2026-06-11T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 107-106 \u00b7 NYK leads 3-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs", homeScore:107, awayScore:106, seriesMargins:[10,1,4,1,-1,-1,-1], matchupNote:"NYK wins G4 107-106 — largest comeback in NBA Finals history. Down 29, erased by Brunson 36pts (12-25 FG, 9-11 FT) and Anunoby 33pts (10-15 FG, 7-9 3PT). OG Anunoby tip-in with 1.2 sec left — also had a clutch block on Fox in final 15 seconds. SAS led by 29, scored 76 pts on 59.6% shooting in first half, then managed just 30 pts on 20.5% in second half. Wembanyama 24pts/13reb (9-25 FG). Fox 7ast. SAS led 97% of game time. KAT 10reb. NYK leads series 3-1 — one win from first championship since 1973. G5 Sunday at Frost Bank Center."},
-    {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G5 \u00b7 NYK wins 94-90, wins series 4-1 \u2014 CHAMPIONS",  start_time:"2026-06-14T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK wins 4-1 \u2014 NBA Champions", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"clinch", homeScore:90, awayScore:94, seriesMargins:[10,1,4,1,4,-1,-1], matchupNote:"NYK wins G5 94-90 at Frost Bank Center \u2014 Knicks clinch series 4-1 and capture the franchise's first NBA Championship since 1973. Brunson named Finals MVP. Wembanyama 30pts/12reb in the SAS finale but the Knicks held on through a tight fourth quarter. G6 and G7 not played \u2014 series ended in 5 games."},
-    {home:"New York Knicks", away:"San Antonio Spurs", league:"NBA Finals 2026 \u2013 G6 \u00b7 NYK leads 3-1",  start_time:"2026-06-17T00:30:00Z", confirmed:true, venue:"Madison Square Garden, New York NY", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 3-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)", _gameImportance:"playoffs"},
-    {home:"San Antonio Spurs", away:"New York Knicks",        league:"NBA Finals 2026 \u2013 G7 \u00b7 NYK leads 3-1",  start_time:"2026-06-20T00:30:00Z", confirmed:true, venue:"Frost Bank Center, San Antonio TX", streams:resolveBundle("NBA_ABC"), seriesRecord:"NYK leads 3-1", crew:"Mike Breen \u00b7 Richard Jefferson \u00b7 Tim Legler (ABC)"},
-  ].reduce((acc,g)=>{
-    // Populate global series record map from ALL games (not just today's)
-    // Night Owl uses this to override stale localStorage seriesRecord values
-    if(g.seriesRecord&&g.seriesRecord!=='0-0'){
-      const key=[teamNick(g.home||''),teamNick(g.away||'')].sort().join('|');
-      if(!window._seriesMap) window._seriesMap={};
-      // CC-CMD-2026-06-16 Bug 1: phantom playoff game guard.
-      // If an earlier entry in this array already recorded a series-closing
-      // record for this matchup AND this entry has no score data, it's a
-      // tentative pre-loaded slot for a game that won't be played
-      // (G6/G7 stubs in a 5-game series). Skip the seriesMap overwrite so
-      // the closing record stays authoritative AND the isToday push so the
-      // phantom card never reaches the schedule.
-      const _isSeriesClosed = s => /wins\s+(?:series\s+)?4-[0-3]\b|Champion/i.test(String(s||''));
-      const prior = window._seriesMap[key];
-      const hasResult = g.homeScore != null || g.awayScore != null;
-      if (prior && _isSeriesClosed(prior) && !hasResult) {
-        return acc;
-      }
-      window._seriesMap[key]=g.seriesRecord; // later entries (newer games) overwrite earlier
-    }
-    if(isToday(g.start_time)) acc.push(g);
-    return acc;
-  },[]);
-  // Source: NHL.com verified May 20, 2026
-  //   TONIGHT: VGK @ COL West CF G1 — 8pm ET — ESPN · Ball Arena, Denver
-  //   TOMORROW: CAR vs MTL East CF G1 — 8pm ET — TNT/truTV
-  //   West CF: COL (Presidents' Trophy) vs VGK (2023 Cup champs) · COL won R2 vs MIN 4-1
-  //   East CF: CAR (8-0 sweep machine) vs MTL (won G7 OT vs BUF to advance)
-  const nhlGames=[
-    // R2 complete: COL 4-1 MIN, VGK 4-2 ANA, MTL 4-3 BUF
-    // ── NHL Eastern Conference Finals — Carolina Hurricanes vs Montreal Canadiens ──
-    // CAR wins East Semis 4-0 (vs Philadelphia) · MTL wins East Semis 4-3 (vs Buffalo)
-    // Broadcast: TNT / truTV / Max (US) · SN / CBC / TVAS (Canada)
-    // ── NHL Stanley Cup Final 2026 — Carolina Hurricanes vs Vegas Golden Knights ──
-    // CAR: Conf champions 4-1 (MTL), have home ice (higher point total)
-    // VGK: Conf champions 4-0 sweep of COL, third Final in 9 seasons (won 2023)
-    // Broadcast: ABC (all games), ESPN app (streaming). 8pm ET all games.
-    // Schedule: G1-G2-G5-G7 at Lenovo Center, Raleigh. G3-G4-G6 at T-Mobile Arena, Las Vegas.
-    {home:"Carolina Hurricanes", away:"Vegas Golden Knights", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G1 \u00b7 VGK wins 5-4", start_time:"2026-06-03T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK wins 5-4", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", homeScore:4, awayScore:5, seriesMargins:[1,-1,-1,-1,-1,-1,-1], matchupNote:"VGK wins G1 5-4. Came back from 2-0 down — first road team to stage a multigoal comeback win in G1 of a Stanley Cup Final. Hertl GWG with 3:24 left. Theodore 1G/2A, McNabb 3A. Ehlers 2G for CAR. Andersen allowed 5 on 23 shots. VGK controlled 70.4% xG with Theodore on ice (5v5). VGK leads series 1-0.", _gameImportance:"playoffs"},
-    {home:"Carolina Hurricanes", away:"Vegas Golden Knights", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G2 \u00b7 CAR wins 4-3 OT", start_time:"2026-06-05T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC", streams:resolveBundle("NHL_ABC"), seriesRecord:"Series tied 1-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", homeScore:4, awayScore:3, seriesMargins:[1,1,-1,-1,-1,-1,-1], matchupNote:"CAR wins G2 4-3 — series tied 1-1. Hurricanes stopped the two-game home-ice slide. Andersen rebounded from allowing 5 in G1 to hold VGK to 3. CAR's PK 93.5% — played the penalty kill clean in G2. Series now shifts to T-Mobile Arena in Las Vegas for G3 (Sat June 6, 8pm ET, ABC). VGK has home-ice advantage for the next two. Ehlers has 3 goals in the series. Theodore held without a point in G2 after dominating G1 (1G/2A). CAR won despite being road team 0-55 in SCF G1 history last game — now they've evened it on home ice. G3/G4 in Las Vegas.", _gameImportance:"playoffs"},
-    {home:"Vegas Golden Knights", away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G3 \u00b7 VGK wins 5-4 OT, leads 2-1", start_time:"2026-06-07T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV", streams:resolveBundle("NHL_ABC"), seriesRecord:"VGK leads 2-1", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", homeScore:5, awayScore:4, seriesMargins:[1,1,1,-1,-1,-1,-1], _gameImportance:"elimination",matchupNote:"VGK leads 2-1. Marner hat trick in G3 (3G 1A, 10 shots) — series-defining. Theodore scored the OT winner. Secondary matchup: Sebastian Aho (7 points this SCF, CAR's first-line center) vs Ivan Barbashev (VGK, 5 points SCF, shutdown assignment). Brent Burns quarterbacks CAR's power play at 52% efficiency this series — VGK's PK is the critical counter. Jack Eichel won only 34% of face-offs in G3; if VGK loses the possession battle early, CAR's cycle game takes over. T-Mobile Arena, 8pm ET, ABC."},
-    {home:"Vegas Golden Knights", away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G4 \u00b7 CAR wins 5-3, series tied 2-2", start_time:"2026-06-10T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV", streams:resolveBundle("NHL_ABC"), seriesRecord:"Series tied 2-2", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", _gameImportance:"elimination", homeScore:3, awayScore:5, seriesMargins:[1,1,1,2,-1,-1,-1], matchupNote:"CAR wins G4 5-3 at T-Mobile Arena — series tied 2-2. Jordan Staal 2G including PPG GWG in P3, Jackson Blake 1G 1A, Logan Stankoven scored. Brandon Bussi made his first career postseason start (18 saves). CAR led 3-1 in P1 before VGK clawed back to 3-3 in P2 — then Staal scored the go-ahead in P3. Stone, Howden, Karlsson scored for VGK. Fourth straight game where a team squandered a multi-goal lead. Staal has 5 goals this series, scored in all 4 games. G5 Thursday at Lenovo Center, Raleigh, 8pm ET, ABC."},
-    {home:"Carolina Hurricanes", away:"Vegas Golden Knights", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G5 \u00b7 CAR wins 4-2, leads 3-2", start_time:"2026-06-12T00:00:00Z", confirmed:true, venue:"Lenovo Center, Raleigh NC", streams:resolveBundle("NHL_ABC"), seriesRecord:"CAR leads 3-2", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", _gameImportance:"clinch", homeScore:4, awayScore:2, seriesMargins:[1,1,1,2,2,-1,-1], matchupNote:"CAR wins G5 4-2 at Lenovo Center. Carolina leads series 3-2 — one win from the Stanley Cup. G6 Sunday at T-Mobile Arena, 8pm ET, ABC."},
-    {home:"Vegas Golden Knights", away:"Carolina Hurricanes", league:"NHL Playoffs \u2013 Stanley Cup Final \u00b7 G6 \u00b7 CAR wins 3-0, wins series 4-2", start_time:"2026-06-15T00:00:00Z", confirmed:true, venue:"T-Mobile Arena, Las Vegas NV", streams:resolveBundle("NHL_ABC"), seriesRecord:"CAR wins 4-2 \u2014 Stanley Cup Champions", crew:"Sean McDonough \u00b7 Ray Ferraro (ABC)", _gameImportance:"clinch", homeScore:0, awayScore:3, seriesMargins:[1,1,1,2,2,3], matchupNote:"CAR wins G6 3-0 at T-Mobile Arena. CAROLINA HURRICANES WIN THE STANLEY CUP. Series 4-2. Road shutout to clinch. First Stanley Cup since 2006 \u2014 20 years. Playoff record: 16-3 (swept Ottawa 4-0, swept Philadelphia 4-0, beat Montreal 4-1, beat Vegas 4-2)."},
-    // G7 not played — series ended in 6 games. CAR wins Stanley Cup 4-2.
-    // ── NHL Western Conference Finals — Colorado Avalanche vs Vegas Golden Knights ──
-    // COL wins Presidents' Trophy (best record) · COL wins R2 4-1 (vs Minnesota) · VGK wins R2 4-2 (vs Anaheim)
-    // Key players: MacKinnon (COL), Marner (VGK), Dorofeyev (VGK — playoff scoring leader)
-    // Broadcast: ESPN (G1-G4, G5, G7) · ABC (G6 only)
-  ].filter(g=>isToday(g.start_time));
+  // nbaGames / nhlGames (the 2026 NBA Finals and Stanley Cup Final) retired
+  // 2026-10-24, CC-CMD-2026-10-24-nhl-nba-today-sections. Their only consumer
+  // was an isToday() filter, so neither had produced a card since 2026-06-14;
+  // today's NHL and NBA sections come from injectV2SportSection in
+  // fetchV2AllScores. The nbaGames reduce also built window._seriesMap, whose
+  // one reader (Night Owl) would have stamped "NYK wins 4-1 — NBA Champions"
+  // on a regular-season Knicks–Spurs final.
   // Sources: MLB.com official schedule. GOTD: ESPN Press Room + Peacock blog.
   // Old entries removed May 31 2026 (pre-May 25 entries unreachable via isToday)
   // mlbRaw — national-TV OVERRIDE list, not a schedule.
@@ -9532,12 +9465,6 @@ function buildTodaySchedule(){
   // ── LAYER 4: Validate all game arrays before rendering ─────────────────
   const _vGames=(arr,src)=>arr.filter(g=>validateGameEntry(g,src));
 
-  nbaGames.forEach(g=>g._sport="NBA Playoffs");
-  applyNarrativeContext(nbaGames);
-  if(nbaGames.length)  sections.push({sport:"NBA Playoffs",games:_vGames(nbaGames,"nbaGames")});
-  nhlGames.forEach(g=>g._sport="NHL Playoffs");
-  applyNarrativeContext(nhlGames);
-  if(nhlGames.length)  sections.push({sport:"NHL Playoffs",games:_vGames(nhlGames,"nhlGames")});
   mlbGames.forEach(g=>g._sport="Baseball (MLB)");
   applyNarrativeContext(mlbGames);  // QW-3/QW-5: elimination badges + narrative labels for ALCS/NLCS/WS
   if(mlbGames.length)  sections.push({sport:"Baseball (MLB)",games:_vGames(mlbGames,"mlbGames")});
@@ -23486,7 +23413,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-24c';
+  const SW_VERSION = '2026-10-24d';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

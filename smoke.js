@@ -528,8 +528,9 @@ assert('localStorage prune function present', html.includes('pruneOldFieldData')
           assert('French Open 2026 WBD bundle',
             html.includes('"tnt","trutv","max"') && html.includes('TENNIS_FO') &&
             html.includes("FO_START = \"2026-05-24\""));
-          assert('NHL ECF entries present',
-            html.includes('Carolina Hurricanes') && html.includes('East CF G1'));
+          assert('NHL/NBA finals lists retired: no hardcoded NBA/NHL Playoffs section creator',
+            !html.includes('const nbaGames=[') && !html.includes('const nhlGames=[') &&
+            !/sections\.push\(\{sport:"N[BH]A Playoffs"/.test(html));
 
 // ── SEMANTIC CONTRACT ASSERTIONS — added May 20 2026 ─────────────────────────
 // These run in CI and locally. Catch silent failures where features reference
@@ -4012,11 +4013,8 @@ assert('A489 — PM-23 R2 Finals Narrative: matchupNote injects into buildCompou
   html.includes("g.matchupNote ? `  Context: ${g.matchupNote}` : ''") &&
   // The assembled prompt must be captured to window._lastCompoundPrompt for
   // runtime verification (HANDOFF "verify at G2" pathway is preserved)
-  html.includes('window._lastCompoundPrompt=buildCompoundPrompt(sections)') &&
-  // At least one NBA Finals game in the hardcoded schedule must carry matchupNote
-  // so the path is actually exercised on a real game during the Finals window
-  /league:\s*"NBA Finals[^"]*",[\s\S]{0,400}matchupNote:/.test(html),
-  'PM-23 (R2 Finals Narrative Context Phase 1) wires per-game matchupNote into buildCompoundPrompt as a "Context: ..." line, with the assembled prompt captured to window._lastCompoundPrompt for runtime inspection. This assertion locks three structural invariants: (a) the matchupNote → Context injection at the buildCompoundPrompt site, (b) the window._lastCompoundPrompt capture so the human-loop verification pathway in HANDOFF stays intact, (c) the existence of at least one NBA Finals game carrying matchupNote so the path is actually exercised. The runtime check is preserved (open console at G2, inspect window._lastCompoundPrompt), but the structural gate prevents a silent regression between commits.');
+  html.includes('window._lastCompoundPrompt=buildCompoundPrompt(sections)'),
+  'PM-23 (R2 Finals Narrative Context Phase 1) wires per-game matchupNote into buildCompoundPrompt as a "Context: ..." line, with the assembled prompt captured to window._lastCompoundPrompt for runtime inspection. This assertion locks two structural invariants: (a) the matchupNote → Context injection at the buildCompoundPrompt site, (b) the window._lastCompoundPrompt capture so the human-loop verification pathway in HANDOFF stays intact. A third, (c) the existence of an NBA Finals game carrying matchupNote, was retired on 2026-10-24 with the June finals lists, which held the only such game. The runtime check is preserved (open console at G2, inspect window._lastCompoundPrompt), but the structural gate prevents a silent regression between commits.');
 
 // ── Drama Dial OTW wiring (June 5 2026) ──────────────────────────────────────
 // Previously: both OTW FIRE state callsites used _otwFindLiveGame(50) —
