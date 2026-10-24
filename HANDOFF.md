@@ -1,5 +1,27 @@
 # FIELD HANDOFF
 
+## 2026-10-24 — today's NHL and NBA games get cards
+
+`eb8e74c4` (SW 2026-10-24d, deploy gate run 40113474301, live by 16:53Z).
+
+**What changed.** The live page held 12 NHL and 8 NBA games and rendered no
+card for either: the only creators of those sections were the June finals
+lists. `injectV2SportSection` now builds both, labelled 'NHL' and 'NBA' like
+past dates. The shared injector also stops feeding today's games into a
+past-date slate, the NBA brief goes to the NBA card instead of WNBA, and the
+June lists are retired.
+
+**Proof:** a live Playwright probe, red at 16:12Z (NHL 0 of 12, NBA 0 of 8) and
+green at 16:55Z (12 and 8). Smoke 1061, mutations 6/6, 5/5, 7/7. An independent
+review removed a day filter that would have blanked 20 sports from 00:00 to
+04:00 ET.
+
+**Open, filed:** `CC-CMD-2026-10-24-slate-day-has-three-owners.md` (tomorrow's
+games in today's sections, from 16:00 ET) and TASK 2 of
+`CC-CMD-2026-10-24-nhl-nba-today-sections.md`.
+
+Session doc: outbox/cc-session-2026-10-24-nhl-nba-sections.md
+
 ## 2026-10-22 — TODAY_ISO steps back a calendar day before 4am ET
 
 `3e489fd5` (SW 2026-10-22a, deploy gate run 39838828451, live 19:19:56Z).
