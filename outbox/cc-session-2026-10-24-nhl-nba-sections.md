@@ -19,7 +19,7 @@ exempted nba and nhl as "built elsewhere".
 
 | commit | what |
 |---|---|
-| `6e4b3947` | `today_sections_probe.js` and its workflow: judges each watched sport on the LIVE page (PASS / FAIL / NO GAMES TODAY / UNJUDGEABLE), ET day computed by the probe itself. Pushed first so it could be shown red |
+| `6e4b3947` | `today_sections_probe.js` and its workflow (**moved to field-laboratory 2026-10-24**, `scripts/client-sections-probe.mjs` at `e12a44a`, on the owner's word; removed here): judges each watched sport on the LIVE page (PASS / FAIL / NO GAMES TODAY / UNJUDGEABLE), ET day computed by the probe itself. Pushed first so it could be shown red |
 | `559ea858` | the shared injector no longer feeds today's games into a past-date slate (Yesterday's NHL 2 → 14 in the harness) |
 | `d8af1668` | `injectV2SportSection('nhl','NHL')` and `('nba','NBA')`; gate exemptions removed; smoke A-NHLNBA-1..4 |
 | `924a90fd` | the NBA brief goes to the section that holds the game, not the first `/NBA/i` match (WNBA) |

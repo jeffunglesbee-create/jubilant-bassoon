@@ -93,5 +93,6 @@ Expected, if the premises hold:
    `fieldDatesToQuery` change reverted.
 3. A long-tab case: load at 20:30Z, advance past 08:00Z, and the new day's
    games appear. Red with the watcher change reverted.
-4. The `today-sections-probe` manifest, run at 05:00Z and at 17:00Z on the
+4. The field-laboratory `client-sections-probe` manifest (the probe moved there
+   on 2026-10-24), run at 05:00Z and at 17:00Z on the
    live URL, shows cards for every sport that has games on that slate day.

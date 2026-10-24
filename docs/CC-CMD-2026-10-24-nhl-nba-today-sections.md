@@ -219,6 +219,9 @@ MLS 14, Premier League 4, Tennis 54, and so on).
 2. A smoke assertion that fails when the nhl or nba injector call is removed.
 3. CI-as-proxy Playwright probe against the LIVE URL on a day with NHL and NBA
    games: a committed manifest with NHL and NBA cards above 0, plus a screenshot.
-   Pattern: `ambient-skeleton-probe.yml`. **Met:** `today_sections_probe.js`
+   Pattern: `ambient-skeleton-probe.yml`. **Met:** the probe (built here as
+   `today_sections_probe.js`, moved on 2026-10-24 to field-laboratory as
+   `scripts/client-sections-probe.mjs`, its commit `e12a44a`, on the owner's word:
+   LAB-FIRST-A)
    judged both sports FAIL (0 cards) at 16:12Z and PASS (12 and 8) at 16:55Z;
    manifests and screenshots are in `outbox/` (see TASK 1 results).
