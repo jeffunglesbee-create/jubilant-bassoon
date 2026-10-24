@@ -67,8 +67,6 @@ for (const key of map.keys()) {
 // section, for two days, while the other seven European leagues rendered. The
 // number was right and said nothing. An unlisted key now fails.
 const SECTION_BUILT_ELSEWHERE = {
-  nba:   'FETCH_LEAGUES / the ESPN fixture sweep builds the NBA section',
-  nhl:   'FETCH_LEAGUES / the ESPN fixture sweep builds the NHL section',
   mlb:   'FETCH_LEAGUES / the ESPN fixture sweep builds Baseball (MLB)',
   afl:   "the sections.push at the Squiggle merge (field.js ~9343) owns 'Australian Football (AFL)'",
   wc26:  'the dedicated FIFA injection block, which dedups against the hardcoded WC schedule',

@@ -126,8 +126,6 @@ export function soccerLeagueKeys(src) {
 // Each MUST name the creator: an exemption with no named function is how this
 // whole class of gap got written in the first place.
 export const DECLARED_OTHER_CREATOR = {
-  nba:   'buildTodaySchedule hardcoded nbaGames -> sections.push("NBA Playoffs")',
-  nhl:   'buildTodaySchedule hardcoded nhlGames -> sections.push',
   mlb:   'buildTodaySchedule hardcoded mlbGames -> sections.push',
   afl:   'buildTodaySchedule aflGames + the Squiggle adapter -> sections.push("Australian Football (AFL)")',
   wc26:  'maybePushWorldCup() pushes the FIFA section from wc26Raw',

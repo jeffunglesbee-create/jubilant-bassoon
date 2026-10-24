@@ -31,6 +31,14 @@ const MUTATIONS = [
     anchor: "  afl: 'Australian Football (AFL)', bundesliga: 'Bundesliga',",
     replace: "  bundesliga: 'Bundesliga',",
     expect: 'UNLABELLED afl' },
+  { name: 'L4  the nhl call site is removed — the 2026-10-24 defect',
+    anchor: "  if (FIELD_V2_SOURCES.nhl) injectV2SportSection('nhl', 'NHL');\n",
+    replace: '',
+    expect: 'NO INJECTOR nhl' },
+  { name: 'L5  the nba call site is removed',
+    anchor: "  if (FIELD_V2_SOURCES.nba) injectV2SportSection('nba', 'NBA');\n",
+    replace: '',
+    expect: 'NO INJECTOR nba' },
 ];
 
 let bad = 0;

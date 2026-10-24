@@ -16551,6 +16551,16 @@ async function fetchV2AllScores() {
   // again it merges into the same section rather than duplicating.
   if (FIELD_V2_SOURCES.wnba) injectV2SportSection('wnba', 'WNBA');
 
+  // NHL and NBA schedule sections (CC-CMD-2026-10-24-nhl-nba-today-sections).
+  // The WNBA gap again: both boards reach espnScores every poll and the only
+  // creators were buildTodaySchedule's June finals lists, empty since 06-14.
+  // Labels are V2_SECTION_LABEL's, the ones fetchRelayDateSections gives a past
+  // date, so Yesterday and Today agree. Not 'NHL Playoffs': that label wakes
+  // fetchNHLRelayScores, which rewrites the same espnScores keys with
+  // _sport 'NHL Playoffs' and so drops them from this injector's filter.
+  if (FIELD_V2_SOURCES.nhl) injectV2SportSection('nhl', 'NHL');
+  if (FIELD_V2_SOURCES.nba) injectV2SportSection('nba', 'NBA');
+
   // MLS schedule section (CC-CMD-2026-07-16-mls-schedule-cards). Same gap
   // class as WNBA above: MLS already flows through this same V2 poll loop
   // (FIELD_V2_SOURCES.mls: true) into espnScores -- confirmed live via a
@@ -23472,7 +23482,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-24a';
+  const SW_VERSION = '2026-10-24b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

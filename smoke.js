@@ -7280,6 +7280,27 @@ assert('A-WNBASC-2 — the stale hardcoded wnbaGames array is untouched (this di
   html.includes('if(wnbaGames.length) { applyNarrativeContext(wnbaGames); sections.push({sport:"WNBA", games:wnbaGames}); }'),
   'the pre-existing hardcoded WNBA schedule array and its section-push must remain exactly as before');
 
+// ── NHL / NBA schedule cards (A-NHLNBA — CC-CMD-2026-10-24-nhl-nba-today-sections) ──
+// Line-anchored, so a call commented out with // cannot satisfy them. A /* */ block
+// around a call still can; the gap is recorded in
+// docs/CC-CMD-2026-10-24-nhl-nba-today-sections.md (TASK 2).
+assert('A-NHLNBA-1 — NHL wired via the generic injector with the label map\'s label',
+  /^\s*if \(FIELD_V2_SOURCES\.nhl\) injectV2SportSection\('nhl', 'NHL'\);/m.test(html),
+  'no NHL card exists for today without this call: the June finals list was the only other creator');
+assert('A-NHLNBA-2 — NBA wired via the generic injector with the label map\'s label',
+  /^\s*if \(FIELD_V2_SOURCES\.nba\) injectV2SportSection\('nba', 'NBA'\);/m.test(html),
+  'no NBA card exists for today without this call');
+assert('A-NHLNBA-3 — both calls sit inside fetchV2AllScores, BEFORE the render guard',
+  (() => { const f = html.indexOf('async function fetchV2AllScores()');
+           const g = html.indexOf('if (_renderLedger.pushesSinceLastRender > 0) scheduleRenderAll();', f);
+           const a = html.search(/^\s*if \(FIELD_V2_SOURCES\.nhl\) injectV2SportSection\('nhl'/m);
+           const b = html.search(/^\s*if \(FIELD_V2_SOURCES\.nba\) injectV2SportSection\('nba'/m);
+           return f > 0 && g > f && a > f && a < g && b > f && b < g; })(),
+  'after the guard a pushed section waits for an unrelated render (harness: pushesSinceLastRender 2, 0 renders)');
+assert('A-NHLNBA-4 — injectV2SportSection stays off other dates\' slates and puts no day filter on the polled games',
+  html.includes("    if (viewingISO !== TODAY_ISO) return;\n    const keys = Object.keys(espnScores).filter(k => espnScores[k]?._sport === sportKey);\n    if (!keys.length) return;"),
+  'without the guard a past-date slate takes today\'s games; with a TODAY_ISO day filter, 00:00-04:00 ET (the poll asks for the calendar date, TODAY_ISO is still the previous day) renders no cards in any injected sport');
+
 // ── Card badges: isPlayoffGame BUG-09 fix + stat-of-day badge (A-CARDBADGE — 2026-07-15) ──
 assert('A-CARDBADGE-1 — importance-badge condition uses isPlayoffGame(g), not raw g._gameImportance (BUG-09 fix)',
   /\$\{isPlayoffGame\(g\)\?`<div class="importance-badge/.test(html) &&
