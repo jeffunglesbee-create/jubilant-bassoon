@@ -249,6 +249,16 @@ jobs:
           node --experimental-strip-types --no-warnings scripts/check-odds-story-scenario.mjs
           node scripts/mutate-odds-story-scenario.mjs
 
+      # The relay's CI backfill writes one snapshot into both odds columns, so a game that kicked off before the
+      # 23:59Z snapshot has an "opening" captured during it (priced openings carrying the late mark, 2026-09-16 to
+      # 2026-10-29: CFB 116 of 183, NHL 97 of 202, NBA 15 of 69, NFL 4 of 33). buildOddsStory and buildOddsMovement
+      # skip it. Real _kickoff shapes; nine mutations, including the verified:false test that would also hide an
+      # unreadable kickoff and the falsy test that would miss a capture at the kickoff instant.
+      - name: The debrief's opening layers skip a line captured after kickoff
+        run: |
+          node --experimental-strip-types --no-warnings scripts/check-opening-odds-late.mjs
+          node scripts/mutate-opening-odds-late.mjs
+
       # fetchRelayDateSections walks FIELD_V2_SOURCES and looks each key up in
       # V2_SECTION_LABEL. A key with no label takes the no-label branch and its
       # section disappears from every past-date slate, silently. The first

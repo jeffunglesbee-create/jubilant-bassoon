@@ -33,7 +33,28 @@ export interface MoneylineOdds {
   /** Named explicitly: the identical-timestamp guard in buildOddsMovement
       depends on it, and the index signature alone left it untyped. */
   captured_at?: string;
+  /** Written by the relay's kickoffMark. `late_minutes` is a number only when
+      the line was captured AFTER kickoff; `verified: false` is also written for
+      a kickoff nobody could read, so it is not the test. */
+  _kickoff?: { at?: string | null; verified?: boolean; late_minutes?: number | null };
   [key: string]: unknown;
+}
+
+/**
+ * Was this "opening" line captured after the game started?
+ *
+ * The relay's CI backfill writes one snapshot into BOTH odds columns, so a game
+ * that kicked off before the 23:59Z snapshot carries an "opening" taken during
+ * it: CFB 116 of 183 priced openings, NHL 97 of 202, NBA 15 of 69, NFL 4 of 33
+ * (D1, 2026-09-16 to 2026-10-29). An in-play moneyline is not an opening price,
+ * and CHALK/UPSET or "Home line opened" built from it is a claim about a line
+ * nobody offered before the game. Same predicate as the relay's
+ * knownLateOpening (field-relay-nba src/odds-consumer-rules.js): a finite
+ * late_minutes, and nothing else.
+ */
+function _openingCapturedLate(open: MoneylineOdds | null | undefined): boolean {
+  const n = open?._kickoff?.late_minutes;
+  return typeof n === 'number' && Number.isFinite(n);
 }
 
 /** Resolved odds outcome for a completed game. */
@@ -142,6 +163,7 @@ export function buildFieldWasWatching(debrief: DebriefData): HTMLElement | null 
 export function buildOddsStory(debrief: DebriefData): HTMLElement | null {
   const odds = debrief?.oddsOutcome;
   if (!odds?.opening) return null;
+  if (_openingCapturedLate(odds.opening)) return null;
   const { opening, home, away, homeScore, awayScore, wentToOT } = odds;
   // Absent scores are not a 0-0 game. Measured 2026-09-12 against this exact
   // function: with homeScore/awayScore null or undefined, `?? 0` made both
@@ -351,6 +373,7 @@ function _isSequence(open: MoneylineOdds, close: MoneylineOdds): boolean {
 export function buildOddsMovement(debrief: DebriefData): HTMLElement | null {
   const odds = debrief?.oddsOutcome;
   if (!odds?.opening) return null;
+  if (_openingCapturedLate(odds.opening)) return null;
   const open = odds.opening, close = odds.closing;
   const oh = open.moneyline ? open.moneyline.home : undefined;
   const oPct = _impliedPct(oh);
