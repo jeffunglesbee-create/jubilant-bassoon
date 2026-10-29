@@ -117,7 +117,7 @@ const getJson = async (path) => {
 
     const geom = await page.evaluate((id) => {
       document.body.insertAdjacentHTML('beforeend',
-        '<div id="bsd-pitch" style="position:relative;width:360px;min-height:200px;margin:12px"></div>');
+        '<div id="bsd-pitch" style="position:fixed;top:12px;left:12px;z-index:2147483647;width:360px;min-height:200px;background:#000"></div>');
       window._bsdVerify.activate(id);
       const el = document.getElementById('bsd-pitch');
       return { W: el.clientWidth };
@@ -171,6 +171,14 @@ const getJson = async (path) => {
     manifest.awayShotCircle = awayC || null;
     manifest.nanAttributes = s1.nanAttributes ?? null;
 
+    // An element screenshot is the pixels at the element's rect, whoever paints them: on the deployed page the first
+    // version (a block appended at the end of <body>) came back as the page's own list of sports. So the pitch is a
+    // fixed top-layer box, and what is painted at its centre is recorded.
+    manifest.pitchIsTopmost = await page.evaluate(() => {
+      const el = document.getElementById('bsd-pitch'); const r = el.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return !!top && (top === el || el.contains(top));
+    });
     const shot = `${OUT}/bsd-pitch-probe-${stamp}.png`;
     try { await (await page.$('#bsd-pitch')).screenshot({ path: shot, timeout: 8000 }); manifest.screenshot = shot; }
     catch (e) { manifest.screenshot = null; manifest.screenshotError = String(e.message).split('\n')[0]; }
@@ -202,7 +210,7 @@ const getJson = async (path) => {
   }
 
   const required = ['contractDeclaresSharedPitch', 'hookPresent', 'ballAppeared', 'ballCircleFinite', 'ballAtExpected', 'ballKeptOnNullFrame',
-    'otherMatchServed', 'otherMatchIgnored', 'shotCirclesFinite', 'homeShotAtVendorPlacement', 'awayShotAtVendorPlacement',
+    'otherMatchServed', 'otherMatchIgnored', 'pitchIsTopmost', 'shotCirclesFinite', 'homeShotAtVendorPlacement', 'awayShotAtVendorPlacement',
     'ballDroppedWhenStale', 'shotsStayWhenBallGoes'];
   manifest.required = required;
   manifest.failing = required.filter(k => manifest[k] !== true);
