@@ -6258,6 +6258,17 @@ assert('A_BSD_13 — the CI probe\'s hook exposes the real _bsdActivate and noth
   /window\._bsdVerify = \{ activate: _bsdActivate \};/.test(html),
   'bsd-pitch-probe.yml reaches the module-scoped _bsdActivate through window._bsdVerify.activate');
 
+assert('A_BSD_14 — shots are placed from pos + home with the contract\'s sharedPitch transform (home rotated, away as sent), never from a bare x/y/team (CC-CMD-2026-10-28-bsd-pitch-renderer-fields Task 2)',
+  /function _bsdShotPoint\(s\) \{/.test(html) &&
+  /if \(s\.home === true\)  return \{ x: 100 - s\.pos\.x, y: 100 - s\.pos\.y \};/.test(html) &&
+  /if \(s\.home === false\) return \{ x: s\.pos\.x, y: s\.pos\.y \};/.test(html) &&
+  /var p = _bsdShotPoint\(s\);/.test(html) &&
+  /Array\.isArray\(data\.shotmap\)/.test(html) &&
+  !/data\.shots\b/.test(html) &&
+  !/s\.team === 'home'/.test(html) &&
+  !/var cx = s\.x \* W/.test(html),
+  'a shotmap record carries pos{x,y} and home:boolean, no top-level x/y/team; sharedPitch (home: x = 100 - x; y = 100 - y, away: as sent) is what puts it on the ball\'s pitch; mirrorAway is the other orientation');
+
 assert('A_DEV_1 — _isFieldDevMode helper defined (?dev=1 or field_dev localStorage)',
   html.includes('function _isFieldDevMode()') &&
   html.includes("get('dev') === '1'") &&

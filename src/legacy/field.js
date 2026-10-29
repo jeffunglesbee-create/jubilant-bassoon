@@ -23413,7 +23413,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-28a';
+  const SW_VERSION = '2026-10-28b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -33464,7 +33464,8 @@ function _bsdOnSSEFrame(type, data) {
     _bsdBallTimer = setTimeout(_bsdRepaint, BSD_BALL_MAX_AGE_MS + 50);
     _bsdRepaint();
   } else if (type === 'bsd:stats') {
-    const _bsdShots = data.shots || data.shotmap; if (Array.isArray(_bsdShots)) { _bsdShotData = _bsdShots; _bsdRepaint(); }
+    // The relay's bsd:stats carries the vendor's `shotmap` (CONTRACTS.md); there is no `shots` key.
+    if (Array.isArray(data.shotmap)) { _bsdShotData = data.shotmap; _bsdRepaint(); }
   }
 }
 
@@ -33515,6 +33516,22 @@ function _bsdActivateForWC() {
   } catch (_e) {}
 }
 
+// Where a shot is drawn. A shotmap record's pos is TARGET-GOAL-RELATIVE per team (x is the distance from the
+// goal that team attacks), but the ball and the incident positions sit on ONE shared pitch where the home side
+// attacks x = 100. /bsd/contract transformReference.sharedPitch gives the placement: home
+// 'x = 100 - x; y = 100 - y', away 'x = x; y = y'. Measured 2026-10-29 by joining each goal's incident
+// sequence pos to its shotmap pos: 123 of 126 goals across 38 finished matches, home 71 of 71 exact, away 51
+// of 52 exact and the 52nd 0.5 off (field-relay-nba outbox/bsd-shared-pitch-fit-latest.json). It is NOT
+// transformReference.mirrorAway: that leaves the home side raw (home attacks x = 0), the other orientation,
+// and would draw the home side's shots at the end of the pitch the ball's home side defends. A record with no
+// numeric pos, or with neither home:true nor home:false, is not drawn; absence is not "away".
+function _bsdShotPoint(s) {
+  if (!s || !s.pos || !Number.isFinite(s.pos.x) || !Number.isFinite(s.pos.y)) return null;
+  if (s.home === true)  return { x: 100 - s.pos.x, y: 100 - s.pos.y };
+  if (s.home === false) return { x: s.pos.x, y: s.pos.y };
+  return null;
+}
+
 // SVG pitch renderer — called on each bsd:ball / bsd:stats frame
 function _bsdRepaint() {
   var el = document.getElementById('bsd-pitch');
@@ -33522,10 +33539,12 @@ function _bsdRepaint() {
   var W = el.clientWidth  || 300;
   var H = Math.round(W * 0.667);
   var shots = (_bsdShotData || []).map(function(s) {
-    var cx = s.x * W / 100;
-    var cy = (100 - s.y) * H / 100;
+    var p = _bsdShotPoint(s);
+    if (!p) return '';
+    var cx = p.x * W / 100;
+    var cy = (100 - p.y) * H / 100;
     var r  = 3 + (s.xg || 0) * 10;
-    var col = s.team === 'home' ? 'rgba(99,179,237,0.75)' : 'rgba(252,129,74,0.75)';
+    var col = s.home === true ? 'rgba(99,179,237,0.75)' : 'rgba(252,129,74,0.75)';
     return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>';
   }).join('');
   var ball = '';
