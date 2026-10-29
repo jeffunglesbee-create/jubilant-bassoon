@@ -1,0 +1,74 @@
+name: BSD Pitch Probe
+# CC-CMD-2026-10-28-bsd-pitch-renderer-fields (field-relay-nba docs/), Rule 90 CI-as-proxy.
+# Loads the DEPLOYED page in a real browser, feeds it recorded bsd:ball / bsd:stats frames over its own
+# SSE path, and commits a screenshot plus a manifest of booleans. Proves the reader, not a live match.
+# Trigger: push to outbox/.trigger-bsd-pitch-probe OR workflow_dispatch
+
+on:
+  push:
+    paths: ['outbox/.trigger-bsd-pitch-probe']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      # The result is committed whether or not the probe passed: a failing manifest is the evidence.
+      - name: Run BSD pitch probe
+        id: probe
+        run: |
+          set +e
+          node bsd_pitch_probe.js
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        run: |
+          git config user.email "probe@field"
+          git config user.name "BSD Pitch Probe"
+          git add outbox/bsd-pitch-probe-*.png outbox/bsd-pitch-probe-manifest-*.json
+          git status --short
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "bsd pitch probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
+          # The loop above exits 0 when EVERY attempt fails: its last command is `sleep`, and `set -e`
+          # does not fire because a failing `&&` list is a tested command. Without this check a lost
+          # artifact reports as a green step. is-ancestor, not HEAD equality: another bot pushing after
+          # us is routine here.
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: push did not land after retries"; exit 1; }
+
+      - name: Result
+        run: |
+          echo "probe exit code: ${{ steps.probe.outputs.code }}"
+          [ "${{ steps.probe.outputs.code }}" = "0" ]
