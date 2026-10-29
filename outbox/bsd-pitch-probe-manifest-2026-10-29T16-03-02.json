@@ -1,0 +1,247 @@
+{
+  "probe": "bsd-pitch",
+  "stamp": "2026-10-29T16-03-02",
+  "page": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "shotEvent": "602347",
+  "scope": "Proves the READER on the deployed page, fed recorded payloads over its real SSE path. Not a live match; none is live in CI.",
+  "error": null,
+  "contractDeclaresSharedPitch": true,
+  "contractRevision": "2026-10-16-1",
+  "shots": {
+    "home": {
+      "min": 90,
+      "pos": {
+        "x": 27.7,
+        "y": 59.3,
+        "z": 0
+      },
+      "vendorShared": {
+        "x": 72.3,
+        "y": 40.7
+      }
+    },
+    "away": {
+      "min": 43,
+      "pos": {
+        "x": 2.7,
+        "y": 48.6,
+        "z": 0
+      },
+      "vendorShared": {
+        "x": 2.7,
+        "y": 48.6
+      }
+    }
+  },
+  "frames": {
+    "ball": {
+      "type": "bsd:ball",
+      "id": "602352",
+      "uts": 1793208042,
+      "coords": {
+        "x": 72,
+        "y": 47
+      },
+      "situation": "dangerous",
+      "side": "home",
+      "time": {
+        "minute": 18,
+        "second": 38,
+        "display": "18:38",
+        "period": 1,
+        "injury_time": 0,
+        "period_started_at_uts": 1793206979
+      },
+      "commentary": "Dresden on the edge of something!"
+    },
+    "nullBall": {
+      "type": "bsd:ball",
+      "id": "602352",
+      "uts": 1793153961,
+      "coords": null,
+      "situation": "freekick",
+      "side": "away",
+      "time": {
+        "minute": 45,
+        "second": 0,
+        "display": "45:00",
+        "period": 2,
+        "injury_time": 2,
+        "period_started_at_uts": 1793153529
+      },
+      "commentary": "Junior Barranquilla send another in."
+    },
+    "otherBall": {
+      "type": "bsd:ball",
+      "id": "602353",
+      "uts": 1793208042,
+      "coords": {
+        "x": 50,
+        "y": 50
+      },
+      "situation": "dangerous",
+      "side": "home",
+      "time": {
+        "minute": 18,
+        "second": 38,
+        "display": "18:38",
+        "period": 1,
+        "injury_time": 0,
+        "period_started_at_uts": 1793206979
+      },
+      "commentary": "Dresden on the edge of something!"
+    },
+    "edgeBall": {
+      "type": "bsd:ball",
+      "id": "602352",
+      "uts": 1793208042,
+      "coords": {
+        "x": 5,
+        "y": 50
+      },
+      "situation": "dangerous",
+      "side": "home",
+      "time": {
+        "minute": 18,
+        "second": 38,
+        "display": "18:38",
+        "period": 1,
+        "injury_time": 0,
+        "period_started_at_uts": 1793206979
+      },
+      "commentary": "Dresden on the edge of something!"
+    },
+    "statsShotCount": 2
+  },
+  "hookPresent": true,
+  "pitchPx": {
+    "W": 360,
+    "H": 240
+  },
+  "ballAppeared": true,
+  "pitchRect": {
+    "x": 18,
+    "y": 12,
+    "w": 324,
+    "h": 216
+  },
+  "ballCircleCount": 1,
+  "ballCircleFinite": true,
+  "ballCx": 251.28000000000003,
+  "ballCy": 126.48,
+  "expectedBall": {
+    "cx": 251.28,
+    "cy": 126.48
+  },
+  "ballAtExpected": true,
+  "ballKeptOnNullFrame": true,
+  "shotCircleCount": 2,
+  "shotCirclesFinite": true,
+  "homeShotAtVendorPlacement": true,
+  "awayShotAtVendorPlacement": true,
+  "homeShotAtTransform": true,
+  "awayShotAtTransform": true,
+  "awayShotCentreInsideGoalLine": true,
+  "awayShotNotClipped": true,
+  "homeShotCircle": {
+    "cx": "252.252",
+    "cy": "140.088",
+    "r": "3.46",
+    "fill": "rgba(99,179,237,0.75)"
+  },
+  "awayShotCircle": {
+    "cx": "26.748",
+    "cy": "123.02399999999999",
+    "r": "9.760000000000002",
+    "fill": "rgba(252,129,74,0.75)"
+  },
+  "nanAttributes": 0,
+  "pitchStack": {
+    "ok": true,
+    "at": {
+      "x": 192,
+      "y": 132
+    },
+    "rect": {
+      "w": 360,
+      "h": 240,
+      "top": 12,
+      "left": 12
+    },
+    "viewport": {
+      "w": 820,
+      "h": 1024
+    },
+    "stack": [
+      "line",
+      "svg",
+      "div#bsd-pitch",
+      "nav.controls",
+      "div#upper-slots"
+    ]
+  },
+  "screenshotShowsPitch": true,
+  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T16-03-02.png",
+  "screenshotSamples": [
+    [
+      45,
+      90,
+      39
+    ],
+    [
+      45,
+      90,
+      39
+    ],
+    [
+      45,
+      90,
+      39
+    ]
+  ],
+  "otherMatchServed": true,
+  "otherMatchIgnored": true,
+  "edgeBallServed": true,
+  "edgeBallCx": 34.2,
+  "expectedEdgeBallCx": 34.2,
+  "ballAtFivePercentIsInside": true,
+  "ballDroppedWhenStale": true,
+  "shotsStayWhenBallGoes": true,
+  "nanAttributesAfterAge": 0,
+  "sseRequests": 13,
+  "consoleErrors": [
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "required": [
+    "contractDeclaresSharedPitch",
+    "hookPresent",
+    "ballAppeared",
+    "ballCircleFinite",
+    "ballAtExpected",
+    "ballKeptOnNullFrame",
+    "otherMatchServed",
+    "otherMatchIgnored",
+    "screenshotShowsPitch",
+    "shotCirclesFinite",
+    "homeShotAtVendorPlacement",
+    "awayShotAtVendorPlacement",
+    "homeShotAtTransform",
+    "awayShotAtTransform",
+    "awayShotCentreInsideGoalLine",
+    "awayShotNotClipped",
+    "edgeBallServed",
+    "ballAtFivePercentIsInside",
+    "ballDroppedWhenStale",
+    "shotsStayWhenBallGoes"
+  ],
+  "failing": [],
+  "pass": true
+}
