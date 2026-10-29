@@ -1,6 +1,6 @@
 {
   "probe": "bsd-pitch",
-  "stamp": "2026-10-29T03-46-59",
+  "stamp": "2026-10-29T03-51-47",
   "page": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "shotEvent": "602347",
@@ -127,9 +127,8 @@
     "fill": "rgba(252,129,74,0.75)"
   },
   "nanAttributes": 0,
-  "pitchIsTopmost": false,
   "pitchStack": {
-    "ok": false,
+    "ok": true,
     "at": {
       "x": 192,
       "y": 132
@@ -145,10 +144,32 @@
       "h": 1024
     },
     "stack": [
-      "html"
+      "line",
+      "svg",
+      "div#bsd-pitch",
+      "div.masthead-inner",
+      "header.masthead"
     ]
   },
-  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T03-46-59.png",
+  "screenshotShowsPitch": true,
+  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T03-51-47.png",
+  "screenshotSamples": [
+    [
+      45,
+      90,
+      39
+    ],
+    [
+      45,
+      90,
+      39
+    ],
+    [
+      45,
+      90,
+      39
+    ]
+  ],
   "otherMatchServed": true,
   "otherMatchIgnored": true,
   "ballDroppedWhenStale": true,
@@ -174,15 +195,13 @@
     "ballKeptOnNullFrame",
     "otherMatchServed",
     "otherMatchIgnored",
-    "pitchIsTopmost",
+    "screenshotShowsPitch",
     "shotCirclesFinite",
     "homeShotAtVendorPlacement",
     "awayShotAtVendorPlacement",
     "ballDroppedWhenStale",
     "shotsStayWhenBallGoes"
   ],
-  "failing": [
-    "pitchIsTopmost"
-  ],
-  "pass": false
+  "failing": [],
+  "pass": true
 }
