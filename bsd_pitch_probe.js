@@ -173,7 +173,10 @@ const getJson = async (path) => {
 
     // An element screenshot is the pixels at the element's rect, whoever paints them: on the deployed page the first
     // version (a block appended at the end of <body>) came back as the page's own list of sports. So the pitch is a
-    // fixed top-layer box, and what is painted at its centre is recorded.
+    // fixed top-layer box. elementsFromPoint is kept as a DIAGNOSTIC only: it answers "who receives a click", and on
+    // the deployed page it returned [line, svg, #bsd-pitch, ...] on one run and ["html"] on the next while the
+    // screenshot showed the pitch both times (the page makes its body non-hit-testable at times). It is not a
+    // statement about what is painted, so it is not required. What is painted is read from the screenshot below.
     const topInfo = await page.evaluate(() => {
       const el = document.getElementById('bsd-pitch'); const r = el.getBoundingClientRect();
       const d = (n) => n ? `${n.tagName.toLowerCase()}${n.id ? '#' + n.id : ''}${n.className && typeof n.className === 'string' ? '.' + n.className.trim().split(/\s+/).join('.') : ''}` : null;
@@ -183,11 +186,28 @@ const getJson = async (path) => {
       return { ok: !!top && (top === el || el.contains(top)), at: { x: cx, y: cy }, rect: { w: r.width, h: r.height, top: r.top, left: r.left },
                viewport: { w: innerWidth, h: innerHeight }, stack };
     });
-    manifest.pitchIsTopmost = topInfo.ok;
     manifest.pitchStack = topInfo;
     const shot = `${OUT}/bsd-pitch-probe-${stamp}.png`;
-    try { await (await page.$('#bsd-pitch')).screenshot({ path: shot, timeout: 8000 }); manifest.screenshot = shot; }
-    catch (e) { manifest.screenshot = null; manifest.screenshotError = String(e.message).split('\n')[0]; }
+    manifest.screenshotShowsPitch = false;
+    try {
+      const buf = await (await page.$('#bsd-pitch')).screenshot({ path: shot, timeout: 8000 });
+      manifest.screenshot = shot;
+      // Decode the PNG in a blank page (the browser is the decoder) and read the pixels where the pitch is plain
+      // grass: three points inside the 5%..95% rectangle that no marking, circle or dot is near (not x = 50%: that is the halfway line).
+      const dec = await ctx.newPage();
+      const samples = await dec.evaluate(async ({ b64, W, H }) => {
+        const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+        const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+        const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+        return [[0.25, 0.25], [0.75, 0.75], [0.4, 0.85]].map(([fx, fy]) => {
+          const d = g.getImageData(Math.round(fx * W), Math.round(fy * H), 1, 1).data; return [d[0], d[1], d[2]];
+        });
+      }, { b64: buf.toString('base64'), W, H });
+      await dec.close();
+      const GRASS = [45, 90, 39]; // #2d5a27, the pitch background in _bsdRepaint
+      manifest.screenshotSamples = samples;
+      manifest.screenshotShowsPitch = samples.length === 3 && samples.every(p => p.every((v, i) => Math.abs(v - GRASS[i]) <= 6));
+    } catch (e) { manifest.screenshot = null; manifest.screenshotError = String(e.message).split('\n')[0]; }
 
     // Connection 2 delivers frame C, a ball for another match: the dot must not move.
     const deadline = Date.now() + 15000;
@@ -216,7 +236,7 @@ const getJson = async (path) => {
   }
 
   const required = ['contractDeclaresSharedPitch', 'hookPresent', 'ballAppeared', 'ballCircleFinite', 'ballAtExpected', 'ballKeptOnNullFrame',
-    'otherMatchServed', 'otherMatchIgnored', 'pitchIsTopmost', 'shotCirclesFinite', 'homeShotAtVendorPlacement', 'awayShotAtVendorPlacement',
+    'otherMatchServed', 'otherMatchIgnored', 'screenshotShowsPitch', 'shotCirclesFinite', 'homeShotAtVendorPlacement', 'awayShotAtVendorPlacement',
     'ballDroppedWhenStale', 'shotsStayWhenBallGoes'];
   manifest.required = required;
   manifest.failing = required.filter(k => manifest[k] !== true);
