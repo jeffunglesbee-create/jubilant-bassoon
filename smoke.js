@@ -6240,6 +6240,24 @@ assert('A_BSD_10 — Stats tab Today\'s Games fetches /bsd/r2/read with a sport-
   /_bsdRepaint\(\)/.test(html),
   'renderStatsSection Today\'s Games must fetch /bsd/r2/read with a bsd/{realSlug}/{id}/stats.json key, assign shotmap to _bsdShotData, and call _bsdRepaint()');
 
+assert('A_BSD_11 — the ball is read from the relay\'s nested coords, a frame without a point keeps the last one, and the dot has a measured age bound (CC-CMD-2026-10-28-bsd-pitch-renderer-fields)',
+  /var c = data\.coords;/.test(html) &&
+  /!Number\.isFinite\(c\.x\) \|\| !Number\.isFinite\(c\.y\)\) return;/.test(html) &&
+  /_bsdBallPos = \{ x: c\.x, y: c\.y \};/.test(html) &&
+  /var BSD_BALL_MAX_AGE_MS = 30000;/.test(html) &&
+  /\(performance\.now\(\) - _bsdBallAt\) <= BSD_BALL_MAX_AGE_MS/.test(html) &&
+  !/_bsdBallPos = data;/.test(html) &&
+  !/_bsdBallPos\.x != null/.test(html),
+  'bsd:ball carries the point at data.coords ({x, y} or null), not at data.x/data.y; a null frame must keep the previous point; the dot is dropped past BSD_BALL_MAX_AGE_MS');
+
+assert('A_BSD_12 — a bsd frame for another match is ignored (AmbientDO fans every subscribed match out to every client)',
+  /if \(!data \|\| String\(data\.id\) !== String\(_bsdActiveId\)\) return;/.test(html),
+  '_bsdOnSSEFrame must drop frames whose id is not the active BSD event id; the relay says clients filter by id');
+
+assert('A_BSD_13 — the CI probe\'s hook exposes the real _bsdActivate and nothing else',
+  /window\._bsdVerify = \{ activate: _bsdActivate \};/.test(html),
+  'bsd-pitch-probe.yml reaches the module-scoped _bsdActivate through window._bsdVerify.activate');
+
 assert('A_DEV_1 — _isFieldDevMode helper defined (?dev=1 or field_dev localStorage)',
   html.includes('function _isFieldDevMode()') &&
   html.includes("get('dev') === '1'") &&

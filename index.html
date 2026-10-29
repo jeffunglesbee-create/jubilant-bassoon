@@ -28474,7 +28474,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-24d';
+  const SW_VERSION = '2026-10-28a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -38490,12 +38490,39 @@ function renderStatsSection() {
 // Track active BSD subscription
 var _bsdActiveId = null;
 var _bsdShotData = [];
-var _bsdBallPos  = null;
+var _bsdBallPos  = null;   // {x, y} on the shared pitch, or null
+var _bsdBallAt   = 0;      // performance.now() when the frame that carried _bsdBallPos arrived
+var _bsdBallTimer = null;  // repaints the moment the dot goes stale, so it does not wait for the next frame
+
+// How old the dot may be. Measured 2026-10-28 on 273 gaps between consecutive frames that carry a
+// point (4 captures, 3 matches, field-relay-nba outbox/bsd-ws-frames-*.jsonl): median 5 s, p90 17 s,
+// p95 26 s, max 112 s; 263 of 273 (96.3%) are within 30 s. Past it the dot goes rather than sit where
+// the ball no longer is. Age is taken at RECEIPT on this device's monotonic clock, not against the
+// frame's uts, so a skewed device clock can neither pin the dot nor hide it.
+var BSD_BALL_MAX_AGE_MS = 30000;
 
 // Called on bsd:ball and bsd:stats frames from _onMessage
 function _bsdOnSSEFrame(type, data) {
+  // AmbientDO fans every subscribed match out to EVERY connected client ("clients filter frames
+  // locally by id", field-relay-nba src/ambient-do.js _bsdOnFrame); this client watches one. Without
+  // this a second user on a different match moved this user's dot.
+  if (!data || String(data.id) !== String(_bsdActiveId)) return;
   if (type === 'bsd:ball') {
-    _bsdBallPos = data;
+    // data.coords is the NEWEST point of the vendor's sliding window, {x, y} integers on ONE shared
+    // pitch, or null when the window is empty (CONTRACTS.md bsd:ball; the relay nests it, so the old
+    // read of data.x / data.y never saw a number). Frame of reference, measured 2026-10-28: the home
+    // side defends x = 0 and attacks toward x = 100 (home goal at x 93, home goal kicks at x 5, away
+    // shots at x 10 to 20), and the frame did not flip at half time in the ONE second half measured
+    // (event 602352). No second second half was available, so nothing here is derived from it: the
+    // point is placed as sent. A frame with no point is routine (72 of 378 in the four captures that
+    // carry coordinates at all) and the ball has not left the pitch: keep the last point, and let
+    // _bsdRepaint age it out.
+    var c = data.coords;
+    if (!c || !Number.isFinite(c.x) || !Number.isFinite(c.y)) return;
+    _bsdBallPos = { x: c.x, y: c.y };
+    _bsdBallAt = performance.now();
+    clearTimeout(_bsdBallTimer);
+    _bsdBallTimer = setTimeout(_bsdRepaint, BSD_BALL_MAX_AGE_MS + 50);
     _bsdRepaint();
   } else if (type === 'bsd:stats') {
     const _bsdShots = data.shots || data.shotmap; if (Array.isArray(_bsdShots)) { _bsdShotData = _bsdShots; _bsdRepaint(); }
@@ -38525,6 +38552,7 @@ function _bsdDeactivate() {
   }).catch(function() {});
   _bsdActiveId = null;
   _bsdBallPos  = null;
+  clearTimeout(_bsdBallTimer);
   _bsdShotData = [];
 }
 
@@ -38562,7 +38590,7 @@ function _bsdRepaint() {
     return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>';
   }).join('');
   var ball = '';
-  if (_bsdBallPos && _bsdBallPos.x != null) {
+  if (_bsdBallPos && (performance.now() - _bsdBallAt) <= BSD_BALL_MAX_AGE_MS) {
     var bx = _bsdBallPos.x * W / 100;
     var by = (100 - _bsdBallPos.y) * H / 100;
     ball = '<circle cx="'+bx+'" cy="'+by+'" r="5" fill="#fff" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>';
@@ -38575,6 +38603,12 @@ function _bsdRepaint() {
     shots + ball +
     '</svg>';
 }
+
+// Test hook for the CI-as-proxy probe (.github/workflows/bsd-pitch-probe.yml, CC-CMD-2026-10-28-bsd-
+// pitch-renderer-fields). This script is a module, so _bsdActivate is out of reach of page.evaluate; the
+// probe needs the REAL activation (which sets the active id the frame filter compares against) to feed the
+// real SSE path. Exposes that one function and nothing else.
+window._bsdVerify = { activate: _bsdActivate };
 
 // openWcGroup — bridge from a schedule WC card to the in-mode Groups view.
 // Activates wc-mode (if not already), selects the Groups sub-tab, scrolls
