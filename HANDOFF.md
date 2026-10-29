@@ -1,5 +1,24 @@
 # FIELD HANDOFF
 
+## 2026-10-29 — the BSD pitch plots inside its own lines
+
+`8d0496e` (renderer) and `70a5228` (probe), SW 2026-10-29a; deploy gate run 40906714683.
+
+**What changed.** The pitch lines were drawn in a rectangle 5% inside the canvas, and the ball and shots were plotted to the
+whole canvas, so pitch x = 0 (the goal line) sat 5% outside the drawn goal line and a recorded goal at x = 2.7 was drawn outside it
+and clipped. `_bsdToCanvas` maps pitch coordinates INTO the rectangle for the ball and the shots, and the rectangle is drawn from the
+same `BSD_PITCH_INSET` constant. The margin stays (it is what stops a large circle at the goal line being clipped).
+
+**Proof:** `outbox/bsd-pitch-probe-manifest-2026-10-29T16-03-02.json` (run 40907485456, green twice). The probe reads the drawn
+`<rect>` out of the SVG and judges position against it: the away goal at `cx 26.7` (was 9.7), a ball at pitch x = 5 at `34.2`
+(was ON the line), both shots equal to the served `sharedPitch` formulas to 0.01 px. A local mutation run found that a margin on
+x only slipped past the shot booleans; two exact booleans were added. Smoke 1066 / 0 failed. Reader on recorded payloads, not a live match.
+
+**Open, filed:** `CC-CMD-2026-10-29-bsd-live-shot-source.md` (field-relay-nba `docs/`): no shot reaches a live match.
+CONTRACTS.md synced ("Where the client draws it").
+
+Session doc: field-relay-nba outbox/cc-session-2026-10-29-bsd-pitch-renderer.md (Part 2)
+
 ## 2026-10-29 — the BSD pitch draws a ball and shots
 
 `94d8b56` (ball) and `18b4873` (shots), SW 2026-10-28b; deploy gate runs 40809785846 (re-run green) and 40812818686.
