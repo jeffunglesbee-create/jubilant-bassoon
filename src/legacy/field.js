@@ -23413,7 +23413,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-28b';
+  const SW_VERSION = '2026-10-29a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -33520,8 +33520,9 @@ function _bsdActivateForWC() {
 // goal that team attacks), but the ball and the incident positions sit on ONE shared pitch where the home side
 // attacks x = 100. /bsd/contract transformReference.sharedPitch gives the placement: home
 // 'x = 100 - x; y = 100 - y', away 'x = x; y = y'. Measured 2026-10-29 by joining each goal's incident
-// sequence pos to its shotmap pos: 123 of 126 goals across 38 finished matches, home 71 of 71 exact, away 51
-// of 52 exact and the 52nd 0.5 off (field-relay-nba outbox/bsd-shared-pitch-fit-latest.json). It is NOT
+// sequence pos to its shotmap pos: 121 of 126 goals (2 own goals excluded) across 38 finished matches, home
+// 69 of 69 exact, away 51 of 52 exact and the 52nd 0.5 off (field-relay-nba
+// outbox/bsd-shared-pitch-fit-latest.json). It is NOT
 // transformReference.mirrorAway: that leaves the home side raw (home attacks x = 0), the other orientation,
 // and would draw the home side's shots at the end of the pitch the ball's home side defends. A record with no
 // numeric pos, or with neither home:true nor home:false, is not drawn; absence is not "away".
@@ -33530,6 +33531,19 @@ function _bsdShotPoint(s) {
   if (s.home === true)  return { x: 100 - s.pos.x, y: 100 - s.pos.y };
   if (s.home === false) return { x: s.pos.x, y: s.pos.y };
   return null;
+}
+
+// The pitch lines are drawn in a rectangle inset BSD_PITCH_INSET (5%) from the canvas on every side; the margin
+// is what keeps a large shot circle at the goal line from being clipped by the canvas edge. Pitch coordinates
+// (0..100 on both axes, y up) map INTO that rectangle, the way /bsd/contract's toScreenSVG maps them onto a
+// pitch that fills its canvas, with y inverted for the screen. Until 2026-10-29 the ball and the shots were
+// mapped to the whole canvas while the lines were drawn inside it, so pitch x = 0 (the goal line) was plotted 5%
+// OUTSIDE the drawn goal line (a recorded goal at x = 2.7 sat outside it and was clipped) and x = 5 sat on it.
+// One helper for the ball and the shots, and the lines are drawn from the same constant, so they cannot drift.
+var BSD_PITCH_INSET = 0.05;
+function _bsdToCanvas(x, y, W, H) {
+  var k = 1 - 2 * BSD_PITCH_INSET;
+  return { cx: W * (BSD_PITCH_INSET + k * x / 100), cy: H * (BSD_PITCH_INSET + k * (100 - y) / 100) };
 }
 
 // SVG pitch renderer — called on each bsd:ball / bsd:stats frame
@@ -33541,22 +33555,24 @@ function _bsdRepaint() {
   var shots = (_bsdShotData || []).map(function(s) {
     var p = _bsdShotPoint(s);
     if (!p) return '';
-    var cx = p.x * W / 100;
-    var cy = (100 - p.y) * H / 100;
+    var c  = _bsdToCanvas(p.x, p.y, W, H);
+    var cx = c.cx;
+    var cy = c.cy;
     var r  = 3 + (s.xg || 0) * 10;
     var col = s.home === true ? 'rgba(99,179,237,0.75)' : 'rgba(252,129,74,0.75)';
     return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>';
   }).join('');
   var ball = '';
   if (_bsdBallPos && (performance.now() - _bsdBallAt) <= BSD_BALL_MAX_AGE_MS) {
-    var bx = _bsdBallPos.x * W / 100;
-    var by = (100 - _bsdBallPos.y) * H / 100;
+    var bc = _bsdToCanvas(_bsdBallPos.x, _bsdBallPos.y, W, H);
+    var bx = bc.cx;
+    var by = bc.cy;
     ball = '<circle cx="'+bx+'" cy="'+by+'" r="5" fill="#fff" stroke="rgba(0,0,0,0.4)" stroke-width="1"/>';
   }
   el.innerHTML =
     '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#2d5a27;border-radius:6px">'+
-    '<rect x="'+W*.05+'" y="'+H*.05+'" width="'+W*.9+'" height="'+H*.9+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
-    '<line x1="'+W/2+'" y1="'+H*.05+'" x2="'+W/2+'" y2="'+H*.95+'" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    '<rect x="'+W*BSD_PITCH_INSET+'" y="'+H*BSD_PITCH_INSET+'" width="'+W*(1-2*BSD_PITCH_INSET)+'" height="'+H*(1-2*BSD_PITCH_INSET)+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
+    '<line x1="'+W/2+'" y1="'+H*BSD_PITCH_INSET+'" x2="'+W/2+'" y2="'+H*(1-BSD_PITCH_INSET)+'" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
     '<circle cx="'+W/2+'" cy="'+H/2+'" r="'+Math.min(W,H)*.1+'" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>'+
     shots + ball +
     '</svg>';

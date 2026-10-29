@@ -6269,6 +6269,18 @@ assert('A_BSD_14 — shots are placed from pos + home with the contract\'s share
   !/var cx = s\.x \* W/.test(html),
   'a shotmap record carries pos{x,y} and home:boolean, no top-level x/y/team; sharedPitch (home: x = 100 - x; y = 100 - y, away: as sent) is what puts it on the ball\'s pitch; mirrorAway is the other orientation');
 
+assert('A_BSD_15 — the ball and the shots are mapped INTO the inset pitch rectangle by one helper, and the lines are drawn from the same constant (CC-CMD-2026-10-29-bsd-pitch-inset)',
+  /var BSD_PITCH_INSET = 0\.05;/.test(html) &&
+  /function _bsdToCanvas\(x, y, W, H\) \{/.test(html) &&
+  /var k = 1 - 2 \* BSD_PITCH_INSET;/.test(html) &&
+  /return \{ cx: W \* \(BSD_PITCH_INSET \+ k \* x \/ 100\), cy: H \* \(BSD_PITCH_INSET \+ k \* \(100 - y\) \/ 100\) \};/.test(html) &&
+  /var c  = _bsdToCanvas\(p\.x, p\.y, W, H\);/.test(html) &&
+  /var bc = _bsdToCanvas\(_bsdBallPos\.x, _bsdBallPos\.y, W, H\);/.test(html) &&
+  /'<rect x="'\+W\*BSD_PITCH_INSET\+'"/.test(html) &&
+  !/\* W \/ 100;\s*\n\s*var cy = \(100 - p\.y\)/.test(html) &&
+  !/var bx = _bsdBallPos\.x \* W/.test(html),
+  'the lines are drawn at BSD_PITCH_INSET from the canvas; pitch x = 0 must be plotted ON the drawn goal line, not 5% outside it. Same helper for the ball and the shots');
+
 assert('A_DEV_1 — _isFieldDevMode helper defined (?dev=1 or field_dev localStorage)',
   html.includes('function _isFieldDevMode()') &&
   html.includes("get('dev') === '1'") &&
