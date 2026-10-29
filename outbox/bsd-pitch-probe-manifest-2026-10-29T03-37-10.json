@@ -1,0 +1,164 @@
+{
+  "probe": "bsd-pitch",
+  "stamp": "2026-10-29T03-37-10",
+  "page": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "shotEvent": "602347",
+  "scope": "Proves the READER on the deployed page, fed recorded payloads over its real SSE path. Not a live match; none is live in CI.",
+  "error": null,
+  "contractDeclaresSharedPitch": true,
+  "contractRevision": "2026-10-16-1",
+  "shots": {
+    "home": {
+      "min": 90,
+      "pos": {
+        "x": 27.7,
+        "y": 59.3,
+        "z": 0
+      },
+      "vendorShared": {
+        "x": 72.3,
+        "y": 40.7
+      }
+    },
+    "away": {
+      "min": 43,
+      "pos": {
+        "x": 2.7,
+        "y": 48.6,
+        "z": 0
+      },
+      "vendorShared": {
+        "x": 2.7,
+        "y": 48.6
+      }
+    }
+  },
+  "frames": {
+    "ball": {
+      "type": "bsd:ball",
+      "id": "602352",
+      "uts": 1793208042,
+      "coords": {
+        "x": 72,
+        "y": 47
+      },
+      "situation": "dangerous",
+      "side": "home",
+      "time": {
+        "minute": 18,
+        "second": 38,
+        "display": "18:38",
+        "period": 1,
+        "injury_time": 0,
+        "period_started_at_uts": 1793206979
+      },
+      "commentary": "Dresden on the edge of something!"
+    },
+    "nullBall": {
+      "type": "bsd:ball",
+      "id": "602352",
+      "uts": 1793153961,
+      "coords": null,
+      "situation": "freekick",
+      "side": "away",
+      "time": {
+        "minute": 45,
+        "second": 0,
+        "display": "45:00",
+        "period": 2,
+        "injury_time": 2,
+        "period_started_at_uts": 1793153529
+      },
+      "commentary": "Junior Barranquilla send another in."
+    },
+    "otherBall": {
+      "type": "bsd:ball",
+      "id": "602353",
+      "uts": 1793208042,
+      "coords": {
+        "x": 50,
+        "y": 50
+      },
+      "situation": "dangerous",
+      "side": "home",
+      "time": {
+        "minute": 18,
+        "second": 38,
+        "display": "18:38",
+        "period": 1,
+        "injury_time": 0,
+        "period_started_at_uts": 1793206979
+      },
+      "commentary": "Dresden on the edge of something!"
+    },
+    "statsShotCount": 2
+  },
+  "hookPresent": true,
+  "pitchPx": {
+    "W": 360,
+    "H": 240
+  },
+  "ballAppeared": true,
+  "ballCircleCount": 1,
+  "ballCircleFinite": true,
+  "ballCx": 259.2,
+  "ballCy": 127.2,
+  "expectedBall": {
+    "cx": 259.2,
+    "cy": 127.2
+  },
+  "ballAtExpected": true,
+  "ballKeptOnNullFrame": true,
+  "shotCircleCount": 2,
+  "shotCirclesFinite": true,
+  "homeShotAtVendorPlacement": true,
+  "awayShotAtVendorPlacement": true,
+  "homeShotCircle": {
+    "cx": "260.28",
+    "cy": "142.32",
+    "r": "3.46",
+    "fill": "rgba(99,179,237,0.75)"
+  },
+  "awayShotCircle": {
+    "cx": "9.72",
+    "cy": "123.36",
+    "r": "9.760000000000002",
+    "fill": "rgba(252,129,74,0.75)"
+  },
+  "nanAttributes": 0,
+  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T03-37-10.png",
+  "otherMatchServed": true,
+  "otherMatchIgnored": true,
+  "ballDroppedWhenStale": true,
+  "shotsStayWhenBallGoes": true,
+  "nanAttributesAfterAge": 0,
+  "sseRequests": 11,
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "required": [
+    "contractDeclaresSharedPitch",
+    "hookPresent",
+    "ballAppeared",
+    "ballCircleFinite",
+    "ballAtExpected",
+    "ballKeptOnNullFrame",
+    "otherMatchServed",
+    "otherMatchIgnored",
+    "shotCirclesFinite",
+    "homeShotAtVendorPlacement",
+    "awayShotAtVendorPlacement",
+    "ballDroppedWhenStale",
+    "shotsStayWhenBallGoes"
+  ],
+  "failing": [],
+  "pass": true
+}

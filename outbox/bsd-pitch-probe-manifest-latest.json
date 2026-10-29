@@ -1,12 +1,12 @@
 {
   "probe": "bsd-pitch",
-  "stamp": "2026-10-29T03-22-08",
+  "stamp": "2026-10-29T03-37-10",
   "page": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "shotEvent": "602347",
   "scope": "Proves the READER on the deployed page, fed recorded payloads over its real SSE path. Not a live match; none is live in CI.",
   "error": null,
-  "contractDeclaresSharedPitch": false,
+  "contractDeclaresSharedPitch": true,
   "contractRevision": "2026-10-16-1",
   "shots": {
     "home": {
@@ -111,23 +111,28 @@
   "ballAtExpected": true,
   "ballKeptOnNullFrame": true,
   "shotCircleCount": 2,
-  "shotCirclesFinite": false,
-  "homeShotAtVendorPlacement": false,
-  "awayShotAtVendorPlacement": false,
-  "homeShotCircle": null,
-  "awayShotCircle": {
-    "cx": "NaN",
-    "cy": "NaN",
+  "shotCirclesFinite": true,
+  "homeShotAtVendorPlacement": true,
+  "awayShotAtVendorPlacement": true,
+  "homeShotCircle": {
+    "cx": "260.28",
+    "cy": "142.32",
     "r": "3.46",
+    "fill": "rgba(99,179,237,0.75)"
+  },
+  "awayShotCircle": {
+    "cx": "9.72",
+    "cy": "123.36",
+    "r": "9.760000000000002",
     "fill": "rgba(252,129,74,0.75)"
   },
-  "nanAttributes": 4,
-  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T03-22-08.png",
+  "nanAttributes": 0,
+  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T03-37-10.png",
   "otherMatchServed": true,
   "otherMatchIgnored": true,
   "ballDroppedWhenStale": true,
   "shotsStayWhenBallGoes": true,
-  "nanAttributesAfterAge": 4,
+  "nanAttributesAfterAge": 0,
   "sseRequests": 11,
   "consoleErrors": [
     "Failed to load resource: the server responded with a status of 404 ()",
@@ -154,13 +159,6 @@
     "ballDroppedWhenStale",
     "shotsStayWhenBallGoes"
   ],
-  "failing": [
-    "contractDeclaresSharedPitch",
-    "shotCirclesFinite",
-    "homeShotAtVendorPlacement",
-    "awayShotAtVendorPlacement",
-    "nanAttributes",
-    "nanAttributesAfterAge"
-  ],
-  "pass": false
+  "failing": [],
+  "pass": true
 }
