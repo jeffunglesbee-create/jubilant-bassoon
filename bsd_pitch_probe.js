@@ -21,7 +21,12 @@
 //                 -> a dot at the expected place (B did not blank it), two shot circles at the places
 //                    the vendor puts those goals
 //   connection 2: frame C bsd:ball for ANOTHER match       -> the dot does not move
-//   later:        keepalives only; 31.5 s after frame A    -> the dot is gone (30 s bound), shots stay
+//   connection 3: frame E, the served example with ONLY its coords replaced by pitch x = 5, y = 50
+//                 -> the dot sits INSIDE the drawn goal line (5% of the pitch from it), not on it
+//   later:        keepalives only; 31.5 s after frame E    -> the dot is gone (30 s bound), shots stay
+//
+// Where things are drawn is judged against the pitch RECTANGLE the page draws (read from the SVG), not against
+// a constant of this script's: a pitch coordinate x maps to rect.x + rect.width * x / 100, and y is inverted.
 
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
@@ -83,7 +88,9 @@ const getJson = async (path) => {
     const body = (frames) => frames.map(([ev, d]) => `event: ${ev}\ndata: ${JSON.stringify(d)}\n\n`).join('');
     const sse1 = body([['bsd:ball', ball], ['bsd:ball', { ...nullBall, id: activeId }], ['bsd:stats', statsFrame]]);
     const sse2 = body([['bsd:ball', otherBall]]);
-    manifest.frames = { ball, nullBall: { ...nullBall, id: activeId }, otherBall, statsShotCount: statsFrame.shotmap.length };
+    const edgeBall = { ...ball, coords: { x: 5, y: 50 } };
+    const sse3 = body([['bsd:ball', edgeBall]]);
+    manifest.frames = { ball, nullBall: { ...nullBall, id: activeId }, otherBall, edgeBall, statsShotCount: statsFrame.shotmap.length };
 
     // ── the browser ──
     browser = await chromium.launch();
@@ -103,7 +110,8 @@ const getJson = async (path) => {
       sseRequests++;
       const cors = { 'access-control-allow-origin': '*', 'cache-control': 'no-cache' };
       if (sseRequests === 2) return r.fulfill({ status: 200, headers: cors, contentType: 'text/event-stream', body: sse2 });
-      if (sseRequests > 2) { // nothing new from here: the age bound is what is tested
+      if (sseRequests === 3) return r.fulfill({ status: 200, headers: cors, contentType: 'text/event-stream', body: sse3 });
+      if (sseRequests > 3) { // nothing new from here: the age bound is what is tested
         return r.fulfill({ status: 200, headers: cors, contentType: 'text/event-stream', body: ': keepalive\n\n' });
       }
       await ready; // not before the page has activated the match and has a pitch to draw on
@@ -132,7 +140,9 @@ const getJson = async (path) => {
       if (!svg) return { svg: false };
       const circ = [...svg.querySelectorAll('circle')].map(c => ({
         cx: c.getAttribute('cx'), cy: c.getAttribute('cy'), r: c.getAttribute('r'), fill: c.getAttribute('fill') }));
-      return { svg: true, circles: circ, nanAttributes: (svg.outerHTML.match(/NaN|undefined|Infinity/g) || []).length };
+      const rc = svg.querySelector('rect');
+      const rect = rc ? { x: +rc.getAttribute('x'), y: +rc.getAttribute('y'), w: +rc.getAttribute('width'), h: +rc.getAttribute('height') } : null;
+      return { svg: true, circles: circ, rect, nanAttributes: (svg.outerHTML.match(/NaN|undefined|Infinity/g) || []).length };
     });
     const isBall = (c) => c.fill === '#fff';
     const isShot = (c) => /^rgba\((99,179,237|252,129,74),/.test(c.fill || '');
@@ -147,7 +157,10 @@ const getJson = async (path) => {
     const ballCircles = (s1.circles || []).filter(isBall);
     const shotCircles = (s1.circles || []).filter(isShot);
 
-    const px = (x) => x * W / 100, py = (y) => (100 - y) * H / 100;
+    const rect = s1.rect;
+    manifest.pitchRect = rect;
+    if (!rect || ![rect.x, rect.y, rect.w, rect.h].every(Number.isFinite)) throw new Error('the drawn pitch rectangle was not readable from the SVG');
+    const px = (x) => rect.x + rect.w * x / 100, py = (y) => rect.y + rect.h * (100 - y) / 100;
     const near = (a, b, tol) => Number.isFinite(+a) && Math.abs(+a - b) <= tol;
     const exp = { cx: px(ball.coords.x), cy: py(ball.coords.y) };
     manifest.ballCircleCount = ballCircles.length;
@@ -162,11 +175,22 @@ const getJson = async (path) => {
     // Shots: home (blue) and away (orange). Expected = the vendor's own placement on the shared pitch.
     const byFill = (pre) => shotCircles.filter(c => c.fill.startsWith(pre));
     const homeC = byFill('rgba(99,179,237')[0], awayC = byFill('rgba(252,129,74')[0];
-    const tolX = AGREE * W / 100, tolY = AGREE * H / 100;
+    const tolX = AGREE * rect.w / 100, tolY = AGREE * rect.h / 100;
     manifest.shotCircleCount = shotCircles.length;
     manifest.shotCirclesFinite = shotCircles.length === 2 && shotCircles.every(c => Number.isFinite(+c.cx) && Number.isFinite(+c.cy) && Number.isFinite(+c.r));
     manifest.homeShotAtVendorPlacement = !!homeC && near(homeC.cx, px(homeGoal.vendorShared.x), tolX) && near(homeC.cy, py(homeGoal.vendorShared.y), tolY);
     manifest.awayShotAtVendorPlacement = !!awayC && near(awayC.cx, px(awayGoal.vendorShared.x), tolX) && near(awayC.cy, py(awayGoal.vendorShared.y), tolY);
+    // The exact leg: the served sharedPitch formulas (checked above to read as the strings in
+    // manifest.contractDeclaresSharedPitch) applied to the RECORD, to 0.01 px. The vendor leg above has a pitch
+    // unit of slack because the vendor's two feeds can differ by 0.5; this one has none, so a margin applied to
+    // one axis only, which a goal near the centre line cannot show against the vendor leg, still fails.
+    const hp = homeGoal.shot.pos, ap = awayGoal.shot.pos;
+    manifest.homeShotAtTransform = !!homeC && near(homeC.cx, px(100 - hp.x), 0.01) && near(homeC.cy, py(100 - hp.y), 0.01);
+    manifest.awayShotAtTransform = !!awayC && near(awayC.cx, px(ap.x), 0.01) && near(awayC.cy, py(ap.y), 0.01);
+    // The inset: the away goal is at pitch x = 2.7, so its centre is INSIDE the drawn goal line (rect.x), and the
+    // circle (xg 0.676, r 9.8 px) is not cut by the canvas edge.
+    manifest.awayShotCentreInsideGoalLine = !!awayC && +awayC.cx >= rect.x;
+    manifest.awayShotNotClipped = !!awayC && +awayC.cx - +awayC.r >= 0;
     manifest.homeShotCircle = homeC || null;
     manifest.awayShotCircle = awayC || null;
     manifest.nanAttributes = s1.nanAttributes ?? null;
@@ -219,8 +243,21 @@ const getJson = async (path) => {
     manifest.otherMatchIgnored = manifest.otherMatchServed && ballB.length === 1 &&
       near(ballB[0].cx, exp.cx, 0.01) && near(ballB[0].cy, exp.cy, 0.01);
 
+    // Connection 3 delivers frame E, a ball at pitch x = 5: drawn 5% of the pitch INSIDE the goal line, not on it.
+    const deadline3 = Date.now() + 15000;
+    while (sseRequests < 3 && Date.now() < deadline3) await page.waitForTimeout(250);
+    await page.waitForTimeout(1200);
+    const tE = Date.now();
+    const s1c = await read();
+    const ballE = (s1c.circles || []).filter(isBall);
+    manifest.edgeBallServed = sseRequests >= 3;
+    manifest.edgeBallCx = ballE[0] ? +ballE[0].cx : null;
+    manifest.expectedEdgeBallCx = px(5);
+    manifest.ballAtFivePercentIsInside = manifest.edgeBallServed && ballE.length === 1 && near(ballE[0].cx, px(5), 0.01) &&
+      near(ballE[0].cy, py(50), 0.01) && +ballE[0].cx > rect.x + 1;
+
     // Nothing further arrives; past the age bound the dot goes by its own timer.
-    await page.waitForTimeout(Math.max(0, AGE_WAIT_MS - (Date.now() - tA)));
+    await page.waitForTimeout(Math.max(0, AGE_WAIT_MS - (Date.now() - tE)));
     const s2 = await read();
     manifest.ballDroppedWhenStale = (s2.circles || []).filter(isBall).length === 0;
     manifest.shotsStayWhenBallGoes = (s2.circles || []).filter(isShot).length === 2;
@@ -237,6 +274,7 @@ const getJson = async (path) => {
 
   const required = ['contractDeclaresSharedPitch', 'hookPresent', 'ballAppeared', 'ballCircleFinite', 'ballAtExpected', 'ballKeptOnNullFrame',
     'otherMatchServed', 'otherMatchIgnored', 'screenshotShowsPitch', 'shotCirclesFinite', 'homeShotAtVendorPlacement', 'awayShotAtVendorPlacement',
+    'homeShotAtTransform', 'awayShotAtTransform', 'awayShotCentreInsideGoalLine', 'awayShotNotClipped', 'edgeBallServed', 'ballAtFivePercentIsInside',
     'ballDroppedWhenStale', 'shotsStayWhenBallGoes'];
   manifest.required = required;
   manifest.failing = required.filter(k => manifest[k] !== true);
