@@ -1,5 +1,29 @@
 # FIELD HANDOFF
 
+## 2026-10-29 — the BSD pitch draws a ball and shots
+
+`94d8b56` (ball) and `18b4873` (shots), SW 2026-10-28b; deploy gate runs 40809785846 (re-run green) and 40812818686.
+
+**What changed.** The live pitch (`#bsd-pitch`) read fields the feed does not carry, so it had never drawn a ball or
+placed a shot. `_bsdOnSSEFrame` now reads `data.coords`, keeps the last point on a frame without one, drops a point
+older than 30 s (273 measured gaps: median 5 s, p90 17 s, p95 26 s) and ignores a frame for another match (the relay fans
+every subscribed match out to every client). Shots are placed from `pos` + `home` with the relay's
+`transformReference.sharedPitch`: home `(100 - x, 100 - y)`, away `(x, y)`. That is NOT `mirrorAway`, which leaves home
+raw; measured by an exact join of goal incidents to shotmap records, 121 of 126 goals, home 69/69, away 51/52 exact.
+
+**Proof:** `bsd-pitch-probe.yml` (new) loads the deployed page, feeds its own EventSource recorded `bsd:ball` and
+`bsd:stats` frames, and commits a screenshot and a manifest. Green at `outbox/bsd-pitch-probe-manifest-2026-10-29T03-53-57.json`
+(run 40814597354, also 03:51:47): ball at the expected pixel, the shots at the vendor's own placement of the same goals,
+`nanAttributes` 0, the dot gone after 30 s with the shots staying, and a screenshot whose grass pixels read `#2d5a27`.
+It proves the READER on recorded payloads, not a live match. Smoke 1065 / 0 failed; source mutations 5/5 and 5/5,
+probe breaks 8/8 (run locally against a build and a stand-in relay).
+
+**Open, filed:** `CC-CMD-2026-10-29-bsd-pitch-inset.md` (lines drawn 5% inside, plotting to the edge) and
+`CC-CMD-2026-10-29-bsd-live-shot-source.md` (no shot reaches a live match: `bsd:stats.shotmap` is null on 170 of 170
+recorded frames), both in field-relay-nba `docs/`. CONTRACTS.md synced.
+
+Session doc: field-relay-nba outbox/cc-session-2026-10-29-bsd-pitch-renderer.md
+
 ## 2026-10-24 — today's NHL and NBA games get cards
 
 `eb8e74c4` (SW 2026-10-24d, deploy gate run 40113474301, live by 16:53Z).
