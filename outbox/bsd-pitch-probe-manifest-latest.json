@@ -1,6 +1,6 @@
 {
   "probe": "bsd-pitch",
-  "stamp": "2026-10-29T03-53-57",
+  "stamp": "2026-10-29T16-00-44",
   "page": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "shotEvent": "602347",
@@ -92,6 +92,26 @@
       },
       "commentary": "Dresden on the edge of something!"
     },
+    "edgeBall": {
+      "type": "bsd:ball",
+      "id": "602352",
+      "uts": 1793208042,
+      "coords": {
+        "x": 5,
+        "y": 50
+      },
+      "situation": "dangerous",
+      "side": "home",
+      "time": {
+        "minute": 18,
+        "second": 38,
+        "display": "18:38",
+        "period": 1,
+        "injury_time": 0,
+        "period_started_at_uts": 1793206979
+      },
+      "commentary": "Dresden on the edge of something!"
+    },
     "statsShotCount": 2
   },
   "hookPresent": true,
@@ -100,13 +120,19 @@
     "H": 240
   },
   "ballAppeared": true,
+  "pitchRect": {
+    "x": 18,
+    "y": 12,
+    "w": 324,
+    "h": 216
+  },
   "ballCircleCount": 1,
   "ballCircleFinite": true,
-  "ballCx": 259.2,
-  "ballCy": 127.2,
+  "ballCx": 251.28000000000003,
+  "ballCy": 126.48,
   "expectedBall": {
-    "cx": 259.2,
-    "cy": 127.2
+    "cx": 251.28,
+    "cy": 126.48
   },
   "ballAtExpected": true,
   "ballKeptOnNullFrame": true,
@@ -114,21 +140,25 @@
   "shotCirclesFinite": true,
   "homeShotAtVendorPlacement": true,
   "awayShotAtVendorPlacement": true,
+  "homeShotAtTransform": true,
+  "awayShotAtTransform": true,
+  "awayShotCentreInsideGoalLine": true,
+  "awayShotNotClipped": true,
   "homeShotCircle": {
-    "cx": "260.28",
-    "cy": "142.32",
+    "cx": "252.252",
+    "cy": "140.088",
     "r": "3.46",
     "fill": "rgba(99,179,237,0.75)"
   },
   "awayShotCircle": {
-    "cx": "9.72",
-    "cy": "123.36",
+    "cx": "26.748",
+    "cy": "123.02399999999999",
     "r": "9.760000000000002",
     "fill": "rgba(252,129,74,0.75)"
   },
   "nanAttributes": 0,
   "pitchStack": {
-    "ok": false,
+    "ok": true,
     "at": {
       "x": 192,
       "y": 132
@@ -144,11 +174,15 @@
       "h": 1024
     },
     "stack": [
-      "html"
+      "line",
+      "svg",
+      "div#bsd-pitch",
+      "nav.controls",
+      "div#upper-slots"
     ]
   },
   "screenshotShowsPitch": true,
-  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T03-53-57.png",
+  "screenshot": "outbox/bsd-pitch-probe-2026-10-29T16-00-44.png",
   "screenshotSamples": [
     [
       45,
@@ -168,19 +202,23 @@
   ],
   "otherMatchServed": true,
   "otherMatchIgnored": true,
+  "edgeBallServed": true,
+  "edgeBallCx": 34.2,
+  "expectedEdgeBallCx": 34.2,
+  "ballAtFivePercentIsInside": true,
   "ballDroppedWhenStale": true,
   "shotsStayWhenBallGoes": true,
   "nanAttributesAfterAge": 0,
-  "sseRequests": 11,
+  "sseRequests": 13,
   "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()"
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard?dates=20261029&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
   ],
   "required": [
     "contractDeclaresSharedPitch",
@@ -195,6 +233,12 @@
     "shotCirclesFinite",
     "homeShotAtVendorPlacement",
     "awayShotAtVendorPlacement",
+    "homeShotAtTransform",
+    "awayShotAtTransform",
+    "awayShotCentreInsideGoalLine",
+    "awayShotNotClipped",
+    "edgeBallServed",
+    "ballAtFivePercentIsInside",
     "ballDroppedWhenStale",
     "shotsStayWhenBallGoes"
   ],
