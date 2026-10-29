@@ -174,11 +174,17 @@ const getJson = async (path) => {
     // An element screenshot is the pixels at the element's rect, whoever paints them: on the deployed page the first
     // version (a block appended at the end of <body>) came back as the page's own list of sports. So the pitch is a
     // fixed top-layer box, and what is painted at its centre is recorded.
-    manifest.pitchIsTopmost = await page.evaluate(() => {
+    const topInfo = await page.evaluate(() => {
       const el = document.getElementById('bsd-pitch'); const r = el.getBoundingClientRect();
-      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      return !!top && (top === el || el.contains(top));
+      const d = (n) => n ? `${n.tagName.toLowerCase()}${n.id ? '#' + n.id : ''}${n.className && typeof n.className === 'string' ? '.' + n.className.trim().split(/\s+/).join('.') : ''}` : null;
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const stack = document.elementsFromPoint(cx, cy).slice(0, 5).map(d);
+      const top = document.elementFromPoint(cx, cy);
+      return { ok: !!top && (top === el || el.contains(top)), at: { x: cx, y: cy }, rect: { w: r.width, h: r.height, top: r.top, left: r.left },
+               viewport: { w: innerWidth, h: innerHeight }, stack };
     });
+    manifest.pitchIsTopmost = topInfo.ok;
+    manifest.pitchStack = topInfo;
     const shot = `${OUT}/bsd-pitch-probe-${stamp}.png`;
     try { await (await page.$('#bsd-pitch')).screenshot({ path: shot, timeout: 8000 }); manifest.screenshot = shot; }
     catch (e) { manifest.screenshot = null; manifest.screenshotError = String(e.message).split('\n')[0]; }
