@@ -112,7 +112,7 @@ const getJson = async (path) => {
 
     await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
     manifest.hookPresent = await page.waitForFunction(() => !!(window._bsdVerify && window._bsdVerify.activate), null, { timeout: 30000 })
-      .then(() => true).catch(() => false);
+      .then(() => true, () => false);
     if (!manifest.hookPresent) throw new Error('window._bsdVerify.activate never appeared on the deployed page (is the Task 1 commit deployed?)');
 
     const geom = await page.evaluate((id) => {
@@ -137,10 +137,10 @@ const getJson = async (path) => {
     const isBall = (c) => c.fill === '#fff';
     const isShot = (c) => /^rgba\((99,179,237|252,129,74),/.test(c.fill || '');
 
-    await page.waitForFunction(() => {
+    manifest.ballAppeared = await page.waitForFunction(() => {
       const svg = document.querySelector('#bsd-pitch svg');
       return !!svg && svg.querySelectorAll('circle[fill="#fff"]').length > 0;
-    }, null, { timeout: 25000 }).catch(() => {});
+    }, null, { timeout: 25000 }).then(() => true, () => false);
     await page.waitForTimeout(800); // frames B and D follow A within the same tick; let them land
     const tA = Date.now();
     const s1 = await read();
@@ -196,10 +196,12 @@ const getJson = async (path) => {
   } catch (e) {
     manifest.error = String(e && e.message || e);
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    if (browser) {
+      try { await browser.close(); } catch (e) { manifest.closeError = String(e.message).split('\n')[0]; }
+    }
   }
 
-  const required = ['contractDeclaresSharedPitch', 'hookPresent', 'ballCircleFinite', 'ballAtExpected', 'ballKeptOnNullFrame',
+  const required = ['contractDeclaresSharedPitch', 'hookPresent', 'ballAppeared', 'ballCircleFinite', 'ballAtExpected', 'ballKeptOnNullFrame',
     'otherMatchServed', 'otherMatchIgnored', 'shotCirclesFinite', 'homeShotAtVendorPlacement', 'awayShotAtVendorPlacement',
     'ballDroppedWhenStale', 'shotsStayWhenBallGoes'];
   manifest.required = required;
