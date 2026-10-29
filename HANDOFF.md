@@ -1,5 +1,29 @@
 # FIELD HANDOFF
 
+## 2026-10-29 — the debrief's odds layers skip an opening captured after kickoff
+
+`26ee3239`, SW 2026-10-29b; deploy gate run 40932255038 (success). Relay half: field-relay-nba `66a61d2` (run 40930832200).
+
+**What changed.** The relay's CI backfill writes one snapshot into both odds columns, so a game that kicked off before the 23:59Z
+snapshot has an "opening" captured during it (priced openings carrying the late mark, 2026-09-16 to 2026-10-29: CFB 116 of 183, NHL 97 of
+202, NBA 15 of 69, NFL 4 of 33). `buildOddsStory` turned it into CHALK / UPSET / SWEAT and `buildOddsMovement` printed "Home line
+opened ...". Both now return nothing when `opening._kickoff.late_minutes` is finite (`_openingCapturedLate`, `src/debrief/index.ts`).
+The test is `late_minutes`, not `verified: false`, which the relay also writes for a kickoff it could not read.
+
+**Relay contract (Rule 65).** Unchanged: `/context/game/{id}` serves `game.opening_odds_parsed._kickoff = {at, verified, late_minutes}`
+(read live on `NHL_2026-09-29_e401891827`: `verified:false, late_minutes:55`). CONTRACTS.md carries the consumer rule; the relay copy matches.
+
+**Proof:** `scripts/check-opening-odds-late.mjs` runs the real exported layers on the three real `_kickoff` shapes plus the unmarked case
+(5 openings x 2 layers + 2 through `buildDebrief`): 5 FAIL on the pre-change source, 0 after; `scripts/mutate-opening-odds-late.mjs`
+9 of 9 caught. Wired into `deploy-gate.yml`. **Live:** the deployed page reports `window.SW_VERSION` 2026-10-29b and its served HTML carries `_openingCapturedLate` three times (definition and both calls) and the `late_minutes` read (browser session, 2026-10-29 18:41Z).
+
+**Not touched, and why.** `_isUpset`, the market-consensus functions and the Upset Archaeology panel read `/archive/query`, which serves
+the `briefs` table (no odds, no scores), and the relay has no `/archive/upsets` route, so they never receive an `opening_odds` and
+stay hidden (already in field-relay-nba `outbox/odds-american-readers-2026-10-20.md`). `_consensusOverRate` takes `Number()` of an
+object (NaN); with no feed it never runs. Recorded in field-relay-nba `outbox/cfb-saturday-a0-20261029.md`.
+
+Session doc: field-relay-nba outbox/cc-session-2026-10-29-opening-odds-late.md
+
 ## 2026-10-29 — the BSD pitch plots inside its own lines
 
 `8d0496e` (renderer) and `70a5228` (probe), SW 2026-10-29a; deploy gate run 40906714683.
