@@ -20,6 +20,7 @@ const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const { judgeForwardWindow, askEspnMlb, espnNeeded } = require('./scripts/forward-window-judge.cjs');
 const { readFieldDataMeta } = require('./scripts/probe-meta-read.cjs');
+const { askRelaySports, coverageRows, coverageLines } = require('./scripts/forward-window-relay.cjs');
 
 const RAW = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 // ?pl-verify exposes window._plVerify. _fieldDataCache is a module-level `let`
@@ -106,12 +107,15 @@ const addDays = (iso, n) => {
   STATE.stage = 'window-read';
   const windowRead = await readPv((list) => list.map(d => {
     const sched = window._plVerify.scheduleForDate(d);
-    return { iso: d, has: !!sched, mlb: sched && sched.mlb ? sched.mlb.length : 0 };
+    // bySport: what the window file carries for this day, per sport (null when the day was not read). Reported beside the
+    // relay's counts; only the MLB count is asserted.
+    const bySport = sched ? Object.fromEntries(Object.entries(sched).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [k, v.length])) : null;
+    return { iso: d, has: !!sched, mlb: sched && sched.mlb ? sched.mlb.length : 0, bySport };
   }), isoDays);
   STATE.stage = 'render';
 
   for (const w of windowRead) {
-    days.push({ iso: w.iso, windowHasDay: w.has, windowMlbCount: w.mlb,
+    days.push({ iso: w.iso, windowHasDay: w.has, windowMlbCount: w.mlb, windowBySport: w.bySport,
                 navigated: false, cardCount: 0, sectionCount: 0,
                 mlbEnrichMatched: 0, mlbEnrichAvailable: 0, error: null });
     console.log(`  [${w.iso}] window=${w.has} mlb=${w.mlb}`);
@@ -151,6 +155,11 @@ const addDays = (iso, n) => {
   const windowMlbTotal = days.reduce((n, d) => n + d.windowMlbCount, 0);
   STATE.stage = 'espn-mlb';
   const espn = espnNeeded(days, windowMlbTotal) ? await askEspnMlb(isoDays, fetch) : null;
+  // What the relay lists for the sports the window file does not carry on forward days. Reported, never asserted: the verdict
+  // below is not given these (scripts/forward-window-relay.cjs holds the reasoning).
+  STATE.stage = 'relay-sports';
+  const relay = await askRelaySports(isoDays, fetch);
+  const coverage = coverageRows(days, relay);
   STATE.stage = 'verdict';
 
   const manifest = {
@@ -166,6 +175,8 @@ const addDays = (iso, n) => {
     windowDaysReachingClient: days.filter(d => d.windowHasDay).length,
     windowMlbTotal,
     espnMlb: espn,
+    relaySports: relay,
+    coverage,
     // Best-effort only — see the note in the loop. Never a pass condition.
     renderedCardsTotal: days.reduce((n, d) => n + d.cardCount, 0),
     totalEnrichMatched: days.reduce((n, d) => n + d.mlbEnrichMatched, 0),
@@ -184,6 +195,8 @@ const addDays = (iso, n) => {
   fs.mkdirSync(OUT, { recursive: true });
   fs.writeFileSync(`${OUT}/forward-window-manifest-latest.json`, JSON.stringify(manifest, null, 2));
   console.log(JSON.stringify(manifest, null, 2));
+  console.log('\nCOVERAGE (reported, not asserted; only the MLB count above is):');
+  for (const line of coverageLines(coverage)) console.log(`  ${line}`);
   await browser.close();
 
   if (verdict.problems.length) { console.error('\nFAIL:\n  - ' + verdict.problems.join('\n  - ')); process.exit(1); }

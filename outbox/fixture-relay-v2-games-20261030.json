@@ -1,0 +1,184 @@
+{
+ "what": "The shapes of the relay's GET /v2/games, as the probe's relay capture reads them: the top-level keys, one real game per sport, the observed count and source, and the error shapes.",
+ "method": "Observed 2026-10-30 through the FIELD_Handoff probe_relay_route tool (GET, allow-listed). Each game array is cut to its first game; the observed count is recorded, and the check rebuilds an array of that length by repeating the real game. Error shapes were READ from field-relay-nba src/index.js at 2562f70 (lines named below) and were NOT observed live.",
+ "url_template": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=<nfl|cfb|nba|nhl>&date=YYYY-MM-DD",
+ "top_level_keys": [
+  "sport",
+  "date",
+  "games",
+  "count",
+  "source",
+  "ts"
+ ],
+ "observed": {
+  "nfl": {
+   "date": "2026-11-01",
+   "count": 12,
+   "source": "espn-wc",
+   "game": {
+    "id": "espn:401873026",
+    "espnEventId": "401873026",
+    "sport": "nfl",
+    "league": "NFL",
+    "state": "pre",
+    "start": "2026-11-01T18:00Z",
+    "home": {
+     "name": "Buffalo Bills",
+     "abbr": "BUF",
+     "score": 0,
+     "curatedRank": 99
+    },
+    "away": {
+     "name": "Baltimore Ravens",
+     "abbr": "BAL",
+     "score": 0,
+     "curatedRank": 99
+    },
+    "periodNum": 0,
+    "periodLabel": "",
+    "clock": "0:00",
+    "venue": "Highmark Stadium",
+    "round": 8,
+    "broadcasts": [
+     "CBS"
+    ],
+    "streams": [
+     {
+      "label": "CBS",
+      "market": "National",
+      "type": "TV"
+     }
+    ],
+    "situation": null
+   }
+  },
+  "nhl": {
+   "date": "2026-10-31",
+   "count": 10,
+   "source": "nhle",
+   "game": {
+    "id": "nhl:2026020217",
+    "nhleGameId": 2026020217,
+    "sport": "nhl",
+    "league": "NHL",
+    "state": "pre",
+    "start": "2026-10-31T17:00:00Z",
+    "home": {
+     "name": "Boston Bruins",
+     "abbr": "BOS",
+     "score": null
+    },
+    "away": {
+     "name": "Chicago Blackhawks",
+     "abbr": "CHI",
+     "score": null
+    },
+    "periodNum": 0,
+    "periodLabel": "",
+    "clock": "",
+    "venue": "TD Garden"
+   }
+  },
+  "nba": {
+   "date": "2026-10-30",
+   "count": 10,
+   "source": "espn-wc",
+   "game": {
+    "id": "espn:401909277",
+    "espnEventId": "401909277",
+    "sport": "nba",
+    "league": "NBA",
+    "state": "pre",
+    "start": "2026-10-30T23:00Z",
+    "home": {
+     "name": "Washington Wizards",
+     "abbr": "WSH",
+     "score": 0
+    },
+    "away": {
+     "name": "Charlotte Hornets",
+     "abbr": "CHA",
+     "score": 0
+    },
+    "periodNum": 0,
+    "periodLabel": "NS",
+    "clock": "0.0",
+    "venue": "Capital One Arena",
+    "situation": null,
+    "linescores": {
+     "home": [],
+     "away": []
+    },
+    "round": null,
+    "streams": [
+     {
+      "label": "MNMT",
+      "market": "Home",
+      "type": "TV"
+     }
+    ]
+   }
+  },
+  "cfb": "not observed (a Saturday slate is tens of games). Same response builder as nfl (src/index.js:4821, adaptESPNFootball); the check treats it as the nfl shape."
+ },
+ "error_shapes_from_source": {
+  "espn_upstream_not_ok": {
+   "http": 502,
+   "body": {
+    "error": "ESPN upstream 502",
+    "sport": "nfl",
+    "date": "2026-11-01"
+   },
+   "line": "src/index.js:4497"
+  },
+  "espn_fetch_threw": {
+   "http": 500,
+   "body": {
+    "error": "<message>",
+    "sport": "nfl",
+    "date": "2026-11-01"
+   },
+   "line": "src/index.js:4513"
+  },
+  "nhle_upstream_not_ok": {
+   "http": 200,
+   "body": {
+    "sport": "nhl",
+    "date": "2026-10-31",
+    "games": [],
+    "count": 0,
+    "source": "nhle-error"
+   },
+   "line": "src/index.js:4845",
+   "warning": "HTTP 200 with count 0: an outage that reads as no games unless source is checked"
+  },
+  "unknown_sport": {
+   "http": 400,
+   "body": {
+    "error": "Unknown sport: x",
+    "supported": [
+     "..."
+    ]
+   },
+   "line": "src/index.js:4355"
+  }
+ },
+ "window_file_same_days": {
+  "source": "outbox/field-data-today.json generated 2026-10-30T14:26Z, schedules_by_date",
+  "2026-10-30": {
+   "nhl": 3,
+   "nba": 0,
+   "mlb": 0,
+   "soccer": 0,
+   "wnba": 0
+  },
+  "2026-10-31": {
+   "nhl": 0,
+   "nba": 0,
+   "mlb": 0,
+   "soccer": 0,
+   "wnba": 1
+  },
+  "note": "the relay listed 10 NBA games on 2026-10-30 and 10 NHL games on 2026-10-31 while the file carried 0 and 0. NFL and CFB have no key in the file."
+ }
+}

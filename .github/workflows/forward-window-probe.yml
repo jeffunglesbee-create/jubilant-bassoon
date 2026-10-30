@@ -3,7 +3,9 @@ name: Forward Window Probe
 # into the cache (schema 2.1) and every forward day is in the window. When the window
 # carries no MLB entries, ESPN's own MLB scoreboard is asked whether it should
 # (scripts/forward-window-judge.cjs); the MLB enrichment match is then reported as NOT
-# MEASURED. Rendering and enrichment are REPORTED in the manifest, never asserted.
+# MEASURED. Rendering, enrichment and the per-sport counts the relay lists for NFL, college
+# football, NBA and NHL (beside what the window file carries) are REPORTED in the manifest,
+# never asserted.
 # Impact analysis outbox/impact-2026-09-04-forward-schedule-window.md §11/§14d.
 # Trigger: push to outbox/.trigger-forward-window-probe OR dispatch.
 
@@ -44,7 +46,7 @@ jobs:
           npm install eslint@8
           npx eslint --no-eslintrc --env es2022,node,browser \
             --parser-options ecmaVersion:2022,sourceType:script \
-            --rule '{"no-undef":"error"}' forward_window_probe.js scripts/forward-window-judge.cjs scripts/probe-meta-read.cjs
+            --rule '{"no-undef":"error"}' forward_window_probe.js scripts/forward-window-judge.cjs scripts/probe-meta-read.cjs scripts/forward-window-relay.cjs
 
       # The probe's verdict is one module (scripts/forward-window-judge.cjs), so the probe and its checks cannot
       # disagree. A window with 0 MLB entries passes as "enrichment NOT MEASURED" only when ESPN's own MLB
@@ -56,6 +58,16 @@ jobs:
         run: |
           node scripts/check-forward-window-judge.mjs
           node scripts/mutate-forward-window-judge.mjs
+
+      # The window file carries only MLB, MLS and WNBA on forward days, so a green probe said nothing about the other
+      # sports (2026-10-30: the relay listed 12 NFL games for Sunday and the probe passed with that day at 0). The probe
+      # now reports, per sport, what the relay lists for each forward day beside what the file carries; nothing here can fail
+      # the run. The check runs the collector against real relay shapes, including the NHL outage that arrives as HTTP 200
+      # with no games (a null, never a zero); 33 mutations prove the cases can fail.
+      - name: The relay coverage capture holds, and can fail
+        run: |
+          node scripts/check-forward-window-relay.mjs
+          node scripts/mutate-forward-window-relay.mjs
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
