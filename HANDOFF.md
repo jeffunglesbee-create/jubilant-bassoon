@@ -1,5 +1,33 @@
 # FIELD HANDOFF
 
+## 2026-10-30 — the forward-window probe: an empty MLB window passes as "not measured" only when ESPN agrees, and its first read survives the page's own reload
+
+`33e6300f`, `6d0931bc`, `63604fc7`, `acd686af`, `9643d7c8`, `70085ad6` (docs `a7f22f25`, `1295c637`). No client code, no SW bump. Final live run 41136703711
+(head `a7f22f25`, dispatch): every step green; manifest `cacheAccepted: true`, schema 2.1, 3 of 3 days, `verdict.mlb.state: not-measured`, no problems.
+
+**What changed.** The probe failed whenever the window carried 0 MLB entries, which has been true since the last game (Wed 2026-10-28), so it was red for no product
+reason. Now, when every forward day was read and the window is empty, ESPN's MLB scoreboard is asked about the same dates from Node: games the generator carries
+-> FAIL; none, all fetched -> pass with "enrichment NOT MEASURED"; a date that could not be asked -> FAIL. Spring-training, exhibition and All-Star events are set
+aside (the generator's `gameType=R,F,D,L,W` never carries them; ESPN lists them) and the manifest shows what and why. A window that was never read is `unread`, not
+empty. Separately, the first read of the cache metadata retries a lost execution context: the page reloads itself when its service worker first activates
+(`field.js:23439`), and 4 of 15 recorded runs (10-21, 10-26, 10-28, 10-30 21:11Z) reported `cacheAccepted:false` for a working page. Verdict: `scripts/forward-window-judge.cjs`;
+read: `scripts/probe-meta-read.cjs`.
+
+**Proof.** `check-forward-window-judge.mjs` 95 cases / `mutate-forward-window-judge.mjs` 69 of 69; `check-probe-meta-read.mjs` 32 cases (a real reload forced in headless
+Chromium; the old read fails on the same page) / `mutate-probe-meta-read.mjs` 28 of 28. A four-lens independent review (22 agents, a skeptic per finding) found two real
+defects in my own first version (ESPN counting non-carried events; an unread window judged as empty), both fixed. The natural race was survived live (run 41130436375:
+`readFailures` has one `meta` entry, `cacheAccepted: true`).
+
+**What the probe does NOT cover (asked 2026-10-30).** The forward window file carries MLB, MLS and WNBA only; NHL and NBA are day 0 only by design and NFL and college
+football are not in it. The probe counts MLB only; other sports on forward days come from the page's own ESPN fetch, which the probe records (cards rendered: 28 on 10-31
+in two runs, 0 in four) and never asserts. The relay had 12 NFL games on Sun 11-01 while the window showed 0 and the probe passed. **Open, owner's call:** per-sport
+forward-day counts (NFL, CFB, NBA, NHL from the relay) in the manifest, reported not asserted, ~40 min. **Noticed, not checked:** the day-0 file shows NBA 0 games on Fri 10-30.
+
+**Armed.** `trig_01WSBRbTaZMQCpwYR1fJ2BNx` (2026-10-31T19:30Z): read the scheduled probe run, dispatch the dead-cron watch in field-relay-nba, confirm
+`forward-window-probe.yml` leaves NEW (the watch judges only the last three scheduled runs: 10-28, 10-29, 10-30 all failed).
+
+Session doc: outbox/cc-session-2026-10-30-forward-window-probe.md
+
 ## 2026-10-30 — a live match now gets shots (relay change, no client change)
 
 Relay `af644f66` and `0f5dcede`; no client commit. The client already reads `bsd:stats.shotmap` as an array (`94d8b56`, `18b4873`); until now nothing sent one

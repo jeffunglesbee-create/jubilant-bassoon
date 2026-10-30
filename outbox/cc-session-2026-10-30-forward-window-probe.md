@@ -31,7 +31,7 @@ Runner commits in between: `75a4ea5d`, `b9672b34` (the probe's own manifests), `
 | "an ESPN event count is the number of games the window should carry" | ESPN lists spring-training exhibitions and the All-Star Game that the generator's `gameType=R,F,D,L,W` never carries (review finding C1, reproduced) | `outbox/fixture-espn-mlb-event-kinds-20261030.json` |
 | "a day with `windowMlbCount` 0 is an empty day" | a day that did not reach the client is 0 because nothing was read; the 21:11Z run printed NOT MEASURED for a window it never read (review C3) | manifest `75a4ea5d` |
 | "ESPN's `calendar` tells which dates have games" | it lists 2026-10-25, 2026-10-29 and every day to 2026-11-11, all of which ESPN answers with `events: []` | `dates=20261025`, `dates=20261029` |
-| "the reload is a race with the probe's first read" | the probe cannot affect whether the page reloads (9 of 14 manifests have one navigation); the race is only whether a reload that does fire lands in the read window (review C14) | manifest history |
+| "the reload is a race with the probe's first read" | the probe cannot affect whether the page reloads (9 of 15 manifests have one navigation); a reload that fires does not always hit the read (the 22:17Z run had two navigations and lost nothing), so what the probe controls is whether a reload that does fire costs it the run (review C14) | manifest history |
 
 ## What was built
 
@@ -56,7 +56,7 @@ the predicate's argument; the same 30 s default applied).
 | it can fail | `scripts/mutate-probe-meta-read.mjs`, 28 of 28 caught, baseline green |
 | live, the race survived | run 41130436375 (`6d0931bc`): navigations at 284 and 907 ms, `readFailures: [{attempt:1, stage:'meta', error:'... Execution context was destroyed ...'}]`, `metaError: null`, `cacheAccepted: true`, 3 of 3 days reached the client |
 | live, the ESPN question | the same run: `espnMlb.counts` 0 for 2026-10-31, 11-01, 11-02, `verdict.mlb.state: not-measured`, run green. Run 41128854301 asked the same and read the same zeros |
-| live, after the review fixes | a run is dispatched after this push; its manifest and conclusion are recorded in the client HANDOFF entry |
+| live, after the review fixes | run 41136703711 (`a7f22f25`, dispatch): every step green, including the check (2 s) and the browser mutation step (2 min 10 s, which the daily cron skips); manifest `08bab81a`: `cacheAccepted: true`, schema 2.1, 3 of 3 days, `espnMlb` now carries `counts`, `listed` (0 on each date) and `setAside` (empty), `verdict.mlb.state: not-measured`, no problems. Two navigations (174, 768 ms) and `readFailures: []`: a reload fired and did not hit the read |
 
 ## What the independent review found (workflow `wf_3a966bea-86e`: four lenses, 22 agents, a skeptic per finding who had to reproduce)
 
@@ -98,6 +98,19 @@ off-day; "every other assertion is unchanged" was inexact (two guards are new); 
   only on 10-23, 10-24 and 10-26 to 10-28 in 2026-10-20..11-03, and ESPN is empty on 10-25 and 10-29. So the NOT MEASURED pass states what ESPN
   listed, and the residual is a false-empty ESPN on a forward date at the same time as a generator that dropped every game. Adding MLB's schedule as a
   second oracle would close it and is the next step if that ever matters.
+
+## Asked after the work: is the probe only looking at baseball? (2026-10-30)
+
+Yes for what it counts, and the file it checks is also narrow. Read, not assumed:
+
+- `scripts/build-field-data.js:37-38`: `WINDOWED_SPORTS = ['mlb', 'soccer', 'wnba']`, `DAY0_ONLY_SPORTS = ['nhl', 'nba']`. NFL and college football have no key in the file.
+- The committed file (`outbox/field-data-today.json`, generated 2026-10-30T14:26Z): 10-30 NHL 3; 10-31 one WNBA game (Atlanta Dream @ Golden State Valkyries); 11-01 and 11-02 zero.
+- The relay for the same weekend, read through the relay probe tool: `/v2/games?sport=nfl&date=2026-11-01` returns 12 games, `source: espn-wc`. The probe passes with that day at 0.
+- The probe counts `sched.mlb.length` only. Other sports on forward days are filled by the page's own ESPN fetch (per the probe's header); the manifest records cards rendered (28 on 10-31 in runs 75a4ea5d and b9672b34, 0 in the four others listed) and never asserts it.
+- The day-0 file shows NBA 0 on Fri 10-30. Not checked whether that is real; the NBA feed had a 403 incident earlier this month (task 22).
+
+**Open, owner's call:** per-sport forward-day counts from the relay (NFL, CFB, NBA, NHL), reported in the manifest and not asserted, about 40 minutes. Asserting needs a decision on
+what counts as a failure (for example, the relay lists games for a sport and the page rendered no card for that day). Not started; the owner has not said go.
 
 ## Verified end to end vs not
 
