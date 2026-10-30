@@ -1,5 +1,17 @@
 # FIELD HANDOFF
 
+## 2026-10-30 — a live match now gets shots (relay change, no client change)
+
+Relay `af644f66` and `0f5dcede`; no client commit. The client already reads `bsd:stats.shotmap` as an array (`94d8b56`, `18b4873`); until now nothing sent one
+during a live match (0 of 170 recorded WebSocket event frames carry it). AmbientDO now polls the vendor's REST `/stats/` once a minute for each activated,
+still-streaming match and hands the array to the next `bsd:stats` once. Capped at 600 calls a day (the owner's number), stopped for the UTC day by the first
+429/401/402/403, `bsdPoll` on `/ambient/state`. **Verified live** on event 7314 (Brasileirao): a bsd:stats carried 26 shots in the shape `_bsdShotPoint` reads
+(`pos{x,y}`, boolean `home`). Not drawn on a real page: the client probe proves the reader on recorded payloads, and no live match was on the page. CONTRACTS.md synced.
+
+**New to know:** `side` is null on `gameon` and `temporary_interruption` ball frames; the client does not read `side`.
+
+Session doc: field-relay-nba outbox/cc-session-2026-10-29-bsd-pitch-renderer.md (Part 4)
+
 ## 2026-10-29 — the debrief's odds layers skip an opening captured after kickoff
 
 `26ee3239`, SW 2026-10-29b; deploy gate run 40932255038 (success). Relay half: field-relay-nba `66a61d2` (run 40930832200).
