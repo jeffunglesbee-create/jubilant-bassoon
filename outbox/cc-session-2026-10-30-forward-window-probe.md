@@ -19,6 +19,8 @@ unrelated session doc), so none was filed; this doc is the record. Spec of recor
 | `70085ad6` | claims, comments and cost: corrected headers and counts, the workflow's mutation step skipped on the daily cron |
 | `a7f22f25`, `1295c637`, `4bf6d632`, `f37d7679` | this doc, its SHA fix, a comment correction, HANDOFF |
 | `ed340682` | the per-sport relay capture (below, "Built on the owner's go") |
+| `fdb0a105` | HANDOFF and this doc: the capture's first live read |
+| `5d5281fe` | the capture answers its review (below, "The review of the capture") |
 
 Runner commits in between: `75a4ea5d`, `b9672b34` (the probe's own manifests), `5be5ce11` (state). No SW bump: nothing here is in the deploy gate's paths.
 
@@ -139,8 +141,32 @@ Proof: `check-forward-window-relay.mjs` 45 cases (24 on the collector against a 
 `mutate-forward-window-relay.mjs` 33 of 33 caught. The harness found four defects in the first draft of the check (two crashes with no verdict, one assertion that could not
 see a guard, one broken mutant); fixed before the commit.
 
-**Still the owner's call:** whether to assert anything about these sports and what counts as a failure (for example, the relay lists games for a sport and the page
-rendered no card for that day); and the generator's NBA source (the CC-CMD above).
+## The review of the capture (workflow `wf_225cd0f3-132`: four lenses, 28 agents, a skeptic per finding, none dropped)
+
+24 findings reported, 24 verified: 19 stood, 5 were rejected (R1 the ET day boundary is how the relay files games, R2 college football's 47 is the full FBS slate, R3 a
+fixture citation was mis-read by the reviewer, R4 the file-versus-relay comparison is what the capture is for, R5 placement under LAB-FIRST-A is a judgement).
+Last time my script silently capped verification at six per lens; this time it logged that nothing was dropped.
+
+| finding | disposition in `5d5281fe` |
+|---|---|
+| C12 a stale window file puts finished days into the NHL request (can start the relay's brief pipeline) | FIXED: a day before the runner's UTC date is never asked |
+| C1, C19 an NHL date outside the relay's scoreboard window is a clean-looking 0 (probed live: 11-06 listed 3 games, 11-07 and 11-08 empty) | FIXED: an NHL day more than 6 days ahead is not asked. The June NHLE migration doc already records the window ("last ~9 days"), so no relay CC-CMD owns it and none was filed |
+| C5, C6, C14 "the judge is not given the relay reading" was false (the manifest that carries it was passed in); the text check matched one spelling | FIXED: the relay keys are attached after the judge runs; the check shows the judge ignores them and counts every `verdict.problems`, `process.exit` and `exitCode` site |
+| C7 call sites checked as text | FIXED: `captureOtherSports` is one call, executed by the check |
+| C8 the in-page per-sport read feeds every file-side number and nothing checked it | FIXED: its source is cut out of the probe and executed against a fake window (this also covers the MLB count and `has`, which were unchecked before) |
+| C3, C4, C9, C15, C16 untested clauses and a vacuous "built from real shapes" | FIXED: distinct file-side values, default timeout, one attempt, parallelism, truncation, source handling, fixture-driven error shapes |
+| C2, C13, C18 cost note omitted an uncached BSD call (up to 9 per run) | CORRECTED in the header, HANDOFF and here |
+| C10 "33 mutations" had no denominator | FIXED: the harness prints it (71 of 72 assertions; the one it cannot reach checks the check's own fake) |
+| C11, C17 wording ("only the MLB count is asserted"; "day 0 only by design"; the NBA 10-30 example is a day-0 miss this capture cannot see) | CORRECTED |
+
+LAB-FIRST-A, stated plainly: the collector and the raw counts are a capture and belong in the client's manifest; `coverageRows` and `coverageLines` are about 25 lines of
+presentation over those counts, and the check and harness are about 600 lines. If the owner wants those in field-laboratory, they move; nothing in the client reads them.
+
+Wording in the commit message of `ed340682` that this doc supersedes: "by design" (NHL and NBA are day 0 only because their feeds serve only today, per `build-field-data.js`)
+and "carried 0" for NFL and college football (they have no key at all).
+
+**Still the owner's call:** whether to assert anything about these sports and what counts as a failure (for example, the relay lists games for a sport and the page rendered no
+card for that day); and the generator's NBA source (the CC-CMD above).
 
 ## Verified end to end vs not
 
