@@ -11,11 +11,16 @@
 // Pass needs BOTH. Zero matches everywhere is a FAIL, not a pass: `home|away`
 // display names come from two different upstreams (ESPN team.displayName vs
 // statsapi), and a silent zero is exactly how that drift would hide.
+//
+// Season-aware (2026-10-30): a window with 0 MLB entries is a FAIL only when ESPN's own MLB scoreboard lists
+// games on those dates, or cannot be asked. When ESPN lists none, the MLB clause is reported as NOT MEASURED
+// and everything else is still asserted. The verdict is scripts/forward-window-judge.cjs.
 
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
+const { judgeForwardWindow, askEspnMlb } = require('./scripts/forward-window-judge.cjs');
 
-const RAW  = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
+const RAW = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 // ?pl-verify exposes window._plVerify. _fieldDataCache is a module-level `let`
 // inside the esbuild bundle, so window._fieldDataCache is undefined by
 // construction — run 33907104753 reported cacheAccepted:false for that reason,
@@ -143,6 +148,14 @@ const addDays = (iso, n) => {
   console.log(`  [${nav.iso}] rendered cards=${nav.cardCount} enriched=${nav.mlbEnrichMatched}/${nav.mlbEnrichAvailable}` +
               (nav.error ? ` (nav: ${nav.error.slice(0, 60)})` : ''));
 
+  // A window with 0 MLB entries is either an empty off-season or a generator that dropped games, and the page
+  // cannot tell which. ESPN's own MLB scoreboard can, so it is asked — from Node, only when the window is empty
+  // (scripts/forward-window-judge.cjs holds the reasoning). null in the manifest means "not asked".
+  const windowMlbTotal = days.reduce((n, d) => n + d.windowMlbCount, 0);
+  STATE.stage = 'espn-mlb';
+  const espn = windowMlbTotal === 0 ? await askEspnMlb(isoDays, fetch) : null;
+  STATE.stage = 'verdict';
+
   const manifest = {
     url: BASE, runId: RUN_ID, commit: process.env.GITHUB_SHA || null,
     timestamp: new Date().toISOString(),
@@ -154,7 +167,8 @@ const addDays = (iso, n) => {
     games_found_by_date: meta?.by_date || null,
     days,
     windowDaysReachingClient: days.filter(d => d.windowHasDay).length,
-    windowMlbTotal: days.reduce((n, d) => n + d.windowMlbCount, 0),
+    windowMlbTotal,
+    espnMlb: espn,
     // Best-effort only — see the note in the loop. Never a pass condition.
     renderedCardsTotal: days.reduce((n, d) => n + d.cardCount, 0),
     totalEnrichMatched: days.reduce((n, d) => n + d.mlbEnrichMatched, 0),
@@ -166,29 +180,20 @@ const addDays = (iso, n) => {
     playwrightVersion: require('@playwright/test/package.json').version,
   };
 
+  // Judged before the manifest is written, so the file carries the verdict it was failed or passed on.
+  const verdict = judgeForwardWindow(manifest, espn);
+  manifest.verdict = verdict;
+
   fs.mkdirSync(OUT, { recursive: true });
   fs.writeFileSync(`${OUT}/forward-window-manifest-latest.json`, JSON.stringify(manifest, null, 2));
   console.log(JSON.stringify(manifest, null, 2));
   await browser.close();
 
-  const problems = [];
-  if (!manifest.cacheAccepted)
-    problems.push('field-data was never accepted into the cache — the accept gate rejected it, or ?pl-verify is not honoured by this build');
-  if (manifest.schema !== '2.1')
-    problems.push(`schema is ${manifest.schema}, expected 2.1 — the generator has not run since the change`);
-  if (!Array.isArray(manifest.window_dates) || manifest.window_dates.length < 2)
-    problems.push('window_dates missing or shorter than 2 — there is no forward window to prove');
-  for (const d of days) {
-    if (!d.windowHasDay)
-      problems.push(`${d.iso}: scheduleForDate returned nothing — the window did not reach the client for this date`);
-  }
-  if (manifest.windowMlbTotal === 0)
-    problems.push('every forward day carried 0 MLB entries — the window is present but empty');
-
-  if (problems.length) { console.error('\nFAIL:\n  - ' + problems.join('\n  - ')); process.exit(1); }
+  if (verdict.problems.length) { console.error('\nFAIL:\n  - ' + verdict.problems.join('\n  - ')); process.exit(1); }
   console.log(`\nPASS: schema ${manifest.schema}, ${manifest.windowDaysReachingClient}/3 forward days reached the client, ` +
               `${manifest.windowMlbTotal} MLB entries. Rendering (not asserted): ${manifest.renderedCardsTotal} cards, ` +
               `${manifest.totalEnrichMatched}/${manifest.totalEnrichAvailable} enriched.`);
+  for (const n of verdict.notes) console.log(`NOTE: ${n}`);
 })().catch(e => {
   console.error(e);
   try {

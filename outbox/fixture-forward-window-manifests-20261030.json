@@ -1,0 +1,266 @@
+{
+ "captured_from": "jubilant-bassoon outbox/forward-window-manifest-latest.json, committed by the Forward Window Probe, verbatim",
+ "note": "offseason = 2026-10-30 run (cache accepted, schema 2.1, windowMlbTotal 0 on all 3 days; the run the dead-cron watch flagged); cache_rejected = 2026-10-26 run (cacheAccepted false, schema null, windowHasDay false on every day; a different failure, windowMlbTotal 0 only because nothing was read); in_season = 2026-10-25 run (windowMlbTotal 3, one MLB entry on each of 3 days, green)",
+ "manifests": {
+  "offseason": {
+   "commit": "326612d6",
+   "manifest": {
+    "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
+    "runId": "41095317648",
+    "commit": "ca967201a4d8612c242a57f7897041008f5ec6f6",
+    "timestamp": "2026-10-30T17:04:20.662Z",
+    "cacheAccepted": true,
+    "testApi": "pl-verify",
+    "schema": "2.1",
+    "for_date": "2026-10-30",
+    "window_dates": [
+     "2026-10-30",
+     "2026-10-31",
+     "2026-11-01",
+     "2026-11-02"
+    ],
+    "games_found_by_date": {
+     "2026-10-30": 3,
+     "2026-10-31": 1,
+     "2026-11-01": 0,
+     "2026-11-02": 0
+    },
+    "days": [
+     {
+      "iso": "2026-10-31",
+      "windowHasDay": true,
+      "windowMlbCount": 0,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
+     },
+     {
+      "iso": "2026-11-01",
+      "windowHasDay": true,
+      "windowMlbCount": 0,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+     },
+     {
+      "iso": "2026-11-02",
+      "windowHasDay": true,
+      "windowMlbCount": 0,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+     }
+    ],
+    "windowDaysReachingClient": 3,
+    "windowMlbTotal": 0,
+    "renderedCardsTotal": 0,
+    "totalEnrichMatched": 0,
+    "totalEnrichAvailable": 0,
+    "consoleErrors": [
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED"
+    ],
+    "mainFrameNavigations": [
+     {
+      "at_ms": 488,
+      "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
+     }
+    ],
+    "readFailures": [],
+    "metaError": null,
+    "playwrightVersion": "1.64.1"
+   }
+  },
+  "cache_rejected": {
+   "commit": "5656cfc2",
+   "manifest": {
+    "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
+    "runId": "40368658781",
+    "commit": "61e4157b887903a743f71b9c38f39caf72f4b136",
+    "timestamp": "2026-10-26T17:28:18.665Z",
+    "cacheAccepted": false,
+    "testApi": "pl-verify",
+    "schema": null,
+    "for_date": null,
+    "window_dates": null,
+    "games_found_by_date": null,
+    "days": [
+     {
+      "iso": "2026-10-27",
+      "windowHasDay": false,
+      "windowMlbCount": 0,
+      "navigated": true,
+      "cardCount": 51,
+      "sectionCount": 53,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+     },
+     {
+      "iso": "2026-10-28",
+      "windowHasDay": false,
+      "windowMlbCount": 0,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+     },
+     {
+      "iso": "2026-10-29",
+      "windowHasDay": false,
+      "windowMlbCount": 0,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+     }
+    ],
+    "windowDaysReachingClient": 0,
+    "windowMlbTotal": 0,
+    "renderedCardsTotal": 51,
+    "totalEnrichMatched": 0,
+    "totalEnrichAvailable": 0,
+    "consoleErrors": [
+     "Failed to load resource: the server responded with a status of 404 (Not Found)",
+     "Failed to load resource: the server responded with a status of 404 (Not Found)",
+     "Failed to load resource: the server responded with a status of 403 ()",
+     "Failed to load resource: the server responded with a status of 404 ()",
+     "Failed to load resource: the server responded with a status of 403 ()",
+     "Failed to load resource: the server responded with a status of 404 ()",
+     "Failed to load resource: the server responded with a status of 404 ()",
+     "Failed to load resource: the server responded with a status of 502 ()",
+     "Failed to load resource: the server responded with a status of 502 ()",
+     "Failed to load resource: the server responded with a status of 502 ()"
+    ],
+    "mainFrameNavigations": [
+     {
+      "at_ms": 340,
+      "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
+     },
+     {
+      "at_ms": 1065,
+      "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
+     }
+    ],
+    "readFailures": [],
+    "metaError": "jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation",
+    "playwrightVersion": "1.64.1"
+   }
+  },
+  "in_season": {
+   "commit": "b1907f18",
+   "manifest": {
+    "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
+    "runId": "40204688862",
+    "commit": "f5ea033f8ee06139d5a260cb91efa152e9ea658d",
+    "timestamp": "2026-10-25T14:59:14.289Z",
+    "cacheAccepted": true,
+    "testApi": "pl-verify",
+    "schema": "2.1",
+    "for_date": "2026-10-25",
+    "window_dates": [
+     "2026-10-25",
+     "2026-10-26",
+     "2026-10-27",
+     "2026-10-28"
+    ],
+    "games_found_by_date": {
+     "2026-10-25": 5,
+     "2026-10-26": 2,
+     "2026-10-27": 1,
+     "2026-10-28": 1
+    },
+    "days": [
+     {
+      "iso": "2026-10-26",
+      "windowHasDay": true,
+      "windowMlbCount": 1,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
+     },
+     {
+      "iso": "2026-10-27",
+      "windowHasDay": true,
+      "windowMlbCount": 1,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+     },
+     {
+      "iso": "2026-10-28",
+      "windowHasDay": true,
+      "windowMlbCount": 1,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
+      "mlbEnrichMatched": 0,
+      "mlbEnrichAvailable": 0,
+      "error": null
+     }
+    ],
+    "windowDaysReachingClient": 3,
+    "windowMlbTotal": 3,
+    "renderedCardsTotal": 0,
+    "totalEnrichMatched": 0,
+    "totalEnrichAvailable": 0,
+    "consoleErrors": [
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=20261026&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20261026&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20261026&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261026&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED",
+     "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20261026&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+     "Failed to load resource: net::ERR_FAILED"
+    ],
+    "mainFrameNavigations": [
+     {
+      "at_ms": 159,
+      "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
+     }
+    ],
+    "readFailures": [],
+    "metaError": null,
+    "playwrightVersion": "1.64.1"
+   }
+  }
+ },
+ "espn_probe": {
+  "url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20261031",
+  "read_at": "2026-10-30",
+  "events": 0,
+  "season_type": "Postseason",
+  "season_end": "2026-11-12T07:59Z",
+  "note": "read through the Cloudflare-side html_probe tool; the sandbox cannot reach ESPN"
+ }
+}

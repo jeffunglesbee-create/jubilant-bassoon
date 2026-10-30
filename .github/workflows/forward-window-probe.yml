@@ -41,7 +41,17 @@ jobs:
           npm install eslint@8
           npx eslint --no-eslintrc --env es2022,node,browser \
             --parser-options ecmaVersion:2022,sourceType:script \
-            --rule '{"no-undef":"error"}' forward_window_probe.js
+            --rule '{"no-undef":"error"}' forward_window_probe.js scripts/forward-window-judge.cjs
+
+      # The probe's verdict is one module (scripts/forward-window-judge.cjs), so the probe and its checks cannot
+      # disagree. A window with 0 MLB entries passes as "enrichment NOT MEASURED" only when ESPN's own MLB
+      # scoreboard lists none on those dates and every date was fetched; if ESPN lists games, or cannot be asked,
+      # it fails. 56 cases on three real manifests the probe committed; 36 mutations prove the cases can fail.
+      # Runs before the browser so a broken verdict fails in seconds.
+      - name: The forward-window verdict holds, and can fail
+        run: |
+          node scripts/check-forward-window-judge.mjs
+          node scripts/mutate-forward-window-judge.mjs
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
