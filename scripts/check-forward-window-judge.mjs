@@ -31,12 +31,13 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 const KINDS = JSON.parse(readFileSync(KINDS_FIXTURE, 'utf8')).kinds;   // real ESPN event excerpts, read 2026-10-30
 const EV = (k) => clone(KINDS[k].event);
 const OFF = fx.offseason.manifest;        // cache accepted, schema 2.1, window present, windowMlbTotal 0
-const REJ = fx.cache_rejected.manifest;   // cacheAccepted false, schema null, windowHasDay false on every day
+const REJ = fx.context_lost.manifest;   // the 2026-10-26 run: its page context was lost, so cacheAccepted false, schema null, windowHasDay false
 const INS = fx.in_season.manifest;        // windowMlbTotal 3
 
-let failed = 0, ran = 0;
+let failed = 0, ran = 0, section = 'judge';
+const tally = {};
 const want = (label, ok, detail) => {
-  ran++;
+  ran++; tally[section] = (tally[section] || 0) + 1;
   if (ok) console.log(`  ok    ${label}`);
   else { failed++; console.error(`  FAIL  ${label}${detail ? ' -> ' + detail : ''}`); }
 };
@@ -148,7 +149,7 @@ for (const [label, bad] of [['the string "0"', '0'], ['-1', -1], ['NaN', NaN], [
   // The real failed run: the cache was rejected, so nothing was read. It must fail on the cache, and an ESPN
   // zero must not turn it into a pass on the MLB clause.
   const r = judgeForwardWindow(clone(REJ), espnFor(REJ, 0, 0, 0));
-  want('real cache-rejected run (2026-10-26) fails even with ESPN zero on ITS OWN dates', r.problems.length >= 1, JSON.stringify(r.problems));
+  want('real run that lost its page context (2026-10-26, cacheAccepted false) fails even with ESPN zero on ITS OWN dates', r.problems.length >= 1, JSON.stringify(r.problems));
   want('unread: that run read nothing, so it is state unread and gets no NOT MEASURED note (it printed one live on 2026-10-30)',
        r.mlb.state === 'unread' && r.notes.length === 0, JSON.stringify({ s: r.mlb.state, n: r.notes }));
   const rd = judgeForwardWindow(clone(REJ), espnFor(REJ, 4, 4, 4));
@@ -181,6 +182,46 @@ for (const [label, bad] of [['the string "0"', '0'], ['-1', -1], ['NaN', NaN], [
        r.problems.length === 2 && r.mlb.state === 'not-measured', JSON.stringify(r.problems));
 }
 
+
+// ── 3b. boundaries, and what a NOT MEASURED or dropped verdict must not hide ───────────────────────────────────────
+for (const t of [1, 2]) {
+  const m = clone(OFF); m.days[0].windowMlbCount = t; m.windowMlbTotal = t;
+  const r = judgeForwardWindow(m, null);
+  want(`boundary: windowMlbTotal ${t} is measured, with no ESPN question and no note`, r.mlb.state === 'measured' && r.problems.length === 0 && r.notes.length === 0, JSON.stringify(r));
+}
+{
+  const m = clone(OFF); m.window_dates = ['2026-10-30'];
+  const r = judgeForwardWindow(m, espnOf(0, 0, 0));
+  want('NOT MEASURED does not hide a window_dates of length 1: still FAIL, naming it',
+       r.mlb.state === 'not-measured' && r.problems.length === 1 && r.problems[0].includes('window_dates'), JSON.stringify(r));
+  const m2 = clone(OFF); m2.cacheAccepted = false; m2.schema = '2.0';
+  const r2 = judgeForwardWindow(m2, espnOf(2, 0, 0));
+  want('a dropped window keeps the cache and schema problems beside the dropped one (3 problems)',
+       r2.mlb.state === 'dropped' && r2.problems.length === 3 && mentions(r2.problems, 'never accepted') && mentions(r2.problems, 'schema is 2.0')
+       && mentions(r2.problems, '2 on'), JSON.stringify(r2.problems));
+}
+{
+  const r = judgeForwardWindow(clone(OFF), { counts: { [D[0]]: 0, [D[1]]: null, [D[2]]: 0 }, errors: { [D[1]]: 'HTTP 503' } });
+  want('verdict: a failed date is null in espn_counts and the others keep their zero (absence is not zero, in the artifact)',
+       r.mlb.espn_counts[D[1]] === null && r.mlb.espn_counts[D[0]] === 0 && r.mlb.espn_counts[D[2]] === 0, JSON.stringify(r.mlb));
+  want('verdict: window_total is carried', r.mlb.window_total === 0);
+  const r2 = judgeForwardWindow(clone(OFF), espnOf(2, 0, 1));
+  want('verdict: two dates ESPN lists games on are both named in the problem',
+       r2.mlb.state === 'dropped' && mentions(r2.problems, `2 on ${D[0]}`) && mentions(r2.problems, `1 on ${D[2]}`), JSON.stringify(r2.problems));
+}
+{
+  const m = clone(INS); delete m.days[0].windowHasDay;
+  const r = judgeForwardWindow(m, null);
+  want('boundary: a day with no windowHasDay at all did not reach the client', r.problems.length === 1 && r.problems[0].startsWith(`${m.days[0].iso}:`), JSON.stringify(r.problems));
+  const m2 = clone(INS); m2.schema = '3.0';
+  want('boundary: schema 3.0 is not 2.1', mentions(judgeForwardWindow(m2, null).problems, 'schema is 3.0, expected 2.1'));
+  const m3 = clone(INS); delete m3.schema;
+  want('boundary: a missing schema is not 2.1', mentions(judgeForwardWindow(m3, null).problems, 'schema is undefined'));
+  const m4 = clone(INS); m4.window_dates = 'ab';
+  want('boundary: window_dates that is a string of length 2 is not a window', mentions(judgeForwardWindow(m4, null).problems, 'window_dates missing'));
+}
+
+section = 'askEspnMlb';
 // ── 4. askEspnMlb, as the real function, against a fake fetch ───────────────────────────────────────────────────
 const fake = (byDate, urls = []) => async (url) => {
   urls.push(url);
@@ -218,6 +259,30 @@ const fake = (byDate, urls = []) => async (url) => {
 for (const [label, body] of [['{}', {}], ['{events: null}', { events: null }], ['{events: "none"}', { events: 'none' }], ['null', null]]) {
   const r = await askEspnMlb(D, fake({ 20261102: body }));
   want(`askEspnMlb: a body of ${label} has no events array and is null, not 0`, r.counts[D[2]] === null && !!r.errors[D[2]], JSON.stringify(r));
+}
+{
+  const urls = [];
+  await askEspnMlb(D, fake({}, urls));
+  want('askEspnMlb: every request goes to https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=',
+       urls.length === 3 && urls.every((u) => u.startsWith('https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=')), urls.join(' '));
+}
+for (const st of [403, 404, 429, 500]) {
+  const r = await askEspnMlb(D, fake({ 20261101: { status: st } }));
+  want(`askEspnMlb: HTTP ${st} with a body that parses as an empty list is null, not 0`, r.counts[D[1]] === null && r.errors[D[1]] === `HTTP ${st}`, JSON.stringify(r));
+}
+{
+  // A request that never answers must be cut off by the timeout. The watchdog is the check's own, so a missing timeout is a
+  // FAIL line and not a hung process.
+  const hang = (url, opts) => new Promise((resolve, reject) => {
+    if (opts && opts.signal) opts.signal.addEventListener('abort', () => reject(opts.signal.reason));
+  });
+  let timer;
+  const r = await Promise.race([askEspnMlb(['2026-11-01'], hang, 50), new Promise((res) => { timer = setTimeout(() => res('HUNG'), 3000); })]);
+  clearTimeout(timer);
+  want('askEspnMlb: a request that never answers is cut off by the timeout and recorded as null with its reason',
+       r !== 'HUNG' && r.counts['2026-11-01'] === null && /abort|timeout/i.test(r.errors['2026-11-01'] || ''), JSON.stringify(r));
+  const ok = await askEspnMlb(['2026-11-01'], fake({}));
+  want('askEspnMlb: asked_at is an ISO timestamp', typeof ok.asked_at === 'string' && !Number.isNaN(Date.parse(ok.asked_at)) && ok.asked_at.endsWith('Z'), String(ok.asked_at));
 }
 {
   const r = await askEspnMlb(D, fake({}));
@@ -278,6 +343,7 @@ for (const [label, body] of [['{}', {}], ['{events: null}', { events: null }], [
        jm.mlb.state === 'dropped' && jm.problems.length === 1 && jm.problems[0].includes(`1 on ${D[2]}`) && !jm.problems[0].includes(D[0]), JSON.stringify(jm));
 }
 
+section = 'probe text';
 // ── 5. the probe is wired to the judge and holds no rule of its own ───────────────────────────────────────────
 const src = readFileSync(PROBE, 'utf8');
 const at = (needle) => src.indexOf(needle);
@@ -292,12 +358,13 @@ want('probe: the manifest that is written carries the verdict and the ESPN readi
 want('probe: ESPN is asked only when every day was read and the window is empty (the judge\'s own definition)',
      src.includes('espnNeeded(days, windowMlbTotal) ? await askEspnMlb('));
 want('probe: the exit code follows the verdict', src.includes('verdict.problems.length) {') && src.includes('process.exit(1); }'));
-want('probe: the old rule (any 0 is a problem) is gone',
+want('probe: the old rule is not present in its literal spellings (text only: see the header)',
      !src.includes(['every forward day carried 0', ' MLB entries'].join('')) && !src.includes('manifest.windowMlbTotal === 0'));
-want('probe: no inline copy of the cache/schema/window rules remains',
+want('probe: no inline problem list remains in its literal spellings (text only: see the header)',
      !src.includes('problems.push(') && !src.includes('const problems = []'));
 
-console.log(`\nchecked ${ran} case(s): 3 real manifests (three distinct runs) x enumerated ESPN inputs through the real judgeForwardWindow and askEspnMlb; `
-          + 'the probe\'s wiring is checked as text and runs on the runner.');
+console.log(`\nchecked ${ran} case(s): ${tally['judge']} on judgeForwardWindow (three real manifests, most on the off-season one, ESPN inputs written by hand), `
+          + `${tally['askEspnMlb']} on askEspnMlb and the ESPN population rule (a fake fetch; four real event shapes from the fixture), `
+          + `${tally['probe text']} text assertions on forward_window_probe.js. The manifest-building lines of the probe are NOT executed here; the runner is their check.`);
 if (failed) { console.error(`FAIL — ${failed} case(s).`); process.exit(1); }
 console.log('PASS');

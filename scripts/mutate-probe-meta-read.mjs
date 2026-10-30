@@ -70,6 +70,30 @@ const MUTATIONS = [
   { name: 'M17 a page without metadata still reads as accepted',
     file: 'meta', anchor: '} : false;', replace: '} : { schema: null, for_date: null, window_dates: null, by_date: null };',
     expect: 'A9: no _plVerify -> falsy' },
+  { name: 'M18 a retried wait waits forever',
+    file: 'meta', anchor: '{ timeout: timeoutMs }', replace: '{ timeout: attempt === 1 ? timeoutMs : 0 }',
+    expect: 'A10: a lost context followed by a timeout' },
+  { name: 'M19 a retried wait gets a 5 s timeout',
+    file: 'meta', anchor: '{ timeout: timeoutMs }', replace: '{ timeout: attempt === 1 ? timeoutMs : 5000 }',
+    expect: 'A10: a lost context followed by a timeout' },
+  { name: 'M20 any error is retried once a loss has happened',
+    file: 'meta', anchor: RETRY_LINE, replace: 'if ((attempt === 1 && !NAVIGATION_LOST.test(msg)) || attempt >= attempts) throw e;',
+    expect: 'A10: a lost context followed by a timeout' },
+  { name: 'M21 the lost-context pattern is the single word "destroyed"',
+    file: 'meta', anchor: 'const NAVIGATION_LOST = /Execution context was destroyed/;', replace: 'const NAVIGATION_LOST = /destroyed/;',
+    expect: 'A6c: only the exact phrase' },
+  { name: 'M22 the lost-context pattern is "Execution context"',
+    file: 'meta', anchor: 'const NAVIGATION_LOST = /Execution context was destroyed/;', replace: 'const NAVIGATION_LOST = /Execution context/;',
+    expect: 'A6c: only the exact phrase' },
+  { name: 'M23 the recorded error is a constant, not what was thrown',
+    file: 'meta', anchor: 'error: msg.slice(0, 200)', replace: "error: 'Execution context was destroyed'",
+    expect: 'A2: the survived loss is kept in readFailures' },
+  { name: 'M24 the recorded error is cut to 55 characters',
+    file: 'meta', anchor: 'error: msg.slice(0, 200)', replace: 'error: msg.slice(0, 55)',
+    expect: 'A2: the survived loss is kept in readFailures' },
+  { name: 'M25 the second recorded loss has the wrong stage',
+    file: 'meta', anchor: "stage: 'meta'", replace: "stage: attempt === 1 ? 'meta' : 'x'",
+    expect: 'A4: the two retried losses are recorded' },
   { name: 'W1  the probe does not use the module',
     file: 'probe', anchor: "const { readFieldDataMeta } = require('./scripts/probe-meta-read.cjs');\n", replace: '',
     expect: 'C: the probe requires the module' },
@@ -115,6 +139,6 @@ try { execFileSync('node', ['scripts/check-probe-meta-read.mjs'], { stdio: 'igno
 if (base) { bad++; console.error('  BASELINE  the unmutated check is red, so no catch above means anything.'); }
 else console.log('  baseline  the unmutated check is green');
 
-console.log(`\nran ${MUTATIONS.length} mutation(s) against scripts/check-probe-meta-read.mjs; each asserted its anchor unique and its effect present; the real files were not written`);
+console.log(`\nran ${MUTATIONS.length} mutation(s) against scripts/check-probe-meta-read.mjs; each asserted its anchor unique and its text change applied; the real files were not written`);
 if (bad) { console.error(`FAIL — ${bad} mutation(s) not caught or not applied.`); process.exit(1); }
 console.log('PASS');

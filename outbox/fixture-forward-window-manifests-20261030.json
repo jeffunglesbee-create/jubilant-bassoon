@@ -1,6 +1,6 @@
 {
  "captured_from": "jubilant-bassoon outbox/forward-window-manifest-latest.json, committed by the Forward Window Probe, verbatim",
- "note": "offseason = 2026-10-30 run (cache accepted, schema 2.1, windowMlbTotal 0 on all 3 days; the run the dead-cron watch flagged); cache_rejected = 2026-10-26 run (cacheAccepted false, schema null, windowHasDay false on every day; a different failure, windowMlbTotal 0 only because nothing was read); in_season = 2026-10-25 run (windowMlbTotal 3, one MLB entry on each of 3 days, green)",
+ "note": "offseason = 2026-10-30 17:04Z run (cache accepted, schema 2.1, windowMlbTotal 0 on all 3 days; the run the dead-cron watch flagged); context_lost = 2026-10-26 run (the page reloaded itself between the probe's wait and its read, so metaError 'Execution context was destroyed', cacheAccepted false, schema null, windowHasDay false on every day; windowMlbTotal is 0 only because nothing was read; the cache was NOT rejected); in_season = 2026-10-25 run (windowMlbTotal 3, one MLB entry on each of 3 days, green)",
  "manifests": {
   "offseason": {
    "commit": "326612d6",
@@ -88,7 +88,7 @@
     "playwrightVersion": "1.64.1"
    }
   },
-  "cache_rejected": {
+  "context_lost": {
    "commit": "5656cfc2",
    "manifest": {
     "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",

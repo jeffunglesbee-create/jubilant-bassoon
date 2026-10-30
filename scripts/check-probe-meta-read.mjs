@@ -33,7 +33,7 @@ const FIXTURE = 'outbox/fixture-forward-window-manifests-20261030.json';
 
 const { readFieldDataMeta, META_PREDICATE } = require(path.resolve(META));
 const { chromium } = require(PW);
-const REAL = JSON.parse(readFileSync(FIXTURE, 'utf8')).manifests.cache_rejected.manifest.metaError;
+const REAL = JSON.parse(readFileSync(FIXTURE, 'utf8')).manifests.context_lost.manifest.metaError;
 
 let failed = 0, ran = 0;
 const want = (label, ok, detail) => {
@@ -71,9 +71,11 @@ const TIMEOUT = 'page.waitForFunction: Timeout 30000ms exceeded.';
   const r = await settle(readFieldDataMeta(pg, st));
   want('A2: a context lost at jsonValue is retried, and the SECOND read\'s value is the one returned',
        r.value === V2 && pg.calls.length === 2, JSON.stringify(r));
-  want('A2: the survived loss is kept in readFailures (attempt 1, stage meta, the real text)',
+  want('A2: the survived loss is kept in readFailures (attempt 1, stage meta, the real text, whole)',
        st.readFailures.length === 1 && st.readFailures[0].attempt === 1 && st.readFailures[0].stage === 'meta'
-       && st.readFailures[0].error.includes('Execution context was destroyed'), JSON.stringify(st.readFailures));
+       && st.readFailures[0].error === REAL.slice(0, 200), JSON.stringify(st.readFailures));
+  want('A2: every wait, the retried one included, is made with the predicate, a null arg and { timeout: 30000 }',
+       pg.calls.length === 2 && pg.calls.every((c) => c.fn === META_PREDICATE && c.arg === null && c.opts && c.opts.timeout === 30000), JSON.stringify(pg.calls.map((c) => c.opts)));
 }
 {
   const pg = fake([{ waitErr: REAL }, { value: V2 }]); const st = { readFailures: [] };
@@ -85,13 +87,30 @@ const TIMEOUT = 'page.waitForFunction: Timeout 30000ms exceeded.';
   const r = await settle(readFieldDataMeta(pg, st));
   want('A4: three losses in a row end in the error (three waits, not four)', !!r.error && r.error.includes('Execution context was destroyed') && pg.calls.length === 3, JSON.stringify({ r, calls: pg.calls.length }));
   want('A4: the two retried losses are recorded and the final one is thrown, not recorded',
-       st.readFailures.map((f) => f.attempt).join() === '1,2', JSON.stringify(st.readFailures));
+       st.readFailures.map((f) => f.attempt).join() === '1,2'
+       && st.readFailures.every((f) => f.stage === 'meta' && f.error === REAL.slice(0, 200)), JSON.stringify(st.readFailures));
 }
 {
   const pg = fake([{ waitErr: TIMEOUT }, { value: V2 }]); const st = { readFailures: [] };
   const r = await settle(readFieldDataMeta(pg, st));
   want('A5: a timeout is NOT retried (a cache that was never accepted fails once)',
        !!r.error && r.error.includes('Timeout 30000ms') && pg.calls.length === 1 && st.readFailures.length === 0, JSON.stringify({ r, calls: pg.calls.length }));
+}
+{
+  // The likely live shape of a cache that is never accepted AFTER the page reloaded: a loss, then the timeout.
+  const pg = fake([{ jsonErr: REAL }, { waitErr: TIMEOUT }, { value: V2 }]); const st = { readFailures: [] };
+  const r = await settle(readFieldDataMeta(pg, st));
+  want('A10: a lost context followed by a timeout is retried once and then fails with the timeout (two waits, both with the 30 s option)',
+       !!r.error && r.error.includes('Timeout 30000ms') && pg.calls.length === 2 && pg.calls.every((c) => c.opts && c.opts.timeout === 30000)
+       && st.readFailures.length === 1, JSON.stringify({ r, calls: pg.calls.map((c) => c.opts), f: st.readFailures.length }));
+  const pg2 = fake([{ jsonErr: REAL }, { waitErr: 'page.waitForFunction: Target page, context or browser has been closed' }, { value: V2 }]);
+  const r2 = await settle(readFieldDataMeta(pg2, { readFailures: [] }));
+  want('A11: a lost context followed by a closed page is not retried a second time', !!r2.error && pg2.calls.length === 2, JSON.stringify({ r2, calls: pg2.calls.length }));
+}
+for (const msg of ['page.waitForFunction: Target was destroyed', 'page.waitForFunction: Execution context was not found', 'boom']) {
+  const pg = fake([{ waitErr: msg }, { value: V2 }]); const st = { readFailures: [] };
+  const r = await settle(readFieldDataMeta(pg, st));
+  want(`A6c: only the exact phrase "Execution context was destroyed" is retried; "${msg.slice(-34)}" is not`, !!r.error && pg.calls.length === 1 && st.readFailures.length === 0, JSON.stringify({ r, calls: pg.calls.length }));
 }
 {
   const pg = fake([{ waitErr: 'page.waitForFunction: Target page, context or browser has been closed' }, { value: V2 }]); const st = { readFailures: [] };

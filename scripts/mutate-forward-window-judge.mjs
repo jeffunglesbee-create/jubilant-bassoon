@@ -95,6 +95,42 @@ const MUTATIONS = [
   { name: 'J19 a NOT MEASURED window ends the judgement before the cache and schema are reported',
     file: 'judge', anchor: "        mlb.state = 'not-measured';\n", replace: "        mlb.state = 'not-measured';\n        problems.length = 0;\n",
     expect: 'does not mask a failed cache or schema' },
+  // ── boundaries, and what a verdict must not hide ──
+  { name: 'J26 an MLB total below 3 is treated as an empty window',
+    file: 'judge', anchor: '} else if (total === 0) {', replace: '} else if (total < 3) {',
+    expect: 'boundary: windowMlbTotal 1' },
+  { name: 'J27 an MLB total of 1 is treated as an empty window',
+    file: 'judge', anchor: '} else if (total === 0) {', replace: '} else if (total <= 1) {',
+    expect: 'boundary: windowMlbTotal 1' },
+  { name: 'J28 a NOT MEASURED verdict drops the window_dates problem',
+    file: 'judge', anchor: "        mlb.state = 'not-measured';\n",
+    replace: "        mlb.state = 'not-measured';\n        for (let i = problems.length - 1; i >= 0; i--) if (problems[i].includes('window_dates')) problems.splice(i, 1);\n",
+    expect: 'NOT MEASURED does not hide a window_dates' },
+  { name: 'J29 a dropped verdict drops the cache and schema problems',
+    file: 'judge', anchor: "        mlb.state = 'dropped';\n",
+    replace: "        mlb.state = 'dropped';\n        for (let i = problems.length - 1; i >= 0; i--) if (/never accepted|schema is/.test(problems[i])) problems.splice(i, 1);\n",
+    expect: 'a dropped window keeps the cache and schema problems' },
+  { name: 'J30 a failed ESPN date is written into the verdict as 0',
+    file: 'judge', anchor: 'isCount(counts[iso]) ? counts[iso] : null', replace: 'isCount(counts[iso]) ? counts[iso] : 0',
+    expect: 'verdict: a failed date is null in espn_counts' },
+  { name: 'J31 the verdict does not carry the window total',
+    file: 'judge', anchor: 'window_total: m.windowMlbTotal,', replace: 'window_total: null,',
+    expect: 'verdict: window_total is carried' },
+  { name: 'J32 the ESPN reading has no timestamp',
+    file: 'judge', anchor: 'asked_at: new Date().toISOString(), ', replace: '',
+    expect: 'askEspnMlb: asked_at is an ISO timestamp' },
+  { name: 'J33 the dropped problem names only the first date',
+    file: 'judge', anchor: 'listed.map((iso) =>', replace: 'listed.slice(0, 1).map((iso) =>',
+    expect: 'verdict: two dates ESPN lists games on are both named' },
+  { name: 'J34 only a day explicitly marked false counts as not reached',
+    file: 'judge', anchor: 'if (!d.windowHasDay)', replace: 'if (d.windowHasDay === false)',
+    expect: 'boundary: a day with no windowHasDay' },
+  { name: 'J35 any schema from 2.1 up passes',
+    file: 'judge', anchor: "if (m.schema !== '2.1')", replace: 'if (!(parseFloat(m.schema) >= 2.1))',
+    expect: 'boundary: schema 3.0' },
+  { name: 'J36 window_dates need not be an array',
+    file: 'judge', anchor: '!Array.isArray(m.window_dates) || ', replace: '!m.window_dates || ',
+    expect: 'boundary: window_dates that is a string' },
   // ── which ESPN events count ──
   { name: 'N1  a preseason game is counted',
     file: 'judge', anchor: "  if (seasonType === 1) return 'preseason';\n", replace: '',
@@ -157,6 +193,18 @@ const MUTATIONS = [
   { name: 'E8  a failed date stops the remaining dates being asked',
     file: 'judge', anchor: '      out.counts[iso] = null;\n', replace: '      out.counts[iso] = null;\n      break;\n',
     expect: 'a failed date does not stop the other dates' },
+  { name: 'E9  the request has no timeout',
+    file: 'judge', anchor: '{ signal: AbortSignal.timeout(timeoutMs) }', replace: '{}',
+    expect: 'askEspnMlb: a request that never answers' },
+  { name: 'E10 the request goes over http',
+    file: 'judge', anchor: "const ESPN_MLB = 'https://site.api.espn.com/", replace: "const ESPN_MLB = 'http://site.api.espn.com/",
+    expect: 'askEspnMlb: every request goes to https://site.api.espn.com' },
+  { name: 'E11 a different host is asked',
+    file: 'judge', anchor: 'site.api.espn.com/apis', replace: 'site.api.espn.org/apis',
+    expect: 'askEspnMlb: every request goes to https://site.api.espn.com' },
+  { name: 'E12 only a 5xx response is a failure, so a 403 or 429 with an empty list reads as none',
+    file: 'judge', anchor: 'if (!res.ok) throw', replace: 'if (res.status >= 500) throw',
+    expect: 'askEspnMlb: HTTP 403' },
   // ── the probe's wiring ──
   { name: 'P1  the probe judges nothing',
     file: 'probe', anchor: 'const verdict = judgeForwardWindow(manifest, espn);', replace: 'const verdict = { problems: [], notes: [], mlb: null };',
@@ -186,11 +234,11 @@ const MUTATIONS = [
   { name: 'P8  the old rule is reinstated beside the judge',
     file: 'probe', anchor: '  manifest.verdict = verdict;\n',
     replace: "  manifest.verdict = verdict;\n  if (manifest.windowMlbTotal === 0) verdict.problems.push('every forward day carried 0 MLB entries — the window is present but empty');\n",
-    expect: 'probe: the old rule (any 0 is a problem) is gone' },
+    expect: 'probe: the old rule is not present in its literal spellings' },
   { name: 'P9  an inline copy of a clause is reinstated beside the judge',
     file: 'probe', anchor: '  manifest.verdict = verdict;\n',
     replace: "  manifest.verdict = verdict;\n  const problems = []; if (!manifest.cacheAccepted) problems.push('x');\n",
-    expect: 'probe: no inline copy of the cache/schema/window rules remains' },
+    expect: 'probe: no inline problem list remains in its literal spellings' },
 ];
 
 let bad = 0;
@@ -226,6 +274,6 @@ try { execFileSync('node', ['scripts/check-forward-window-judge.mjs'], { stdio: 
 if (base) { bad++; console.error('  BASELINE  the unmutated check is red, so no catch above means anything.'); }
 else console.log('  baseline  the unmutated check is green');
 
-console.log(`\nran ${MUTATIONS.length} mutation(s) against scripts/check-forward-window-judge.mjs; each asserted its anchor unique and its effect present; the real files were not written`);
+console.log(`\nran ${MUTATIONS.length} mutation(s) against scripts/check-forward-window-judge.mjs; each asserted its anchor unique and its text change applied; the real files were not written`);
 if (bad) { console.error(`FAIL — ${bad} mutation(s) not caught or not applied.`); process.exit(1); }
 console.log('PASS');
