@@ -2,7 +2,7 @@
 
 ## 2026-10-30 — the forward-window probe: an empty MLB window passes as "not measured" only when ESPN agrees, and its first read survives the page's own reload
 
-`33e6300f`, `6d0931bc`, `63604fc7`, `acd686af`, `9643d7c8`, `70085ad6` (docs `a7f22f25`, `1295c637`). No client code, no SW bump. Final live run 41136703711
+`33e6300f`, `6d0931bc`, `63604fc7`, `acd686af`, `9643d7c8`, `70085ad6`, `ed340682` (docs `a7f22f25`, `1295c637`, `f37d7679`). No client code, no SW bump. Final live run 41136703711
 (head `a7f22f25`, dispatch): every step green; manifest `cacheAccepted: true`, schema 2.1, 3 of 3 days, `verdict.mlb.state: not-measured`, no problems.
 
 **What changed.** The probe failed whenever the window carried 0 MLB entries, which has been true since the last game (Wed 2026-10-28), so it was red for no product
@@ -18,10 +18,15 @@ Chromium; the old read fails on the same page) / `mutate-probe-meta-read.mjs` 28
 defects in my own first version (ESPN counting non-carried events; an unread window judged as empty), both fixed. The natural race was survived live (run 41130436375:
 `readFailures` has one `meta` entry, `cacheAccepted: true`).
 
-**What the probe does NOT cover (asked 2026-10-30).** The forward window file carries MLB, MLS and WNBA only; NHL and NBA are day 0 only by design and NFL and college
-football are not in it. The probe counts MLB only; other sports on forward days come from the page's own ESPN fetch, which the probe records (cards rendered: 28 on 10-31
-in two runs, 0 in four) and never asserts. The relay had 12 NFL games on Sun 11-01 while the window showed 0 and the probe passed. **Open, owner's call:** per-sport
-forward-day counts (NFL, CFB, NBA, NHL from the relay) in the manifest, reported not asserted, ~40 min. **Noticed, not checked:** the day-0 file shows NBA 0 games on Fri 10-30.
+**Other sports (asked 2026-10-30, built on the owner's go: `ed340682`).** The forward window file carries MLB, MLS and WNBA only (NHL and NBA are day 0 only by
+design; NFL and college football are not in it), and the probe asserts the MLB count only. It now also reports, per sport and forward day, what the relay's
+`/v2/games` lists beside what the file carries (`manifest.relaySports`, `manifest.coverage`, a table in the run log). **Reported, never asserted:** what counts as a
+failure for these sports is the owner's call. First live read (run 41139258140, 10-31 / 11-01 / 11-02): NFL 0 / 12 / 1, college football 47 / 0 / 0, NBA 7 / 4 / 15,
+NHL 10 / 5 / 4, all 12 cells clean, against a file carrying one game (WNBA) over the same three days. An upstream failure is null, never 0: HTTP non-OK, an `error`
+key, or `source: nhle-error` (the relay answers NHL's outage with a 200, no games and count 0). `scripts/forward-window-relay.cjs`, checked by
+`check-forward-window-relay.mjs` (45 cases) and `mutate-forward-window-relay.mjs` (33 of 33). **Found on the way:** the generator's day-0 NBA is 0 on a ten-game night
+(Fri 10-30) because `field-data.yml` calls the 403'ing `/nba/liveData/...` passthrough with `curl -sf ... || echo '{}'`; added as a data point to field-relay-nba
+`docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` (`05bad2c`), not fixed. **Open, owner's call:** whether to assert anything about these sports, and the generator's NBA source.
 
 **Armed.** `trig_01WSBRbTaZMQCpwYR1fJ2BNx` (2026-10-31T19:30Z): read the scheduled probe run, dispatch the dead-cron watch in field-relay-nba, confirm
 `forward-window-probe.yml` leaves NEW (the watch judges only the last three scheduled runs: 10-28, 10-29, 10-30 all failed).

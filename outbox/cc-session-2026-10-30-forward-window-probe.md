@@ -17,7 +17,8 @@ unrelated session doc), so none was filed; this doc is the record. Spec of recor
 | `acd686af` | ESPN events the generator never carries (preseason, exhibition, All-Star) are set aside; the manifest shows what and why |
 | `9643d7c8` | check and harness survivors an independent review found |
 | `70085ad6` | claims, comments and cost: corrected headers and counts, the workflow's mutation step skipped on the daily cron |
-| `a7f22f25` | this doc |
+| `a7f22f25`, `1295c637`, `4bf6d632`, `f37d7679` | this doc, its SHA fix, a comment correction, HANDOFF |
+| `ed340682` | the per-sport relay capture (below, "Built on the owner's go") |
 
 Runner commits in between: `75a4ea5d`, `b9672b34` (the probe's own manifests), `5be5ce11` (state). No SW bump: nothing here is in the deploy gate's paths.
 
@@ -107,10 +108,39 @@ Yes for what it counts, and the file it checks is also narrow. Read, not assumed
 - The committed file (`outbox/field-data-today.json`, generated 2026-10-30T14:26Z): 10-30 NHL 3; 10-31 one WNBA game (Atlanta Dream @ Golden State Valkyries); 11-01 and 11-02 zero.
 - The relay for the same weekend, read through the relay probe tool: `/v2/games?sport=nfl&date=2026-11-01` returns 12 games, `source: espn-wc`. The probe passes with that day at 0.
 - The probe counts `sched.mlb.length` only. Other sports on forward days are filled by the page's own ESPN fetch (per the probe's header); the manifest records cards rendered (28 on 10-31 in runs 75a4ea5d and b9672b34, 0 in the four others listed) and never asserts it.
-- The day-0 file shows NBA 0 on Fri 10-30. Not checked whether that is real; the NBA feed had a 403 incident earlier this month (task 22).
+- The day-0 file shows NBA 0 on Fri 10-30. Checked later the same day: it is a miss, not an empty night. The relay lists 10 NBA games for 10-30, and the generator's `field-data.yml` calls the 403'ing `/nba/liveData/...` passthrough with `curl -sf ... || echo '{}'`. Recorded as a data point in field-relay-nba `docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` (`05bad2c`); not fixed.
 
-**Open, owner's call:** per-sport forward-day counts from the relay (NFL, CFB, NBA, NHL), reported in the manifest and not asserted, about 40 minutes. Asserting needs a decision on
-what counts as a failure (for example, the relay lists games for a sport and the page rendered no card for that day). Not started; the owner has not said go.
+## Built on the owner's go: the per-sport relay capture (`ed340682`)
+
+`scripts/forward-window-relay.cjs` asks the relay's `GET /v2/games?sport=<nfl|cfb|nba|nhl>&date=<day>` for each forward day (12 requests, parallel, one attempt
+each, 15 s timeout). The manifest carries `relaySports` (counts, sources, errors per cell) and `coverage` (per day: the window file's per-sport counts and the relay's),
+and the run log prints the table. **A capture, not a metric** (LAB-FIRST-A: raw counts stay in the client's manifest, which the laboratory can read; any comparison
+metric or assertion belongs in field-laboratory). Nothing from it reaches the judge or can fail the run.
+
+Premises refuted or checked first (Rule 100):
+
+| premise | what the command showed |
+|---|---|
+| "one count per `games.length` is enough" | the NHL branch answers an upstream outage with HTTP 200, `games: []`, `count: 0`, `source: "nhle-error"`; read as a count it is "no games". Each such cell is null with its reason (`src/index.js` NHL branch, named in the fixture) |
+| "the route is free of paid APIs" | nfl, cfb and nba are ESPN-sourced and nhl uses NHL's own API, through the relay's cache; no Odds API. Side effects of a viewer request on a forward date were handed to the review below, not asserted |
+| "the day-0 NBA zero is an empty night" | the relay lists 10 NBA games for Fri 10-30; the file says 0; the generator's `curl -sf ... \|\| echo '{}'` turns the passthrough's 403 into an empty scoreboard. Added to field-relay-nba `docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` (`05bad2c`) |
+
+First live read (run 41139258140, head `ed340682`, every step green, the new check step 5 s):
+
+| sport | 2026-10-31 | 2026-11-01 | 2026-11-02 | source |
+|---|---|---|---|---|
+| NFL | 0 | 12 | 1 | espn-wc |
+| College football | 47 | 0 | 0 | espn-wc |
+| NBA | 7 | 4 | 15 | espn-wc |
+| NHL | 10 | 5 | 4 | nhle |
+| the window file, all sports | 1 (WNBA) | 0 | 0 | |
+
+Proof: `check-forward-window-relay.mjs` 45 cases (24 on the collector against a fake fetch built from real relay shapes, 13 on the table, 8 text assertions on the probe);
+`mutate-forward-window-relay.mjs` 33 of 33 caught. The harness found four defects in the first draft of the check (two crashes with no verdict, one assertion that could not
+see a guard, one broken mutant); fixed before the commit.
+
+**Still the owner's call:** whether to assert anything about these sports and what counts as a failure (for example, the relay lists games for a sport and the page
+rendered no card for that day); and the generator's NBA source (the CC-CMD above).
 
 ## Verified end to end vs not
 
