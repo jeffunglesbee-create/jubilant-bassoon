@@ -6,16 +6,17 @@
 // controller (src/legacy/field.js: reg `updatefound` -> `statechange` -> `window.location.reload()`, the only automatic
 // reload in the client). A probe's browser context is always fresh. Whether the reload fires on a given load varies, and
 // what decides it is not established here; sw.js has skipWaiting and clients.claim, so the first worker activates and
-// claims on a fresh load. When it does fire, it has landed in the probe's read every time: the wait resolves, the page
-// reloads, and the value is read from a destroyed context:
+// claims on a fresh load. When it fires it can land between the wait resolving and the value being read, so the value is
+// read from a destroyed context:
 //   jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation
 // The run then reported cacheAccepted:false and schema:null for a page that was working.
-// In the 14 manifests of this (shallow) clone's history, 2026-10-19T17:35Z to 2026-10-30T21:25Z, nine have one main-frame
-// navigation and a clean read; five have a second navigation 284 to 1065 ms after the load: 10-21, 10-26, 10-28 and
-// 10-30 21:11Z died on it, and the 10-30 21:25Z run (the first after this module) survived it, with one `meta` entry in
-// readFailures. On 10-21 the forward-day reads had worked (3 of 3 days reached the client) and only the metadata read was
-// lost; on the other three nothing was read. The race is not whether the page reloads, which the probe cannot affect;
-// it is whether a reload that does fire lands between the wait resolving and the value being read.
+// In the 15 manifests of this (shallow) clone's history, 2026-10-19T17:35Z to 2026-10-30T22:17Z, nine have one main-frame
+// navigation and a clean read; six have a second navigation 174 to 1065 ms after the load. Of those six: 10-21, 10-26,
+// 10-28 and 10-30 21:11Z died on it; the 10-30 21:25Z run (the first after this module) survived it, with one `meta`
+// entry in readFailures; and the 10-30 22:17Z run had the second navigation (768 ms) and lost nothing (readFailures
+// empty), so a reload that fires does not always hit the read. On 10-21 the forward-day reads had worked (3 of 3 days
+// reached the client) and only the metadata read was lost; on the other three nothing was read. The probe cannot affect
+// whether the page reloads; what it controls is whether a reload that does fire costs it the run.
 //
 // WHAT IT RETRIES. A lost execution context, and nothing else. The wait has a 30 s timeout: a field-data file that was
 // genuinely never accepted still has to fail, once, at 30 s, not three times for 90 s. Each retried loss is kept in the

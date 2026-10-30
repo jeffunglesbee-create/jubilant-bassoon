@@ -70,7 +70,7 @@ jobs:
 
       # The page reloads itself when its service worker first activates (src/legacy/field.js), and the probe's context is
       # always fresh, so on some runs the reload lands between the probe's wait for the cache metadata and its read of
-      # it. 4 of the 14 runs in this clone's history (2026-10-19 to 2026-10-30) died there ("Execution context was
+      # it. 4 of the 15 runs in this clone's history (2026-10-19 to 2026-10-30) died there ("Execution context was
       # destroyed") and reported the cache as never accepted for a page that was working. The read now survives a lost
       # context and nothing else (a 30 s timeout is still one 30 s timeout). This step forces a real reload into that
       # window in headless Chromium, first proves the old single-shot read fails on the same page, then proves the new
