@@ -1,8 +1,8 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "41130436375",
-  "commit": "6d0931bcee94bc3cc175b1302b000ff4a3d39b9b",
-  "timestamp": "2026-10-30T21:25:24.644Z",
+  "runId": "41136703711",
+  "commit": "a7f22f25de341bf60c486d90cd8b657cdf08e344",
+  "timestamp": "2026-10-30T22:17:30.693Z",
   "cacheAccepted": true,
   "testApi": "pl-verify",
   "schema": "2.1",
@@ -24,12 +24,12 @@
       "iso": "2026-10-31",
       "windowHasDay": true,
       "windowMlbCount": 0,
-      "navigated": true,
-      "cardCount": 28,
-      "sectionCount": 29,
+      "navigated": false,
+      "cardCount": 0,
+      "sectionCount": 0,
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
-      "error": null
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
     },
     {
       "iso": "2026-11-01",
@@ -57,48 +57,52 @@
   "windowDaysReachingClient": 3,
   "windowMlbTotal": 0,
   "espnMlb": {
-    "asked_at": "2026-10-30T21:25:24.558Z",
+    "asked_at": "2026-10-30T22:17:30.603Z",
     "counts": {
       "2026-10-31": 0,
       "2026-11-01": 0,
       "2026-11-02": 0
     },
+    "listed": {
+      "2026-10-31": 0,
+      "2026-11-01": 0,
+      "2026-11-02": 0
+    },
+    "setAside": {},
     "errors": {}
   },
-  "renderedCardsTotal": 28,
+  "renderedCardsTotal": 0,
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
   "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()"
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20261031&limit=50&groups=80' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20261031&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
   ],
   "mainFrameNavigations": [
     {
-      "at_ms": 284,
+      "at_ms": 174,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     },
     {
-      "at_ms": 907,
+      "at_ms": 768,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     }
   ],
-  "readFailures": [
-    {
-      "attempt": 1,
-      "stage": "meta",
-      "error": "jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation"
-    }
-  ],
+  "readFailures": [],
   "metaError": null,
   "playwrightVersion": "1.64.1",
   "verdict": {
     "problems": [],
     "notes": [
-      "MLB enrichment NOT MEASURED: the window carries 0 MLB entries and ESPN lists 0 MLB games on 2026-10-31, 2026-11-01, 2026-11-02, so the name match across ESPN and statsapi was not exercised"
+      "MLB enrichment NOT MEASURED: the window carries 0 MLB entries and ESPN lists 0 MLB games the generator carries on 2026-10-31, 2026-11-01, 2026-11-02, so the name match across ESPN and statsapi was not exercised"
     ],
     "mlb": {
       "state": "not-measured",
@@ -108,6 +112,7 @@
         "2026-11-01": 0,
         "2026-11-02": 0
       },
+      "espn_set_aside": {},
       "unasked": []
     }
   }
