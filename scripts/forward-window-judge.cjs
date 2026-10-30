@@ -4,8 +4,10 @@
 //
 // WHY THE MLB CLAUSE ASKS SOMEONE ELSE. The probe used to fail whenever the window carried 0 MLB entries.
 // That is the right answer when the generator dropped games and the wrong one in the off-season, and the
-// manifest alone cannot tell them apart: from 2026-10-28 the window was empty because the postseason was
-// over (ESPN's MLB scoreboard for 2026-10-31 lists 0 events), not because anything had regressed.
+// manifest alone cannot tell them apart. The last MLB game of the 2026 postseason was 2026-10-28 (MLB's schedule,
+// gameType R,F,D,L,W, lists none after it; ESPN's scoreboard lists none for 2026-10-29 or 2026-10-31 either), so from
+// the 2026-10-29 run the window was empty because the season was over, not because anything had regressed, and the
+// probe was red on this clause alone. (The 2026-10-28 run was red for a different reason: see scripts/probe-meta-read.cjs.)
 // A probe that cannot say which it is has two options, both bad: stay red all winter, or stop caring.
 //
 // So when the window carries 0 MLB entries the probe asks ESPN's own MLB scoreboard about the same dates,
@@ -15,6 +17,16 @@
 //   - ESPN could not be asked about some date       -> problem: an empty off-season cannot be told from a drop
 // Nothing falls back to a pass. The last outcome is the one Rule 99 exists for: a date ESPN was not asked
 // about is not a date ESPN lists no games on.
+//
+// SCOPE. ESPN is asked only when the WHOLE window is empty. A window with some MLB entries and one silently empty day is
+// not examined (the old probe did not examine it either; the check asserts this on purpose). And ESPN's empty list is
+// the oracle: src/legacy/field.js:16192 records ESPN answering 200 with `events: []` for a past date that had 15 games.
+// On 2026-10-30 ESPN and MLB's own schedule agreed for the dates in question (outbox/fixture-espn-mlb-event-kinds-20261030.json),
+// so a NOT MEASURED pass states what ESPN listed, not that no game exists.
+//
+// The probe's own clauses (cache accepted, schema 2.1, window_dates, each forward day reaching the client) are
+// unchanged. Two guards are new: no forward day read at all, and a windowMlbTotal that is not a number. An empty loop
+// and a missing count must not read as a pass.
 //
 // "NOT MEASURED" is what the pass says about the name match across ESPN and statsapi: with no MLB entries in
 // the window that match is not exercised, so a green run proves the window reached the client and nothing

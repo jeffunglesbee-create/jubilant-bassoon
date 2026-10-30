@@ -1,6 +1,9 @@
 name: Forward Window Probe
-# Proves the 4-day schedule window reaches the DOM: the ESPN base path still
-# renders every forward day, and the window's MLB entries actually matched.
+# Proves the 4-day schedule window reaches the client: the field-data file was accepted
+# into the cache (schema 2.1) and every forward day is in the window. When the window
+# carries no MLB entries, ESPN's own MLB scoreboard is asked whether it should
+# (scripts/forward-window-judge.cjs); the MLB enrichment match is then reported as NOT
+# MEASURED. Rendering and enrichment are REPORTED in the manifest, never asserted.
 # Impact analysis outbox/impact-2026-09-04-forward-schedule-window.md §11/§14d.
 # Trigger: push to outbox/.trigger-forward-window-probe OR dispatch.
 
@@ -46,7 +49,8 @@ jobs:
       # The probe's verdict is one module (scripts/forward-window-judge.cjs), so the probe and its checks cannot
       # disagree. A window with 0 MLB entries passes as "enrichment NOT MEASURED" only when ESPN's own MLB
       # scoreboard lists none on those dates and every date was fetched; if ESPN lists games, or cannot be asked,
-      # it fails. 56 cases on three real manifests the probe committed; 36 mutations prove the cases can fail.
+      # it fails. 95 cases (three real manifests the probe committed, four real ESPN event shapes); 69 mutations
+      # prove the cases can fail.
       # Runs before the browser so a broken verdict fails in seconds.
       - name: The forward-window verdict holds, and can fail
         run: |
@@ -66,20 +70,27 @@ jobs:
 
       # The page reloads itself when its service worker first activates (src/legacy/field.js), and the probe's context is
       # always fresh, so on some runs the reload lands between the probe's wait for the cache metadata and its read of
-      # it. 4 of the 13 runs committed 2026-10-19 to 2026-10-30 died there ("Execution context was destroyed"), reported
-      # the cache as never accepted, and failed every clause for a page that was working. The read now survives a lost
+      # it. 4 of the 14 runs in this clone's history (2026-10-19 to 2026-10-30) died there ("Execution context was
+      # destroyed") and reported the cache as never accepted for a page that was working. The read now survives a lost
       # context and nothing else (a 30 s timeout is still one 30 s timeout). This step forces a real reload into that
       # window in headless Chromium, first proves the old single-shot read fails on the same page, then proves the new
-      # one survives it; 20 mutations prove the cases can fail.
-      - name: The metadata read survives a page reload, and can fail
-        run: |
-          node scripts/check-probe-meta-read.mjs
-          node scripts/mutate-probe-meta-read.mjs
+      # one survives it (32 cases).
+      - name: The metadata read survives a page reload
+        run: node scripts/check-probe-meta-read.mjs
 
-      # The script exits 1 unless every forward day rendered AND the enrichment
-      # matched at least one fixture. Run it before the commit step so a failure
-      # is loud, then commit the manifest either way so a failing run still
-      # leaves its evidence behind.
+      # 28 mutations prove those cases can fail. Each launches a browser, about two minutes in all, and the check does not
+      # change between daily runs, so the scheduled run skips it. Every push and dispatch runs it, which is when the check
+      # or the module changes.
+      - name: The metadata read check can fail
+        if: github.event_name != 'schedule'
+        run: node scripts/mutate-probe-meta-read.mjs
+
+      # The script exits 1 when the verdict (scripts/forward-window-judge.cjs) has any
+      # problem: the cache was not accepted, the schema is not 2.1, a forward day did
+      # not reach the client, or the window carries no MLB entries while ESPN lists
+      # games the generator carries (or could not be asked). Run it before the commit
+      # step so a failure is loud, then commit the manifest either way so a failing
+      # run still leaves its evidence behind.
       - name: Run forward window probe
         id: probe
         continue-on-error: true
