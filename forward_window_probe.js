@@ -19,6 +19,7 @@
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const { judgeForwardWindow, askEspnMlb } = require('./scripts/forward-window-judge.cjs');
+const { readFieldDataMeta } = require('./scripts/probe-meta-read.cjs');
 
 const RAW = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 // ?pl-verify exposes window._plVerify. _fieldDataCache is a module-level `let`
@@ -82,15 +83,9 @@ const addDays = (iso, n) => {
   // Wait for the field-data file to be accepted into the cache. If the accept
   // gate rejected it (wrong schema, today outside window_dates) this never
   // becomes true and the assertions below fail loudly.
-  const meta = await page.waitForFunction(() => {
-    const m = window._plVerify && window._plVerify.fieldDataMeta && window._plVerify.fieldDataMeta();
-    return m ? {
-      schema: m.schema_version,
-      for_date: m.for_date,
-      window_dates: m.window_dates || null,
-      by_date: m.games_found_by_date || null,
-    } : false;
-  }, { timeout: 30000 }).then(h => h.jsonValue()).catch(e => {
+  // The read survives the page reloading itself when its service worker first activates; see
+  // scripts/probe-meta-read.cjs. Four of 13 committed runs died on exactly that.
+  const meta = await readFieldDataMeta(page, STATE).catch(e => {
     // Kept, not swallowed: a fast rejection here is the first thing the
     // 10-08..10-11 runs did, and the old `catch(() => null)` threw it away.
     STATE.metaError = String(e && e.message || e).slice(0, 300);
