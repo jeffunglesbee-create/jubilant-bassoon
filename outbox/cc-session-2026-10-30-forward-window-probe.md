@@ -159,6 +159,10 @@ Last time my script silently capped verification at six per lens; this time it l
 | C10 "33 mutations" had no denominator | FIXED: the harness prints it (71 of 72 assertions; the one it cannot reach checks the check's own fake) |
 | C11, C17 wording ("only the MLB count is asserted"; "day 0 only by design"; the NBA 10-30 example is a day-0 miss this capture cannot see) | CORRECTED |
 
+**Live after the fixes:** run 41144895751 (head `b734cef0`, which carries `97fb0543`), every step green, the relay check and its 77 mutants 13 s. Manifest `b2dfd8a3`: 12 of 12 cells
+clean, no error, the same counts as before (NFL 0 / 12 / 1, college football 47 / 0 / 0, NBA 7 / 4 / 15, NHL 10 / 5 / 4), `relaySports` and `coverage` written after `verdict`, three
+coverage rows. The floor and ceiling guards did not trigger (all three forward days are after the runner's date, and the NHL days are within 6 days).
+
 LAB-FIRST-A, stated plainly: the collector and the raw counts are a capture and belong in the client's manifest; `coverageRows` and `coverageLines` are about 25 lines of
 presentation over those counts, and the check and harness are about 600 lines. If the owner wants those in field-laboratory, they move; nothing in the client reads them.
 
