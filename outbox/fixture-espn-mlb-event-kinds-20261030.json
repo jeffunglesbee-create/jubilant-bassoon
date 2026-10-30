@@ -1,0 +1,125 @@
+{
+ "what": "The fields the judge reads from ESPN MLB scoreboard events, copied from live responses, plus the empty days and MLB's own schedule for the same dates.",
+ "method": "Read on 2026-10-30 through the Cloudflare-side html_probe tool (the sandbox cannot reach ESPN or statsapi), with &limit=1 so the first event is in the first 3000 characters. Only the fields the judge reads are kept (id, date, name, event.season, competitions[0].type); the responses carry much more.",
+ "kinds": {
+  "preseason": {
+   "url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20260305",
+   "event": {
+    "id": "401833056",
+    "date": "2026-03-05T18:05Z",
+    "name": "Toronto Blue Jays at Atlanta Braves",
+    "season": {
+     "year": 2026,
+     "type": 1,
+     "slug": "preseason"
+    },
+    "competitions": [
+     {
+      "type": {
+       "id": "18",
+       "abbreviation": "EXH"
+      }
+     }
+    ]
+   }
+  },
+  "all_star": {
+   "url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20260714",
+   "event": {
+    "id": "401817370",
+    "date": "2026-07-15T00:00Z",
+    "name": "American All-Stars at National All-Stars",
+    "season": {
+     "year": 2026,
+     "type": 2,
+     "slug": "regular-season"
+    },
+    "competitions": [
+     {
+      "type": {
+       "id": "4",
+       "abbreviation": "ALLSTAR"
+      }
+     }
+    ]
+   }
+  },
+  "regular": {
+   "url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20260915",
+   "event": {
+    "id": "401816943",
+    "date": "2026-09-15T22:40Z",
+    "name": "Athletics Athletics at Tampa Bay Rays",
+    "season": {
+     "year": 2026,
+     "type": 2,
+     "slug": "regular-season"
+    },
+    "competitions": [
+     {
+      "type": {
+       "id": "1",
+       "abbreviation": "STD"
+      }
+     }
+    ]
+   }
+  },
+  "postseason": {
+   "url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20261028",
+   "event": {
+    "id": "401908046",
+    "date": "2026-10-29T00:00Z",
+    "name": "Milwaukee Brewers at Tampa Bay Rays",
+    "season": {
+     "year": 2026,
+     "type": 3,
+     "slug": "post-season"
+    },
+    "competitions": [
+     {
+      "type": {
+       "id": "17",
+       "abbreviation": "FINAL"
+      }
+     }
+    ]
+   }
+  }
+ },
+ "empty_days": {
+  "20261025": "events [] (statsapi: no game on 2026-10-25)",
+  "20261029": "events [] (statsapi: no game on 2026-10-29)",
+  "20260713": "events [] (the Home Run Derby day lists no event)"
+ },
+ "espn_calendar_is_not_a_signal": "leagues[0].calendar lists 2026-10-25, 2026-10-29 and every day to 2026-11-11 although ESPN returns events [] for those days, so a date being in the calendar does not mean games",
+ "statsapi_same_window": {
+  "url": "https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2026-10-20&endDate=2026-11-03&gameType=R,F,D,L,W&fields=totalGames,dates,date,totalGames",
+  "result": {
+   "totalGames": 5,
+   "dates": [
+    {
+     "date": "2026-10-23",
+     "totalGames": 1
+    },
+    {
+     "date": "2026-10-24",
+     "totalGames": 1
+    },
+    {
+     "date": "2026-10-26",
+     "totalGames": 1
+    },
+    {
+     "date": "2026-10-27",
+     "totalGames": 1
+    },
+    {
+     "date": "2026-10-28",
+     "totalGames": 1
+    }
+   ]
+  },
+  "gameType": "the generator's own filter, scripts/build-field-data.js: R,F,D,L,W (regular season, wild card, division, league championship, World Series). It excludes spring training, exhibition and the All-Star Game."
+ }
+}

@@ -34,16 +34,47 @@ function espnNeeded(days, windowMlbTotal) {
   return windowMlbTotal === 0 && daysRead(days);
 }
 
+// WHICH ESPN EVENTS COUNT. The generator asks MLB's schedule for gameType R,F,D,L,W (regular season, wild card, division,
+// league championship, World Series; scripts/build-field-data.js), so it never carries spring training, exhibitions or the
+// All-Star Game, and ESPN's scoreboard lists all three. Counting every ESPN event would make a healthy empty window fail as
+// "the generator dropped them" for the ~30 days before every Opening Day. An event is set aside only when it is POSITIVELY
+// one of the kinds seen in ESPN's responses on 2026-10-30 (outbox/fixture-espn-mlb-event-kinds-20261030.json):
+//   preseason   event.season.type 1                        "Toronto Blue Jays at Atlanta Braves", competition type EXH
+//   exhibition  competitions[0].type.abbreviation EXH
+//   all-star    competitions[0].type.abbreviation ALLSTAR  "American All-Stars at National All-Stars", event.season.type 2
+// Everything else is counted, shapes nobody has seen included: a kind this file does not recognise has to make the probe
+// louder, not quieter. Regular season is STD with season.type 2; the World Series is FINAL with season.type 3.
+function notCarried(ev) {
+  const seasonType = ev && ev.season && ev.season.type;
+  const comp = ev && Array.isArray(ev.competitions) ? ev.competitions[0] : null;
+  const kind = comp && comp.type && comp.type.abbreviation;
+  if (seasonType === 1) return 'preseason';
+  if (kind === 'EXH') return 'exhibition';
+  if (kind === 'ALLSTAR') return 'all-star';
+  return null;
+}
+
 // One request per date, one attempt each. A failure is recorded against its date as null and never read as 0.
+// counts[iso] is the number of events the generator would carry; listed[iso] is everything ESPN listed; setAside[iso] names
+// what was left out and why, so the denominator is in the manifest and not in the reader's head.
 async function askEspnMlb(isoDays, fetchImpl, timeoutMs = 15000) {
-  const out = { asked_at: new Date().toISOString(), counts: {}, errors: {} };
+  const out = { asked_at: new Date().toISOString(), counts: {}, listed: {}, setAside: {}, errors: {} };
   for (const iso of isoDays) {
     try {
       const res = await fetchImpl(ESPN_MLB + iso.replace(/-/g, ''), { signal: AbortSignal.timeout(timeoutMs) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
       if (!body || !Array.isArray(body.events)) throw new Error('response has no events array');
-      out.counts[iso] = body.events.length;
+      const aside = [];
+      let carried = 0;
+      for (const ev of body.events) {
+        const why = notCarried(ev);
+        if (why) aside.push({ name: String((ev && ev.name) || ''), why });
+        else carried++;
+      }
+      out.counts[iso] = carried;
+      out.listed[iso] = body.events.length;
+      if (aside.length) out.setAside[iso] = aside;
     } catch (e) {
       out.counts[iso] = null;
       out.errors[iso] = String((e && e.message) || e).slice(0, 200);
@@ -58,7 +89,7 @@ function judgeForwardWindow(m, espn) {
   const problems = [];
   const notes = [];
   const days = Array.isArray(m.days) ? m.days : [];
-  const mlb = { state: 'measured', window_total: m.windowMlbTotal, espn_counts: null, unasked: [] };
+  const mlb = { state: 'measured', window_total: m.windowMlbTotal, espn_counts: null, espn_set_aside: null, unasked: [] };
 
   if (!m.cacheAccepted)
     problems.push('field-data was never accepted into the cache — the accept gate rejected it, or ?pl-verify is not honoured by this build');
@@ -83,8 +114,10 @@ function judgeForwardWindow(m, espn) {
   } else if (total === 0) {
     const counts = (espn && espn.counts) || {};
     const errors = (espn && espn.errors) || {};
+    const aside = (espn && espn.setAside) || {};
     const dates = days.map((d) => d.iso);
     mlb.espn_counts = Object.fromEntries(dates.map((iso) => [iso, isCount(counts[iso]) ? counts[iso] : null]));
+    mlb.espn_set_aside = Object.fromEntries(dates.filter((iso) => Array.isArray(aside[iso])).map((iso) => [iso, aside[iso]]));
     mlb.unasked = dates.filter((iso) => !isCount(counts[iso]));
     if (mlb.unasked.length) {
       mlb.state = 'unverifiable';
@@ -95,12 +128,14 @@ function judgeForwardWindow(m, espn) {
       const listed = dates.filter((iso) => counts[iso] > 0);
       if (listed.length) {
         mlb.state = 'dropped';
-        problems.push(`0 MLB entries in the window while ESPN lists ${listed.map((iso) => `${counts[iso]} on ${iso}`).join(', ')} — ` +
+        problems.push(`0 MLB entries in the window while ESPN lists games the generator carries (${listed.map((iso) => `${counts[iso]} on ${iso}`).join(', ')}) — ` +
                       'the generator dropped them, or the window never carried them');
       } else {
         mlb.state = 'not-measured';
-        notes.push(`MLB enrichment NOT MEASURED: the window carries 0 MLB entries and ESPN lists 0 MLB games on ${dates.join(', ')}, ` +
-                   'so the name match across ESPN and statsapi was not exercised');
+        const setAside = Object.entries(mlb.espn_set_aside).map(([iso, evs]) => `${iso}: ${evs.map((e) => e.why).join(', ')}`).join('; ');
+        notes.push(`MLB enrichment NOT MEASURED: the window carries 0 MLB entries and ESPN lists 0 MLB games the generator carries on ${dates.join(', ')}` +
+                   (setAside ? ` (set aside, not carried by the generator: ${setAside})` : '') +
+                   ', so the name match across ESPN and statsapi was not exercised');
       }
     }
   }

@@ -23,10 +23,13 @@ import path from 'node:path';
 const JUDGE = process.env.JUDGE_SRC || 'scripts/forward-window-judge.cjs';
 const PROBE = process.env.PROBE_SRC || 'forward_window_probe.js';
 const FIXTURE = 'outbox/fixture-forward-window-manifests-20261030.json';
+const KINDS_FIXTURE = 'outbox/fixture-espn-mlb-event-kinds-20261030.json';
 
 const { judgeForwardWindow, askEspnMlb, espnNeeded } = createRequire(import.meta.url)(path.resolve(JUDGE));
 const fx = JSON.parse(readFileSync(FIXTURE, 'utf8')).manifests;
 const clone = (o) => JSON.parse(JSON.stringify(o));
+const KINDS = JSON.parse(readFileSync(KINDS_FIXTURE, 'utf8')).kinds;   // real ESPN event excerpts, read 2026-10-30
+const EV = (k) => clone(KINDS[k].event);
 const OFF = fx.offseason.manifest;        // cache accepted, schema 2.1, window present, windowMlbTotal 0
 const REJ = fx.cache_rejected.manifest;   // cacheAccepted false, schema null, windowHasDay false on every day
 const INS = fx.in_season.manifest;        // windowMlbTotal 3
@@ -221,6 +224,58 @@ for (const [label, body] of [['{}', {}], ['{events: null}', { events: null }], [
   const j = judgeForwardWindow(clone(OFF), r);
   want('askEspnMlb -> judge end to end: ESPN all zero on a real off-season manifest passes as NOT MEASURED',
        j.problems.length === 0 && j.mlb.state === 'not-measured', JSON.stringify(j));
+}
+
+
+// ── 4b. which ESPN events count: only the games the generator would carry ───────────────────────────────────────
+// The generator asks MLB's schedule for gameType R,F,D,L,W, so spring training, exhibitions and the All-Star Game are not in
+// its window. ESPN lists them. Counting them would fail a healthy empty window every spring.
+{
+  const ask = async (events) => askEspnMlb(D, fake({ 20261101: { events } }));
+  const r1 = await ask([EV('preseason')]);
+  want('population: a preseason game is listed but not counted',
+       r1.counts[D[1]] === 0 && r1.listed[D[1]] === 1, JSON.stringify(r1));
+  want('population: the set-aside is recorded with the event name and the reason',
+       Array.isArray(r1.setAside[D[1]]) && r1.setAside[D[1]].length === 1 && r1.setAside[D[1]][0].name === 'Toronto Blue Jays at Atlanta Braves'
+       && r1.setAside[D[1]][0].why === 'preseason', JSON.stringify(r1.setAside));
+  const r2 = await ask([EV('all_star')]);
+  want('population: the All-Star Game (regular-season type 2, competition ALLSTAR) is not counted',
+       r2.counts[D[1]] === 0 && r2.setAside[D[1]][0].why === 'all-star', JSON.stringify(r2));
+  const exh = EV('preseason'); exh.season.type = 2;
+  const r3 = await ask([exh]);
+  want('population: a competition type EXH is an exhibition even with season type 2',
+       r3.counts[D[1]] === 0 && r3.setAside[D[1]][0].why === 'exhibition', JSON.stringify(r3));
+  const r4 = await ask([EV('regular')]);
+  want('population: a regular-season game (STD, season type 2) is counted', r4.counts[D[1]] === 1 && !r4.setAside[D[1]], JSON.stringify(r4));
+  const r5 = await ask([EV('postseason')]);
+  want('population: a World Series game (FINAL, season type 3) is counted', r5.counts[D[1]] === 1 && !r5.setAside[D[1]], JSON.stringify(r5));
+  const preOnly = EV('preseason'); preOnly.competitions[0].type.abbreviation = 'STD';
+  const r5b = await ask([preOnly]);
+  want('population: season type 1 alone (competition STD, not EXH) sets an event aside as preseason',
+       r5b.counts[D[1]] === 0 && r5b.setAside[D[1]][0].why === 'preseason', JSON.stringify(r5b));
+  const r6 = await ask([EV('preseason'), EV('regular'), EV('postseason'), EV('all_star')]);
+  want('population: a day with two games and two set-aside events counts 2 of 4 listed',
+       r6.counts[D[1]] === 2 && r6.listed[D[1]] === 4 && r6.setAside[D[1]].length === 2, JSON.stringify(r6));
+  const weird = { id: 'x', name: 'Something new' };
+  const unk = EV('regular'); unk.competitions[0].type.abbreviation = 'XYZ';
+  const strSeason = EV('preseason'); strSeason.season.type = '1'; strSeason.competitions[0].type.abbreviation = 'STD';
+  const r7 = await ask([weird, unk, strSeason, { id: 'y', competitions: 'oops' }, null]);
+  want('population: an unrecognised kind, a shape with no season or competitions, a string season type and a null event are all COUNTED (they stay loud)',
+       r7.counts[D[1]] === 5 && r7.listed[D[1]] === 5 && !r7.setAside[D[1]], JSON.stringify(r7));
+  const r8 = await ask([]);
+  want('population: an empty day is 0 listed, 0 counted and no set-aside key', r8.counts[D[1]] === 0 && r8.listed[D[1]] === 0 && !(D[1] in r8.setAside), JSON.stringify(r8));
+  // end to end through the judge, on the real off-season manifest
+  const spring = await askEspnMlb(D, fake({ 20261031: { events: [EV('preseason')] }, 20261101: { events: [EV('all_star'), EV('preseason')] } }));
+  const jv = judgeForwardWindow(clone(OFF), spring);
+  want('population -> judge: a window that is empty while ESPN lists only set-aside events passes as NOT MEASURED',
+       jv.problems.length === 0 && jv.mlb.state === 'not-measured', JSON.stringify(jv));
+  want('population -> judge: the note names what was set aside and the verdict carries it',
+       jv.notes.length === 1 && jv.notes[0].includes('set aside') && jv.notes[0].includes('preseason') && jv.notes[0].includes('all-star')
+       && jv.mlb.espn_set_aside && jv.mlb.espn_set_aside[D[1]].length === 2, JSON.stringify(jv));
+  const mixed = await askEspnMlb(D, fake({ 20261031: { events: [EV('preseason')] }, 20261102: { events: [EV('regular')] } }));
+  const jm = judgeForwardWindow(clone(OFF), mixed);
+  want('population -> judge: a carried game on one date still fails the window, naming only that date',
+       jm.mlb.state === 'dropped' && jm.problems.length === 1 && jm.problems[0].includes(`1 on ${D[2]}`) && !jm.problems[0].includes(D[0]), JSON.stringify(jm));
 }
 
 // ── 5. the probe is wired to the judge and holds no rule of its own ───────────────────────────────────────────
