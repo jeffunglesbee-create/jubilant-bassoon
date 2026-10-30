@@ -63,7 +63,9 @@ jobs:
       # sports (2026-10-30: the relay listed 12 NFL games for Sunday and the probe passed with that day at 0). The probe
       # now reports, per sport, what the relay lists for each forward day beside what the file carries; nothing here can fail
       # the run. The check runs the collector against real relay shapes, including the NHL outage that arrives as HTTP 200
-      # with no games (a null, never a zero); 33 mutations prove the cases can fail.
+      # with no games (a null, never a zero), and executes the probe's in-page read. 77 mutations prove the cases can fail;
+      # the harness prints how many of the check's assertions none of them reaches (1 of 72 today: an assertion about the
+      # check's own fake answers).
       - name: The relay coverage capture holds, and can fail
         run: |
           node scripts/check-forward-window-relay.mjs
