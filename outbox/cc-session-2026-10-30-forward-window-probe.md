@@ -20,7 +20,7 @@ unrelated session doc), so none was filed; this doc is the record. Spec of recor
 | `a7f22f25`, `1295c637`, `4bf6d632`, `f37d7679` | this doc, its SHA fix, a comment correction, HANDOFF |
 | `ed340682` | the per-sport relay capture (below, "Built on the owner's go") |
 | `fdb0a105` | HANDOFF and this doc: the capture's first live read |
-| `5d5281fe` | the capture answers its review (below, "The review of the capture") |
+| `97fb0543` | the capture answers its review (below, "The review of the capture") |
 
 Runner commits in between: `75a4ea5d`, `b9672b34` (the probe's own manifests), `5be5ce11` (state). No SW bump: nothing here is in the deploy gate's paths.
 
@@ -147,7 +147,7 @@ see a guard, one broken mutant); fixed before the commit.
 fixture citation was mis-read by the reviewer, R4 the file-versus-relay comparison is what the capture is for, R5 placement under LAB-FIRST-A is a judgement).
 Last time my script silently capped verification at six per lens; this time it logged that nothing was dropped.
 
-| finding | disposition in `5d5281fe` |
+| finding | disposition in `97fb0543` |
 |---|---|
 | C12 a stale window file puts finished days into the NHL request (can start the relay's brief pipeline) | FIXED: a day before the runner's UTC date is never asked |
 | C1, C19 an NHL date outside the relay's scoreboard window is a clean-looking 0 (probed live: 11-06 listed 3 games, 11-07 and 11-08 empty) | FIXED: an NHL day more than 6 days ahead is not asked. The June NHLE migration doc already records the window ("last ~9 days"), so no relay CC-CMD owns it and none was filed |

@@ -2,7 +2,7 @@
 
 ## 2026-10-30 — the forward-window probe: an empty MLB window passes as "not measured" only when ESPN agrees, and its first read survives the page's own reload
 
-`33e6300f`, `6d0931bc`, `63604fc7`, `acd686af`, `9643d7c8`, `70085ad6`, `ed340682`, `5d5281fe` (docs `a7f22f25`, `1295c637`, `f37d7679`, `fdb0a105`). No client code, no SW bump. Final live run 41136703711
+`33e6300f`, `6d0931bc`, `63604fc7`, `acd686af`, `9643d7c8`, `70085ad6`, `ed340682`, `97fb0543` (docs `a7f22f25`, `1295c637`, `f37d7679`, `fdb0a105`). No client code, no SW bump. Final live run 41136703711
 (head `a7f22f25`, dispatch): every step green; manifest `cacheAccepted: true`, schema 2.1, 3 of 3 days, `verdict.mlb.state: not-measured`, no problems.
 
 **What changed.** The probe failed whenever the window carried 0 MLB entries, which has been true since the last game (Wed 2026-10-28), so it was red for no product
@@ -18,7 +18,7 @@ Chromium; the old read fails on the same page) / `mutate-probe-meta-read.mjs` 28
 defects in my own first version (ESPN counting non-carried events; an unread window judged as empty), both fixed. The natural race was survived live (run 41130436375:
 `readFailures` has one `meta` entry, `cacheAccepted: true`).
 
-**Other sports (asked 2026-10-30, built on the owner's go: `ed340682`, review fixes `5d5281fe`).** The forward window file carries MLB, MLS and WNBA only (NHL and NBA
+**Other sports (asked 2026-10-30, built on the owner's go: `ed340682`, review fixes `97fb0543`).** The forward window file carries MLB, MLS and WNBA only (NHL and NBA
 are day 0 only because their feeds serve only today; NFL and college football are not in it), and the probe asserts the MLB count only. It now also reports, per sport and
 forward day, what the relay's `/v2/games` lists beside what the file carries (`manifest.relaySports`, `manifest.coverage`, a table in the run log). **Reported, never
 asserted**, and attached to the manifest after the judge runs, so the judge cannot see it. First live read (run 41139258140, 10-31 / 11-01 / 11-02): NFL 0 / 12 / 1, college
@@ -27,7 +27,7 @@ non-OK, an `error` key, or `source: nhle-error` (the relay answers NHL's outage 
 day can start the relay's brief pipeline, and a stale window file would otherwise send one) or an NHL day more than 6 days ahead (the relay's NHL branch answers a date outside
 NHL's scoreboard window with a clean-looking 200 and 0). **Cost:** 12 requests per run; nfl, cfb and nba each also make one uncached call to BSD's live feed when the relay has its
 token (up to 9 per run; no limit documented). **Not covered: day 0.** The capture asks forward days only, so it cannot see the day-0 NBA miss below. An independent review (28
-agents, a skeptic per finding, none dropped) confirmed 19 of 24 findings; all were fixed or corrected in `5d5281fe`. `check-forward-window-relay.mjs` 72 cases (it executes the
+agents, a skeptic per finding, none dropped) confirmed 19 of 24 findings; all were fixed or corrected in `97fb0543`. `check-forward-window-relay.mjs` 72 cases (it executes the
 probe's in-page read), `mutate-forward-window-relay.mjs` 77 of 77, and it prints that 71 of the 72 assertions go red under some mutation (the one that does not checks the
 check's own fake). **Found on the way:** the generator's day-0 NBA is 0 on a ten-game night (Fri 10-30) because `field-data.yml` calls the 403'ing `/nba/liveData/...` passthrough
 with `curl -sf ... || echo '{}'`; added as a data point to field-relay-nba `docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` (`05bad2c`), not fixed. **Open, owner's call:**
