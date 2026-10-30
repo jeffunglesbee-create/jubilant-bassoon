@@ -18,7 +18,7 @@
 
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
-const { judgeForwardWindow, askEspnMlb } = require('./scripts/forward-window-judge.cjs');
+const { judgeForwardWindow, askEspnMlb, espnNeeded } = require('./scripts/forward-window-judge.cjs');
 const { readFieldDataMeta } = require('./scripts/probe-meta-read.cjs');
 
 const RAW = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
@@ -144,11 +144,13 @@ const addDays = (iso, n) => {
               (nav.error ? ` (nav: ${nav.error.slice(0, 60)})` : ''));
 
   // A window with 0 MLB entries is either an empty off-season or a generator that dropped games, and the page
-  // cannot tell which. ESPN's own MLB scoreboard can, so it is asked — from Node, only when the window is empty
-  // (scripts/forward-window-judge.cjs holds the reasoning). null in the manifest means "not asked".
+  // cannot tell which. ESPN's own MLB scoreboard can, so it is asked — from Node, only when every forward day was
+  // read and the window is empty (scripts/forward-window-judge.cjs holds the reasoning and the one definition of
+  // "asked"). A day that did not reach the client has a count of 0 because nothing was there to count; it is not an
+  // empty day. null in the manifest means "not asked".
   const windowMlbTotal = days.reduce((n, d) => n + d.windowMlbCount, 0);
   STATE.stage = 'espn-mlb';
-  const espn = windowMlbTotal === 0 ? await askEspnMlb(isoDays, fetch) : null;
+  const espn = espnNeeded(days, windowMlbTotal) ? await askEspnMlb(isoDays, fetch) : null;
   STATE.stage = 'verdict';
 
   const manifest = {

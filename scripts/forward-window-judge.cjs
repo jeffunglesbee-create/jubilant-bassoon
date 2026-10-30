@@ -24,6 +24,16 @@ const ESPN_MLB = 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/sco
 
 const isCount = (n) => Number.isInteger(n) && n >= 0;
 
+// A forward day that did not reach the client is UNREAD, not empty: its MLB count is 0 only because there was nothing to
+// count. An empty-window verdict is only meaningful over days that were read.
+const daysRead = (days) => Array.isArray(days) && days.length > 0 && days.every((d) => d.windowHasDay);
+
+// Whether the empty-window question can be asked at all. The probe asks ESPN only when this is true, and the judge
+// compares against ESPN only when this is true, from this one definition.
+function espnNeeded(days, windowMlbTotal) {
+  return windowMlbTotal === 0 && daysRead(days);
+}
+
 // One request per date, one attempt each. A failure is recorded against its date as null and never read as 0.
 async function askEspnMlb(isoDays, fetchImpl, timeoutMs = 15000) {
   const out = { asked_at: new Date().toISOString(), counts: {}, errors: {} };
@@ -67,15 +77,18 @@ function judgeForwardWindow(m, espn) {
   if (typeof total !== 'number' || !Number.isFinite(total)) {
     mlb.state = 'unread';
     problems.push('windowMlbTotal is not a number — the MLB entry count was never read');
+  } else if (total === 0 && !daysRead(days)) {
+    // Nothing to compare ESPN with: the clauses above already name each day that did not reach the client.
+    mlb.state = 'unread';
   } else if (total === 0) {
     const counts = (espn && espn.counts) || {};
     const errors = (espn && espn.errors) || {};
     const dates = days.map((d) => d.iso);
     mlb.espn_counts = Object.fromEntries(dates.map((iso) => [iso, isCount(counts[iso]) ? counts[iso] : null]));
     mlb.unasked = dates.filter((iso) => !isCount(counts[iso]));
-    if (dates.length === 0 || mlb.unasked.length) {
+    if (mlb.unasked.length) {
       mlb.state = 'unverifiable';
-      const why = mlb.unasked.map((iso) => `${iso} (${errors[iso] || 'not asked'})`).join(', ') || 'no forward day was read';
+      const why = mlb.unasked.map((iso) => `${iso} (${errors[iso] || 'not asked'})`).join(', ');
       problems.push(`0 MLB entries in the window and ESPN could not be asked about ${why}, ` +
                     'so an empty off-season cannot be told from a window that dropped games');
     } else {
@@ -94,4 +107,4 @@ function judgeForwardWindow(m, espn) {
   return { problems, notes, mlb };
 }
 
-module.exports = { judgeForwardWindow, askEspnMlb, ESPN_MLB };
+module.exports = { judgeForwardWindow, askEspnMlb, espnNeeded, ESPN_MLB };
