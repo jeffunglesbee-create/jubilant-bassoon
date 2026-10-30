@@ -1,18 +1,28 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "41128854301",
-  "commit": "33e6300ffb889e8519b9aac6928f3437bd5f79ba",
-  "timestamp": "2026-10-30T21:11:03.348Z",
-  "cacheAccepted": false,
+  "runId": "41130436375",
+  "commit": "6d0931bcee94bc3cc175b1302b000ff4a3d39b9b",
+  "timestamp": "2026-10-30T21:25:24.644Z",
+  "cacheAccepted": true,
   "testApi": "pl-verify",
-  "schema": null,
-  "for_date": null,
-  "window_dates": null,
-  "games_found_by_date": null,
+  "schema": "2.1",
+  "for_date": "2026-10-30",
+  "window_dates": [
+    "2026-10-30",
+    "2026-10-31",
+    "2026-11-01",
+    "2026-11-02"
+  ],
+  "games_found_by_date": {
+    "2026-10-30": 3,
+    "2026-10-31": 1,
+    "2026-11-01": 0,
+    "2026-11-02": 0
+  },
   "days": [
     {
       "iso": "2026-10-31",
-      "windowHasDay": false,
+      "windowHasDay": true,
       "windowMlbCount": 0,
       "navigated": true,
       "cardCount": 28,
@@ -23,7 +33,7 @@
     },
     {
       "iso": "2026-11-01",
-      "windowHasDay": false,
+      "windowHasDay": true,
       "windowMlbCount": 0,
       "navigated": false,
       "cardCount": 0,
@@ -34,7 +44,7 @@
     },
     {
       "iso": "2026-11-02",
-      "windowHasDay": false,
+      "windowHasDay": true,
       "windowMlbCount": 0,
       "navigated": false,
       "cardCount": 0,
@@ -44,10 +54,10 @@
       "error": null
     }
   ],
-  "windowDaysReachingClient": 0,
+  "windowDaysReachingClient": 3,
   "windowMlbTotal": 0,
   "espnMlb": {
-    "asked_at": "2026-10-30T21:11:03.004Z",
+    "asked_at": "2026-10-30T21:25:24.558Z",
     "counts": {
       "2026-10-31": 0,
       "2026-11-01": 0,
@@ -59,39 +69,34 @@
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 403 ()",
     "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 403 ()",
     "Failed to load resource: the server responded with a status of 404 (Not Found)",
     "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 403 ()"
+    "Failed to load resource: the server responded with a status of 404 ()"
   ],
   "mainFrameNavigations": [
     {
-      "at_ms": 373,
+      "at_ms": 284,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     },
     {
-      "at_ms": 847,
+      "at_ms": 907,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     }
   ],
-  "readFailures": [],
-  "metaError": "jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation",
+  "readFailures": [
+    {
+      "attempt": 1,
+      "stage": "meta",
+      "error": "jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation"
+    }
+  ],
+  "metaError": null,
   "playwrightVersion": "1.64.1",
   "verdict": {
-    "problems": [
-      "field-data was never accepted into the cache — the accept gate rejected it, or ?pl-verify is not honoured by this build",
-      "schema is null, expected 2.1 — the generator has not run since the change",
-      "window_dates missing or shorter than 2 — there is no forward window to prove",
-      "2026-10-31: scheduleForDate returned nothing — the window did not reach the client for this date",
-      "2026-11-01: scheduleForDate returned nothing — the window did not reach the client for this date",
-      "2026-11-02: scheduleForDate returned nothing — the window did not reach the client for this date"
-    ],
+    "problems": [],
     "notes": [
       "MLB enrichment NOT MEASURED: the window carries 0 MLB entries and ESPN lists 0 MLB games on 2026-10-31, 2026-11-01, 2026-11-02, so the name match across ESPN and statsapi was not exercised"
     ],
