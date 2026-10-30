@@ -256,11 +256,20 @@
   }
  },
  "espn_probe": {
-  "url": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20261031",
-  "read_at": "2026-10-30",
-  "events": 0,
-  "season_type": "Postseason",
-  "season_end": "2026-11-12T07:59Z",
-  "note": "read through the Cloudflare-side html_probe tool; the sandbox cannot reach ESPN"
+  "what": "askEspnMlb result as the probe wrote it into the manifest (manifest.espnMlb), fetched by Node on the GitHub runner",
+  "url_template": "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=YYYYMMDD",
+  "runs": {
+   "41128854301": "asked_at 2026-10-30T21:11:03.004Z, counts 2026-10-31/11-01/11-02 all 0 (read from the run log)",
+   "41130436375": {
+    "asked_at": "2026-10-30T21:25:24.558Z",
+    "counts": {
+     "2026-10-31": 0,
+     "2026-11-01": 0,
+     "2026-11-02": 0
+    },
+    "errors": {}
+   }
+  },
+  "note": "the judge check does not use these as inputs; its ESPN inputs are labeled test inputs"
  }
 }
