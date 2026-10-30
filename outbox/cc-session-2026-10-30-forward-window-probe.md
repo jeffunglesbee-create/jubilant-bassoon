@@ -13,10 +13,11 @@ unrelated session doc), so none was filed; this doc is the record. Spec of recor
 | `33e6300f` | the season-aware MLB clause: `scripts/forward-window-judge.cjs` (the verdict), ESPN asked from Node when the window is empty |
 | `6d0931bc` | `scripts/probe-meta-read.cjs`: the first read of the cache metadata retries a lost execution context, and nothing else |
 | `f4e5efba` | fixture: the runner's own ESPN readings instead of an unverifiable season note |
-| `856597b2` | a window that was never read is state `unread`, not an empty window (`espnNeeded()` is the one definition of "ask ESPN") |
-| `329b6add` | ESPN events the generator never carries (preseason, exhibition, All-Star) are set aside; the manifest shows what and why |
-| `330e8f74` | check and harness survivors an independent review found |
-| (this commit) | claims, comments and cost: corrected headers and counts, the workflow's mutation step skipped on the daily cron |
+| `63604fc7` | a window that was never read is state `unread`, not an empty window (`espnNeeded()` is the one definition of "ask ESPN") |
+| `acd686af` | ESPN events the generator never carries (preseason, exhibition, All-Star) are set aside; the manifest shows what and why |
+| `9643d7c8` | check and harness survivors an independent review found |
+| `70085ad6` | claims, comments and cost: corrected headers and counts, the workflow's mutation step skipped on the daily cron |
+| `a7f22f25` | this doc |
 
 Runner commits in between: `75a4ea5d`, `b9672b34` (the probe's own manifests), `5be5ce11` (state). No SW bump: nothing here is in the deploy gate's paths.
 
@@ -64,17 +65,17 @@ was my script's silent cap, found afterwards and handled here by reading each an
 
 | finding | disposition |
 |---|---|
-| C1 ESPN counts spring training and the All-Star Game | FIXED `329b6add`, on real event shapes |
-| C3 an unread window judged as an empty one | FIXED `856597b2` |
-| C4 a NOT MEASURED or dropped verdict could drop other problems (turned a failing run green) | FIXED `330e8f74`, with the mutants that exposed it |
-| C5, U9 the request timeout, host, scheme and non-5xx failures untested | FIXED `330e8f74` |
-| C6 the boundary of the empty-window clause untested | FIXED `330e8f74` |
-| C7 a lost context followed by a timeout untested | FIXED `330e8f74` |
-| C9 the retried phrase could be widened unseen | FIXED `330e8f74` |
-| U6, U7 recorded error text, stage, and null-not-zero in the artifact untested | FIXED `330e8f74` |
-| U8 boundary values of the unchanged clauses | FIXED `330e8f74` |
+| C1 ESPN counts spring training and the All-Star Game | FIXED `acd686af`, on real event shapes |
+| C3 an unread window judged as an empty one | FIXED `63604fc7` |
+| C4 a NOT MEASURED or dropped verdict could drop other problems (turned a failing run green) | FIXED `9643d7c8`, with the mutants that exposed it |
+| C5, U9 the request timeout, host, scheme and non-5xx failures untested | FIXED `9643d7c8` |
+| C6 the boundary of the empty-window clause untested | FIXED `9643d7c8` |
+| C7 a lost context followed by a timeout untested | FIXED `9643d7c8` |
+| C9 the retried phrase could be widened unseen | FIXED `9643d7c8` |
+| U6, U7 recorded error text, stage, and null-not-zero in the artifact untested | FIXED `9643d7c8` |
+| U8 boundary values of the unchanged clauses | FIXED `9643d7c8` |
 | C8 the probe's manifest-building lines are checked only as text | LABELS CORRECTED; not built (below) |
-| C10 to C16, U11, U12 false or overstated comments, counts and names | CORRECTED in the stage-4 commit |
+| C10 to C16, U11, U12 false or overstated comments, counts and names | CORRECTED in `70085ad6` |
 | C2 a partly empty window (some MLB entries, one silently empty day) is not examined | NOT BUILT (below) |
 | U10 ESPN `events: []` is not proof of no games | RECORDED (below) |
 | R1, R2 (rejected) self-tests gate the probe; 115 s of a 10-minute job | not defects; the cost point was acted on separately |
