@@ -1,7 +1,7 @@
 {
- "written": "2026-10-17",
+ "written": "2026-10-31",
  "heads": {
-  "jubilant-bassoon": "d6ffa1f7"
+  "jubilant-bassoon": "ba002242"
  },
  "repos": {
   "jubilant-bassoon": {
@@ -115,7 +115,11 @@
      "./tests/adapter-visible-value.spec.js :: const mlsResults = (probeData.results || []).filter(r => r.league === 'MLS');"
     ]
    },
-   "suppressed": {}
+   "suppressed": {
+    "catch-collapse": [
+     "./scripts/mutate-forward-window-relay.mjs :: file: 'relay', anchor: REQ, replace: '      const res = await (globalThis.__relayQ = (globalThis.__relayQ || Promise.resolve()).catch(() => "
+    ]
+   }
   }
  }
 }

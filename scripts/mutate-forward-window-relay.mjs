@@ -102,7 +102,7 @@ const MUTATIONS = [
     file: 'relay', anchor: REQ, replace: '      let res = await fetchImpl(' + URLX + ', { signal: AbortSignal.timeout(timeoutMs) });\n      if (!res.ok) res = await fetchImpl(' + URLX + ', { signal: AbortSignal.timeout(timeoutMs) });\n',
     expect: 'relay: a failing cell is asked once' },
   { name: 'D4  the requests are made one after another',
-    file: 'relay', anchor: REQ, replace: '      const res = await (globalThis.__relayQ = (globalThis.__relayQ || Promise.resolve()).catch(() => {}).then(() => fetchImpl(' + URLX + ', { signal: AbortSignal.timeout(timeoutMs) })));\n',
+    file: 'relay', anchor: REQ, replace: '      const res = await (globalThis.__relayQ = (globalThis.__relayQ || Promise.resolve()).catch(() => {}).then(() => fetchImpl(' + URLX + ', { signal: AbortSignal.timeout(timeoutMs) })));\n',  // absence-ok: the text of a mutant that the harness writes into a COPY of the relay reader to prove the check notices serial requests; the .catch only keeps that queue alive and nothing here reads a value from outside
     expect: 'relay: all twelve requests are in flight at once' },
   { name: 'D5  a day before the runner\'s date is asked',
     file: 'relay', anchor: "      if (iso < today) throw new Error(`not asked: ${iso} is before ${today}, and a finished day can start the relay's brief pipeline`);\n", replace: '',
