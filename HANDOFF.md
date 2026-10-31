@@ -83,7 +83,7 @@ check's own fake). **Found on the way:** the generator's day-0 NBA is 0 on a ten
 with `curl -sf ... || echo '{}'`; added as a data point to field-relay-nba `docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` (`05bad2c`), not fixed. **Open, owner's call:**
 whether to assert anything about these sports, and the generator's NBA source.
 
-**Armed.** `trig_01WSBRbTaZMQCpwYR1fJ2BNx` (2026-10-31T19:30Z): read the scheduled probe run, dispatch the dead-cron watch in field-relay-nba, confirm
+**Closed 2026-10-31:** the probe's scheduled run 41218324482 was green and the dead-cron watch (run 41223980190) no longer lists `forward-window-probe.yml` (`NEW 0`); the wake below was deleted, and the line is kept as history. **Armed (history).** `trig_01WSBRbTaZMQCpwYR1fJ2BNx` (2026-10-31T19:30Z): read the scheduled probe run, dispatch the dead-cron watch in field-relay-nba, confirm
 `forward-window-probe.yml` leaves NEW (the watch judges only the last three scheduled runs: 10-28, 10-29, 10-30 all failed).
 
 Session doc: outbox/cc-session-2026-10-30-forward-window-probe.md

@@ -188,3 +188,6 @@ card for that day); and the generator's NBA source (the CC-CMD above).
 Wake `trig_01WSBRbTaZMQCpwYR1fJ2BNx` (2026-10-31T19:30Z): read the scheduled run of 2026-10-31, dispatch `silently-dead-crons.yml` in
 field-relay-nba, and confirm `jubilant-bassoon/forward-window-probe.yml` is no longer under NEW. The watch judges only scheduled runs and
 the last three (10-28, 10-29, 10-30) all failed, so one green scheduled run ends the streak. GitHub has delayed this cron by up to six hours.
+
+**Closed 2026-10-31 (task 52): the dead-cron watch no longer lists the probe.** The probe's scheduled run of 2026-10-31 (run 41218324482, created 16:09Z, event `schedule`, head `30b0530b`) was green; one green scheduled run ends the streak the watch judges (its last 3 scheduled runs: 10-28, 10-29 and 10-30 had failed). I dispatched field-relay-nba `silently-dead-crons.yml` (run 41223980190, green, log `outbox/silently-dead-crons-2026-10-31T17-22-01-852Z.log`): in jubilant-bassoon the only workflow under "FAILING 3 CONSECUTIVE RUNS" is `nba-clutch-update.yml` (red since 2026-07-25, a different, older workflow), `forward-window-probe.yml` is not listed, field-laboratory's list is empty (`seed-coverage.yml` is gone from it), and `NEW, not in the baseline : 0`. The armed wake `trig_01WSBRbTaZMQCpwYR1fJ2BNx` is deleted because it was redundant.
+
