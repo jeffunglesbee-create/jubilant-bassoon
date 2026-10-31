@@ -1,5 +1,5 @@
 {
-  "ts": "2026-10-31T05:51:22.203Z",
+  "ts": "2026-10-31T19:19:41.635Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "relayReachable": true,
@@ -7,17 +7,17 @@
   "pickedSeason": "2026",
   "relayDrawStatus": 200,
   "relayRounds": [
-    "Round of 64=17"
+    "Round of 64=18"
   ],
-  "relayMainDrawMatches": 17,
+  "relayMainDrawMatches": 18,
   "relayEdges": 0,
   "relayAnomalies": [],
   "relayChampion": null,
   "pageLoaded": true,
   "navLinkVisible": true,
   "sectionVisible": true,
-  "treeMatchCards": 17,
-  "listMatchRows": 17,
+  "treeMatchCards": 18,
+  "listMatchRows": 18,
   "columnHeads": [
     "R64",
     "R64"
@@ -27,19 +27,26 @@
   "consoleErrors": [
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 400 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 403 ()"
+    "Failed to load resource: the server responded with a status of 404 ()"
   ],
-  "failedRequests": [],
-  "renderWaitMs": 572,
+  "failedRequests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/la%20liga/401882825 net::ERR_FAILED",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/bundesliga/401884754 net::ERR_FAILED",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/la%20liga/401882825 net::ERR_FAILED",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/bundesliga/401884754 net::ERR_FAILED",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/la%20liga/401882825 net::ERR_FAILED",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/signal/crunch/bundesliga/401884754 net::ERR_FAILED"
+  ],
+  "renderWaitMs": 755,
   "renderTimedOut": null,
-  "relayFetchMs": 547,
+  "relayFetchMs": 623,
   "urlLoaded": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt=1",
   "setupOverlayState": "suppressed by ?wpt",
   "treeHeightPx": 496,
@@ -48,12 +55,12 @@
   "treeDisplay": "block",
   "listDisplay": "none",
   "listHeightPx": 0,
-  "cardsInViewport": 17,
+  "cardsInViewport": 18,
   "cardsCovered": 0,
   "cardsCoveredBy": [],
   "firstCardVisible": true,
   "firstCardCoveredBy": null,
   "verdict": "PASS",
-  "reason": "196 Paris (masters_1000) 2026: 17 matches drawn in 1 round(s), 0 edge(s) joined",
+  "reason": "196 Paris (masters_1000) 2026: 18 matches drawn in 1 round(s), 0 edge(s) joined",
   "sampleText": "\n    \n      R64\n      \n      R64\n    \n    \n      \n    \n    A. Davidovich Fokina#15\n  \n    \n    M. Kouamé#176\n  \n    \n  \n    \n    A. Tabilo#30\n  \n    \n    R. Jódar#11\n  \n    \n  \n    \n    A. Michelsen#34\n  \n    \n    J. Lehečka#21\n  \n    \n  \n    \n    A. Rublev#22\n  \n    \n    T. Etcheverry#29\n  \n    \n  \n    \n    A. Rinderknech#61\n  \n    \n    F. Cerundolo#19\n  \n    \n  \n    \n    B. Nakashima#17\n  \n    \n"
 }
