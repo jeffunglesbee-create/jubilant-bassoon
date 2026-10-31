@@ -139,3 +139,5 @@ The off-season case runs the whole generator over four clean empty boards, one o
 
 **Gaps now.** NHL, MLB and MLS still turn a failed read into `[]` and record nothing (not in the cover list). NBA playoff context is absent until the relay serves it. NBA is day 0 only. The module is still named `nba-board.cjs`. Each of the first two is an owner decision.
 
+**The first scheduled run on the new code, verified 2026-10-31T15:01Z.** Run 41207089236 (event `schedule`, created 13:46Z, head `26cc735e`, which carries `7176807e` and `a8c1744e`) was green on every step, including "Fail the run when a recorded source could not be read". Its overlay (`c9bd9d45`): `games_found` `{nhl 10, nba 7, mlb 0, mls 0, wnba 1}`, `source_errors {}`, `source_errors_cover ["nba","wnba"]`, NBA 7 and WNBA 1 on day 0 and `[]` on the three forward days, against the relay's 7 NBA and 1 WNBA games for 2026-10-31 read through the relay self-probe the same minute. The run was created at 13:46Z, earlier than the 14:17Z to 14:34Z measured on the three days before, so the fire time varies by an hour or more; the armed check for 2026-11-01 is set to re-arm if its run has not appeared.
+
