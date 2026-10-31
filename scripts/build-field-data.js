@@ -20,24 +20,29 @@
 
 const fs    = require('fs');
 const https = require('https');
-const { readNbaBoard } = require('./nba-board.cjs');
+const { readNbaBoard, readWnbaBoard } = require('./nba-board.cjs');
 
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 
-// A source the run could not read, by sport: `{ nba: "2026-10-31: HTTP 403" }`. Written to _meta.source_errors, always
-// present, and empty when every source in SOURCES_CHECKED read clean. A source in here has `null` in the file, never an
-// empty list: "no games" and "could not be read" are different facts. field-data.yml's last step fails the run when this is
+// A source the run could not read, by sport: `{ nba: "2026-10-31: HTTP 403" }`, or for a sport read on several days
+// `{ wnba: "2026-11-02: HTTP 503; 2026-11-03: HTTP 503" }`. Written to _meta.source_errors, always present, and empty when
+// every source in SOURCES_CHECKED read clean. Each day that failed has `null` in the file (in schedules_by_date[date], and in
+// schedules and games_found for day 0), never an empty list: "no games" and "could not be read" are different facts. field-data.yml's last step fails the run when this is
 // not empty (scripts/field-data-source-errors.cjs), after the file has been pushed, so one unread source does not cost the
 // day's others.
 //
-// WHAT THE RECORD COVERS. Only the sources listed in SOURCES_CHECKED. The NHL, MLB, MLS and WNBA readers below still turn a
-// failed read into [] and record nothing (measured 2026-10-31 by an independent review: a WNBA 502, an MLB statsapi error
-// body and an ESPN error body each shipped an empty list with source_errors {} and a green last step). So `{}` here means "the
-// sources in SOURCES_CHECKED read clean", and says nothing about the others. _meta.source_errors_cover carries the list, so a
-// reader of the file can see what an empty record vouches for. Widening it is one reader at a time, each its own decision:
-// a failed read in any of them would turn the daily run red.
+// WHAT THE RECORD COVERS. Only the sources listed in SOURCES_CHECKED. The NHL, MLB and MLS readers below still turn a failed
+// read into [] and record nothing (measured 2026-10-31 by an independent review: an MLB statsapi error body and an ESPN error
+// body each shipped an empty list with source_errors {} and a green last step). So `{}` here means "the sources in
+// SOURCES_CHECKED read clean", and says nothing about the others. _meta.source_errors_cover carries the list, so a reader of the
+// file can see what an empty record vouches for. Widening it is one reader at a time, each its own decision: a failed read in
+// any of them would turn the daily run red. WNBA joined NBA on 2026-10-31.
 const SOURCE_ERRORS = {};
-const SOURCES_CHECKED = ['nba'];
+const SOURCES_CHECKED = ['nba', 'wnba'];
+// One entry per sport; a sport read for several days (WNBA reads four) accumulates "<date>: <reason>" for each day that failed.
+const recordSourceError = (sport, dateISO, message) => {
+  SOURCE_ERRORS[sport] = [SOURCE_ERRORS[sport], `${dateISO}: ${message}`].filter(Boolean).join('; ');
+};
 
 // ── Forward schedule window ───────────────────────────────────────────────
 // 4 days: day 0 plus 3 forward, matching index.html's own nav ceiling
@@ -387,7 +392,7 @@ function parseNHL() {
 }
 
 // ── Read the NBA board ────────────────────────────────────────────────────
-// The relay's ESPN-sourced board, the route parseWNBA reads for WNBA and the client's NBA cards read. This used to parse
+// The relay's ESPN-sourced board, the route parseWNBA also reads (for WNBA) and the client's NBA cards read. This used to parse
 // the CDN scoreboard from /tmp/nba.json, which field-data.yml filled with `curl -sf ... || echo '{}'`: the passthrough
 // answers 403 to the Worker, the fallback wrote `{}`, and this returned [] on a night the relay listed 10 games
 // (field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md, "Data point 2026-10-30").
@@ -403,7 +408,7 @@ async function parseNBA(dateISO) {
     console.log(`NBA: ${board.games.length} game(s) for ${dateISO} (source ${board.source})`);
     return board.games;
   } catch (e) {
-    SOURCE_ERRORS.nba = `${dateISO}: ${e.message}`;
+    recordSourceError('nba', dateISO, e.message);
     console.error(`NBA board not read for ${dateISO}: ${e.message}`);
     return null;
   }
@@ -533,51 +538,27 @@ function parseESPNSoccer(leagueSlug, leagueName, dateISO) {
   });
 }
 
-// ── Parse WNBA (V2 relay endpoint) ────────────────────────────────────────
-// Unlike NHL/NBA/MLB (pre-fetched /tmp/*.json from older dedicated relay
-// paths) or MLS (site.api.espn.com direct), WNBA has no dedicated relay
-// path -- the daily-brief.yml WNBA fetch was found broken May 23 2026
-// (appended ?leagueId=10 to an NBA-only CDN file) and was replaced with an
-// explicit empty slate + TODO rather than publish wrong data. That TODO
-// was never completed. field-relay-nba's newer V2 multi-sport endpoint
-// (/v2/games?sport=wnba&date=YYYY-MM-DD) is confirmed live and working
-// (CC-CMD-2026-07-13-wnba-daily-discovery: probed fresh, real 2 games for
-// today with real venue/team/start-time data) -- a genuinely different
-// response shape than the other parsers in this file, not the same shape
-// as parseNBA()'s pre-fetched CDN JSON.
-function parseWNBA(dateISO) {
-  return new Promise((resolve) => {
-    const req = https.request({
-      hostname: 'field-relay-nba.jeffunglesbee.workers.dev',
-      path: `/v2/games?sport=wnba&date=${dateISO}`,
-      method: 'GET',
-      headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
-    }, res => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          const games = (parsed.games || []).map(g => {
-            const home = g.home?.name || '';
-            const away = g.away?.name || '';
-            if (!home || !away) return null;
-            return {
-              sport: 'WNBA', home, away,
-              start_time: g.start || null,
-              venue: g.venue || null,
-              league: 'WNBA',
-            };
-          }).filter(Boolean);
-          console.log(`WNBA: ${games.length} game(s) for ${dateISO}`);
-          resolve(games);
-        } catch (e) { console.warn('WNBA parse error:', e.message); resolve([]); }
-      });
-    });
-    req.on('error', (e) => { console.warn('WNBA request error:', e.message); resolve([]); });
-    req.setTimeout(10000, () => { req.destroy(); resolve([]); });
-    req.end();
-  });
+// ── Read the WNBA board (V2 relay endpoint) ───────────────────────────────
+// The relay's /v2/games?sport=wnba&date= through the same reader as the NBA board. The old version here checked no HTTP status,
+// so the relay's 502 {"error": ...} parsed as JSON, `parsed.games || []` gave an empty slate, and a request error or a timeout
+// resolved [] too: an unread WNBA day was recorded as a day with no games.
+//
+// A read that is not clean returns null and appends "<date>: <reason>" to SOURCE_ERRORS.wnba; [] means the relay answered and
+// the day has no games. WNBA is windowed, so this runs once per window day: a failed forward day is null for that day only and
+// does not drop the day from window_dates (its MLB and MLS entries are fine). An off-season day is a clean empty board from the
+// relay (probed 2026-10-31: 2026-11-01 and 2027-01-15, source espn-wc), so the winter window is [] on every day and records
+// nothing. The relay may answer from its KV secondary (source wnba-kv) when ESPN fails; that is an answer, and its source is
+// logged here.
+async function parseWNBA(dateISO) {
+  try {
+    const board = await readWnbaBoard(dateISO, fetch);
+    console.log(`WNBA: ${board.games.length} game(s) for ${dateISO} (source ${board.source})`);
+    return board.games;
+  } catch (e) {
+    recordSourceError('wnba', dateISO, e.message);
+    console.error(`WNBA board not read for ${dateISO}: ${e.message}`);
+    return null;
+  }
 }
 
 // ── Build matchupNote prompt ──────────────────────────────────────────────
@@ -677,7 +658,7 @@ async function fetchDay(dateISO, isDay0, espnGotdKeys) {
   const mlsGames  = await parseMLS(dateISO);
   const wnbaGames = await parseWNBA(dateISO);
 
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames === null ? 'unread' : nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames.length} WNBA game(s) for ${dateISO}`);
+  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames === null ? 'unread' : nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames === null ? 'unread' : wnbaGames.length} WNBA game(s) for ${dateISO}`);
   return { nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames };
 }
 
@@ -720,7 +701,8 @@ async function main() {
       league: g.league, isPlayoff: g.isPlayoff,
       nationalBundle: g.nationalBundle, confirmed: true,
     })),
-    wnba: wnbaGames.map(g => ({
+    // null when the board could not be read (SOURCE_ERRORS.wnba says why); [] is a day the relay answered for with no games.
+    wnba: wnbaGames === null ? null : wnbaGames.map(g => ({
       sport: 'WNBA', home: g.home, away: g.away,
       start_time: g.start_time, venue: g.venue,
       league: g.league, confirmed: true,
@@ -830,10 +812,11 @@ async function main() {
       // Sources the run could not read, by sport, with the date and the reason.
       // Always present. `{}` means every source in source_errors_cover read
       // clean, and says nothing about a source that is not in that list (the
-      // NHL, MLB, MLS and WNBA readers still turn a failed read into []). A
+      // NHL, MLB and MLS readers still turn a failed read into []). A
       // file without these keys is not evidence of a clean run. A sport listed
-      // in source_errors has null in `schedules` and in games_found, not an
-      // empty list.
+      // in source_errors has null, not an empty list, for each day that could
+      // not be read: in schedules_by_date[date], and for day 0 in `schedules`
+      // and games_found too. A day-0-only sport (nba) has just the one day.
       source_errors: SOURCE_ERRORS,
       source_errors_cover: SOURCES_CHECKED,
       // matchupNotes are day 0 only. One sequential AI call per target, so a
@@ -845,7 +828,7 @@ async function main() {
         nba: nbaGames === null ? null : nbaGames.length,
         mlb: mlbGames.length,
         mls: mlsGames.length,
-        wnba: wnbaGames.length,
+        wnba: wnbaGames === null ? null : wnbaGames.length,
       },
       games_found_by_date: Object.fromEntries(
         windowDates.map(d => [d, Object.values(schedulesByDate[d]).filter(Array.isArray).flat().length])

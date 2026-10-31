@@ -1,0 +1,29 @@
+{
+  "_what": "The relay's /v2/games?sport=wnba answers read through the relay self-probe (mcp probe_relay_route) on 2026-10-31, all status 200. scripts/check-nba-board.mjs drives the generator's WNBA read from these.",
+  "_why_these": "The generator's WNBA read has to treat an off-season day as a CLEAN empty board, or the daily run goes red every day of the winter. The last WNBA game day of 2026 is 10-31 (one game, tipping 2026-11-01T00:00Z). The two empty days are the day after and a mid-winter date; both answer source espn-wc with games [] and count 0, so an empty off-season board is not an error and not a failover.",
+  "_not_observed": "The relay can answer a WNBA request from its KV secondary (source 'wnba-kv', with fetchedAt and staleSeconds) when ESPN fails, and 502 {error} when both fail. Both were READ from field-relay-nba src/index.js (_trySecondary in handleV2Games) on 2026-10-31, not observed. The check builds them; this file does not contain them.",
+  "last_game_day": {
+    "route": "/v2/games?sport=wnba&date=2026-10-31",
+    "status": 200,
+    "body": {
+      "sport": "wnba",
+      "date": "2026-10-31",
+      "games": [
+        {"id": "espn:401918311", "espnEventId": "401918311", "sport": "wnba", "league": "WNBA", "state": "pre", "start": "2026-11-01T00:00Z", "home": {"name": "Golden State Valkyries", "abbr": "GS", "score": 0}, "away": {"name": "Atlanta Dream", "abbr": "ATL", "score": 0}, "periodNum": 0, "periodLabel": "NS", "clock": "0.0", "venue": "Chase Center", "situation": null, "linescores": {"home": [], "away": []}, "round": null, "streams": [{"label": "USA Net", "market": "National", "type": "TV"}, {"label": "CNBC", "market": "National", "type": "TV"}]}
+      ],
+      "count": 1,
+      "source": "espn-wc",
+      "ts": 1793421540272
+    }
+  },
+  "off_season_day_after": {
+    "route": "/v2/games?sport=wnba&date=2026-11-01",
+    "status": 200,
+    "body": {"sport": "wnba", "date": "2026-11-01", "games": [], "count": 0, "source": "espn-wc", "ts": 1793421539737}
+  },
+  "off_season_midwinter": {
+    "route": "/v2/games?sport=wnba&date=2027-01-15",
+    "status": 200,
+    "body": {"sport": "wnba", "date": "2027-01-15", "games": [], "count": 0, "source": "espn-wc", "ts": 1793421541123}
+  }
+}

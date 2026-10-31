@@ -2,15 +2,15 @@
 // The last step of field-data.yml: turns the generator's own record of unread sources into a failed run.
 //
 // WHY A STEP AND NOT AN EXIT IN THE BUILD. A source that could not be read is written to the file as null with its reason
-// in _meta.source_errors (scripts/build-field-data.js), and the rest of the file is still good: MLB, MLS and WNBA do not
-// depend on the NBA board. If the build step exited non-zero, "Push overlay" would not run and the day's good data would
+// in _meta.source_errors (scripts/build-field-data.js), and the rest of the file is still good: MLB and MLS do not
+// depend on the NBA or WNBA boards. If the build step exited non-zero, "Push overlay" would not run and the day's good data would
 // stay unpublished. So the build ships the honest file, the push step commits it, and this step then fails the run, which is
 // what makes the unread source visible without costing the day.
 //
 // ABSENCE IS NOT CLEAN. A file with no `_meta.source_errors` record at all fails here too: a generator that stopped writing
 // the record would otherwise read as "nothing went wrong". So does a file with no `_meta.source_errors_cover` list.
 //
-// WHAT A GREEN RUN VOUCHES FOR. Only the sources in `source_errors_cover`. The generator's other readers (NHL, MLB, MLS, WNBA)
+// WHAT A GREEN RUN VOUCHES FOR. Only the sources in `source_errors_cover`. The generator's other readers (NHL, MLB, MLS)
 // still turn a failed read into [] without recording it, so this step says which sources it checked and that the rest are not.
 //
 // Usage: node scripts/field-data-source-errors.cjs <path to field-data-today.json>
@@ -39,7 +39,7 @@ if (require.main === module) {
   if (!file) { console.error('usage: node scripts/field-data-source-errors.cjs <field-data-today.json>'); process.exit(2); }
   const r = judge(file);
   if (r.ok) { console.log(`source_errors: none recorded for ${r.cover.join(', ')}. Other sources are not checked by this step.`); process.exit(0); }
-  console.error('A source could not be read. The file was still written; its entry is null, not empty:');
+  console.error('A source could not be read. The file was still written; each unread day is null in it, not empty:');
   for (const l of r.lines) console.error(`  ${l}`);
   process.exit(1);
 }
