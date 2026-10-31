@@ -1,3 +1,4 @@
-url=https://field-relay-nba.jeffunglesbee.workers.dev/ambient/state
-maxtime=15
-limit=300
+url=https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-10-31&gameType=R,F,D,L,W&hydrate=game,team,venue,broadcasts(all)&limit=30
+limit=4000
+maxtime=20
+accept=application/json
