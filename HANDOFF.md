@@ -1,5 +1,27 @@
 # FIELD HANDOFF
 
+## 2026-10-31 — the daily generator reads the NBA board from /v2/games, and a board it could not read is null, not zero
+
+`7176807e` (overlay `54091f34` from the dispatched run; relay CC-CMD record `6a2d8a1`). No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md`.
+
+**What changed.** `field-data.yml` read the NBA board from the relay's `/nba` passthrough with `curl -sf ... || echo '{}'`; the passthrough answers 403 to the Worker, so the file said
+`nba` 0 on a ten-game night (2026-10-30). The generator now reads `/v2/games?sport=nba&date=` through `scripts/nba-board.cjs`, which throws on any answer that is not clean. An unread board is
+`null` in `schedules.nba` and `games_found.nba` with `"<date>: <reason>"` in `_meta.source_errors`; an empty day stays `[]`. A last workflow step fails the run for a recorded source,
+after the overlay is pushed so the day's other sports are not lost. **`source_errors: {}` vouches only for the sources in `_meta.source_errors_cover` (today `["nba"]`).** The NHL, MLB, MLS
+and WNBA readers still turn a failed read into `[]` and record nothing (an independent review reproduced it); the file and the step say so.
+
+**Proof.** Live: dispatch run 41165483123 green, committed overlay `54091f34` has `schedules_by_date['2026-10-31'].nba` 7 against the relay's 7. `check-nba-board.mjs` 112 assertions (the whole
+generator runs under `node:vm` with stubbed `fs`, `https` and `fetch`; the check was red on the old generator in 31 places) / `mutate-nba-board.mjs` 80 of 80, 112 of 112 assertions red under
+at least one, 9 caught by failure text only (printed). Check run on the runner: 41165473123, green, in its own workflow (`nba-board-check.yml`) so a text assertion cannot stop the overlay. A
+three-lens review (12 agents, a skeptic per finding) confirmed 8 of 9 findings, all fixed or disclosed in the commit. **Not seen live: the red path** (a 403 becoming `null` and a failed last step) is
+proven in the check only.
+
+**Open, none started (owner's calls).** (1) Whether a failed read in WNBA, MLB, MLS or NHL turns the daily run red; WNBA can reuse the board reader. (2) NBA playoff context (`seriesRecord`,
+`isPlayoff`, `gameLabel`) is absent: the ESPN board does not carry it, so no NBA matchupNote until the relay does (first playoff day, April 2027). (3) NBA is still day 0 only. (4) The NHL fetch keeps
+its `|| echo '{}'`. Recorded in `field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` ("Built 2026-10-31").
+
+**Armed.** A check at 2026-10-31T10:00Z reads the 07:30Z scheduled run of `field-data.yml` (the first on the new code), confirms it is green, and confirms the overlay's NBA count equals the relay's for its date.
+
 ## 2026-10-30 — the forward-window probe: an empty MLB window passes as "not measured" only when ESPN agrees, and its first read survives the page's own reload
 
 `33e6300f`, `6d0931bc`, `63604fc7`, `acd686af`, `9643d7c8`, `70085ad6`, `ed340682`, `97fb0543` (docs `a7f22f25`, `1295c637`, `f37d7679`, `fdb0a105`). No client code, no SW bump. Final live run 41136703711
