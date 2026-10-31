@@ -21,6 +21,7 @@
 const fs    = require('fs');
 const https = require('https');
 const { readNbaBoard, readWnbaBoard } = require('./nba-board.cjs');
+const { readMlbSchedule } = require('./mlb-schedule.cjs');
 
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 
@@ -31,14 +32,15 @@ const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 // not empty (scripts/field-data-source-errors.cjs), after the file has been pushed, so one unread source does not cost the
 // day's others.
 //
-// WHAT THE RECORD COVERS. Only the sources listed in SOURCES_CHECKED. The NHL, MLB and MLS readers below still turn a failed
-// read into [] and record nothing (measured 2026-10-31 by an independent review: an MLB statsapi error body and an ESPN error
-// body each shipped an empty list with source_errors {} and a green last step). So `{}` here means "the sources in
-// SOURCES_CHECKED read clean", and says nothing about the others. _meta.source_errors_cover carries the list, so a reader of the
-// file can see what an empty record vouches for. Widening it is one reader at a time, each its own decision: a failed read in
-// any of them would turn the daily run red. WNBA joined NBA on 2026-10-31.
+// WHAT THE RECORD COVERS. Only the sources listed in SOURCES_CHECKED. The NHL and MLS readers and the ESPN GOTD flags read
+// (fetchEspnMlbGotd) below still turn a failed read into [] / an empty set and record nothing (measured 2026-10-31 by an
+// independent review: an ESPN error body shipped an empty list with source_errors {} and a green last step). So `{}` here means
+// "the sources in SOURCES_CHECKED read clean", and says nothing about the others. _meta.source_errors_cover carries the list, so
+// a reader of the file can see what an empty record vouches for. Widening it is one reader at a time, each its own decision: a
+// failed read in any of them would turn the daily run red. WNBA joined NBA on 2026-10-31, and so did MLB: "mlb" means the
+// statsapi schedule read (parseMLBFull), not the ESPN GOTD flags.
 const SOURCE_ERRORS = {};
-const SOURCES_CHECKED = ['nba', 'wnba'];
+const SOURCES_CHECKED = ['nba', 'wnba', 'mlb'];
 // One entry per sport; a sport read for several days (WNBA reads four) accumulates "<date>: <reason>" for each day that failed.
 const recordSourceError = (sport, dateISO, message) => {
   SOURCE_ERRORS[sport] = [SOURCE_ERRORS[sport], `${dateISO}: ${message}`].filter(Boolean).join('; ');
@@ -416,77 +418,79 @@ async function parseNBA(dateISO) {
 
 // ── Fetch full MLB schedule (Phase 1) ─────────────────────────────────────
 // Returns full game objects: home, away, start_time, venue, nationalBundle
-function parseMLBFull(espnGotdKeys, dateISO) {
-  return new Promise((resolve) => {
-    const req = https.request({
-      hostname: 'statsapi.mlb.com',
-      path: `/api/v1/schedule?sportId=1&date=${dateISO}&gameType=R,F,D,L,W&hydrate=game,team,venue,broadcasts(all)&limit=30`,
-      method: 'GET',
-      headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
-    }, res => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        try {
-          const sched = JSON.parse(data);
-          const raw = (sched.dates || [])[0]?.games || [];
-          const games = raw.map(g => {
-            const home = g.teams?.home?.team?.name || '';
-            const away = g.teams?.away?.team?.name || '';
-            if (!home || !away) return null;
+//
+// The read goes through scripts/mlb-schedule.cjs (fetch, a status check, a validated `dates` array), and the mapping below is what
+// parseMLBFull always did. A read that is not clean returns null and appends "<date>: <reason>" to SOURCE_ERRORS.mlb; [] means
+// statsapi answered and the day has no games (HTTP 200, `dates: []`). The old read checked no status, so an error body, a parse
+// failure, a request error and a timeout each came back as [] (a day with no games). This covers the statsapi schedule only: the
+// ESPN scoreboard read for the GOTD flags (fetchEspnMlbGotd) is a separate read that still fails open.
+async function parseMLBFull(espnGotdKeys, dateISO) {
+  let raw;
+  try {
+    raw = (await readMlbSchedule(dateISO, fetch)).games;
+  } catch (e) {
+    recordSourceError('mlb', dateISO, e.message);
+    console.error(`MLB schedule not read for ${dateISO}: ${e.message}`);
+    return null;
+  }
+  // A game the mapping cannot handle is an unread day too, not a crash that costs the day's other sports and not a quiet [].
+  let games;
+  try {
+    games = raw.map(g => {
+      const home = g.teams?.home?.team?.name || '';
+      const away = g.teams?.away?.team?.name || '';
+      if (!home || !away) return null;
 
-            const isPPD = g.status?.statusCode === 'DR' ||
-              (g.status?.detailedState || '').toLowerCase().includes('postpone');
+      const isPPD = g.status?.statusCode === 'DR' ||
+        (g.status?.detailedState || '').toLowerCase().includes('postpone');
 
-            // Venue from hydrated game data
-            const venue = g.venue?.name
-              ? `${g.venue.name}${g.venue.location?.city ? ', ' + g.venue.location.city + (g.venue.location.stateAbbrev ? ' ' + g.venue.location.stateAbbrev : '') : ''}`
-              : null;
+      // Venue from hydrated game data
+      const venue = g.venue?.name
+        ? `${g.venue.name}${g.venue.location?.city ? ', ' + g.venue.location.city + (g.venue.location.stateAbbrev ? ' ' + g.venue.location.stateAbbrev : '') : ''}`
+        : null;
 
-            const isPlayoff = g.gameType !== 'R';
-            const seriesRecord = isPlayoff
-              ? (() => {
-                  const hw = g.teams?.home?.isWinner != null ? null : null; // series wins not always in schedule
-                  return null; // series record comes from live scoreboard
-                })()
-              : null;
+      const isPlayoff = g.gameType !== 'R';
+      const seriesRecord = isPlayoff
+        ? (() => {
+            const hw = g.teams?.home?.isWinner != null ? null : null; // series wins not always in schedule
+            return null; // series record comes from live scoreboard
+          })()
+        : null;
 
-            // Extract broadcast array from hydrated data
-            const rawBroadcasts = g.broadcasts || [];
+      // Extract broadcast array from hydrated data
+      const rawBroadcasts = g.broadcasts || [];
 
-            const game = {
-              sport: 'MLB',
-              home, away,
-              start_time: g.gameDate || null,
-              venue,
-              league: isPlayoff ? 'MLB Playoffs' : 'MLB',
-              isPlayoff,
-              seriesRecord: null,
-              nationalBundle: null,
-              espnGOTD: false,
-              peacockGOTD: false,
-              mlbnShowcase: false,
-              _postponed: isPPD,
-              confirmed: true,
-            };
+      const game = {
+        sport: 'MLB',
+        home, away,
+        start_time: g.gameDate || null,
+        venue,
+        league: isPlayoff ? 'MLB Playoffs' : 'MLB',
+        isPlayoff,
+        seriesRecord: null,
+        nationalBundle: null,
+        espnGOTD: false,
+        peacockGOTD: false,
+        mlbnShowcase: false,
+        _postponed: isPPD,
+        confirmed: true,
+      };
 
-            // Assign broadcast: live broadcasts(all) first, then day-of-week fallback
-            if (!isPlayoff) assignMLBBroadcast(game, dateISO, rawBroadcasts, espnGotdKeys);
+      // Assign broadcast: live broadcasts(all) first, then day-of-week fallback
+      if (!isPlayoff) assignMLBBroadcast(game, dateISO, rawBroadcasts, espnGotdKeys);
 
-            return game;
-          }).filter(Boolean);
+      return game;
+    }).filter(Boolean);
+  } catch (e) {
+    recordSourceError('mlb', dateISO, `mapping failed: ${e.message}`);
+    console.error(`MLB schedule not mapped for ${dateISO}: ${e.message}`);
+    return null;
+  }
 
-          const ppd = games.filter(g => g._postponed);
-          if (ppd.length) console.log(`MLB PPD: ${ppd.map(g => g.away + ' @ ' + g.home).join(', ')}`);
-          console.log(`MLB full schedule: ${games.length} game(s) (${ppd.length} PPD) for ${dateISO}`);
-          resolve(games);
-        } catch (e) { console.warn('MLB full parse failed:', e.message); resolve([]); }
-      });
-    });
-    req.on('error', () => resolve([]));
-    req.setTimeout(10000, () => { req.destroy(); resolve([]); });
-    req.end();
-  });
+  const ppd = games.filter(g => g._postponed);
+  if (ppd.length) console.log(`MLB PPD: ${ppd.map(g => g.away + ' @ ' + g.home).join(', ')}`);
+  console.log(`MLB full schedule: ${games.length} game(s) (${ppd.length} PPD) for ${dateISO}`);
+  return games;
 }
 
 // ── ESPN Soccer (generic) ─────────────────────────────────────────────────
@@ -545,7 +549,7 @@ function parseESPNSoccer(leagueSlug, leagueName, dateISO) {
 //
 // A read that is not clean returns null and appends "<date>: <reason>" to SOURCE_ERRORS.wnba; [] means the relay answered and
 // the day has no games. WNBA is windowed, so this runs once per window day: a failed forward day is null for that day only and
-// does not drop the day from window_dates (its MLB and MLS entries are fine). An off-season day is a clean empty board from the
+// does not drop the day from window_dates (its other sports' entries are fine). An off-season day is a clean empty board from the
 // relay (probed 2026-10-31: 2026-11-01 and 2027-01-15, source espn-wc), so the winter window is [] on every day and records
 // nothing. The relay may answer from its KV secondary (source wnba-kv) when ESPN fails; that is an answer, and its source is
 // logged here.
@@ -658,7 +662,7 @@ async function fetchDay(dateISO, isDay0, espnGotdKeys) {
   const mlsGames  = await parseMLS(dateISO);
   const wnbaGames = await parseWNBA(dateISO);
 
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames === null ? 'unread' : nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames === null ? 'unread' : wnbaGames.length} WNBA game(s) for ${dateISO}`);
+  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames === null ? 'unread' : nbaGames.length} NBA + ${mlbGames === null ? 'unread' : mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames === null ? 'unread' : wnbaGames.length} WNBA game(s) for ${dateISO}`);
   return { nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames };
 }
 
@@ -684,7 +688,8 @@ async function main() {
       seriesRecord: g.seriesRecord, isPlayoff: g.isPlayoff,
       gameLabel: g.gameLabel, confirmed: true,
     })),
-    mlb: mlbGames.map(g => ({
+    // null when the schedule could not be read (SOURCE_ERRORS.mlb says why); [] is a day statsapi answered for with no games.
+    mlb: mlbGames === null ? null : mlbGames.map(g => ({
       sport: 'MLB', home: g.home, away: g.away,
       start_time: g.start_time, venue: g.venue,
       league: g.league, isPlayoff: g.isPlayoff,
@@ -730,7 +735,7 @@ async function main() {
   }
 
   // Log MLB broadcast assignments for verification
-  const mlbWithBroadcast = schedules.mlb.filter(g => g.nationalBundle);
+  const mlbWithBroadcast = (schedules.mlb || []).filter(g => g.nationalBundle);
   if (mlbWithBroadcast.length) {
     console.log('MLB broadcast assignments:');
     mlbWithBroadcast.forEach(g => console.log(`  ${g.away} @ ${g.home}: ${g.nationalBundle}${g.espnGOTD?' ESPN-GOTD':''}${g.peacockGOTD?' PCK-GOTD':''}`));
@@ -752,7 +757,7 @@ async function main() {
     ...(nbaGames || []).filter(g => g.isPlayoff || g.seriesRecord),
     ...mlsGames,
     // MLB: generate notes for national broadcast games only (keep API costs down)
-    ...mlbGames.filter(g => g.nationalBundle && !g._postponed),
+    ...(mlbGames || []).filter(g => g.nationalBundle && !g._postponed),
   ];
 
   for (const g of noteTargets) {
@@ -782,7 +787,7 @@ async function main() {
   }
 
   // MLB PPD overlays (all games, not just national)
-  for (const g of mlbGames.filter(g => g._postponed)) {
+  for (const g of (mlbGames || []).filter(g => g._postponed)) {
     const key = `${g.home}|${g.away}`;
     const existing = overlays.find(o => o._match_key === key);
     if (existing) { existing._postponed = true; }
@@ -812,7 +817,7 @@ async function main() {
       // Sources the run could not read, by sport, with the date and the reason.
       // Always present. `{}` means every source in source_errors_cover read
       // clean, and says nothing about a source that is not in that list (the
-      // NHL, MLB and MLS readers still turn a failed read into []). A
+      // NHL and MLS readers and the ESPN GOTD flags still fail open). A
       // file without these keys is not evidence of a clean run. A sport listed
       // in source_errors has null, not an empty list, for each day that could
       // not be read: in schedules_by_date[date], and for day 0 in `schedules`
@@ -826,7 +831,7 @@ async function main() {
       games_found: {
         nhl: nhlGames.length,
         nba: nbaGames === null ? null : nbaGames.length,
-        mlb: mlbGames.length,
+        mlb: mlbGames === null ? null : mlbGames.length,
         mls: mlsGames.length,
         wnba: wnbaGames === null ? null : wnbaGames.length,
       },

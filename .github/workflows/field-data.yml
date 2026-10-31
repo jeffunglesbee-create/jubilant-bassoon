@@ -83,7 +83,7 @@ jobs:
 
       # Last, so the overlay above is already pushed: a source the build could not read is null in the file with its reason
       # in _meta.source_errors, and this step fails the run for it. The good sports are not lost to one unread source.
-      # It vouches only for the sources in _meta.source_errors_cover (today: nba, wnba); the NHL, MLB and MLS readers still
+      # It vouches only for the sources in _meta.source_errors_cover (today: nba, wnba, mlb); the NHL and MLS readers and the ESPN GOTD flags still
       # turn a failed read into [] without recording it. The NBA read's check runs in nba-board-check.yml, not here: a
       # check that asserts text must not be able to stop the day's overlay.
       - name: Fail the run when a recorded source could not be read

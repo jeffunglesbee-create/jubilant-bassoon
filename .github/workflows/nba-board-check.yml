@@ -1,5 +1,5 @@
 name: NBA Board Check
-# The generator's NBA and WNBA reads (scripts/nba-board.cjs, used by scripts/build-field-data.js) and the daily workflow's last step
+# The generator's NBA, WNBA and MLB reads (scripts/nba-board.cjs and scripts/mlb-schedule.cjs, used by scripts/build-field-data.js) and the daily workflow's last step
 # (scripts/field-data-source-errors.cjs): a refused or malformed relay answer must be null with a reason in the file, never an
 # empty list, and the run must go red for it. The old `curl -sf ... || echo '{}'` turned the relay's 403 into "no games" on
 # 2026-10-30 (field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md, "Data point 2026-10-30").
@@ -8,18 +8,20 @@ name: NBA Board Check
 # harmless to the data. Run inside field-data.yml, ahead of the build, that failure would have stopped the day's overlay from
 # being built or pushed (an independent review of 2026-10-31 reproduced it). Here it can only turn this workflow red.
 #
-# Node only, about 30 seconds, no network, no secrets. It runs on a push that touches the files it checks, or on demand.
+# Node only, about 2 to 3 minutes (the mutation harness is most of it), no network, no secrets. It runs on a push that touches the files it checks, or on demand.
 
 on:
   push:
     paths:
       - 'scripts/nba-board.cjs'
+      - 'scripts/mlb-schedule.cjs'
       - 'scripts/build-field-data.js'
       - 'scripts/field-data-source-errors.cjs'
       - 'scripts/check-nba-board.mjs'
       - 'scripts/mutate-nba-board.mjs'
       - 'outbox/fixture-nba-board-20261031.json'
       - 'outbox/fixture-wnba-board-20261031.json'
+      - 'outbox/fixture-mlb-schedule-20261031.json'
       - '.github/workflows/field-data.yml'
       - '.github/workflows/nba-board-check.yml'
   workflow_dispatch:

@@ -1,6 +1,7 @@
 'use strict';
 // The generator's read of the relay's basketball boards (NBA and WNBA), alone in a module so build-field-data.js and its check
-// share ONE definition. The file is still called nba-board.cjs because the NBA read came first; the WNBA read was added to it
+// share ONE definition. getJson, below, is the request-and-parse step both this module and scripts/mlb-schedule.cjs (the statsapi
+// schedule read) use, so "a failed request", "a timeout in the body" and "not JSON" mean the same thing in both. The file is still called nba-board.cjs because the NBA read came first; the WNBA read was added to it
 // 2026-10-31 because it is the same route and the same ESPN basketball adapter, and a second reader would have been a second
 // definition of "a clean answer".
 //
@@ -52,12 +53,12 @@ const why = (e) => {
   return (cause ? `${msg} (${cause})` : msg).slice(0, 160);
 };
 
-async function readV2Board(sport, iso, fetchImpl, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
-  const label = BOARD_SPORTS[sport];
-  if (!label) throw new Error(`no board reader for sport ${sport}`);
+// One GET, parsed. Throws "request failed: ...", "HTTP <status>", "response is not JSON" or "response is not an object"; returns the
+// parsed object otherwise. What a clean answer is beyond that (an `error` key, a games array, an echoed date) is the caller's.
+async function getJson(url, fetchImpl, timeoutMs) {
   let res;
   try {
-    res = await fetchImpl(`${RELAY_V2_GAMES}?sport=${sport}&date=${iso}`, {
+    res = await fetchImpl(url, {
       headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -73,6 +74,13 @@ async function readV2Board(sport, iso, fetchImpl, { timeoutMs = DEFAULT_TIMEOUT_
     throw new Error('response is not JSON');
   }
   if (!body || typeof body !== 'object') throw new Error('response is not an object');
+  return body;
+}
+
+async function readV2Board(sport, iso, fetchImpl, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+  const label = BOARD_SPORTS[sport];
+  if (!label) throw new Error(`no board reader for sport ${sport}`);
+  const body = await getJson(`${RELAY_V2_GAMES}?sport=${sport}&date=${iso}`, fetchImpl, timeoutMs);
   if (body.error) throw new Error(`relay error: ${String(body.error).slice(0, 120)}`);
   if (/error/i.test(String(body.source || ''))) throw new Error(`relay source ${body.source}`);
   if (!Array.isArray(body.games)) throw new Error('response has no games array');
@@ -93,4 +101,4 @@ async function readV2Board(sport, iso, fetchImpl, { timeoutMs = DEFAULT_TIMEOUT_
 const readNbaBoard = (iso, fetchImpl, opts) => readV2Board('nba', iso, fetchImpl, opts);
 const readWnbaBoard = (iso, fetchImpl, opts) => readV2Board('wnba', iso, fetchImpl, opts);
 
-module.exports = { readV2Board, readNbaBoard, readWnbaBoard, RELAY_V2_GAMES, DEFAULT_TIMEOUT_MS, BOARD_SPORTS };
+module.exports = { getJson, readV2Board, readNbaBoard, readWnbaBoard, RELAY_V2_GAMES, DEFAULT_TIMEOUT_MS, BOARD_SPORTS };
