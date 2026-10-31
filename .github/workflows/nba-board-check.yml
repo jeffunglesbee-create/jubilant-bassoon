@@ -1,0 +1,44 @@
+name: NBA Board Check
+# The generator's NBA read (scripts/nba-board.cjs, used by scripts/build-field-data.js) and the daily workflow's last step
+# (scripts/field-data-source-errors.cjs): a refused or malformed relay answer must be null with a reason in the file, never an
+# empty list, and the run must go red for it. The old `curl -sf ... || echo '{}'` turned the relay's 403 into "no games" on
+# 2026-10-30 (field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md, "Data point 2026-10-30").
+#
+# WHY A WORKFLOW OF ITS OWN. The check asserts the text of field-data.yml and of the generator, so it can fail on an edit that is
+# harmless to the data. Run inside field-data.yml, ahead of the build, that failure would have stopped the day's overlay from
+# being built or pushed (an independent review of 2026-10-31 reproduced it). Here it can only turn this workflow red.
+#
+# Node only, about 30 seconds, no network, no secrets. It runs on a push that touches the files it checks, or on demand.
+
+on:
+  push:
+    paths:
+      - 'scripts/nba-board.cjs'
+      - 'scripts/build-field-data.js'
+      - 'scripts/field-data-source-errors.cjs'
+      - 'scripts/check-nba-board.mjs'
+      - 'scripts/mutate-nba-board.mjs'
+      - 'outbox/fixture-nba-board-20261031.json'
+      - '.github/workflows/field-data.yml'
+      - '.github/workflows/nba-board-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: The NBA board read holds
+        run: node scripts/check-nba-board.mjs
+
+      - name: The NBA board check can fail
+        run: node scripts/mutate-nba-board.mjs

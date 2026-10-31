@@ -8,7 +8,7 @@
  *   TYPE A sessions now verify output rather than hardcoding game entries.
  *
  * Reads:  /tmp/nhl.json  (from relay /nhl/v1/scoreboard/now)
- *         /tmp/nba.json  (from relay /nba/liveData/scoreboard/todaysScoreboard_00.json)
+ *         relay /v2/games?sport=nba&date=  (NBA, day 0; scripts/nba-board.cjs)
  *         /tmp/mlb.json  (NEW: from relay /mlb/schedule)
  *         statsapi.mlb.com (live schedule — postponed game detection)
  * Env:    TODAY=YYYY-MM-DD
@@ -20,19 +20,37 @@
 
 const fs    = require('fs');
 const https = require('https');
+const { readNbaBoard } = require('./nba-board.cjs');
 
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
+
+// A source the run could not read, by sport: `{ nba: "2026-10-31: HTTP 403" }`. Written to _meta.source_errors, always
+// present, and empty when every source in SOURCES_CHECKED read clean. A source in here has `null` in the file, never an
+// empty list: "no games" and "could not be read" are different facts. field-data.yml's last step fails the run when this is
+// not empty (scripts/field-data-source-errors.cjs), after the file has been pushed, so one unread source does not cost the
+// day's others.
+//
+// WHAT THE RECORD COVERS. Only the sources listed in SOURCES_CHECKED. The NHL, MLB, MLS and WNBA readers below still turn a
+// failed read into [] and record nothing (measured 2026-10-31 by an independent review: a WNBA 502, an MLB statsapi error
+// body and an ESPN error body each shipped an empty list with source_errors {} and a green last step). So `{}` here means "the
+// sources in SOURCES_CHECKED read clean", and says nothing about the others. _meta.source_errors_cover carries the list, so a
+// reader of the file can see what an empty record vouches for. Widening it is one reader at a time, each its own decision:
+// a failed read in any of them would turn the daily run red.
+const SOURCE_ERRORS = {};
+const SOURCES_CHECKED = ['nba'];
 
 // ── Forward schedule window ───────────────────────────────────────────────
 // 4 days: day 0 plus 3 forward, matching index.html's own nav ceiling
 // (updateDateLabel: `next.disabled = diff >= 3`). This does not widen the nav.
 //
-// Only MLB, soccer/MLS and WNBA are windowed. NHL and NBA are day 0 only, and
-// not by choice: field-data.yml pre-fetches them from /nhl/v1/scoreboard/now
-// and todaysScoreboard_00.json, which are TODAY-ONLY endpoints with no date
-// parameter to pass. Serving them forward needs a date-capable relay route —
-// a cross-repo change (Rule 70), deliberately not attempted here. _meta
-// records this per-sport so no reader has to infer it from an empty array.
+// Only MLB, soccer/MLS and WNBA are windowed. NHL and NBA are day 0 only. NHL
+// is not by choice: field-data.yml pre-fetches it from /nhl/v1/scoreboard/now,
+// a TODAY-ONLY endpoint with no date parameter to pass. NBA used to be the
+// same (todaysScoreboard_00.json, which also answers 403 to the Worker) and now
+// reads /v2/games?sport=nba&date=, which takes a date. It stays day 0 only
+// because windowing it is a separate change nobody has asked for yet, not
+// because the source cannot. _meta records this per-sport so no reader has to
+// infer it from an empty array.
 const WINDOW_DAYS = 4;
 const WINDOWED_SPORTS = ['mlb', 'soccer', 'wnba'];
 const DAY0_ONLY_SPORTS = ['nhl', 'nba'];
@@ -368,43 +386,26 @@ function parseNHL() {
   }
 }
 
-// ── Parse NBA scoreboard ──────────────────────────────────────────────────
-function parseNBA() {
+// ── Read the NBA board ────────────────────────────────────────────────────
+// The relay's ESPN-sourced board, the route parseWNBA reads for WNBA and the client's NBA cards read. This used to parse
+// the CDN scoreboard from /tmp/nba.json, which field-data.yml filled with `curl -sf ... || echo '{}'`: the passthrough
+// answers 403 to the Worker, the fallback wrote `{}`, and this returned [] on a night the relay listed 10 games
+// (field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md, "Data point 2026-10-30").
+//
+// A read that is not clean returns null and records why in SOURCE_ERRORS; it never returns []. [] means the relay answered and
+// the day has no games. scripts/nba-board.cjs lists what counts as clean.
+//
+// The ESPN board carries no series text, no playoff flag and no game label, so the entries have no seriesRecord, isPlayoff or
+// gameLabel (absent, not false) and no NBA matchupNote is generated until the relay serves them.
+async function parseNBA(dateISO) {
   try {
-    const raw = JSON.parse(fs.readFileSync('/tmp/nba.json', 'utf8'));
-    return (raw.scoreboard?.games || [])
-      .map(g => {
-        const seriesRecord = g.seriesText ||
-          (g.homeTeam?.seriesWins != null
-            ? (() => {
-                const hw = g.homeTeam?.seriesWins ?? 0;
-                const aw = g.awayTeam?.seriesWins ?? 0;
-                const home = `${g.homeTeam.teamCity} ${g.homeTeam.teamName}`;
-                const away = `${g.awayTeam.teamCity} ${g.awayTeam.teamName}`;
-                if (hw > aw)      return `${home} leads ${hw}-${aw}`;
-                if (aw > hw)      return `${away} leads ${aw}-${hw}`;
-                if (hw > 0)       return `Series tied ${hw}-${aw}`;
-                return null;
-              })()
-            : null);
-
-        const isPlayoff = g.seasonType === 'Playoffs' ||
-          g.gameSubtype === '4' || seriesRecord != null ||
-          (g.gameLabel || '').toLowerCase().includes('playoff');
-
-        return {
-          sport: 'NBA',
-          home: `${g.homeTeam.teamCity} ${g.homeTeam.teamName}`,
-          away: `${g.awayTeam.teamCity} ${g.awayTeam.teamName}`,
-          seriesRecord: g.seriesText || seriesRecord,
-          league: 'NBA', isPlayoff,
-          gameLabel: g.gameLabel || null,
-          start_time: g.gameTimeUTC || null,
-          venue: g.arenaName ? `${g.arenaName}${g.arenaCity ? ', ' + g.arenaCity : ''}` : null,
-        };
-      });
+    const board = await readNbaBoard(dateISO, fetch);
+    console.log(`NBA: ${board.games.length} game(s) for ${dateISO} (source ${board.source})`);
+    return board.games;
   } catch (e) {
-    console.error('NBA parse error:', e.message); return [];
+    SOURCE_ERRORS.nba = `${dateISO}: ${e.message}`;
+    console.error(`NBA board not read for ${dateISO}: ${e.message}`);
+    return null;
   }
 }
 
@@ -671,12 +672,12 @@ async function parseMLS(dateISO) {
 // they are populated for day 0 and empty for every forward day (see WINDOW_DAYS).
 async function fetchDay(dateISO, isDay0, espnGotdKeys) {
   const nhlGames  = isDay0 ? parseNHL() : [];
-  const nbaGames  = isDay0 ? parseNBA() : [];
+  const nbaGames  = isDay0 ? await parseNBA(dateISO) : [];
   const mlbGames  = await parseMLBFull(isDay0 ? espnGotdKeys : new Set(), dateISO);
   const mlsGames  = await parseMLS(dateISO);
   const wnbaGames = await parseWNBA(dateISO);
 
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames.length} WNBA game(s) for ${dateISO}`);
+  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames === null ? 'unread' : nbaGames.length} NBA + ${mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames.length} WNBA game(s) for ${dateISO}`);
   return { nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames };
 }
 
@@ -695,7 +696,8 @@ async function main() {
       seriesRecord: g.seriesRecord, isPlayoff: g.isPlayoff,
       round: g.round, confirmed: true,
     })),
-    nba: nbaGames.map(g => ({
+    // null when the board could not be read (SOURCE_ERRORS.nba says why); [] is a day the relay answered for with no games.
+    nba: nbaGames === null ? null : nbaGames.map(g => ({
       sport: 'NBA', home: g.home, away: g.away,
       start_time: g.start_time, venue: g.venue,
       seriesRecord: g.seriesRecord, isPlayoff: g.isPlayoff,
@@ -765,7 +767,7 @@ async function main() {
   // Generate matchupNotes for NHL/NBA/MLS (high-value; MLB gets notes too for key games)
   const noteTargets = [
     ...nhlGames.filter(g => g.isPlayoff || g.seriesRecord),
-    ...nbaGames.filter(g => g.isPlayoff || g.seriesRecord),
+    ...(nbaGames || []).filter(g => g.isPlayoff || g.seriesRecord),
     ...mlsGames,
     // MLB: generate notes for national broadcast games only (keep API costs down)
     ...mlbGames.filter(g => g.nationalBundle && !g._postponed),
@@ -820,24 +822,33 @@ async function main() {
       // fetch failed is absent here — this is the record of what exists, not
       // what was requested.
       window_dates: windowDates,
-      // Honest per-sport coverage: NHL and NBA are pre-fetched from today-only
-      // endpoints (see WINDOW_DAYS), so their forward days are empty by
-      // construction, not because there are no games.
+      // Honest per-sport coverage: NHL and NBA are day 0 only (see WINDOW_DAYS),
+      // so their forward days are empty by construction, not because there are
+      // no games.
       windowed_sports: WINDOWED_SPORTS,
       day0_only_sports: DAY0_ONLY_SPORTS,
+      // Sources the run could not read, by sport, with the date and the reason.
+      // Always present. `{}` means every source in source_errors_cover read
+      // clean, and says nothing about a source that is not in that list (the
+      // NHL, MLB, MLS and WNBA readers still turn a failed read into []). A
+      // file without these keys is not evidence of a clean run. A sport listed
+      // in source_errors has null in `schedules` and in games_found, not an
+      // empty list.
+      source_errors: SOURCE_ERRORS,
+      source_errors_cover: SOURCES_CHECKED,
       // matchupNotes are day 0 only. One sequential AI call per target, so a
       // naive per-day loop would multiply that spend by WINDOW_DAYS for the
       // lowest-value field in the payload (STANDARDS Rule 78).
       notes_for_dates: [TODAY],
       games_found: {
         nhl: nhlGames.length,
-        nba: nbaGames.length,
+        nba: nbaGames === null ? null : nbaGames.length,
         mlb: mlbGames.length,
         mls: mlsGames.length,
         wnba: wnbaGames.length,
       },
       games_found_by_date: Object.fromEntries(
-        windowDates.map(d => [d, Object.values(schedulesByDate[d]).flat().length])
+        windowDates.map(d => [d, Object.values(schedulesByDate[d]).filter(Array.isArray).flat().length])
       ),
       ai_notes: useAI,
       ai_backend: useGemini ? 'gemini-3.1-flash-lite' : (useClaude ? 'claude-sonnet-4' : 'none'),
@@ -854,9 +865,9 @@ async function main() {
   };
 
   fs.writeFileSync('/tmp/field-data-today.json', JSON.stringify(output, null, 2));
-  const totalSchedule = Object.values(schedules).flat().length;
+  const totalSchedule = Object.values(schedules).filter(Array.isArray).flat().length;
   const windowTotal = windowDates.reduce(
-    (n, d) => n + Object.values(schedulesByDate[d]).flat().length, 0);
+    (n, d) => n + Object.values(schedulesByDate[d]).filter(Array.isArray).flat().length, 0);
   console.log(`✅ Output: ${totalSchedule} day-0 games + ${overlays.length} overlay(s)`);
   console.log(`   window: ${windowDates.length}/${WINDOW_DAYS} days [${windowDates.join(', ')}] = ${windowTotal} games`);
   if (windowDates.length < WINDOW_DAYS) {

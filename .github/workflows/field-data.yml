@@ -43,16 +43,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch NHL + NBA + MLB schedules from relay
+      - name: Fetch the NHL schedule from relay
         run: |
           RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
           curl -sf --max-time 10 -H "Cache-Control: no-cache" \
             "$RELAY/nhl/v1/scoreboard/now" > /tmp/nhl.json 2>/dev/null || echo '{}' > /tmp/nhl.json
-          curl -sf --max-time 10 -H "Cache-Control: no-cache" \
-            "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json" \
-            > /tmp/nba.json 2>/dev/null || echo '{}' > /tmp/nba.json
           echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
-          echo "Fetched NHL ($(wc -c < /tmp/nhl.json) bytes) + NBA ($(wc -c < /tmp/nba.json) bytes)"
+          echo "Fetched NHL ($(wc -c < /tmp/nhl.json) bytes)"
+          # NBA is read by the build script from /v2/games (scripts/nba-board.cjs), not from a file written here.
           # MLB fetched directly from statsapi.mlb.com in build script (no relay needed)
 
       - name: Build overlay JSON
@@ -82,3 +80,11 @@ jobs:
             git fetch origin main && git rebase origin/main && git push origin main
           }
           echo "✅ Overlay updated for ${TODAY}"
+
+      # Last, so the overlay above is already pushed: a source the build could not read is null in the file with its reason
+      # in _meta.source_errors, and this step fails the run for it. The good sports are not lost to one unread source.
+      # It vouches only for the sources in _meta.source_errors_cover (today: nba); the NHL, MLB, MLS and WNBA readers still
+      # turn a failed read into [] without recording it. The NBA read's check runs in nba-board-check.yml, not here: a
+      # check that asserts text must not be able to stop the day's overlay.
+      - name: Fail the run when a recorded source could not be read
+        run: node scripts/field-data-source-errors.cjs /tmp/field-data-today.json

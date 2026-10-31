@@ -1,0 +1,334 @@
+#!/usr/bin/env node
+// Rule 90 harness for scripts/check-nba-board.mjs.
+//
+// Each mutation breaks one clause of the board reader, the generator, the last-step script or the workflow in a COPY of the
+// file, points the check at the copy through BOARD_SRC / GEN_SRC / ERRS_SRC / WORKFLOW_SRC, and requires the check to go red on
+// that clause's own FAIL line. The real files are never written. A mutation counts as CAUGHT only when the check exits non-zero
+// AND prints a FAIL line AND that line names the clause. An anchor that is not unique, a mutation that did not apply, or a
+// crash with no FAIL line is a harness defect and is reported as one.
+//
+// A mutant marked `wording: true` leaves the code failing closed (a TypeError instead of the named reason, or a crash exit that is
+// still non-zero): the check catches it by the text of the message, not by observing an open failure. The harness prints those
+// separately so "N mutations caught" is not read as "N open failures observed".
+//
+// Rule 91: the harness prints how many of the check's assertions went red under at least one mutation, and lists the ones that
+// none reached, so "N mutations caught" is never read as "every assertion can fail".
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+
+const FILES = {
+  board: { src: 'scripts/nba-board.cjs', mut: 'scripts/__mut_nba_board__.cjs', env: 'BOARD_SRC' },
+  gen:   { src: 'scripts/build-field-data.js', mut: 'scripts/__mut_nba_board_gen__.js', env: 'GEN_SRC' },
+  errs:  { src: 'scripts/field-data-source-errors.cjs', mut: 'scripts/__mut_nba_board_errs__.cjs', env: 'ERRS_SRC' },
+  wf:    { src: '.github/workflows/field-data.yml', mut: '.github/workflows/__mut_nba_board_wf__.yml', env: 'WORKFLOW_SRC' },
+  cw:    { src: '.github/workflows/nba-board-check.yml', mut: '.github/workflows/__mut_nba_board_cw__.yml', env: 'CHECK_WORKFLOW_SRC' },
+};
+
+const FAIL403 = 'generator: a 403 ';
+const MUTATIONS = [
+  // ── the board reader: what is a clean answer ──
+  { name: 'B1  a non-OK status is not checked, so a 503 with a clean body reads as an answer',
+    file: 'board', anchor: '  if (!res.ok) throw new Error(`HTTP ${res.status}`);\n', replace: '',
+    expect: 'board: HTTP 503 whose body parses as a clean empty board is still an error' },
+  { name: 'B2  an error key on a 200 is ignored',
+    file: 'board', anchor: "  if (body.error) throw new Error(`relay error: ${String(body.error).slice(0, 120)}`);\n", replace: '',
+    expect: 'board: an error key on a 200 is an error' },
+  { name: 'B3  a source naming an error is ignored (the NHL branch\'s 200 with source nhle-error)',
+    file: 'board', anchor: "  if (/error/i.test(String(body.source || ''))) throw new Error(`relay source ${body.source}`);\n", replace: '',
+    expect: 'board: a source naming an error is an error' },
+  { name: 'B4  only a source spelled "nhle-error" is an error',
+    file: 'board', anchor: "/error/i.test(String(body.source || ''))", replace: "/nhle-error/.test(String(body.source || ''))",
+    expect: 'board: any source containing "error" is an error, not only nhle-error' },
+  { name: 'B5  the games array is not required',
+    file: 'board', anchor: "  if (!Array.isArray(body.games)) throw new Error('response has no games array');\n", replace: '',
+    wording: true,
+    expect: 'board: a body without a games array is an error' },
+  { name: 'B6  a body that is not an object is not rejected',
+    file: 'board', anchor: "  if (!body || typeof body !== 'object') throw new Error('response is not an object');\n", replace: '',
+    wording: true,
+    expect: 'board: a body that is JSON null is an error' },
+  { name: 'B7  an answer for another sport is accepted',
+    file: 'board', anchor: "body.sport !== 'nba' || body.date !== iso", replace: 'body.date !== iso',
+    expect: 'board: an answer for another sport is an error' },
+  { name: 'B8  an answer for another date is accepted',
+    file: 'board', anchor: "body.sport !== 'nba' || body.date !== iso", replace: "body.sport !== 'nba'",
+    expect: 'board: an answer for another date is an error' },
+  { name: 'B9  a game with no team name is not counted',
+    file: 'board', anchor: "  if (unnamed) throw new Error(`${unnamed} of ${body.games.length} games have no team name`);\n", replace: '',
+    expect: 'board: a game with no team name fails the read and says how many' },
+  { name: 'B10 only the home name is required',
+    file: 'board', anchor: '!(g && g.home && g.home.name && g.away && g.away.name)', replace: '!(g && g.home && g.home.name)',
+    expect: 'board: a game with no team name fails the read and says how many' },
+  { name: 'B11 a response that is not JSON is not caught',
+    file: 'board', anchor: "  try { body = await res.json(); } catch (e) { throw new Error('response is not JSON'); }\n", replace: '  body = await res.json();\n',
+    wording: true,
+    expect: 'board: a response that is not JSON is an error' },
+  { name: 'B12 a fetch that rejects is not caught',
+    file: 'board', anchor: "  } catch (e) {\n    throw new Error(`request failed: ${String((e && e.message) || e).slice(0, 120)}`);\n  }\n", replace: "  } finally {}\n",
+    wording: true,
+    expect: 'board: a fetch that rejects is an error that names the reason' },
+  { name: 'B13 the request has no timeout',
+    file: 'board', anchor: '      signal: AbortSignal.timeout(timeoutMs),\n', replace: '',
+    expect: 'board: a request that never answers is cut at the timeout and fails the read' },
+  { name: 'B14 the board asked for is the wnba one',
+    file: 'board', anchor: '?sport=nba&date=${iso}', replace: '?sport=wnba&date=${iso}',
+    expect: 'board: exactly one request, to /v2/games for the nba and the date asked' },
+  { name: 'B15 the start time is not carried',
+    file: 'board', anchor: '      start_time: g.start || null,\n', replace: '      start_time: null,\n',
+    expect: 'board: a game is exactly sport, league, home, away, start_time and venue' },
+  { name: 'B16 the venue is not carried',
+    file: 'board', anchor: '      venue: g.venue || null,\n', replace: '      venue: null,\n',
+    expect: 'board: a game is exactly sport, league, home, away, start_time and venue' },
+  { name: 'B17 a playoff flag is invented (false is a claim the relay never made)',
+    file: 'board', anchor: '      venue: g.venue || null,\n', replace: '      venue: g.venue || null,\n      isPlayoff: false,\n',
+    expect: 'board: no playoff field is invented' },
+  { name: 'B18 the source is not recorded',
+    file: 'board', anchor: '    source: body.source === undefined ? null : body.source,\n', replace: '',
+    expect: 'board: the source is recorded' },
+  { name: 'B19 a missing source is recorded as undefined, not null',
+    file: 'board', anchor: 'body.source === undefined ? null : body.source', replace: 'body.source',
+    expect: 'board: an answer with no source keeps its games and records the source as null' },
+  { name: 'B20 home and away are swapped',
+    file: 'board', anchor: '      home: g.home.name, away: g.away.name,\n', replace: '      home: g.away.name, away: g.home.name,\n',
+    expect: "board: every game keeps the relay's order, home and away" },
+  { name: 'B21 an empty day is an error',
+    file: 'board', anchor: '  const unnamed = ', replace: "  if (!body.games.length) throw new Error('empty');\n  const unnamed = ",
+    expect: 'board: a clean empty day is an empty list, not an error' },
+  { name: 'B24 the default timeout is 1 ms',
+    file: 'board', anchor: 'const DEFAULT_TIMEOUT_MS = 15000;', replace: 'const DEFAULT_TIMEOUT_MS = 1;',
+    expect: 'board: with no option the request is cut at 15000 ms, and timeoutMs overrides it' },
+  { name: 'B22 a relay field leaks into the entry (the entry is not exactly the six the file carries)',
+    file: 'board', anchor: "      sport: 'NBA', league: 'NBA',\n", replace: "      sport: 'NBA', league: 'NBA', id: g.id,\n",
+    expect: 'board: a game is exactly sport, league, home, away, start_time and venue' },
+  { name: 'B23 the first game is dropped',
+    file: 'board', anchor: '    games: body.games.map((g) => ({', replace: '    games: body.games.slice(1).map((g) => ({',
+    expect: "board: the relay's real answer reads as 7 games" },
+
+  // ── the generator: null is not an empty list ──
+  { name: 'G1  a failed read returns [] instead of null',
+    file: 'gen', anchor: '    console.error(`NBA board not read for ${dateISO}: ${e.message}`);\n    return null;\n', replace: '    console.error(`NBA board not read for ${dateISO}: ${e.message}`);\n    return [];\n',
+    expect: FAIL403 + 'makes day 0 NBA null, not an empty list' },
+  { name: 'G2  the reason is not recorded',
+    file: 'gen', anchor: '    SOURCE_ERRORS.nba = `${dateISO}: ${e.message}`;\n', replace: '',
+    expect: FAIL403 + 'records the date and the reason in source_errors.nba' },
+  { name: 'G3  the date is not in the recorded reason',
+    file: 'gen', anchor: 'SOURCE_ERRORS.nba = `${dateISO}: ${e.message}`;', replace: 'SOURCE_ERRORS.nba = `${e.message}`;',
+    expect: FAIL403 + 'records the date and the reason in source_errors.nba' },
+  { name: 'G4  games_found.nba is 0 for an unread board',
+    file: 'gen', anchor: 'nba: nbaGames === null ? null : nbaGames.length,', replace: 'nba: nbaGames === null ? 0 : nbaGames.length,',
+    expect: FAIL403 + 'makes games_found.nba null, not 0' },
+  { name: 'G5  the per-day count counts the null entry as one game',
+    file: 'gen', anchor: 'windowDates.map(d => [d, Object.values(schedulesByDate[d]).filter(Array.isArray).flat().length])', replace: 'windowDates.map(d => [d, Object.values(schedulesByDate[d]).flat().length])',
+    expect: FAIL403 + 'does not count the null as a game in games_found_by_date' },
+  { name: 'G6  the day-0 total in the run log counts the null entry as one game',
+    file: 'gen', anchor: 'const totalSchedule = Object.values(schedules).filter(Array.isArray).flat().length;', replace: 'const totalSchedule = Object.values(schedules).flat().length;',
+    expect: FAIL403 + 'counts 0 games in the run log, not the null as one' },
+  { name: 'G7  the window total in the run log counts the null entry as one game',
+    file: 'gen', anchor: '(n, d) => n + Object.values(schedulesByDate[d]).filter(Array.isArray).flat().length, 0);', replace: '(n, d) => n + Object.values(schedulesByDate[d]).flat().length, 0);',
+    expect: FAIL403 + 'counts 0 games in the run log, not the null as one' },
+  { name: 'G8  an unread board is shaped as an empty list',
+    file: 'gen', anchor: 'nba: nbaGames === null ? null : nbaGames.map(g => ({', replace: 'nba: (nbaGames || []).map(g => ({',
+    expect: FAIL403 + 'makes day 0 NBA null, not an empty list' },
+  { name: 'G9  the note targets do not tolerate a null board',
+    file: 'gen', anchor: '    ...(nbaGames || []).filter(g => g.isPlayoff || g.seriesRecord),', replace: '    ...nbaGames.filter(g => g.isPlayoff || g.seriesRecord),',
+    expect: FAIL403 + 'still ships the file and does not exit' },
+  { name: 'G10 the forward days ask the NBA board too',
+    file: 'gen', anchor: '  const nbaGames  = isDay0 ? await parseNBA(dateISO) : [];', replace: '  const nbaGames  = await parseNBA(dateISO);',
+    expect: 'generator: the NBA board is asked once, for day 0 only' },
+  { name: 'G11 the forward days carry null for the NBA instead of an empty list',
+    file: 'gen', anchor: '  const nbaGames  = isDay0 ? await parseNBA(dateISO) : [];', replace: '  const nbaGames  = isDay0 ? await parseNBA(dateISO) : null;',
+    expect: 'generator: the forward days carry an empty NBA list, as before' },
+  { name: 'G12 source_errors is not written into _meta',
+    file: 'gen', anchor: '      source_errors: SOURCE_ERRORS,\n', replace: '',
+    expect: 'generator: source_errors is present and empty on a clean read' },
+  { name: 'G13 an unread source stops the run (exit 1 after the file is written)',
+    file: 'gen', anchor: '  if (windowDates.length < WINDOW_DAYS) {', replace: '  if (Object.keys(SOURCE_ERRORS).length) process.exit(1);\n  if (windowDates.length < WINDOW_DAYS) {',
+    expect: FAIL403 + 'still ships the file and does not exit' },
+  { name: 'G14 the NBA entry loses confirmed',
+    file: 'gen', anchor: "      gameLabel: g.gameLabel, confirmed: true,\n", replace: "      gameLabel: g.gameLabel,\n",
+    expect: 'generator: an entry is sport, home, away, start_time, venue and confirmed, with no playoff field' },
+  { name: 'G15 the NBA board is not required from the shared module',
+    file: 'gen', anchor: "const { readNbaBoard } = require('./nba-board.cjs');\n", replace: "const readNbaBoard = async () => ({ games: [], source: 'inline' });\n",
+    expect: 'text: the generator requires the shared board reader and calls it once' },
+  { name: 'G16 the run log does not say which date was not read',
+    file: 'gen', anchor: '    console.error(`NBA board not read for ${dateISO}: ${e.message}`);\n', replace: '',
+    expect: FAIL403 + 'says which date was not read in the run log' },
+  { name: 'G17 the retired file is read again',
+    file: 'gen', anchor: "    const board = await readNbaBoard(dateISO, fetch);\n", replace: "    JSON.parse(fs.readFileSync('/tmp/nba.json', 'utf8'));\n    const board = await readNbaBoard(dateISO, fetch);\n",
+    expect: 'generator: the retired /tmp/nba.json is never read' },
+  { name: 'G18 a second exit is added to the generator',
+    file: 'gen', anchor: "main().catch(e => { console.error('Fatal:', e.message); process.exit(1); });", replace: "main().then(() => { if (Object.keys(SOURCE_ERRORS).length) process.exit(1); }).catch(e => { console.error('Fatal:', e.message); process.exit(1); });",
+    expect: 'text: the generator still exits non-zero only in its one fatal handler' },
+
+  { name: 'G19 the run exits before it ends, on a clean read too',
+    file: 'gen', anchor: '  if (windowDates.length < WINDOW_DAYS) {', replace: '  process.exit(1);\n  if (windowDates.length < WINDOW_DAYS) {',
+    expect: 'generator: the run wrote its file and did not exit' },
+  { name: 'G20 the generator makes a request no stub claims',
+    file: 'gen', anchor: '    const board = await readNbaBoard(dateISO, fetch);\n', replace: "    https.request({ hostname: 'unclaimed.invalid', path: '/' }, () => {}).end();\n    const board = await readNbaBoard(dateISO, fetch);\n",
+    expect: 'generator: every request the generator made was answered by a stub' },
+
+  { name: 'G21 the cover list is not written',
+    file: 'gen', anchor: '      source_errors_cover: SOURCES_CHECKED,\n', replace: '',
+    expect: 'generator: source_errors_cover lists exactly the source the empty record vouches for (nba)' },
+  { name: 'G22 the cover list claims a source the generator does not check',
+    file: 'gen', anchor: "const SOURCES_CHECKED = ['nba'];", replace: "const SOURCES_CHECKED = ['nba', 'wnba'];",
+    expect: 'generator: source_errors_cover lists exactly the source the empty record vouches for (nba)' },
+  { name: 'G23 an unread NBA board nulls the WNBA key too',
+    file: 'gen', anchor: '    wnba: wnbaGames.map(g => ({', replace: '    wnba: nbaGames === null ? null : wnbaGames.map(g => ({',
+    expect: "leaves every other sport's key an array" },
+  { name: 'G24 an unread NBA board nulls the NHL key too',
+    file: 'gen', anchor: '    nhl: nhlGames.map(g => ({', replace: '    nhl: nbaGames === null ? null : nhlGames.map(g => ({',
+    expect: "leaves every other sport's key an array" },
+  { name: 'G25 an unread NBA board nulls the MLB key too',
+    file: 'gen', anchor: '    mlb: mlbGames.map(g => ({', replace: '    mlb: nbaGames === null ? null : mlbGames.map(g => ({',
+    expect: "leaves every other sport's key an array" },
+  { name: 'G26 an unread NBA board nulls the soccer key too',
+    file: 'gen', anchor: '    soccer: mlsGames.map(g => ({', replace: '    soccer: nbaGames === null ? null : mlsGames.map(g => ({',
+    expect: "leaves every other sport's key an array" },
+  { name: 'G27 the generator asks for a 1 ms timeout',
+    file: 'gen', anchor: '    const board = await readNbaBoard(dateISO, fetch);\n', replace: '    const board = await readNbaBoard(dateISO, fetch, { timeoutMs: 1 });\n',
+    expect: 'generator: the NBA board is requested with the 15000 ms timeout' },
+
+  // ── the last workflow step's script ──
+  { name: 'E1  an error exits 0',
+    file: 'errs', anchor: '  for (const l of r.lines) console.error(`  ${l}`);\n  process.exit(1);', replace: '  for (const l of r.lines) console.error(`  ${l}`);\n  process.exit(0);',
+    expect: 'source errors: a recorded error exits 1 and prints the source and the reason' },
+  { name: 'E2  a file with no source_errors record is clean',
+    file: 'errs', anchor: "if (!errs || typeof errs !== 'object' || Array.isArray(errs)) {", replace: "if (false) {",
+    wording: true,
+    expect: 'source errors: a file with no source_errors record exits 1 (absence is not clean)' },
+  { name: 'E3  a record that is an array is clean',
+    file: 'errs', anchor: "if (!errs || typeof errs !== 'object' || Array.isArray(errs)) {", replace: "if (!errs || typeof errs !== 'object') {",
+    expect: 'source errors: a record that is an array exits 1' },
+  { name: 'E4  the reason is not printed',
+    file: 'errs', anchor: 'lines: keys.map((k) => `${k}: ${errs[k]}`)', replace: 'lines: keys',
+    expect: 'source errors: a recorded error exits 1 and prints the source and the reason' },
+  { name: 'E5  a file that is not JSON is not caught',
+    file: 'errs', anchor: "  try { data = JSON.parse(raw); } catch (e) { return { ok: false, lines: [`${file} is not JSON: ${e.message}`] }; }\n", replace: '  data = JSON.parse(raw);\n',
+    wording: true,
+    expect: 'source errors: a file that is not JSON exits 1' },
+  { name: 'E6  a file that cannot be read is not caught',
+    file: 'errs', anchor: "  try { raw = fs.readFileSync(file, 'utf8'); } catch (e) { return { ok: false, lines: [`cannot read ${file}: ${e.message}`] }; }\n", replace: "  raw = fs.readFileSync(file, 'utf8');\n",
+    wording: true,
+    expect: 'source errors: a file that does not exist exits 1' },
+  { name: 'E7  no argument exits 1 instead of 2',
+    file: 'errs', anchor: "process.exit(2); }", replace: "process.exit(1); }",
+    expect: 'source errors: no argument exits 2 with a usage line' },
+  { name: 'E8  a file that is JSON null crashes',
+    file: 'errs', anchor: 'const errs = data && data._meta && data._meta.source_errors;', replace: 'const errs = data._meta && data._meta.source_errors;',
+    wording: true,
+    expect: 'source errors: a file that is JSON null exits 1 and does not crash' },
+  { name: 'E9  a clean record exits 1',
+    file: 'errs', anchor: "by this step.`); process.exit(0); }", replace: "by this step.`); process.exit(1); }",
+    expect: 'source errors: a present, empty record with its cover list exits 0' },
+
+  { name: 'E10 an empty cover list is accepted',
+    file: 'errs', anchor: "!Array.isArray(cover) || !cover.length || !cover.every((c) => typeof c === 'string')", replace: "!Array.isArray(cover) || !cover.every((c) => typeof c === 'string')",
+    expect: 'source errors: an empty cover list exits 1' },
+  { name: 'E11 a cover list of non-strings is accepted',
+    file: 'errs', anchor: "!Array.isArray(cover) || !cover.length || !cover.every((c) => typeof c === 'string')", replace: '!Array.isArray(cover) || !cover.length',
+    expect: 'source errors: a cover list that is not strings exits 1' },
+  { name: 'E12 a file with no cover list is accepted',
+    file: 'errs', anchor: "if (!Array.isArray(cover) || !cover.length || !cover.every((c) => typeof c === 'string')) {", replace: 'if (false) {',
+    wording: true,
+    expect: 'source errors: an empty record with no cover list exits 1' },
+  { name: 'E13 the green message drops the caveat that the other sources are not checked',
+    file: 'errs', anchor: ' Other sources are not checked by this step.', replace: '',
+    expect: 'source errors: a green run says which source it vouches for and that the others are not checked' },
+
+  // ── the workflows, as text ──
+  { name: 'W1  the CDN passthrough is fetched again',
+    file: 'wf', anchor: '          echo "Fetched NHL ($(wc -c < /tmp/nhl.json) bytes)"\n', replace: '          echo "Fetched NHL ($(wc -c < /tmp/nhl.json) bytes)"\n          curl -sf "$RELAY/nba/liveData/scoreboard/todaysScoreboard_00.json" > /tmp/nba.json || echo \'{}\' > /tmp/nba.json\n',
+    expect: 'text: field-data.yml no longer fetches the NBA CDN passthrough or writes /tmp/nba.json' },
+  { name: 'W2  the NHL fetch is dropped',
+    file: 'wf', anchor: '"$RELAY/nhl/v1/scoreboard/now"', replace: '"$RELAY/nhl/v1/scoreboard/new"',
+    expect: 'text: field-data.yml still fetches the NHL scoreboard into /tmp/nhl.json (untouched)' },
+  { name: 'W3  the check step does not run the check',
+    file: 'cw', anchor: '        run: node scripts/check-nba-board.mjs\n', replace: '        run: echo skipped\n',
+    expect: 'text: the check workflow runs the check, then the harness, each once' },
+  { name: 'W4  the mutation step does not run the harness',
+    file: 'cw', anchor: '        run: node scripts/mutate-nba-board.mjs\n', replace: '        run: echo skipped\n',
+    expect: 'text: the check workflow runs the check, then the harness, each once' },
+  { name: 'W5  the last step does not run the source-errors script',
+    file: 'wf', anchor: '        run: node scripts/field-data-source-errors.cjs /tmp/field-data-today.json\n', replace: '        run: echo done\n',
+    expect: 'text: the source-errors step runs once, after the push step, as the last step' },
+  { name: 'W6  the last step may fail silently (continue-on-error)',
+    file: 'wf', anchor: '      - name: Fail the run when a recorded source could not be read\n', replace: '      - name: Fail the run when a recorded source could not be read\n        continue-on-error: true\n',
+    expect: 'text: the source-errors step is exactly a name and its run line' },
+  { name: 'W7  the last step is skipped on an earlier failure or not (if: always())',
+    file: 'wf', anchor: '      - name: Fail the run when a recorded source could not be read\n', replace: '      - name: Fail the run when a recorded source could not be read\n        if: always()\n',
+    expect: 'text: the source-errors step is exactly a name and its run line' },
+  { name: 'W8  the last step is moved before the push (the good sports would not be published)',
+    file: 'wf', anchor: '      - name: Push overlay to outbox\n', replace: '      - name: Fail the run when a recorded source could not be read\n        run: node scripts/field-data-source-errors.cjs /tmp/field-data-today.json\n\n      - name: Push overlay to outbox\n',
+    expect: 'text: the source-errors step runs once, after the push step, as the last step' },
+  { name: 'W9  the last step is silenced with || true',
+    file: 'wf', anchor: 'field-data-source-errors.cjs /tmp/field-data-today.json\n', replace: 'field-data-source-errors.cjs /tmp/field-data-today.json || true\n',
+    expect: 'text: the source-errors step is exactly a name and its run line' },
+  { name: 'W10 the check step is silenced with || true',
+    file: 'cw', anchor: 'run: node scripts/check-nba-board.mjs\n', replace: 'run: node scripts/check-nba-board.mjs || true\n',
+    expect: 'text: the check step and the harness step are each exactly a name and their run line' },
+  { name: 'W11 the harness step is silenced with || true',
+    file: 'cw', anchor: 'run: node scripts/mutate-nba-board.mjs\n', replace: 'run: node scripts/mutate-nba-board.mjs || true\n',
+    expect: 'text: the check step and the harness step are each exactly a name and their run line' },
+  { name: 'W12 the check step may fail silently (continue-on-error)',
+    file: 'cw', anchor: '      - name: The NBA board read holds\n', replace: '      - name: The NBA board read holds\n        continue-on-error: true\n',
+    expect: 'text: no step in either workflow may fail silently' },
+  { name: 'W13 the check workflow no longer runs when the reader changes',
+    file: 'cw', anchor: "      - 'scripts/nba-board.cjs'\n", replace: '',
+    expect: 'text: the check workflow runs on a push to every file it checks and on dispatch' },
+  { name: 'W14 the check workflow gains a schedule',
+    file: 'cw', anchor: '  workflow_dispatch:\n', replace: "  workflow_dispatch:\n  schedule:\n    - cron: '0 0 * * *'\n",
+    expect: 'text: the check workflow cannot write to the repo (contents: read) and does not run on a schedule' },
+  { name: 'W15 the check workflow can write to the repo',
+    file: 'cw', anchor: '  contents: read\n', replace: '  contents: write\n',
+    expect: 'text: the check workflow cannot write to the repo (contents: read) and does not run on a schedule' },
+  { name: 'W16 the check steps sit in the publishing job again',
+    file: 'wf', anchor: '      - name: Fetch the NHL schedule from relay\n', replace: '      - name: The NBA board read holds\n        run: node scripts/check-nba-board.mjs\n\n      - name: Fetch the NHL schedule from relay\n',
+    expect: 'text: field-data.yml holds no check or harness step' },
+];
+
+let bad = 0;
+const wordingOnly = [];
+const cleanup = () => { for (const f of Object.values(FILES)) { try { unlinkSync(f.mut); } catch { /* not created */ } } };
+process.on('exit', cleanup);
+
+// The unmutated check: it must be green, and its assertion labels are the denominator for the never-red report.
+let base = 0, baseOut = '';
+try { baseOut = execFileSync('node', ['scripts/check-nba-board.mjs'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); }
+catch (e) { base = e.status ?? 1; baseOut = `${e.stdout || ''}${e.stderr || ''}`; }
+const allLabels = new Set(baseOut.split('\n').filter((l) => /^\s*ok {4}/.test(l)).map((l) => l.replace(/^\s*ok {4}/, '')));
+const redLabels = new Set();
+const labelOf = (l) => l.replace(/^\s*FAIL {2}/, '').split(' -> ')[0];
+
+for (const m of MUTATIONS) {
+  const f = FILES[m.file];
+  const before = readFileSync(f.src, 'utf8');
+  const hits = before.split(m.anchor).length - 1;
+  if (hits !== 1) { bad++; console.error(`  ANCHOR  ${m.name}\n          anchor occurs ${hits} time(s), expected 1. NOTHING WAS MUTATED — harness defect, not a result.`); continue; }
+  const after = before.replace(m.anchor, () => m.replace);
+  if (after === before) { bad++; console.error(`  NO EFFECT  ${m.name}`); continue; }
+  writeFileSync(f.mut, after);
+  const env = { ...process.env, [f.env]: f.mut };
+  let out = '', code = 0;
+  try { out = execFileSync('node', ['scripts/check-nba-board.mjs'], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000 }); }
+  catch (e) { code = e.status ?? 1; out = `${e.stdout || ''}${e.stderr || ''}`; }
+  finally { cleanup(); }
+  const red = out.split('\n').filter((l) => /^\s*FAIL {2}/.test(l));
+  for (const l of red) redLabels.add(labelOf(l));
+  if (code === 0) { bad++; console.error(`  NOT CAUGHT  ${m.name}\n          the check still passed.`); }
+  else if (!red.length) { bad++; console.error(`  CRASH  ${m.name}\n          exit ${code} with no FAIL line (a harness or syntax error, not a catch). Output tail:\n${out.slice(-500)}`); }
+  else if (!red.some((l) => l.includes(m.expect))) { bad++; console.error(`  WRONG REASON  ${m.name}\n          no FAIL line mentioned "${m.expect}". Red lines:\n${red.join('\n')}`); }
+  else { if (m.wording) wordingOnly.push(m.name); console.log(`  caught  ${m.name}\n          by "${m.expect}" (${red.length} red)${m.wording ? ' [wording: the code still fails closed]' : ''}`); }
+}
+
+if (base) { bad++; console.error('  BASELINE  the unmutated check is red, so no catch above means anything.'); }
+else console.log('  baseline  the unmutated check is green');
+
+const reached = [...allLabels].filter((l) => redLabels.has(l));
+const never = [...allLabels].filter((l) => !redLabels.has(l));
+console.log(`\nassertions that went red under at least one mutation: ${reached.length} of ${allLabels.size}`
+          + (never.length ? `\nnone of the ${MUTATIONS.length} mutations reaches these ${never.length}:\n${never.map((l) => `  - ${l}`).join('\n')}` : ''));
+if (wordingOnly.length) console.log(`\n${wordingOnly.length} of ${MUTATIONS.length} mutations are caught by the text of the failure, not by observing an open failure: the mutated code still fails closed (a TypeError or a crash exit, not a named reason). The check pins the named reason there, which is wording, not the safety property:\n${wordingOnly.map((n) => `  - ${n}`).join('\n')}`);
+console.log(`\nran ${MUTATIONS.length} mutation(s) against scripts/check-nba-board.mjs; each asserted its anchor unique and its text change applied; the real files were not written`);
+if (bad) { console.error(`FAIL — ${bad} mutation(s) not caught or not applied.`); process.exit(1); }
+console.log('PASS');
