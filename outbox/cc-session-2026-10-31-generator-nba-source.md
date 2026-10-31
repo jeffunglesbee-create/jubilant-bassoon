@@ -193,3 +193,61 @@ and appends `"<date>: <reason>"` to `_meta.source_errors.mlb`; the mapping is un
 
 **Gaps now.** The NHL and MLS readers and the ESPN GOTD flags read still turn a failed read into `[]` / an empty set and record nothing (not in the cover list). NBA playoff context is absent until the relay serves it. NBA is day 0 only. The module is still named `nba-board.cjs`. Each is an owner decision.
 
+
+## Addendum 3 — the NHL read (owner's `go. Fully finish all tasks before coming back to the user.`)
+
+Built on the owner's `go` to the next open call, with the order to finish every open task before reporting. NHL is in season, so unlike WNBA and MLB the live day has games; the property that had to hold is the same (**a failed read is never "no games"**) plus the off-season one (a summer day with no scoreboard entry stays green).
+BUILD-ON-A: a content search of the three repos' CC-CMDs for `parseNHL`, `/tmp/nhl.json` and `scoreboard/now` found `field-relay-nba docs/CC-CMD-2026-06-26-nhl-nhle.md` (the route and its off-season behaviour: used as the source for that shape, no ruling or hold on the generator), `docs/CC-CMD-2026-07-13-wnba-daily-discovery.md` (describes the older per-sport parsers, no ruling), and the NBA 403 CC-CMD, whose gap 1 already named NHL as still silent. The work is recorded there, not in a new CC-CMD.
+
+| step | head |
+|---|---|
+| start | `0998a285` (the ratchet fix below) |
+| the change | `aefe51ff` |
+| the overlay the dispatched run committed | `24749d46` |
+
+**Found on the way: `smoke-and-verify` was red on `main` from 2026-10-30 23:30Z to this session, my defect.** The Rule 99 ratchet read 71 catch-collapse sites against a baseline of 70. The one new site was mutant D4 in `scripts/mutate-forward-window-relay.mjs` (commit `97fb0543`, the forward-window probe): its replacement string contains `.catch(() => {})` as text written into a copy of the relay reader. Seventeen runs on `main` went red, including my NBA, WNBA and MLB commits of today, and the red was not noticed until a reviewer reported it. Reproduced locally with the workflow's own command (`RATCHET FAILED: ... 71 > baseline 70`, naming the line), fixed in `0998a285` with an `absence-ok` reason on the line and the regenerated baseline (flagged 70, suppressed 1). Same command after: `ratchet OK`; run 41228385932 on that commit is the first green since 10-30. The relay's own baseline note ("field-relay-nba flagged [?? 0] 1 < 3, lower it") is an improvement in the other repo and is left there.
+
+**Premises (Rule 100), each with the command that could refute it.** The sandbox cannot reach `/nhl/*` (the probe allow-list excludes it), so a runner read it: `cors-probe` on `/nhl/v1/scoreboard/now` (`outbox/cors-result-20261031T172544Z.txt`).
+
+| premise | the command | result |
+|---|---|---|
+| the passthrough's shape is what the reader parses | the runner read above | HTTP 200, `{focusedDate, focusedDateCount, gamesByDate}`, 11 dates (the last 3 days and the next 7), 78 games, none without a team abbreviation. `outbox/fixture-nhl-scoreboard-20261031.json` is that body trimmed to 3 dates (JSON-identical to the raw entries; an independent review compared them) |
+| moving the read changes no output | old (`HEAD` before this change) and new generators under the same stubs: the real body for 10-30, 10-31 and 11-07, a summer date, empty and malformed bodies, the `{games: []}` shape, 7 playoff variants; plus a 300-body and a 400-body fuzz of the mapping fields | identical output in every case but one class: a body the old mapping threw on (29 of 300) is now `null` with `mapping failed`, where the old generator wrote an empty day. My own run on four bodies: `old==new: true` ×4. `schedules.nhl` in the overlay the old curl path committed (`c11ceaa0`, 16:36Z) and in the one the new reader committed (`24749d46`, 18:29Z) is byte-equal, 10 games |
+| nothing reads the file's `nhl` key | grep of `src/legacy/field.js`, the probe, the judge and every script | the page reads `mlb` only and `games_found?.nhl\|\|0` in a `FIELD_DEBUG` log (`field.js:21601`); the probe reads `sched.mlb`. `null` breaks no reader |
+| the relay does not vary on the new headers | the reader sends `User-Agent` and `Accept`, which curl did not; read of `field-relay-nba src/index.js` | the relay reads only `X-FIELD-*`, `Authorization` and `Upgrade` from request headers. Then the live run (below) read 10 games with them |
+| an off-season scoreboard has no entry for today | **not observed** (it is October); read from `CC-CMD-2026-06-26-nhl-nhle.md` lines 14-15 and 162 (the last ~9 days, no entry for today) | the reader treats no entry as `[]`. Verify on the first run after the last NHL game, or on any summer scheduled run: `games_found.nhl` 0, `source_errors {}`, green |
+
+**Built.** `scripts/nhl-scoreboard.cjs`: `readNhlScoreboard(iso, fetch)` over the shared `getJson` (which gained an `extraHeaders` parameter so `Cache-Control: no-cache`, the one header the old curl sent, belongs to this read alone). It throws on a request that fails or times out, HTTP not ok, not JSON, neither a `gamesByDate` nor a `games` array (`{}` is exactly what the old fallback wrote), a `gamesByDate` entry not keyed by a `YYYY-MM-DD` `date`, an entry for the date with no `games` array, and a game with no team abbreviation (a present but empty one counts as unnamed). No entry for the date is an empty day. `parseNHL` is async: a failed read or a mapping failure is `null` for day 0 with `"<date>: <reason>"` in `_meta.source_errors.nhl`; the mapping is unchanged. `field-data.yml` no longer curls anything; its date step stays. **`source_errors_cover` is now `["nba","wnba","mlb","nhl"]`.** MLS and the ESPN GOTD flags still fail open and are not in it.
+
+**Proof.** `check-nba-board.mjs` 423 assertions; `mutate-nba-board.mjs` 218 of 218 caught, 423 of 423 assertions red under at least one, 10 caught by failure text only (printed: the mutated code still fails closed). The expected NHL entries are the previous generator's output (`outbox/fixture-nhl-mapped-20261031.json`): all 18 real games across three dates, and 52 games derived from one real game (32 teams as home and as away, 20 field variants) because the real scoreboard of 10-31 has only `gameType` 2 games. The check says so in its printed summary: the playoff, series, round and fallback paths are derived, not observed.
+
+**Review.** Three lenses, 16 candidate findings, a skeptic each; 15 confirmed, 1 refuted (the same label nit, confirmed from the other lens). **The commit message of `aefe51ff` says 13 confirmed; the count is 15.** The one wrong-behaviour finding: `gamesByDate` entries keyed any way but an exact `date` matched no day and read as the off-season's empty day (10 real games recorded as 0, `source_errors {}`, green), reproduced by two reviewers. The rest:
+
+| finding | disposition |
+|---|---|
+| date-key drift reads as an empty day (behaviour and tests lenses) | reader rejects any entry without a `YYYY-MM-DD` date; 8 cases; mutants NR13-NR17 |
+| the overlay (`game_overlays`) was never asserted; its line could be deleted | 9 expected overlays from the previous generator; OV1-OV3 |
+| mapping pinned for 2 of 13 games; 7 mapping mutants passed | goldens for all real games and 52 derived; MP1-MP20 |
+| an empty-string abbreviation passes a key-presence reader | 3 cases; NR12 |
+| the shared `getJson` could send `Cache-Control` to every reader | a headers assertion for NBA, WNBA and MLB; X1 |
+| the run log's `Parsed:` line had no assertion for any source | exact line for NHL, NBA, WNBA and MLB; PL1-PL5 |
+| the summary did not say the playoff paths are derived | it does |
+| stale comments: "pre-fetched today-only files", `/tmp/mlb.json`, the workflow header, `nba-board.cjs` header, `forward-window-relay.cjs` | fixed (the day-0-only reason was false: the scoreboard carries 11 dates) |
+| a mislabelled header assertion and a dead helper | fixed |
+| the Rule 99 ratchet red at HEAD | `0998a285`, above |
+| a null NHL day shows as 0 in the page's `FIELD_DEBUG` log, and the day-0 window total leaves out an unread source | **not fixed**: the client log is a debug line that would need a client deploy; the total counts only sources that returned a list, by design since the NBA work. Recorded as gap 4 of the NBA 403 CC-CMD |
+
+**Verified, and what was not.**
+
+| claim | status | evidence |
+|---|---|---|
+| the runner reads the real NHL scoreboard through the new reader and ships it | **VERIFIED** | dispatch run 41229556544, head `aefe51ff`, every step green including the last; overlay `24749d46`: `games_found {nhl 10, nba 7, mlb 0, mls 0, wnba 1}`, `schedules.nhl` byte-equal to the golden for 10-31, `source_errors {}`, `source_errors_cover ["nba","wnba","mlb","nhl"]`, forward days `[]` |
+| the check and the harness pass on the runner | **VERIFIED** | run 41229518658, green, 3m49s (the workflow header said 2 to 3 minutes: now says about 4) |
+| `smoke-and-verify` is green again | **VERIFIED** | runs 41228385932 (`0998a285`) and 41229518639 (`aefe51ff`) |
+| a failed NHL read becomes `null` with a reason and a red last step | **proven in the check only** | there is no way to make the relay fail on demand without a bad overlay on `main` |
+| the off-season scoreboard reads as `[]` | **STAGED** | unblocked by the first summer scheduled run; verify `games_found.nhl` 0, `source_errors {}`, green |
+| the 2026-11-01 scheduled run | **ARMED** | wake `trig_012m8cVxrTDADcYsyo8kBQeB` at 15:30Z: WNBA and MLB `[]`, NHL equal to the relay's count for 11-01 (the forward-window probe saw 5), `nhl` in the cover list |
+
+**Forward-window probe run 41224278008** (read this session, head `0b071b62`): green, `problems []`; MLB "not measured" (window 0, ESPN 0). Its relay coverage shows the NHL scoreboard lists 5, 4 and 11 games for 11-01, 11-02 and 11-03 while the window file carries 0: the same answer the scoreboard body gives, and the reason the "NHL is day 0 only because its feed is today-only" statement was false.
+
+**Gaps now.** The MLS reader and the ESPN GOTD flags still turn a failed read into `[]` and record nothing (not in the cover list). NBA playoff context is absent until the relay serves it. **NHL and NBA are day 0 only; the NHL scoreboard already carries the next 7 days (a new data point, owner decision).** The module is still named `nba-board.cjs` and hosts the shared `getJson`. The page's debug log reads `games_found.nhl` as 0 when it is null. Each is an owner decision or a recorded nit.

@@ -1,5 +1,19 @@
 # FIELD HANDOFF
 
+## 2026-10-31 (night) — the generator's NHL read joins NBA, WNBA and MLB: an unread scoreboard is null, `smoke-and-verify` is green again
+
+`aefe51ff` (overlay `24749d46` from the dispatched run); `0998a285` first. No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md` ("Addendum 3 — the NHL read"). Built on the owner's `go. Fully finish all tasks before coming back to the user.`
+
+**What changed.** `field-data.yml` filled `/tmp/nhl.json` with `curl -sf ... || echo '{}'`, so a failed request, a refused path or a relay 502 was "no games". The generator now reads the same relay URL (`/nhl/v1/scoreboard/now`) through `scripts/nhl-scoreboard.cjs`, which throws on anything that is not a clean answer (including a `gamesByDate` whose date key drifted, which a review showed would have read 10 real games as 0). A failed read, or a mapping failure, is `null` for day 0 with `"<date>: <reason>"` in `_meta.source_errors.nhl`; no entry for the date stays `[]` so the off-season stays green; the mapping is unchanged (identical to the previous generator on the real body and on 52 derived games). **`_meta.source_errors_cover` is now `["nba","wnba","mlb","nhl"]`.** The curl step is gone. MLS and the ESPN GOTD flags still fail open and are not in the cover list.
+
+**Also fixed: `smoke-and-verify` was red on `main` from 2026-10-30 23:30Z (17 runs), my defect.** The Rule 99 ratchet counted 71 catch-collapse sites against 70: the new site was mutant D4's replacement text in `scripts/mutate-forward-window-relay.mjs` (`97fb0543`). `0998a285` gives it an `absence-ok` reason and regenerates the baseline (flagged 70, suppressed 1). Green since: runs 41228385932 and 41229518639.
+
+**Proof.** Live: dispatch run 41229556544 green, overlay `24749d46` has 10 NHL games byte-equal to the previous generator's mapping of the same body, `source_errors {}`, forward days `[]`. `check-nba-board.mjs` 423 assertions / `mutate-nba-board.mjs` 218 of 218, every assertion red under at least one; the check workflow ran green on the runner (41229518658, 3m49s). Review: 19 agents, 15 of 16 findings confirmed, all fixed or recorded (the commit message of `aefe51ff` says 13: the count is 15). **Not seen live: the red path, the off-season scoreboard (read from the relay's CC-CMD only), and a real NHL playoff game (the check runs them on bodies derived from one regular-season game).**
+
+**Open (owner's calls).** Whether a failed read in MLS or the ESPN GOTD flags turns the daily run red (each its own reader); NBA playoff context; **windowing NHL and NBA: the NHL scoreboard already carries the next 7 days (the forward-window probe saw 5, 4 and 11 NHL games for 11-01 to 11-03 against 0 in the file)**; the `nba-board.cjs` module name. A nit recorded, not fixed: the page's `FIELD_DEBUG` log prints a null `games_found` entry as 0. `field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` ("Built 2026-10-31") has each with its unblock criteria.
+
+**Armed.** 2026-11-01T15:30Z reads that day's scheduled run: WNBA and MLB `[]`, NHL equal to the relay's count for 11-01, `source_errors {}`, `nhl` in the cover list, green. First summer check of the NHL off-season shape: the first scheduled run after the last NHL game.
+
 ## 2026-10-31 (evening) — the generator's MLB read joins NBA and WNBA: an unread statsapi day is null, and an all-empty off-season window stays green
 
 `4b1580a5` (overlay `c11ceaa0` from the dispatched run). No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md` ("Addendum 2 — the MLB read"). Built on the owner's `go`.

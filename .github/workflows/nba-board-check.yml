@@ -8,7 +8,7 @@ name: NBA Board Check
 # harmless to the data. Run inside field-data.yml, ahead of the build, that failure would have stopped the day's overlay from
 # being built or pushed (an independent review of 2026-10-31 reproduced it). Here it can only turn this workflow red.
 #
-# Node only, about 2 to 3 minutes (the mutation harness is most of it), no network, no secrets. It runs on a push that touches the files it checks, or on demand.
+# Node only, about 4 minutes (3m49s on the runner with 218 mutants; the mutation harness is most of it), no network, no secrets. It runs on a push that touches the files it checks, or on demand.
 
 on:
   push:
