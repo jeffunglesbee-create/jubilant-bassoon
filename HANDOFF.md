@@ -1,5 +1,20 @@
 # FIELD HANDOFF
 
+## 2026-10-31 (evening) — the generator's MLB read joins NBA and WNBA: an unread statsapi day is null, and an all-empty off-season window stays green
+
+`4b1580a5` (overlay `c11ceaa0` from the dispatched run). No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md` ("Addendum 2 — the MLB read"). Built on the owner's `go`.
+
+**What changed.** `parseMLBFull` checked no HTTP status, so a statsapi error body parsed as an empty slate, and a parse failure, a request error and a 10 s timeout each resolved `[]`; a game with no team name was dropped silently. It now reads through `scripts/mlb-schedule.cjs` (a strict reader over a shared `getJson` in `scripts/nba-board.cjs`):
+a failed read, or a mapping failure, is `null` for that window day with `"<date>: <reason>"` appended to `_meta.source_errors.mlb`; the day stays in `window_dates`; the mapping is unchanged. **`_meta.source_errors_cover` is now `["nba","wnba","mlb"]`, and "mlb" means the statsapi schedule only.** Statsapi's answers (an off-day, the last game day, an invalid-date 400) were read by a runner through `cors-probe`
+because the sandbox cannot reach it; they are in `outbox/fixture-mlb-schedule-20261031.json`.
+
+**Proof.** Live: dispatch run 41220454373 green, overlay `c11ceaa0` has MLB `[]` on all four days (four real statsapi off-day answers), `source_errors {}`. `check-nba-board.mjs` 322 assertions / `mutate-nba-board.mjs` 151 of 151, every assertion red under at least one (9 caught by failure text only, printed). Old and new generators are identical on the real game, an off-day, a regular-season retype, three postponed variants and the GOTD path.
+Review: 11 agents, 6 of 8 findings confirmed, all fixed. **Not seen live: the red path, and any in-season game, postponed game or GOTD flag.**
+
+**Open (owner's calls).** Whether a failed read in NHL, MLS or the ESPN GOTD flags turns the daily run red (each its own reader); NBA playoff context; NBA windowing. `field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` ("Built 2026-10-31") has the gaps with their unblock criteria.
+
+**Armed.** 2026-11-01T15:30Z reads that day's scheduled run: WNBA and MLB `[]` on all four days, `source_errors {}`, green. First in-season check: the first scheduled run after Opening Day (late March 2027).
+
 ## 2026-10-31 (later) — the generator's WNBA read joins NBA: an unread day is null, and an all-empty off-season window stays green
 
 `a8c1744e` (overlay `d8611140` from the dispatched run). No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md` ("Addendum — the WNBA read"). Built on the owner's `go`; the WNBA season ends 2026-10-31.

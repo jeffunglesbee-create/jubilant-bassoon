@@ -141,3 +141,55 @@ The off-season case runs the whole generator over four clean empty boards, one o
 
 **The first scheduled run on the new code, verified 2026-10-31T15:01Z.** Run 41207089236 (event `schedule`, created 13:46Z, head `26cc735e`, which carries `7176807e` and `a8c1744e`) was green on every step, including "Fail the run when a recorded source could not be read". Its overlay (`c9bd9d45`): `games_found` `{nhl 10, nba 7, mlb 0, mls 0, wnba 1}`, `source_errors {}`, `source_errors_cover ["nba","wnba"]`, NBA 7 and WNBA 1 on day 0 and `[]` on the three forward days, against the relay's 7 NBA and 1 WNBA games for 2026-10-31 read through the relay self-probe the same minute. The run was created at 13:46Z, earlier than the 14:17Z to 14:34Z measured on the three days before, so the fire time varies by an hour or more; the armed check for 2026-11-01 is set to re-arm if its run has not appeared.
 
+---
+
+## Addendum 2 — the MLB read (owner's `go`: "MLB (statsapi)")
+
+Built on the owner's `go` to the next open call. MLB is off-season (the last game was 2026-10-28), so the property that had to hold is the same as for WNBA: **an off-season window must stay green** until the season starts.
+BUILD-ON-A: a content search of the three repos' CC-CMDs for `parseMLBFull`, `statsapi.mlb.com`, `MLB full schedule` and `mlb enrichment` found none; the relay NBA CC-CMD (where the generator work is recorded) holds no ruling or hold on it.
+
+| step | head |
+|---|---|
+| start | `13f6005e` plus bot commits |
+| the change | `4b1580a5` |
+| the overlay the dispatched run committed | `c11ceaa0` |
+
+**Premises (Rule 100), each with the command that could refute it.** The sandbox cannot reach statsapi (`CONNECT tunnel failed, response 403`), so a runner read it: the repo's `cors-probe` workflow, triggered by `outbox/.trigger-cors-probe`, four times.
+
+| premise | the command | result |
+|---|---|---|
+| a day with no games is a clean answer, not an error | `cors-probe` on the generator's own URL for 2026-10-31 | HTTP 200, `dates: []`, `totalGames: 0` (`outbox/cors-result-20261031T154058Z.txt`) |
+| the reader parses the shape the generator really gets | the same URL for 2026-10-28, the last game day | HTTP 200, one World Series game, `dates[0].date` echoes the request (`...T154211Z.txt`) |
+| an error is distinguishable from an empty day | `cors-probe` with `date=2026-13-45` | HTTP 400 with `{messageNumber, message, timestamp, traceId}` and **no `dates` key** (`...T154431Z.txt`) |
+| `totalGames` could be a cheap integrity check | a regular-season week, 2026-09-14 to 09-20 | `dates[i].totalGames` equalled the list on all 7 days (94 games, no doubleheader). **Not used**: a doubleheader day was not observed, and a check that could turn a normal day red on a guess is not added |
+| nothing outside MLB changes, and no field of a game changes | old (`HEAD`) and new generators run under the same stubs on the real game, an off-day, a regular-season retype, three postponed variants, and the ESPN GOTD path | identical after removing the record keys and `generated_at`, all seven |
+| the file's `mlb` key tolerates `null` | grep of the page, the probe and the judge | `fieldDataForDate(iso)?.mlb \|\| []`, `(...schedules?.mlb \|\| []).forEach`, and the probe's `sched.mlb ? sched.mlb.length : 0` all treat `null` as empty |
+
+**Built.** `scripts/mlb-schedule.cjs`: `readMlbSchedule(iso, fetch)` returns the raw games for one date and throws on HTTP not ok, not JSON, no `dates` array, more than one `dates` entry, an entry for another date, no `games` array, a game with no team name
+(the old code dropped it silently), and a request that fails or times out. The request/parse step moved verbatim into an exported `getJson` in `scripts/nba-board.cjs`, used by the board reader and the MLB reader. `parseMLBFull` is async: a failed read, or a mapping failure, returns `null`
+and appends `"<date>: <reason>"` to `_meta.source_errors.mlb`; the mapping is unchanged. `source_errors_cover` is `["nba","wnba","mlb"]` — **"mlb" is the statsapi schedule, not the ESPN GOTD flags read** (`fetchEspnMlbGotd`), which still fails open.
+
+**Proof.** `check-nba-board.mjs` 322 assertions (red in 63 places on the previous MLB read first); `mutate-nba-board.mjs` 151 of 151 caught, 322 of 322 assertions red under at least one, 9 caught by failure text only (printed). A three-lens review (11 agents, a skeptic per finding) confirmed 6 of 8, all in test coverage or documentation, all fixed:
+
+| finding | disposition |
+|---|---|
+| no run carried a clean MLB game on a forward day, so a generator that discarded forward-day games passed | the real game re-dated to 10-30; mutant GF1 |
+| the postponed flag and the PPD overlay were never executed (six mutants passed) | three postponed variants (code alone, text alone, both); mutants PM1-PM6 |
+| the regular-season broadcast path and the GOTD wiring were never executed on a real body | the real game retyped `R`, with and without the ESPN GOTD set, and a playoff game with it; expected entries taken from the previous generator; mutants RM1-RM4 |
+| the printed summary named neither MLB nor what does not run | an `mlb reader` bucket and a "NOT executed / NOT observed" list |
+| the fixture pointed at a check file that does not exist | corrected to `check-nba-board.mjs` |
+| the check workflow said "about 30 seconds" | measured 2m14s to 2m31s locally; now "about 2 to 3 minutes" |
+
+**Verified, and what was not.**
+
+| claim | status | evidence |
+|---|---|---|
+| the runner reads four real statsapi off-day answers and ships `mlb: []` on all four days, with nothing recorded | **VERIFIED** | dispatch run 41220454373, head `4b1580a5`, every step green; overlay `c11ceaa0`: `schedules_by_date` MLB `[0,0,0,0]`, `games_found` `{nhl 10, nba 7, mlb 0, mls 0, wnba 1}`, `source_errors {}`, `source_errors_cover ["nba","wnba","mlb"]`. This is the winter case for MLB, seen live |
+| the check and the harness pass on the runner | **VERIFIED** | run 41220443863, green, 2m18s |
+| a failed MLB day becomes `null` with a reason and a red last step | **proven in the check only** | no way to make statsapi fail on demand without a bad overlay on `main` |
+| an in-season game, a postponed game and the GOTD path against the real servers | **STAGED** | none exists until the season. Unblocked by Opening Day (about late March 2027). Verify on the first scheduled run with games: `schedules_by_date` MLB length equals `curl 'https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=<day>&gameType=R,F,D,L,W'` `dates[0].totalGames` from a runner, `source_errors {}`, green |
+
+**Not observed, and why it matters.** A statsapi 5xx, an HTML error page and a two-date answer were not observed and are built by the check. Statsapi sends `cache-control: stale-if-error=86400`, so an outage may be answered from cache and look clean; the reader cannot detect that.
+
+**Gaps now.** The NHL and MLS readers and the ESPN GOTD flags read still turn a failed read into `[]` / an empty set and record nothing (not in the cover list). NBA playoff context is absent until the relay serves it. NBA is day 0 only. The module is still named `nba-board.cjs`. Each is an owner decision.
+
