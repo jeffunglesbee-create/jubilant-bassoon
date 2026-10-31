@@ -1,0 +1,52 @@
+URL: https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-13-45&gameType=R,F,D,L,W&limit=30  [20261031T154431Z]
+maxtime=25s accept=application/json
+=== HEAD (not what a browser sends) ===
+HTTP/2 400 
+x-request-id: f85c2a88-abb0-4233-a2a8-a46a8eada21e
+access-control-allow-origin: *
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-expose-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-allow-credentials: true
+x-content-type-options: nosniff
+x-xss-protection: 0
+x-frame-options: DENY
+content-type: application/json;charset=UTF-8
+via: 1.1 google, 1.1 varnish
+accept-ranges: bytes
+date: Sat, 31 Oct 2026 15:44:32 GMT
+x-served-by: cache-chi-kmdw8640038-CHI
+x-cache: MISS
+x-cache-hits: 0
+x-timer: S1793461472.969336,VS0,VE38
+vary: accept-encoding
+
+
+=== GET headers (what a browser actually receives) ===
+HTTP/2 400 
+x-request-id: 15f2d208-f360-4c2b-8b94-c1cc22834730
+access-control-allow-origin: *
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-expose-headers: Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+access-control-allow-credentials: true
+x-content-type-options: nosniff
+x-xss-protection: 0
+x-frame-options: DENY
+content-type: application/json;charset=UTF-8
+via: 1.1 google, 1.1 varnish
+accept-ranges: bytes
+date: Sat, 31 Oct 2026 15:44:32 GMT
+x-served-by: cache-chi-kmdw8640021-CHI
+x-cache: MISS
+x-cache-hits: 0
+x-timer: S1793461472.030175,VS0,VE73
+vary: accept-encoding
+
+
+=== ACAO present in the GET response? ===
+access-control-allow-origin: *
+access-control-allow-origin: *
+
+=== BODY (first 3000 chars) ===
+{"messageNumber":11,"message":"Invalid Request with value: 2026-13-45","timestamp":"2026-10-31T15:44:32.153660132Z","traceId":null}
