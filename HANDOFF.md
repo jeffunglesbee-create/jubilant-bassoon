@@ -1,5 +1,18 @@
 # FIELD HANDOFF
 
+## 2026-10-31 (later) — the generator's WNBA read joins NBA: an unread day is null, and an all-empty off-season window stays green
+
+`a8c1744e` (overlay `d8611140` from the dispatched run). No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md` ("Addendum — the WNBA read"). Built on the owner's `go`; the WNBA season ends 2026-10-31.
+
+**What changed.** `parseWNBA` checked no HTTP status, so a relay 502 parsed as an empty slate. It now uses the same strict reader as NBA (`scripts/nba-board.cjs`, `readWnbaBoard`): a failed read is `null` for that window day and `"<date>: <reason>"` is appended to `_meta.source_errors.wnba`
+(four requests a run); the day stays in `window_dates`. **`_meta.source_errors_cover` is now `["nba","wnba"]`.** An off-season day is a clean empty board from the relay (2026-11-01 and 2027-01-15, `source espn-wc`), so a winter window records nothing and the run stays green. The relay's KV failover (`source wnba-kv`) is an answer.
+
+**Proof.** Live: dispatch run 41171382117 green, overlay `d8611140` has today's WNBA game (Atlanta Dream at Golden State Valkyries) and `source_errors {}`. `check-nba-board.mjs` 210 assertions / `mutate-nba-board.mjs` 110 of 110, every assertion red under at least one (9 mutants caught by failure text only, printed). Review: 10 agents, 6 of 7 findings confirmed, all fixed. Check run on the runner 41171379541 green. **Not seen live: the red path, and a winter window.**
+
+**Open (owner's calls).** Whether a failed read in NHL, MLB or MLS turns the daily run red (each is its own reader); NBA playoff context; NBA windowing. `field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` ("Built 2026-10-31") has the gaps with their unblock criteria.
+
+**Armed.** 2026-10-31T10:00Z reads the 07:30Z scheduled run (new code). Verify the winter case on 2026-11-01's scheduled run: WNBA `[]` on all four days, `source_errors {}`, green.
+
 ## 2026-10-31 — the daily generator reads the NBA board from /v2/games, and a board it could not read is null, not zero
 
 `7176807e` (overlay `54091f34` from the dispatched run; relay CC-CMD record `6a2d8a1`). No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md`.
@@ -7,8 +20,8 @@
 **What changed.** `field-data.yml` read the NBA board from the relay's `/nba` passthrough with `curl -sf ... || echo '{}'`; the passthrough answers 403 to the Worker, so the file said
 `nba` 0 on a ten-game night (2026-10-30). The generator now reads `/v2/games?sport=nba&date=` through `scripts/nba-board.cjs`, which throws on any answer that is not clean. An unread board is
 `null` in `schedules.nba` and `games_found.nba` with `"<date>: <reason>"` in `_meta.source_errors`; an empty day stays `[]`. A last workflow step fails the run for a recorded source,
-after the overlay is pushed so the day's other sports are not lost. **`source_errors: {}` vouches only for the sources in `_meta.source_errors_cover` (today `["nba"]`).** The NHL, MLB, MLS
-and WNBA readers still turn a failed read into `[]` and record nothing (an independent review reproduced it); the file and the step say so.
+after the overlay is pushed so the day's other sports are not lost. **`source_errors: {}` vouches only for the sources in `_meta.source_errors_cover` (`["nba"]` when this was written, `["nba","wnba"]` after the entry above).** The NHL, MLB, MLS
+and (until the entry above) WNBA readers turn a failed read into `[]` and record nothing (an independent review reproduced it); the file and the step say so.
 
 **Proof.** Live: dispatch run 41165483123 green, committed overlay `54091f34` has `schedules_by_date['2026-10-31'].nba` 7 against the relay's 7. `check-nba-board.mjs` 112 assertions (the whole
 generator runs under `node:vm` with stubbed `fs`, `https` and `fetch`; the check was red on the old generator in 31 places) / `mutate-nba-board.mjs` 80 of 80, 112 of 112 assertions red under

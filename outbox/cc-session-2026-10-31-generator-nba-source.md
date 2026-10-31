@@ -89,3 +89,53 @@ and `parseNBA` returned `[]`. On 2026-10-30 the file said `nba` 0 on a night the
 4. The generator's NHL fetch keeps `curl -sf ... || echo '{}'`. Not measured failing; the same defect class as the NBA one.
 
 Recorded under BUILD-ON-A in `field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` ("Built 2026-10-31"), commit `6a2d8a1`.
+
+---
+
+## Addendum — the WNBA read (owner's `go`, same day; "the WNBA season ends 10/31")
+
+Built on the owner's `go` to the open call above (gap 1, WNBA first because it is the same relay route). The owner's note that the season ends 2026-10-31 set the one property that had to hold:
+**an off-season window must stay green all winter**, because a reader that failed on an empty board would turn the daily run red every day until May 2027.
+
+| step | head |
+|---|---|
+| start | `5a7af777` |
+| the change | `a8c1744e` |
+| the overlay the dispatched run committed | `d8611140` |
+
+**Premises (Rule 100), each with the command that could refute it.**
+
+| premise | the command | result |
+|---|---|---|
+| an off-season WNBA day reads as a clean empty board, not an error | relay self-probe, `/v2/games?sport=wnba&date=` for 2026-11-01 and 2027-01-15 | both 200, `games []`, `count 0`, `source espn-wc`. Kept, with the last game day, as `outbox/fixture-wnba-board-20261031.json` |
+| the relay's WNBA failover cannot make a failure look like an empty day | read of `handleV2Games` / `_trySecondary` in the relay source | ESPN failure falls to a KV secondary: `source wnba-kv` with `fetchedAt` and `staleSeconds`; the secondary's `null` (both failed) is a 502, its `[]` is the relay's own "real off-day". So `wnba-kv` is an answer and is returned as the source, not an error. Read from source, **not observed** |
+| nothing reads the file's `wnba` key | grep of the page and the probe | the page reads `mlb` only; the probe's table covers nfl, cfb, nba, nhl |
+| the new entry equals the old one | old (`HEAD`) and new generators run under the same stubs with an empty board and with the real one-game board | identical after removing the record keys and `generated_at`; the entry is `{sport, home, away, start_time, venue, league, confirmed}` in both |
+
+**Built.** `scripts/nba-board.cjs` gained `readV2Board(sport, ...)` with `readNbaBoard` and `readWnbaBoard` (the file keeps its name; the header says why). `parseWNBA` is async, returns `null` on a failed read and appends `"<date>: <reason>"` to
+`_meta.source_errors.wnba` for each failed window day (four per run). A failed forward day is `null` for that day only and the day stays in `window_dates`, because its MLB and MLS entries are fine. `_meta.source_errors_cover` is `["nba","wnba"]`.
+The old read checked no status, so a relay 502 body parsed as an empty slate and a timeout resolved `[]`.
+
+**Proof.** `check-nba-board.mjs` 210 assertions (red in 48 places on the previous WNBA read first); `mutate-nba-board.mjs` 110 of 110 caught, 210 of 210 assertions red under at least one; 9 of the 110 are caught by failure text only and are printed as such.
+The off-season case runs the whole generator over four clean empty boards, one of them the relay's real 2026-11-01 answer. A three-lens review (10 agents, a skeptic per finding) confirmed 6 of 7, all in test coverage or reason wording, all fixed:
+
+| finding | disposition |
+|---|---|
+| a timeout during the body read was recorded as "response is not JSON" | a `TimeoutError` or `AbortError` there is now `request failed: ...`; two cases, two mutants |
+| no run put a WNBA game on a forward day, so a generator that discarded forward-day games passed | a run with 1 game on 11-02 and 2 on 11-03; mutant GW15. That body is the real game re-dated, and is labelled as derived |
+| the last-step script was never given two failed sources | cases for two sources and for the generator's own output with both failing; mutants E14, E15. Found on the way: `nba: ...` is a substring of `wnba: ...`, so the regexes are now anchored to line starts |
+| the `|| null` on `start_time` and `venue` was never exercised (the relay writes `''`) | a case and two mutants |
+| a failed connection recorded only "fetch failed" | the cause (`ECONNREFUSED`) is kept; a case and a mutant |
+| the `_meta` comment and the step's header said a sport in `source_errors` is `null` in `schedules` and `games_found`, false for a sport read on four days | reworded |
+
+**Verified, and what was not.**
+
+| claim | status | evidence |
+|---|---|---|
+| the runner writes today's WNBA game, with the NBA still right and the record clean | **VERIFIED** | dispatch run 41171382117, head `a8c1744e`, every step green; overlay `d8611140`: `schedules.wnba` 1 (`Atlanta Dream` at `Golden State Valkyries`, `2026-11-01T00:00Z`, `Chase Center`), `games_found` `{nhl 10, nba 7, mlb 0, mls 0, wnba 1}`, `source_errors {}`, `source_errors_cover ["nba","wnba"]`, all four days in `window_dates` |
+| the check and the harness pass on the runner | **VERIFIED** | run 41171379541, green |
+| a failed WNBA day becomes `null` with a reason and a red last step | **proven in the check only** | no way to make the relay fail on demand without pushing a bad overlay |
+| the winter window (all empty) stays green on the runner | **STAGED** | unblocked from tomorrow, when the day-0 WNBA game is gone; the armed check at 2026-10-31T10:00Z covers the 07:30Z scheduled run, which still sees 10-31's game. Verify on 2026-11-01's scheduled run: `schedules_by_date` WNBA `[]` on all four days, `source_errors {}`, run green |
+
+**Gaps now.** NHL, MLB and MLS still turn a failed read into `[]` and record nothing (not in the cover list). NBA playoff context is absent until the relay serves it. NBA is day 0 only. The module is still named `nba-board.cjs`. Each of the first two is an owner decision.
+
