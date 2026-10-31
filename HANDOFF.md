@@ -11,7 +11,7 @@
 
 **Open (owner's calls).** Whether a failed read in NHL, MLB or MLS turns the daily run red (each is its own reader); NBA playoff context; NBA windowing. `field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` ("Built 2026-10-31") has the gaps with their unblock criteria.
 
-**Armed.** 2026-10-31T10:00Z reads the 07:30Z scheduled run (new code). Verify the winter case on 2026-11-01's scheduled run: WNBA `[]` on all four days, `source_errors {}`, green.
+**Armed.** 2026-10-31T15:00Z reads today's scheduled run (cron 07:30Z, but GitHub has fired it at 14:17Z to 14:34Z on the last three days, measured; new code). Verify the winter case on 2026-11-01's scheduled run (check armed for 15:30Z): WNBA `[]` on all four days, `source_errors {}`, green.
 
 ## 2026-10-31 — the daily generator reads the NBA board from /v2/games, and a board it could not read is null, not zero
 
@@ -33,7 +33,7 @@ proven in the check only.
 `isPlayoff`, `gameLabel`) is absent: the ESPN board does not carry it, so no NBA matchupNote until the relay does (first playoff day, April 2027). (3) NBA is still day 0 only. (4) The NHL fetch keeps
 its `|| echo '{}'`. Recorded in `field-relay-nba docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md` ("Built 2026-10-31").
 
-**Armed.** A check at 2026-10-31T10:00Z reads the 07:30Z scheduled run of `field-data.yml` (the first on the new code), confirms it is green, and confirms the overlay's NBA count equals the relay's for its date.
+**Armed.** Superseded by the entry above: the check reads the scheduled run of `field-data.yml` (the first on the new code; fired about 14:20Z lately, not 07:30Z), confirms it is green, and confirms the NBA and WNBA counts equal the relay's for its date.
 
 ## 2026-10-30 — the forward-window probe: an empty MLB window passes as "not measured" only when ESPN agrees, and its first read survives the page's own reload
 

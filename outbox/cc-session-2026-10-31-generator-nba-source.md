@@ -34,7 +34,7 @@ and `parseNBA` returned `[]`. On 2026-10-30 the file said `nba` 0 on a night the
 | nothing in the page reads `schedules.nba` from this file | grep of `src/legacy/field.js` for `fieldDataForDate`, `scheduleForDate`, `_fieldDataCache` | the page reads `.mlb` and `game_overlays` only. A `null` NBA entry cannot break it |
 | the ESPN board carries series context | read of the 7 games | it does not: `round` is null on every game, no series text, no flag. The generator's `seriesRecord`, `isPlayoff` and `gameLabel` are therefore absent (not false) and no NBA matchupNote is generated |
 | nothing outside NBA changes | old and new generator run under the same stubs, NBA board empty, outputs diffed | identical after removing `_meta.source_errors`, `_meta.source_errors_cover` and `generated_at` |
-| the daily cron's date is the board's date | cron `30 7 * * *` is 03:30 ET, the same calendar date as UTC | yes. Not the same between 00:00Z and about 04:00Z, which is true of every sport in this file already |
+| the daily run's date is the board's date | the cron is `30 7 * * *`, but `gh run list --event schedule` (2026-10-31) shows the last three scheduled runs created at 14:17Z, 14:25Z and 14:34Z (10-28, 10-29, 10-30): GitHub fires it about 7 hours late, so the run is 10:17 to 10:34 ET, the same calendar date as UTC. I had read 03:30 ET off the cron and not measured it (corrected 2026-10-31) | yes. A manual dispatch between 00:00Z and about 04:00Z would see tomorrow's ET date, which is true of every sport in this file already |
 
 ## What was built
 
@@ -77,7 +77,7 @@ and `parseNBA` returned `[]`. On 2026-10-30 the file said `nba` 0 on a night the
 | the generator, on the runner, writes the relay's NBA count into the file | **VERIFIED** | dispatch run 41165483123, head `7176807e`, every step green; the committed overlay `54091f34`: `schedules_by_date['2026-10-31'].nba` 7, `games_found.nba` 7, `source_errors {}`, `source_errors_cover ["nba"]`; the relay listed 7 for that date |
 | the check and the mutation harness pass on the runner | **VERIFIED** | run 41165473123, green, both steps |
 | a 403 becomes `null` with a reason, and the last step then fails the run | **proven in the check, not seen on the runner** | the only way to make the relay fail on demand is to push a bad overlay to `main` |
-| the 07:30Z scheduled run uses the new code and stays green | **STAGED** | armed check below; unblocked by the cron firing (GitHub can delay it by hours) |
+| the scheduled run (cron 07:30Z, fired about 14:20Z lately) uses the new code and stays green | **STAGED** | armed check at 2026-10-31T15:00Z; unblocked by the cron firing |
 
 ## Gaps (decisions, none started)
 
@@ -135,7 +135,7 @@ The off-season case runs the whole generator over four clean empty boards, one o
 | the runner writes today's WNBA game, with the NBA still right and the record clean | **VERIFIED** | dispatch run 41171382117, head `a8c1744e`, every step green; overlay `d8611140`: `schedules.wnba` 1 (`Atlanta Dream` at `Golden State Valkyries`, `2026-11-01T00:00Z`, `Chase Center`), `games_found` `{nhl 10, nba 7, mlb 0, mls 0, wnba 1}`, `source_errors {}`, `source_errors_cover ["nba","wnba"]`, all four days in `window_dates` |
 | the check and the harness pass on the runner | **VERIFIED** | run 41171379541, green |
 | a failed WNBA day becomes `null` with a reason and a red last step | **proven in the check only** | no way to make the relay fail on demand without pushing a bad overlay |
-| the winter window (all empty) stays green on the runner | **STAGED** | unblocked from tomorrow, when the day-0 WNBA game is gone; the armed check at 2026-10-31T10:00Z covers the 07:30Z scheduled run, which still sees 10-31's game. Verify on 2026-11-01's scheduled run: `schedules_by_date` WNBA `[]` on all four days, `source_errors {}`, run green |
+| the winter window (all empty) stays green on the runner | **STAGED** | unblocked from tomorrow, when the day-0 WNBA game is gone; the armed check at 2026-10-31T15:00Z covers today's scheduled run, which still sees 10-31's game. Verify on 2026-11-01's scheduled run: `schedules_by_date` WNBA `[]` on all four days, `source_errors {}`, run green |
 
 **Gaps now.** NHL, MLB and MLS still turn a failed read into `[]` and record nothing (not in the cover list). NBA playoff context is absent until the relay serves it. NBA is day 0 only. The module is still named `nba-board.cjs`. Each of the first two is an owner decision.
 
