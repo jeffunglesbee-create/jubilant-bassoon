@@ -1,7 +1,8 @@
 'use strict';
 // The generator's read of the relay's basketball boards (NBA and WNBA), alone in a module so build-field-data.js and its check
-// share ONE definition. getJson, below, is the request-and-parse step both this module and scripts/mlb-schedule.cjs (the statsapi
-// schedule read) use, so "a failed request", "a timeout in the body" and "not JSON" mean the same thing in both. The file is still called nba-board.cjs because the NBA read came first; the WNBA read was added to it
+// share ONE definition. getJson, below, is the request-and-parse step this module, scripts/mlb-schedule.cjs (the statsapi schedule
+// read) and scripts/nhl-scoreboard.cjs (the NHL scoreboard read) all use, so "a failed request", "a timeout in the body" and "not
+// JSON" mean the same thing in all three. The file is still called nba-board.cjs because the NBA read came first; the WNBA read was added to it
 // 2026-10-31 because it is the same route and the same ESPN basketball adapter, and a second reader would have been a second
 // definition of "a clean answer".
 //
@@ -53,13 +54,13 @@ const why = (e) => {
   return (cause ? `${msg} (${cause})` : msg).slice(0, 160);
 };
 
-// One GET, parsed. Throws "request failed: ...", "HTTP <status>", "response is not JSON" or "response is not an object"; returns the
+// One GET, parsed (extraHeaders are added to the two every reader sends). Throws "request failed: ...", "HTTP <status>", "response is not JSON" or "response is not an object"; returns the
 // parsed object otherwise. What a clean answer is beyond that (an `error` key, a games array, an echoed date) is the caller's.
-async function getJson(url, fetchImpl, timeoutMs) {
+async function getJson(url, fetchImpl, timeoutMs, extraHeaders) {
   let res;
   try {
     res = await fetchImpl(url, {
-      headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json' },
+      headers: { 'User-Agent': 'FIELD-DataBot/1.0', 'Accept': 'application/json', ...extraHeaders },
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (e) {

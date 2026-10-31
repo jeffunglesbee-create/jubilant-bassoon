@@ -7,10 +7,12 @@
  * PHASE 1 (May 28 2026): Added full MLB schedule + broadcast assignment.
  *   TYPE A sessions now verify output rather than hardcoding game entries.
  *
- * Reads:  /tmp/nhl.json  (from relay /nhl/v1/scoreboard/now)
+ * Reads:  relay /nhl/v1/scoreboard/now  (NHL, day 0; scripts/nhl-scoreboard.cjs)
  *         relay /v2/games?sport=nba&date=  (NBA, day 0; scripts/nba-board.cjs)
- *         /tmp/mlb.json  (NEW: from relay /mlb/schedule)
- *         statsapi.mlb.com (live schedule — postponed game detection)
+ *         relay /v2/games?sport=wnba&date=  (WNBA, the 4-day window; scripts/nba-board.cjs)
+ *         statsapi.mlb.com /api/v1/schedule  (MLB, the 4-day window, with postponed-game detection; scripts/mlb-schedule.cjs)
+ *         ESPN scoreboards  (MLS, the 4-day window; the MLB game-of-the-day flags)
+ *         No input file: field-data.yml fetches nothing, so no source is read from a file that a `|| echo '{}'` could have filled.
  * Env:    TODAY=YYYY-MM-DD
  *         GEMINI_KEY / ANTHROPIC_API_KEY
  *         ESPN_GOTD_IDS=home|away,home|away (comma-sep, for ESPN GOTD flag)
@@ -22,6 +24,7 @@ const fs    = require('fs');
 const https = require('https');
 const { readNbaBoard, readWnbaBoard } = require('./nba-board.cjs');
 const { readMlbSchedule } = require('./mlb-schedule.cjs');
+const { readNhlScoreboard } = require('./nhl-scoreboard.cjs');
 
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 
@@ -32,15 +35,15 @@ const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 // not empty (scripts/field-data-source-errors.cjs), after the file has been pushed, so one unread source does not cost the
 // day's others.
 //
-// WHAT THE RECORD COVERS. Only the sources listed in SOURCES_CHECKED. The NHL and MLS readers and the ESPN GOTD flags read
+// WHAT THE RECORD COVERS. Only the sources listed in SOURCES_CHECKED. The MLS reader and the ESPN GOTD flags read
 // (fetchEspnMlbGotd) below still turn a failed read into [] / an empty set and record nothing (measured 2026-10-31 by an
 // independent review: an ESPN error body shipped an empty list with source_errors {} and a green last step). So `{}` here means
 // "the sources in SOURCES_CHECKED read clean", and says nothing about the others. _meta.source_errors_cover carries the list, so
 // a reader of the file can see what an empty record vouches for. Widening it is one reader at a time, each its own decision: a
-// failed read in any of them would turn the daily run red. WNBA joined NBA on 2026-10-31, and so did MLB: "mlb" means the
+// failed read in any of them would turn the daily run red. WNBA, MLB and NHL joined NBA on 2026-10-31: "mlb" means the
 // statsapi schedule read (parseMLBFull), not the ESPN GOTD flags.
 const SOURCE_ERRORS = {};
-const SOURCES_CHECKED = ['nba', 'wnba', 'mlb'];
+const SOURCES_CHECKED = ['nba', 'wnba', 'mlb', 'nhl'];
 // One entry per sport; a sport read for several days (WNBA reads four) accumulates "<date>: <reason>" for each day that failed.
 const recordSourceError = (sport, dateISO, message) => {
   SOURCE_ERRORS[sport] = [SOURCE_ERRORS[sport], `${dateISO}: ${message}`].filter(Boolean).join('; ');
@@ -50,14 +53,16 @@ const recordSourceError = (sport, dateISO, message) => {
 // 4 days: day 0 plus 3 forward, matching index.html's own nav ceiling
 // (updateDateLabel: `next.disabled = diff >= 3`). This does not widen the nav.
 //
-// Only MLB, soccer/MLS and WNBA are windowed. NHL and NBA are day 0 only. NHL
-// is not by choice: field-data.yml pre-fetches it from /nhl/v1/scoreboard/now,
-// a TODAY-ONLY endpoint with no date parameter to pass. NBA used to be the
-// same (todaysScoreboard_00.json, which also answers 403 to the Worker) and now
-// reads /v2/games?sport=nba&date=, which takes a date. It stays day 0 only
-// because windowing it is a separate change nobody has asked for yet, not
-// because the source cannot. _meta records this per-sport so no reader has to
-// infer it from an empty array.
+// Only MLB, soccer/MLS and WNBA are windowed. NHL and NBA are day 0 only, and
+// neither is a feed limit any more. NHL used to be a today-only file that
+// field-data.yml pre-fetched, which is where the day-0 choice came from; the
+// generator now reads the relay's whole NHL scoreboard and picks the day out of
+// it (11 dates on 2026-10-31: the last 3 days and the next 7). NBA reads
+// /v2/games?sport=nba&date=, which takes a date (it used to be
+// todaysScoreboard_00.json, which answers 403 to the Worker). Windowing either
+// is a separate change nobody has asked for yet, not something the source
+// cannot do. _meta records this per-sport so no reader has to infer it from an
+// empty array.
 const WINDOW_DAYS = 4;
 const WINDOWED_SPORTS = ['mlb', 'soccer', 'wnba'];
 const DAY0_ONLY_SPORTS = ['nhl', 'nba'];
@@ -348,13 +353,23 @@ function assignMLBBroadcast(game, dateStr, rawBroadcasts, espnGotdKeysFromApi) {
 
 // ── Parse NHL scoreboard
 // ── Parse NHL scoreboard ──────────────────────────────────────────────────
-function parseNHL() {
+//
+// The read goes through scripts/nhl-scoreboard.cjs (fetch, a status check, a validated body), and the mapping below is what parseNHL
+// always did. A read that is not clean returns null and appends "<date>: <reason>" to SOURCE_ERRORS.nhl; [] means the relay answered
+// and the day has no games (or, in the off-season, is not among the scoreboard's last ~9 days). The old read took /tmp/nhl.json, which
+// field-data.yml wrote with `curl -sf ... || echo '{}'`: a failed request became `{}` and a day with no games.
+async function parseNHL(dateISO) {
+  let raw;
   try {
-    const raw = JSON.parse(fs.readFileSync('/tmp/nhl.json', 'utf8'));
-    const games = raw.games ||
-      (raw.gamesByDate || []).filter(d => d.date === TODAY).flatMap(d => d.games || []);
-
-    return games.map(g => {
+    raw = (await readNhlScoreboard(dateISO, fetch)).games;
+  } catch (e) {
+    recordSourceError('nhl', dateISO, e.message);
+    console.error(`NHL scoreboard not read for ${dateISO}: ${e.message}`);
+    return null;
+  }
+  // A game the mapping cannot handle is an unread day too, not a crash that costs the day's other sports and not a quiet [].
+  try {
+    return raw.map(g => {
       const homeAbbr = g.homeTeam?.abbrev;
       const awayAbbr = g.awayTeam?.abbrev;
       if (!homeAbbr || !awayAbbr) return null;
@@ -389,7 +404,9 @@ function parseNHL() {
       return { sport: 'NHL', home, away, seriesRecord, league: 'NHL', isPlayoff, round, venue, start_time };
     }).filter(Boolean);
   } catch (e) {
-    console.error('NHL parse error:', e.message); return [];
+    recordSourceError('nhl', dateISO, `mapping failed: ${e.message}`);
+    console.error(`NHL scoreboard not mapped for ${dateISO}: ${e.message}`);
+    return null;
   }
 }
 
@@ -653,16 +670,16 @@ async function parseMLS(dateISO) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
-// Fetch one day's games. NHL and NBA come from pre-fetched today-only files, so
-// they are populated for day 0 and empty for every forward day (see WINDOW_DAYS).
+// Fetch one day's games. NHL and NBA are read for day 0 only (see WINDOW_DAYS), so
+// they are populated for day 0 and empty for every forward day.
 async function fetchDay(dateISO, isDay0, espnGotdKeys) {
-  const nhlGames  = isDay0 ? parseNHL() : [];
+  const nhlGames  = isDay0 ? await parseNHL(dateISO) : [];
   const nbaGames  = isDay0 ? await parseNBA(dateISO) : [];
   const mlbGames  = await parseMLBFull(isDay0 ? espnGotdKeys : new Set(), dateISO);
   const mlsGames  = await parseMLS(dateISO);
   const wnbaGames = await parseWNBA(dateISO);
 
-  console.log(`Parsed: ${nhlGames.length} NHL + ${nbaGames === null ? 'unread' : nbaGames.length} NBA + ${mlbGames === null ? 'unread' : mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames === null ? 'unread' : wnbaGames.length} WNBA game(s) for ${dateISO}`);
+  console.log(`Parsed: ${nhlGames === null ? 'unread' : nhlGames.length} NHL + ${nbaGames === null ? 'unread' : nbaGames.length} NBA + ${mlbGames === null ? 'unread' : mlbGames.length} MLB + ${mlsGames.length} MLS + ${wnbaGames === null ? 'unread' : wnbaGames.length} WNBA game(s) for ${dateISO}`);
   return { nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames };
 }
 
@@ -675,7 +692,8 @@ async function main() {
   // Structured schedule: full game entries for Phase 2 consumption
   // Phase 2 will use schedules.mlb, schedules.nhl, etc. to build game arrays.
   const shapeSchedules = ({ nhlGames, nbaGames, mlbGames, mlsGames, wnbaGames }) => ({
-    nhl: nhlGames.map(g => ({
+    // null when the scoreboard could not be read (SOURCE_ERRORS.nhl says why); [] is a day the relay answered for with no games.
+    nhl: nhlGames === null ? null : nhlGames.map(g => ({
       sport: 'NHL', home: g.home, away: g.away,
       start_time: g.start_time, venue: g.venue,
       seriesRecord: g.seriesRecord, isPlayoff: g.isPlayoff,
@@ -753,7 +771,7 @@ async function main() {
 
   // Generate matchupNotes for NHL/NBA/MLS (high-value; MLB gets notes too for key games)
   const noteTargets = [
-    ...nhlGames.filter(g => g.isPlayoff || g.seriesRecord),
+    ...(nhlGames || []).filter(g => g.isPlayoff || g.seriesRecord),
     ...(nbaGames || []).filter(g => g.isPlayoff || g.seriesRecord),
     ...mlsGames,
     // MLB: generate notes for national broadcast games only (keep API costs down)
@@ -817,7 +835,7 @@ async function main() {
       // Sources the run could not read, by sport, with the date and the reason.
       // Always present. `{}` means every source in source_errors_cover read
       // clean, and says nothing about a source that is not in that list (the
-      // NHL and MLS readers and the ESPN GOTD flags still fail open). A
+      // MLS reader and the ESPN GOTD flags still fail open). A
       // file without these keys is not evidence of a clean run. A sport listed
       // in source_errors has null, not an empty list, for each day that could
       // not be read: in schedules_by_date[date], and for day 0 in `schedules`
@@ -829,7 +847,7 @@ async function main() {
       // lowest-value field in the payload (STANDARDS Rule 78).
       notes_for_dates: [TODAY],
       games_found: {
-        nhl: nhlGames.length,
+        nhl: nhlGames === null ? null : nhlGames.length,
         nba: nbaGames === null ? null : nbaGames.length,
         mlb: mlbGames === null ? null : mlbGames.length,
         mls: mlsGames.length,

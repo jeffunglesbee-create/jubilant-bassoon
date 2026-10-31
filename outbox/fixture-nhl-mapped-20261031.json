@@ -1,0 +1,1011 @@
+{
+ "_provenance": "Expected schedules.nhl entries taken from the PREVIOUS generator (scripts/build-field-data.js at ba002242, before the NHL read moved into scripts/nhl-scoreboard.cjs), run on the same bodies the check feeds the current one. \"real\": the three dates of outbox/fixture-nhl-scoreboard-20261031.json, each run as day 0. \"derived\": ONE real game (game 0 of 2026-10-31) cloned and changed by assignment, NOT observed: the real fixture holds only gameType 2 regular-season games, so the playoff, series, round and fallback paths exist here only as derived bodies. Produced 2026-10-31.",
+ "real": {
+  "2026-10-30": [
+   {
+    "sport": "NHL",
+    "home": "Vegas Golden Knights",
+    "away": "New Jersey Devils",
+    "start_time": "2026-10-30T22:00:00Z",
+    "venue": "T-Mobile Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Florida Panthers",
+    "away": "Winnipeg Jets",
+    "start_time": "2026-10-30T23:00:00Z",
+    "venue": "Amerant Bank Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Calgary Flames",
+    "away": "Seattle Kraken",
+    "start_time": "2026-10-31T00:00:00Z",
+    "venue": "Scotiabank Saddledome",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   }
+  ],
+  "2026-10-31": [
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Detroit Red Wings",
+    "away": "St. Louis Blues",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "Little Caesars Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Nashville Predators",
+    "away": "Tampa Bay Lightning",
+    "start_time": "2026-10-31T18:00:00Z",
+    "venue": "Bridgestone Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "New York Islanders",
+    "away": "Edmonton Oilers",
+    "start_time": "2026-10-31T18:00:00Z",
+    "venue": "UBS Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Los Angeles Kings",
+    "away": "Buffalo Sabres",
+    "start_time": "2026-10-31T20:00:00Z",
+    "venue": "Crypto.com Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "San Jose Sharks",
+    "away": "Ottawa Senators",
+    "start_time": "2026-10-31T20:00:00Z",
+    "venue": "SAP Center at San Jose",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Montreal Canadiens",
+    "away": "Pittsburgh Penguins",
+    "start_time": "2026-10-31T23:00:00Z",
+    "venue": "Centre Bell",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Vancouver Canucks",
+    "away": "Toronto Maple Leafs",
+    "start_time": "2026-10-31T23:00:00Z",
+    "venue": "Rogers Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Dallas Stars",
+    "away": "Columbus Blue Jackets",
+    "start_time": "2026-11-01T00:00:00Z",
+    "venue": "American Airlines Center",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Colorado Avalanche",
+    "away": "Calgary Flames",
+    "start_time": "2026-11-01T02:00:00Z",
+    "venue": "Ball Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   }
+  ],
+  "2026-11-01": [
+   {
+    "sport": "NHL",
+    "home": "Carolina Hurricanes",
+    "away": "Winnipeg Jets",
+    "start_time": "2026-11-01T18:00:00Z",
+    "venue": "Lenovo Center",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Washington Capitals",
+    "away": "Minnesota Wild",
+    "start_time": "2026-11-01T20:30:00Z",
+    "venue": "Capital One Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Philadelphia Flyers",
+    "away": "Utah Hockey Club",
+    "start_time": "2026-11-01T21:00:00Z",
+    "venue": "Xfinity Mobile Arena",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "New York Rangers",
+    "away": "Edmonton Oilers",
+    "start_time": "2026-11-01T23:00:00Z",
+    "venue": "Madison Square Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Anaheim Ducks",
+    "away": "Ottawa Senators",
+    "start_time": "2026-11-02T01:00:00Z",
+    "venue": "Honda Center",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   }
+  ]
+ },
+ "derived": {
+  "from": "game 0 of 2026-10-31 in outbox/fixture-nhl-scoreboard-20261031.json",
+  "teams": [
+   "ANA",
+   "BOS",
+   "BUF",
+   "CGY",
+   "CAR",
+   "CHI",
+   "COL",
+   "CBJ",
+   "DAL",
+   "DET",
+   "EDM",
+   "FLA",
+   "LAK",
+   "MIN",
+   "MTL",
+   "NSH",
+   "NJD",
+   "NYI",
+   "NYR",
+   "OTT",
+   "PHI",
+   "PIT",
+   "SEA",
+   "SJS",
+   "STL",
+   "TBL",
+   "TOR",
+   "UTA",
+   "VAN",
+   "VGK",
+   "WSH",
+   "WPG"
+  ],
+  "teamRule": "game i: homeTeam.abbrev = teams[i], awayTeam.abbrev = teams[(i+1) % 32]",
+  "variants": [
+   {
+    "name": "unknown abbreviation with a commonName falls back to the commonName",
+    "home": "XXX",
+    "homeCommon": "Expansion Hawks"
+   },
+   {
+    "name": "unknown abbreviation with no commonName falls back to the abbreviation",
+    "home": "YYY",
+    "unsetHomeCommon": true
+   },
+   {
+    "name": "seriesAbbrev is the series record",
+    "set": {
+     "seriesStatus": {
+      "seriesAbbrev": "R1"
+     }
+    }
+   },
+   {
+    "name": "seriesStatusShort inside seriesStatus is the series record",
+    "set": {
+     "seriesStatus": {
+      "seriesStatusShort": "BOS leads 2-1"
+     }
+    }
+   },
+   {
+    "name": "top seed ahead: the home team leads",
+    "set": {
+     "seriesStatus": {
+      "topSeedWins": 2,
+      "bottomSeedWins": 1
+     }
+    }
+   },
+   {
+    "name": "bottom seed ahead: the away team leads",
+    "set": {
+     "seriesStatus": {
+      "topSeedWins": 1,
+      "bottomSeedWins": 3
+     }
+    }
+   },
+   {
+    "name": "level and above zero: series tied",
+    "set": {
+     "seriesStatus": {
+      "topSeedWins": 2,
+      "bottomSeedWins": 2
+     }
+    }
+   },
+   {
+    "name": "level at zero: no series record, still a playoff game",
+    "set": {
+     "seriesStatus": {
+      "topSeedWins": 0,
+      "bottomSeedWins": 0
+     }
+    }
+   },
+   {
+    "name": "an empty seriesStatus object is still a playoff game with no record",
+    "set": {
+     "seriesStatus": {}
+    }
+   },
+   {
+    "name": "a missing top seed count reads as zero",
+    "set": {
+     "seriesStatus": {
+      "bottomSeedWins": 1
+     }
+    }
+   },
+   {
+    "name": "a top-level seriesStatusShort with no seriesStatus is the record",
+    "set": {
+     "seriesStatusShort": "MTL leads 1-0"
+    }
+   },
+   {
+    "name": "gameType 3 alone is a playoff game",
+    "set": {
+     "gameType": 3
+    }
+   },
+   {
+    "name": "gameType P alone is a playoff game",
+    "set": {
+     "gameType": "P"
+    }
+   },
+   {
+    "name": "gameSubType containing P is a playoff game",
+    "set": {
+     "gameSubType": "P"
+    }
+   },
+   {
+    "name": "seasonType containing playoff is a playoff game",
+    "set": {
+     "seasonType": "playoff"
+    }
+   },
+   {
+    "name": "round from seriesStatus.round.names.name",
+    "set": {
+     "seriesStatus": {
+      "seriesAbbrev": "R1",
+      "round": {
+       "names": {
+        "name": "First Round"
+       }
+      }
+     }
+    }
+   },
+   {
+    "name": "round from seriesStatus.roundLabel",
+    "set": {
+     "seriesStatus": {
+      "seriesAbbrev": "R2",
+      "roundLabel": "Second Round"
+     }
+    }
+   },
+   {
+    "name": "no startTimeUTC: start_time is gameDate",
+    "unset": [
+     "startTimeUTC"
+    ],
+    "set": {
+     "gameDate": "2026-10-31"
+    }
+   },
+   {
+    "name": "no startTimeUTC and no gameDate: start_time is null",
+    "unset": [
+     "startTimeUTC",
+     "gameDate"
+    ]
+   },
+   {
+    "name": "no venue: venue is null",
+    "unset": [
+     "venue"
+    ]
+   }
+  ],
+  "expected": [
+   {
+    "sport": "NHL",
+    "home": "Anaheim Ducks",
+    "away": "Boston Bruins",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Buffalo Sabres",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Buffalo Sabres",
+    "away": "Calgary Flames",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Calgary Flames",
+    "away": "Carolina Hurricanes",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Carolina Hurricanes",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Chicago Blackhawks",
+    "away": "Colorado Avalanche",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Colorado Avalanche",
+    "away": "Columbus Blue Jackets",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Columbus Blue Jackets",
+    "away": "Dallas Stars",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Dallas Stars",
+    "away": "Detroit Red Wings",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Detroit Red Wings",
+    "away": "Edmonton Oilers",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Edmonton Oilers",
+    "away": "Florida Panthers",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Florida Panthers",
+    "away": "Los Angeles Kings",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Los Angeles Kings",
+    "away": "Minnesota Wild",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Minnesota Wild",
+    "away": "Montreal Canadiens",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Montreal Canadiens",
+    "away": "Nashville Predators",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Nashville Predators",
+    "away": "New Jersey Devils",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "New Jersey Devils",
+    "away": "New York Islanders",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "New York Islanders",
+    "away": "New York Rangers",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "New York Rangers",
+    "away": "Ottawa Senators",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Ottawa Senators",
+    "away": "Philadelphia Flyers",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Philadelphia Flyers",
+    "away": "Pittsburgh Penguins",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Pittsburgh Penguins",
+    "away": "Seattle Kraken",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Seattle Kraken",
+    "away": "San Jose Sharks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "San Jose Sharks",
+    "away": "St. Louis Blues",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "St. Louis Blues",
+    "away": "Tampa Bay Lightning",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Tampa Bay Lightning",
+    "away": "Toronto Maple Leafs",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Toronto Maple Leafs",
+    "away": "Utah Hockey Club",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Utah Hockey Club",
+    "away": "Vancouver Canucks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Vancouver Canucks",
+    "away": "Vegas Golden Knights",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Vegas Golden Knights",
+    "away": "Washington Capitals",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Washington Capitals",
+    "away": "Winnipeg Jets",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Winnipeg Jets",
+    "away": "Anaheim Ducks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Expansion Hawks",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "YYY",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "R1",
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "BOS leads 2-1",
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "Boston Bruins leads 2-1",
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "Chicago Blackhawks leads 3-1",
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "Series tied 2-2",
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "Chicago Blackhawks leads 1-0",
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "MTL leads 1-0",
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": true,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "R1",
+    "isPlayoff": true,
+    "round": "First Round",
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": "TD Garden",
+    "seriesRecord": "R2",
+    "isPlayoff": true,
+    "round": "Second Round",
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31",
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": null,
+    "venue": "TD Garden",
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   },
+   {
+    "sport": "NHL",
+    "home": "Boston Bruins",
+    "away": "Chicago Blackhawks",
+    "start_time": "2026-10-31T17:00:00Z",
+    "venue": null,
+    "seriesRecord": null,
+    "isPlayoff": false,
+    "round": null,
+    "confirmed": true
+   }
+  ],
+  "expected_overlays": [
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "R1"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "BOS leads 2-1"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "Boston Bruins leads 2-1"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "Chicago Blackhawks leads 3-1"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "Series tied 2-2"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "Chicago Blackhawks leads 1-0"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "MTL leads 1-0"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "R1"
+   },
+   {
+    "_match_key": "Boston Bruins|Chicago Blackhawks",
+    "seriesRecord": "R2"
+   }
+  ]
+ }
+}

@@ -2,10 +2,11 @@
 #
 # FIELD DATA — Daily Overlay Automation
 #
-# Runs each morning AFTER the daily brief. Fetches live NHL/NBA schedules
-# from the relay, extracts series records, optionally generates matchupNotes
-# via Claude (if ANTHROPIC_API_KEY secret is set), then pushes
-# outbox/field-data-today.json to the repo.
+# Runs each morning AFTER the daily brief. scripts/build-field-data.js reads the
+# NHL, NBA, WNBA, MLB and MLS schedules itself (this workflow fetches nothing),
+# extracts series records, optionally generates matchupNotes via Claude (if
+# ANTHROPIC_API_KEY secret is set), then pushes outbox/field-data-today.json to
+# the repo.
 #
 # WHAT UPDATES AUTOMATICALLY (no session needed):
 #   - NHL/NBA series records (e.g. "MTL leads 2-0") after each playoff game
@@ -43,15 +44,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch the NHL schedule from relay
-        run: |
-          RELAY="https://field-relay-nba.jeffunglesbee.workers.dev"
-          curl -sf --max-time 10 -H "Cache-Control: no-cache" \
-            "$RELAY/nhl/v1/scoreboard/now" > /tmp/nhl.json 2>/dev/null || echo '{}' > /tmp/nhl.json
-          echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
-          echo "Fetched NHL ($(wc -c < /tmp/nhl.json) bytes)"
-          # NBA is read by the build script from /v2/games (scripts/nba-board.cjs), not from a file written here.
-          # MLB fetched directly from statsapi.mlb.com in build script (no relay needed)
+      # Every source is read by the build script itself, through a reader that throws on an unclean answer
+      # (scripts/nba-board.cjs, scripts/mlb-schedule.cjs, scripts/nhl-scoreboard.cjs). This step used to curl the NHL scoreboard
+      # into /tmp/nhl.json with `|| echo '{}'`, which turned a failed request into a day with no games.
+      - name: Set the date
+        run: echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
 
       - name: Build overlay JSON
         env:
@@ -83,7 +80,7 @@ jobs:
 
       # Last, so the overlay above is already pushed: a source the build could not read is null in the file with its reason
       # in _meta.source_errors, and this step fails the run for it. The good sports are not lost to one unread source.
-      # It vouches only for the sources in _meta.source_errors_cover (today: nba, wnba, mlb); the NHL and MLS readers and the ESPN GOTD flags still
+      # It vouches only for the sources in _meta.source_errors_cover (today: nba, wnba, mlb, nhl); the MLS reader and the ESPN GOTD flags still
       # turn a failed read into [] without recording it. The NBA read's check runs in nba-board-check.yml, not here: a
       # check that asserts text must not be able to stop the day's overlay.
       - name: Fail the run when a recorded source could not be read

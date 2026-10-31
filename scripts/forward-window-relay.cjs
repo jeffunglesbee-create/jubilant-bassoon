@@ -2,15 +2,16 @@
 // The forward-window probe's capture of what the RELAY lists, per sport, for the forward days. REPORTED, NEVER ASSERTED.
 //
 // WHY. The probe's one assertion about content is the MLB count, and the window file it checks carries only MLB, MLS and
-// WNBA on forward days (scripts/build-field-data.js: WINDOWED_SPORTS). NHL and NBA are day 0 only because their feeds serve
-// only today (build-field-data.js says "not by choice"), and NFL and college football have no key at all. So a green probe
+// WNBA on forward days (scripts/build-field-data.js: WINDOWED_SPORTS). NHL and NBA are day 0 only by a choice nobody has revisited
+// (their feeds used to serve only today; the NHL scoreboard now carries 11 dates and the NBA read takes a date, see build-field-data.js
+// WINDOW_DAYS), and NFL and college football have no key at all. So a green probe
 // said nothing about this weekend's other sports: on 2026-10-30 the relay listed 12 NFL games for Sunday 11-01 and 10 NHL
 // games for Saturday 10-31, while the window file carried 0 for both and the probe passed. This module puts both counts side
 // by side in the manifest, so a run says which sports it looked at and what the relay had.
 //
 // NOT COVERED: day 0. The capture asks only the forward days, so it cannot see a day-0 miss. On 2026-10-30 the file's NBA was
-// 0 on a night the relay listed 10 games (the generator's NBA read hits a 403'ing passthrough; see field-relay-nba
-// docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md, "Data point 2026-10-30"). That is invisible here.
+// 0 on a night the relay listed 10 games (the generator's NBA read then hit a 403'ing passthrough, fixed 2026-10-31; see field-relay-nba
+// docs/CC-CMD-2026-10-22-nba-cdn-403-in-season.md, "Data point 2026-10-30"). A day-0 miss of that kind is invisible here.
 //
 // It is a capture (raw counts the laboratory can read), not a metric and not a verdict: nothing here adds a problem to the
 // judge, and the probe attaches the result to the manifest AFTER the judge has run, so the judge never sees it. What counts as

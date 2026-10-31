@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// The generator's NBA, WNBA and MLB reads: scripts/nba-board.cjs and scripts/mlb-schedule.cjs, how scripts/build-field-data.js uses them, and the last workflow step that
+// The generator's NBA, WNBA, MLB and NHL reads: scripts/nba-board.cjs, scripts/mlb-schedule.cjs and scripts/nhl-scoreboard.cjs, how scripts/build-field-data.js uses them, and the last workflow step that
 // turns an unread source into a failed run (scripts/field-data-source-errors.cjs, .github/workflows/field-data.yml).
 //
 // THE FAILURE THIS GUARDS. field-data.yml read the NBA board from the relay's /nba/... passthrough with `curl -sf ... || echo '{}'`.
@@ -12,6 +12,10 @@
 // The MLB read (statsapi, parseMLBFull) had it too and moved to scripts/mlb-schedule.cjs on 2026-10-31. MLB is off-season too, so the
 // same property holds: a winter window of clean `dates: []` answers must record nothing. Its answers (an off-day, the last game day, an
 // invalid-date error) are statsapi's real ones, read by a runner (outbox/fixture-mlb-schedule-20261031.json).
+// The NHL read (parseNHL read /tmp/nhl.json, which a curl step filled with `|| echo '{}'`) moved to scripts/nhl-scoreboard.cjs on 2026-10-31.
+// Its body is the relay's real passthrough answer, read by a runner and trimmed to 3 of its 11 dates (outbox/fixture-nhl-scoreboard-20261031.json).
+// The generator's expected entries are the PREVIOUS generator's output on the same bodies (outbox/fixture-nhl-mapped-20261031.json); that
+// file also holds bodies DERIVED from one real game, because the real scoreboard of 2026-10-31 carries regular-season games only.
 //
 // Coverage (Rule 91): the board reader runs as the real function against a fake fetch built from outbox/fixture-nba-board-20261031.json
 // (the relay's real answer, observed 2026-10-31); the error shapes are READ from field-relay-nba src/index.js, not observed. The
@@ -34,6 +38,9 @@ const ERRS = process.env.ERRS_SRC || 'scripts/field-data-source-errors.cjs';
 const WORKFLOW = process.env.WORKFLOW_SRC || '.github/workflows/field-data.yml';
 const CHECK_WORKFLOW = process.env.CHECK_WORKFLOW_SRC || '.github/workflows/nba-board-check.yml';
 const MLB = process.env.MLB_SRC || 'scripts/mlb-schedule.cjs';
+const NHL = process.env.NHL_SRC || 'scripts/nhl-scoreboard.cjs';
+const NFIXTURE = 'outbox/fixture-nhl-scoreboard-20261031.json';
+const NMAPPED = 'outbox/fixture-nhl-mapped-20261031.json';
 const FIXTURE = 'outbox/fixture-nba-board-20261031.json';
 const MFIXTURE = 'outbox/fixture-mlb-schedule-20261031.json';
 const WFIXTURE = 'outbox/fixture-wnba-board-20261031.json';
@@ -42,6 +49,8 @@ const require = createRequire(import.meta.url);
 const fx = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 const wfx = JSON.parse(readFileSync(WFIXTURE, 'utf8'));
 const mfx = JSON.parse(readFileSync(MFIXTURE, 'utf8'));
+const nfx = JSON.parse(readFileSync(NFIXTURE, 'utf8'));
+const nmapped = JSON.parse(readFileSync(NMAPPED, 'utf8'));
 const TODAY = fx.body.date;
 
 let failed = 0, ran = 0, section = 'board';
@@ -69,6 +78,8 @@ function loadCjs(file, mapping) {
 }
 const mlbMod = loadCjs(MLB, { './nba-board.cjs': require(path.resolve(BOARD)) });
 const { readMlbSchedule } = mlbMod;
+const nhlMod = loadCjs(NHL, { './nba-board.cjs': require(path.resolve(BOARD)) });
+const { readNhlScoreboard } = nhlMod;
 const read = (handler, iso = TODAY, opts) => settle(readNbaBoard(iso, fakeFetch(handler), opts));
 const reads = (label, r, re) => want(label, r.error !== undefined && re.test(r.error), JSON.stringify(r).slice(0, 200));
 
@@ -262,6 +273,106 @@ reads('mlb: a timeout while the body is being read is a request that failed', aw
   want('mlb: with no option the request is cut at 15000 ms', same(seen, [15000]), JSON.stringify(seen));
 }
 
+// NHL: the relay's passthrough of NHL's scoreboard. The body is the real one read by a runner on 2026-10-31 (trimmed to three dates).
+section = 'nhl reader';
+const nBody = () => clone(nfx.body);
+const nread = (handler, iso = '2026-10-31', opts) => settle(readNhlScoreboard(iso, fakeFetch(handler), opts));
+const N31 = () => nfx.body.gamesByDate.find((d) => d.date === '2026-10-31');
+{
+  const seen = [];
+  const r = await settle(readNhlScoreboard('2026-10-31', async (url, o) => { seen.push([url, o]); return resp(200, nBody()); }));
+  want('nhl: the real scoreboard reads as exactly the entry for the date (10 games on 10-31, not the 3 of 10-30 or the 5 of 11-01)', r.value && same(r.value.games, N31().games), JSON.stringify(r).slice(0, 160));
+  want('nhl: exactly one request, to the relay\'s /nhl/v1/scoreboard/now', seen.length === 1 && seen[0][0] === 'https://field-relay-nba.jeffunglesbee.workers.dev/nhl/v1/scoreboard/now', JSON.stringify(seen.map((x) => x[0])));
+  want('nhl: the request carries the bot User-Agent and Accept JSON (the curl step sent neither) and Cache-Control no-cache (the one header it sent)', seen.length === 1 && seen[0][1].headers['User-Agent'] === 'FIELD-DataBot/1.0' && seen[0][1].headers['Accept'] === 'application/json' && seen[0][1].headers['Cache-Control'] === 'no-cache', JSON.stringify(seen.map((x) => x[1] && x[1].headers)));
+}
+{
+  const r = await nread(() => resp(200, nBody()), '2026-10-30');
+  want('nhl: another date in the window reads its own 3 games', r.value && r.value.games.length === 3, JSON.stringify(r).slice(0, 120));
+}
+{
+  const r = await nread(() => resp(200, nBody()), '2026-11-20');
+  want('nhl: a date with no entry (the off-season shape: today is not among the scoreboard\'s dates) is an empty list, not an error', r.value && same(r.value.games, []), JSON.stringify(r));
+}
+{
+  const r = await nread(() => resp(200, { focusedDate: '2026-11-20', focusedDateCount: 0, gamesByDate: [] }), '2026-11-20');
+  want('nhl: an empty gamesByDate array is an empty list, not an error', r.value && same(r.value.games, []), JSON.stringify(r));
+}
+{
+  const r = await nread(() => resp(200, { games: [{ homeTeam: { abbrev: 'BOS' }, awayTeam: { abbrev: 'CHI' } }] }));
+  want('nhl: the alternate shape parseNHL has always accepted ({ games: [...] }) is read', r.value && r.value.games.length === 1, JSON.stringify(r));
+}
+reads('nhl: HTTP 503 (the relay answers an upstream failure with its status and the text `nhl returned 503`) is an error', await nread(() => resp(503, null, true)), /HTTP 503/);
+reads('nhl: HTTP 502 (the relay\'s `nhl network error`) is an error', await nread(() => resp(502, null, true)), /HTTP 502/);
+reads('nhl: HTTP 403 (a path the relay does not allow) is an error', await nread(() => resp(403, null, true)), /HTTP 403/);
+reads('nhl: `{}`, exactly what the old curl fallback wrote, is an error and not an empty day', await nread(() => resp(200, {})), /neither a gamesByDate array nor a games array/);
+reads('nhl: a gamesByDate that is not an array is an error', await nread(() => resp(200, { gamesByDate: 'none' })), /neither a gamesByDate array nor a games array/);
+reads('nhl: a response that is not JSON is an error', await nread(() => resp(200, null, true)), /not JSON/);
+reads('nhl: a body that is JSON null is an error', await nread(() => resp(200, null)), /not an object/);
+{
+  const b = nBody(); delete b.gamesByDate.find((d) => d.date === '2026-10-31').games;
+  reads('nhl: an entry for the date with no games array is an error', await nread(() => resp(200, b)), /the entry for 2026-10-31 has no games array/);
+}
+{
+  const b = nBody(); delete b.gamesByDate.find((d) => d.date === '2026-10-30').games;
+  const r = await nread(() => resp(200, b), '2026-10-31');
+  want('nhl: a malformed entry for ANOTHER date does not fail today\'s read', r.value && r.value.games.length === 10, JSON.stringify(r).slice(0, 120));
+}
+{
+  const b = nBody(); delete b.gamesByDate.find((d) => d.date === '2026-10-31').games[2].awayTeam.abbrev;
+  reads('nhl: a game with no team abbreviation fails the read and says how many (the old read dropped it silently)', await nread(() => resp(200, b)), /1 of 10 games have no team abbreviation/);
+}
+{
+  const b = nBody(); delete b.gamesByDate.find((d) => d.date === '2026-10-31').games[0].homeTeam;
+  reads('nhl: a game with no homeTeam object fails the read rather than throwing a TypeError', await nread(() => resp(200, b)), /1 of 10 games have no team abbreviation/);
+}
+for (const [name, mut, re] of [
+  ['entries keyed `gameDate` instead of `date`', (b) => { b.gamesByDate.forEach((d) => { d.gameDate = d.date; delete d.date; }); }, /3 of 3 gamesByDate entries have no YYYY-MM-DD date/],
+  ['dates written as timestamps', (b) => { b.gamesByDate.forEach((d) => { d.date = `${d.date}T00:00:00Z`; }); }, /3 of 3 gamesByDate entries have no YYYY-MM-DD date/],
+  ['dates written as YYYYMMDD', (b) => { b.gamesByDate.forEach((d) => { d.date = d.date.replace(/-/g, ''); }); }, /3 of 3 gamesByDate entries have no YYYY-MM-DD date/],
+  ['dates written as numbers', (b) => { b.gamesByDate.forEach((d) => { d.date = Number(d.date.replace(/-/g, '')); }); }, /3 of 3 gamesByDate entries have no YYYY-MM-DD date/],
+  ['dates with text in front of them', (b) => { b.gamesByDate.forEach((d) => { d.date = `on ${d.date}`; }); }, /3 of 3 gamesByDate entries have no YYYY-MM-DD date/],
+  ['a null entry', (b) => { b.gamesByDate.push(null); }, /1 of 4 gamesByDate entries have no YYYY-MM-DD date/],
+  ['an entry that is `{}`', (b) => { b.gamesByDate.push({}); }, /1 of 4 gamesByDate entries have no YYYY-MM-DD date/],
+  ['one bad date among three (a bad date on ANOTHER entry fails the read; a missing games array there does not)', (b) => { b.gamesByDate[0].date = '10/30/2026'; }, /1 of 3 gamesByDate entries have no YYYY-MM-DD date/],
+]) {
+  const b = nBody(); mut(b);
+  reads(`nhl: ${name} is an error and not the off-season's empty day (a populated scoreboard whose date key drifted must not read as no games)`, await nread(() => resp(200, b)), re);
+}
+for (const [name, mut] of [
+  ['an empty-string home abbreviation', (g) => { g.homeTeam.abbrev = ''; }],
+  ['a null away abbreviation', (g) => { g.awayTeam.abbrev = null; }],
+  ['a present but empty away abbreviation object', (g) => { g.awayTeam = { abbrev: '', commonName: { default: 'Blackhawks' } }; }],
+]) {
+  const b = nBody(); mut(b.gamesByDate.find((d) => d.date === '2026-10-31').games[3]);
+  reads(`nhl: ${name} fails the read (a key that is present but empty is as unnamed as a missing one)`, await nread(() => resp(200, b)), /1 of 10 games have no team abbreviation/);
+}
+reads('nhl: a fetch that fails with a cause records the cause', await settle(readNhlScoreboard('2026-10-31', async () => { throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } }); })), /request failed: fetch failed \(ECONNREFUSED\)/);
+reads('nhl: a timeout while the body is being read is a request that failed', await settle(readNhlScoreboard('2026-10-31', async () => ({ ok: true, status: 200, json: async () => { throw new DOMException('The operation was aborted due to timeout', 'TimeoutError'); } }))), /request failed: The operation was aborted due to timeout/);
+{
+  const hang = (url, { signal }) => new Promise((_, rej) => signal.addEventListener('abort', () => rej(new Error('aborted by the timeout'))));
+  let timer;
+  const watchdog = new Promise((r) => { timer = setTimeout(() => r({ error: 'WATCHDOG: still waiting after 2000 ms, the request has no timeout' }), 2000); });
+  const r = await Promise.race([settle(readNhlScoreboard('2026-10-31', hang, { timeoutMs: 40 })), watchdog]);
+  clearTimeout(timer);
+  reads('nhl: a request that never answers is cut at the timeout and fails the read', r, /request failed: aborted by the timeout/);
+}
+{
+  const seen = [], orig = AbortSignal.timeout;
+  AbortSignal.timeout = (ms) => { seen.push(ms); return orig.call(AbortSignal, ms); };
+  try { await settle(readNhlScoreboard('2026-10-31', fakeFetch(() => resp(200, nBody())))); } finally { AbortSignal.timeout = orig; }
+  want('nhl: with no option the request is cut at 15000 ms', same(seen, [15000]), JSON.stringify(seen));
+}
+
+{
+  const hs = {};
+  const grab = (k, body) => async (url, o) => { hs[k] = Object.keys(o.headers).sort(); return resp(200, body); };
+  await settle(readNbaBoard(TODAY, grab('nba', fixtureBody())));
+  await settle(readWnbaBoard('2026-11-01', grab('wnba', emptyOf('wnba', '2026-11-01'))));
+  await settle(readMlbSchedule('2026-10-31', grab('mlb', mOff())));
+  want('headers: the NBA, WNBA and MLB requests carry User-Agent and Accept only; Cache-Control: no-cache belongs to the NHL read alone (the shared getJson adds extra headers for one caller)',
+       same(hs, { nba: ['Accept', 'User-Agent'], wnba: ['Accept', 'User-Agent'], mlb: ['Accept', 'User-Agent'] }), JSON.stringify(hs));
+}
+
 // ─── 2. the generator, in full, under stubs ────────────────────────────────────────────────────────────────────────────
 section = 'generator';
 const GEN_SRC_TEXT = readFileSync(GEN, 'utf8');
@@ -292,11 +403,11 @@ const wDay = (o, d) => ((o && o.schedules_by_date && o.schedules_by_date[d]) || 
 const dateOf = (url) => new URL(url).searchParams.get('date');
 const sportOf = (url) => new URL(url).searchParams.get('sport');
 // nba(iso, url) and wnba(iso, url) answer that sport's board requests; unlisted ones answer the real 7-game NBA board for day 0 and a clean empty WNBA board.
-async function runGenerator({ src = GEN, today = TODAY, nba = () => resp(200, fixtureBody()), wnba = (iso) => resp(200, emptyOf('wnba', iso)), mlb = () => resp(200, mOff()), espnMlb = { events: [] }, nbaJson = '{}' }) {
+async function runGenerator({ src = GEN, today = TODAY, nba = () => resp(200, fixtureBody()), wnba = (iso) => resp(200, emptyOf('wnba', iso)), mlb = () => resp(200, mOff()), nhl = () => resp(200, { focusedDate: today, focusedDateCount: 0, gamesByDate: [] }), espnMlb = { events: [] }, nbaJson = '{}' }) {
   const written = {}, readLog = [], logs = [], unstubbed = [], fetchUrls = [], timeouts = [];
   let exited = null;
   const fakeFs = {
-    readFileSync(p) { readLog.push(p); if (p === '/tmp/nhl.json') return '{}'; if (p === '/tmp/nba.json') return nbaJson; throw new Error(`ENOENT ${p}`); },
+    readFileSync(p) { readLog.push(p); if (p === '/tmp/nba.json') return nbaJson; throw new Error(`ENOENT ${p}`); },
     writeFileSync(p, d) { written[p] = d; },
   };
   const fakeProcess = { env: { TODAY: today }, exit(c) { exited = c; } };
@@ -304,6 +415,7 @@ async function runGenerator({ src = GEN, today = TODAY, nba = () => resp(200, fi
   const stubFetch = async (url) => {
     fetchUrls.push(url);
     if (new URL(url).hostname === 'statsapi.mlb.com') return mlb(dateOf(url), url);
+    if (new URL(url).pathname === '/nhl/v1/scoreboard/now') return nhl(url);
     const sp = sportOf(url);
     if (sp === 'nba') return nba(dateOf(url), url);
     if (sp === 'wnba') return wnba(dateOf(url), url);
@@ -311,7 +423,7 @@ async function runGenerator({ src = GEN, today = TODAY, nba = () => resp(200, fi
     return resp(404, {});
   };
   const stubRequire = (id) => (id === 'fs' ? fakeFs : id === 'https' ? stubHttps(unstubbed, espnMlb)
-    : id === './nba-board.cjs' ? require(path.resolve(BOARD)) : id === './mlb-schedule.cjs' ? mlbMod : createRequire(path.resolve(src))(id));
+    : id === './nba-board.cjs' ? require(path.resolve(BOARD)) : id === './mlb-schedule.cjs' ? mlbMod : id === './nhl-scoreboard.cjs' ? nhlMod : createRequire(path.resolve(src))(id));
   const code = readFileSync(src, 'utf8').replace(/^#!.*\n/, '');
   const fn = vm.runInThisContext(`(function (require, process, console, fetch) {${code}\n})`, { filename: src });
   const origTimeout = AbortSignal.timeout;
@@ -324,7 +436,8 @@ async function runGenerator({ src = GEN, today = TODAY, nba = () => resp(200, fi
   const text = written['/tmp/field-data-today.json'];
   const nbaUrls = fetchUrls.filter((u) => sportOf(u) === 'nba'), wnbaUrls = fetchUrls.filter((u) => sportOf(u) === 'wnba');
   const mlbUrls = fetchUrls.filter((u) => new URL(u).hostname === 'statsapi.mlb.com');
-  return { text, out: text ? JSON.parse(text) : null, exited, logs, unstubbed, readLog, nbaUrls, wnbaUrls, mlbUrls, timeouts };
+  const nhlUrls = fetchUrls.filter((u) => new URL(u).pathname === '/nhl/v1/scoreboard/now');
+  return { text, out: text ? JSON.parse(text) : null, exited, logs, unstubbed, readLog, nbaUrls, wnbaUrls, mlbUrls, nhlUrls, timeouts };
 }
 
 const se = (o) => (o && o._meta && o._meta.source_errors) || {};
@@ -342,8 +455,8 @@ const good = await runGenerator({});
   want('generator: the NBA board is asked once, for day 0 only (forward days stay day-0-only)', good.nbaUrls.length === 1 && good.nbaUrls[0].endsWith(`/v2/games?sport=nba&date=${TODAY}`), JSON.stringify(good.nbaUrls));
   want('generator: the forward days carry an empty NBA list, as before', o && Object.keys(o.schedules_by_date).length === 4
        && Object.entries(o.schedules_by_date).filter(([d]) => d !== TODAY).every(([, s]) => same(s.nba, [])), JSON.stringify(o && Object.fromEntries(Object.entries(o.schedules_by_date).map(([d, s]) => [d, s.nba && s.nba.length]))));
-  want('generator: the one NBA board, the four WNBA boards and the four MLB schedules are each requested with the 15000 ms timeout', same(good.timeouts, Array(9).fill(15000)), JSON.stringify(good.timeouts));
-  want('generator: source_errors_cover lists exactly the sources the empty record vouches for (nba, wnba, mlb)', o && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb']), JSON.stringify(o && o._meta.source_errors_cover));
+  want('generator: the one NBA board, the four WNBA boards, the four MLB schedules and the one NHL scoreboard are each requested with the 15000 ms timeout', same(good.timeouts, Array(10).fill(15000)), JSON.stringify(good.timeouts));
+  want('generator: source_errors_cover lists exactly the sources the empty record vouches for (nba, wnba, mlb, nhl)', o && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb', 'nhl']), JSON.stringify(o && o._meta.source_errors_cover));
   want('generator: the retired /tmp/nba.json is never read', !good.readLog.includes('/tmp/nba.json'), JSON.stringify(good.readLog));
   want('generator: the run log counts 7 day-0 games and 7 in the window', good.logs.some((l) => l.includes('Output: 7 day-0 games')) && good.logs.some((l) => /window: 4\/4 days .* = 7 games/.test(l)), JSON.stringify(good.logs.slice(-4)));
 }
@@ -368,7 +481,7 @@ for (const [name, handler, why] of [
   want(`generator: ${name} does not count the null as a game in games_found_by_date`, !!o && o._meta.games_found_by_date[TODAY] === 0, JSON.stringify(o && o._meta.games_found_by_date));
   want(`generator: ${name} counts 0 games in the run log, not the null as one`, bad.logs.some((l) => l.includes('Output: 0 day-0 games')) && bad.logs.some((l) => /window: 4\/4 days .* = 0 games/.test(l)), JSON.stringify(bad.logs.slice(-4)));
   want(`generator: ${name} says which date was not read in the run log`, bad.logs.some((l) => l.includes(`NBA board not read for ${TODAY}`)), JSON.stringify(bad.logs.slice(0, 6)));
-  want(`generator: ${name} keeps source_errors_cover at nba, wnba and mlb`, !!o && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb']), JSON.stringify(o && o._meta.source_errors_cover));
+  want(`generator: ${name} keeps source_errors_cover at nba, wnba, mlb and nhl`, !!o && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb', 'nhl']), JSON.stringify(o && o._meta.source_errors_cover));
   want(`generator: ${name} leaves every other sport's key an array`, !!o && ['nhl', 'mlb', 'soccer', 'wnba'].every((k) => Array.isArray(o.schedules[k])), JSON.stringify(o && Object.keys(o.schedules)));
 }
 
@@ -426,7 +539,7 @@ for (const [name, wnba, nullDays, why] of [
   want(`generator: WNBA ${name} does not touch source_errors.nba or the NBA games (the NBA board read clean)`, !!o && !('nba' in se(o)) && Array.isArray(o.schedules.nba) && o.schedules.nba.length === 7, JSON.stringify(o && o._meta.source_errors));
   want(`generator: WNBA ${name} does not count a null day as a game in games_found_by_date`, !!o && WIN.every((d) => o._meta.games_found_by_date[d] === (d === TODAY ? 7 : 0)), JSON.stringify(o && o._meta.games_found_by_date));
   want(`generator: WNBA ${name} names each date not read in the run log`, nullDays.every((d) => r.logs.some((l) => l.includes(`WNBA board not read for ${d}`))), JSON.stringify(r.logs.slice(0, 8)));
-  want(`generator: WNBA ${name} keeps the other sports' keys arrays and the cover at nba, wnba and mlb`, !!o && ['nhl', 'nba', 'mlb', 'soccer'].every((k) => Array.isArray(o.schedules[k])) && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb']), JSON.stringify(o && Object.keys(o.schedules)));
+  want(`generator: WNBA ${name} keeps the other sports' keys arrays and the cover at nba, wnba, mlb and nhl`, !!o && ['nhl', 'nba', 'mlb', 'soccer'].every((k) => Array.isArray(o.schedules[k])) && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb', 'nhl']), JSON.stringify(o && Object.keys(o.schedules)));
 }
 const both = await runGenerator({ nba: () => resp(403, { error: 'nba returned 403' }), wnba: () => resp(502, { error: 'x' }) });
 {
@@ -517,7 +630,82 @@ for (const [name, mlb, nullDays, why] of [
   want(`generator: MLB ${name} does not touch source_errors.nba or source_errors.wnba`, !!o && !('nba' in se(o)) && !('wnba' in se(o)), JSON.stringify(o && o._meta.source_errors));
   want(`generator: MLB ${name} does not count a null day as a game in games_found_by_date (a failed day is not a game)`, !!o && MWIN.every((d) => o._meta.games_found_by_date[d] === ((d === MD0 && !nullDays.includes(MD0)) ? 1 : 0)), JSON.stringify(o && o._meta.games_found_by_date));
   want(`generator: MLB ${name} names each date not read in the run log`, nullDays.every((d) => r.logs.some((l) => l.includes(`MLB schedule not ${name.includes('mapping') ? 'mapped' : 'read'} for ${d}`))), JSON.stringify(r.logs.slice(0, 8)));
-  want(`generator: MLB ${name} keeps the other sports' keys arrays and the cover at nba, wnba and mlb`, !!o && ['nhl', 'nba', 'soccer', 'wnba'].every((k) => Array.isArray(o.schedules[k])) && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb']), JSON.stringify(o && Object.keys(o.schedules)));
+  want(`generator: MLB ${name} keeps the other sports' keys arrays and the cover at nba, wnba, mlb and nhl`, !!o && ['nhl', 'nba', 'soccer', 'wnba'].every((k) => Array.isArray(o.schedules[k])) && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb', 'nhl']), JSON.stringify(o && Object.keys(o.schedules)));
+}
+
+// ── NHL: day 0 only, one scoreboard read ──
+// The expected entries were taken from the PREVIOUS generator (parseNHL over /tmp/nhl.json) run on the same bodies on 2026-10-31: old and new were identical.
+// The day-0 NHL list of a generator output, [] when the output or the list is missing (null is what a failed read writes), so an assertion reads red instead of crashing the check.
+const nhlOf = (o) => (o && o.schedules && o.schedules.nhl) || [];
+const parsedLine = (r) => r.logs.find((l) => l.startsWith('Parsed: ')) || '';
+const nhlGood = await runGenerator({ nhl: () => resp(200, nBody()) });
+{
+  const o = nhlGood.out;
+  const FIRST = { sport: 'NHL', home: 'Boston Bruins', away: 'Chicago Blackhawks', start_time: '2026-10-31T17:00:00Z', venue: 'TD Garden', seriesRecord: null, isPlayoff: false, round: null, confirmed: true };
+  want('generator: day 0 NHL is the scoreboard\'s 10 games for 2026-10-31, the first mapped exactly as parseNHL always did', !!o && nhlOf(o).length === 10 && same(nhlOf(o)[0], FIRST), JSON.stringify(nhlOf(o)[0]));
+  want('generator: games_found.nhl is 10 and the day-0 window count is 17 (7 NBA + 10 NHL)', !!o && o._meta.games_found.nhl === 10 && o._meta.games_found_by_date[TODAY] === 17, JSON.stringify(o && [o._meta.games_found, o._meta.games_found_by_date]));
+  want('generator: the NHL scoreboard is read once (day 0 only), the forward days carry an empty NHL list, and nothing is recorded as unread',
+       !!o && nhlGood.nhlUrls.length === 1 && WIN.slice(1).every((d) => same(o.schedules_by_date[d].nhl, [])) && same(o._meta.source_errors, {}), JSON.stringify(o && [nhlGood.nhlUrls, o._meta.source_errors]));
+  want('generator: it reads no input file at all (every source is read over the network now)', same(nhlGood.readLog, []), JSON.stringify(nhlGood.readLog));
+  want('generator: all 10 NHL entries of 2026-10-31 equal the previous generator\'s output on the same body, in order', same(nhlOf(o), nmapped.real['2026-10-31']), JSON.stringify(nhlOf(o)).slice(0, 200));
+  want('generator: the run log says how many games each source returned', parsedLine(nhlGood) === 'Parsed: 10 NHL + 7 NBA + 0 MLB + 0 MLS + 0 WNBA game(s) for 2026-10-31', JSON.stringify(parsedLine(nhlGood)));
+}
+{
+  const r = await runGenerator({ today: '2026-11-01', ...mlbEmpties, nhl: () => resp(200, nBody()) });
+  want('generator: 2026-11-01 reads its own 5 games and each equals the previous generator\'s output', !!r.out && same(nhlOf(r.out), nmapped.real['2026-11-01']) && nhlOf(r.out).length === 5, JSON.stringify(nhlOf(r.out)).slice(0, 160));
+}
+{
+  // DERIVED bodies: one real game cloned and changed by assignment (outbox/fixture-nhl-mapped-20261031.json says so). The real scoreboard holds only
+  // regular-season games, so every playoff, series, round and fallback path runs here and nowhere on a real body. The expected entries and overlays are
+  // the previous generator's output on these same bodies.
+  const D = nmapped.derived, g0 = N31().games[0];
+  const variant = (v) => { const g = clone(g0); if (v.home) g.homeTeam.abbrev = v.home; if (v.homeCommon) g.homeTeam.commonName = { default: v.homeCommon }; if (v.unsetHomeCommon) delete g.homeTeam.commonName; Object.assign(g, clone(v.set || {})); for (const k of v.unset || []) delete g[k]; return g; };
+  const games = [...D.teams.map((t, i) => { const g = clone(g0); g.homeTeam.abbrev = t; g.awayTeam.abbrev = D.teams[(i + 1) % D.teams.length]; return g; }), ...D.variants.map(variant)];
+  const r = await runGenerator({ nhl: () => resp(200, { gamesByDate: [{ date: TODAY, games }] }) });
+  want(`generator: ${games.length} derived games (${D.teams.length} teams as home and as away, ${D.variants.length} field variants) map exactly as the previous generator mapped them`, !!r.out && games.length === D.expected.length && same(nhlOf(r.out), D.expected), JSON.stringify(nhlOf(r.out).filter((x, i) => !same(x, D.expected[i]))[0]));
+  want('generator: the overlays for those games (one per series record, keyed home|away, in order) equal the previous generator\'s', !!r.out && D.expected_overlays.length === 9 && same(r.out.game_overlays, D.expected_overlays), JSON.stringify(r.out && r.out.game_overlays));
+}
+{
+  const r = await runGenerator({ nhl: () => resp(200, (() => { const b = nBody(); const g = b.gamesByDate.find((d) => d.date === '2026-10-31').games[0]; g.gameType = 3; g.seriesStatus = { round: 1, topSeedWins: 2, bottomSeedWins: 1, seriesAbbrev: 'R1' }; return b; })()) });
+  want('generator: a playoff game (gameType 3 with a seriesStatus) keeps its series record and playoff flag', !!r.out && (nhlOf(r.out)[0] || {}).seriesRecord === 'R1' && (nhlOf(r.out)[0] || {}).isPlayoff === true, JSON.stringify(nhlOf(r.out)[0]));
+}
+{
+  const r = await runGenerator({ today: '2026-10-30', ...mlbEmpties, nhl: () => resp(200, nBody()) });
+  want('generator: an earlier date in the window reads its own 3 games', !!r.out && nhlOf(r.out).length === 3 && same(nhlOf(r.out), nmapped.real['2026-10-30']) && same(nhlOf(r.out)[0], { sport: 'NHL', home: 'Vegas Golden Knights', away: 'New Jersey Devils', start_time: '2026-10-30T22:00:00Z', venue: 'T-Mobile Arena', seriesRecord: null, isPlayoff: false, round: null, confirmed: true }), JSON.stringify(nhlOf(r.out)[0]));
+}
+{
+  const r = await runGenerator({ today: '2026-11-20', ...mlbEmpties, nhl: () => resp(200, nBody()) });
+  want('generator: a date the scoreboard has no entry for (the off-season shape) is [] with games_found.nhl 0 and nothing recorded',
+       !!r.out && same(r.out.schedules.nhl, []) && r.out._meta.games_found.nhl === 0 && same(r.out._meta.source_errors, {}), JSON.stringify(r.out && [r.out.schedules.nhl, r.out._meta.games_found.nhl, r.out._meta.source_errors]));
+}
+const nhlRuns = [];
+for (const [name, nhl, why] of [
+  ['an HTTP 503', () => resp(503, null, true), /HTTP 503/],
+  ['a fetch that rejects', () => { throw new Error('connect ECONNRESET'); }, /request failed: connect ECONNRESET/],
+  ['the old fallback body {}', () => resp(200, {}), /neither a gamesByDate array nor a games array/],
+  ['an entry for today with no games array', () => { const b = nBody(); delete b.gamesByDate.find((d) => d.date === '2026-10-31').games; return resp(200, b); }, /the entry for 2026-10-31 has no games array/],
+  ['a game with no team abbreviation', () => { const b = nBody(); delete b.gamesByDate.find((d) => d.date === '2026-10-31').games[4].homeTeam.abbrev; return resp(200, b); }, /1 of 10 games have no team abbreviation/],
+  ['a game the mapping cannot handle (a gameSubType that is a number)', () => { const b = nBody(); b.gamesByDate.find((d) => d.date === '2026-10-31').games[1].gameSubType = 5; return resp(200, b); }, /mapping failed: /],
+]) {
+  const r = await runGenerator({ nhl }); const o = r.out;
+  nhlRuns.push([name, r]);
+  want(`generator: NHL ${name} still ships the file and does not exit`, !!o && r.exited === null, JSON.stringify({ wrote: !!o, exited: r.exited, tail: r.logs.slice(-2) }));
+  want(`generator: NHL ${name} makes day 0 NHL null, not an empty list, and the forward days arrays`, !!o && o.schedules.nhl === null && o.schedules_by_date[TODAY].nhl === null && WIN.slice(1).every((d) => same(o.schedules_by_date[d].nhl, [])), JSON.stringify(o && o.schedules && o.schedules.nhl));
+  want(`generator: NHL ${name} makes games_found.nhl null, not 0`, !!o && o._meta.games_found.nhl === null, JSON.stringify(o && o._meta.games_found));
+  want(`generator: NHL ${name} records the date and the reason in source_errors.nhl, and nothing else`, !!o && typeof se(o).nhl === 'string' && se(o).nhl.startsWith(`${TODAY}: `) && why.test(se(o).nhl) && Object.keys(se(o)).join() === 'nhl', JSON.stringify(o && o._meta.source_errors));
+  want(`generator: NHL ${name} does not count the null as a game in games_found_by_date`, !!o && o._meta.games_found_by_date[TODAY] === 7, JSON.stringify(o && o._meta.games_found_by_date));
+  want(`generator: NHL ${name} says "unread" for NHL in the run log's Parsed line and counts the other sources`, parsedLine(r) === 'Parsed: unread NHL + 7 NBA + 0 MLB + 0 MLS + 0 WNBA game(s) for 2026-10-31', JSON.stringify(parsedLine(r)));
+  want(`generator: NHL ${name} names the date in the run log`, r.logs.some((l) => l.includes(`NHL scoreboard not ${name.includes('mapping') ? 'mapped' : 'read'} for ${TODAY}`)), JSON.stringify(r.logs.slice(0, 8)));
+  want(`generator: NHL ${name} keeps the other sports' keys arrays and the cover at nba, wnba, mlb and nhl`, !!o && ['nba', 'mlb', 'soccer', 'wnba'].every((k) => Array.isArray(o.schedules[k])) && same(o._meta.source_errors_cover, ['nba', 'wnba', 'mlb', 'nhl']), JSON.stringify(o && Object.keys(o.schedules)));
+}
+{
+  // The run log is where a person reads a red run: every source that could not be read says "unread" in the Parsed line, and the others still count.
+  const nbaBad = await runGenerator({ nba: () => resp(403, { error: 'nba returned 403' }) });
+  want('generator: an unread NBA board says "unread NBA" in the Parsed line and the others still count', /^Parsed: \d+ NHL \+ unread NBA \+ 0 MLB \+ 0 MLS \+ 0 WNBA game\(s\) for 2026-10-31$/.test(parsedLine(nbaBad)), JSON.stringify(parsedLine(nbaBad)));
+  const wnbaBad = wnbaRuns.find(([n]) => n === 'a 503 on one forward day only')[1];
+  want('generator: an unread WNBA day says "unread WNBA" in that day\'s Parsed line', wnbaBad.logs.some((l) => /^Parsed: \d+ NHL \+ \d+ NBA \+ \d+ MLB \+ \d+ MLS \+ unread WNBA game\(s\) for 2026-11-02$/.test(l)), JSON.stringify(wnbaBad.logs.filter((l) => l.startsWith('Parsed: '))));
+  const mlbBad = mlbRuns.find(([n]) => n === 'an HTTP 503 on one forward day only')[1];
+  want('generator: an unread MLB day says "unread MLB" in that day\'s Parsed line', mlbBad.logs.some((l) => /^Parsed: \d+ NHL \+ \d+ NBA \+ unread MLB \+ \d+ MLS \+ \d+ WNBA game\(s\) for 2026-10-30$/.test(l)), JSON.stringify(mlbBad.logs.filter((l) => l.startsWith('Parsed: '))));
 }
 want('generator: every request the generator made was answered by a stub (none unclaimed)', unstubbedAll.length === 0, JSON.stringify(unstubbedAll));
 
@@ -562,13 +750,16 @@ try {
   const wnbaDown = wnbaRuns.find(([n]) => n === 'a 503 on one forward day only')[1];
   const fromWnbaBad = runErrs(put('gen-wnba-bad.json', wnbaDown.text));
   want('source errors: the generator\'s own output for a WNBA 503 on one forward day exits 1 and names the WNBA and the date', fromWnbaBad.status === 1 && /^  wnba: 2026-11-02: HTTP 503$/m.test(fromWnbaBad.stderr), `${fromWnbaBad.status} ${fromWnbaBad.stderr}`);
+  const nhlDown = nhlRuns.find(([n]) => n === 'an HTTP 503')[1];
+  const fromNhlBad = runErrs(put('gen-nhl-bad.json', nhlDown.text));
+  want('source errors: the generator\'s own output for an NHL 503 exits 1 and names the NHL and the date', fromNhlBad.status === 1 && /^  nhl: 2026-10-31: HTTP 503$/m.test(fromNhlBad.stderr), `${fromNhlBad.status} ${fromNhlBad.stderr}`);
   const mlbDown = mlbRuns.find(([n]) => n === 'an HTTP 503 on one forward day only')[1];
   const fromMlbBad = runErrs(put('gen-mlb-bad.json', mlbDown.text));
   want('source errors: the generator\'s own output for an MLB 503 on one forward day exits 1 and names the MLB and the date', fromMlbBad.status === 1 && /^  mlb: 2026-10-30: HTTP 503$/m.test(fromMlbBad.stderr), `${fromMlbBad.status} ${fromMlbBad.stderr}`);
   const fromMlbWinter = runErrs(put('gen-mlb-winter.json', mlbWinter.text));
   want('source errors: the generator\'s own output for an off-season MLB window exits 0', fromMlbWinter.status === 0, `${fromMlbWinter.status} ${fromMlbWinter.stderr}`);
   const fromWinter = runErrs(put('gen-winter.json', winter.text));
-  want('source errors: the generator\'s own output for an off-season window exits 0 and says it vouches for nba, wnba and mlb', fromWinter.status === 0 && /none recorded for nba, wnba, mlb\./.test(fromWinter.stdout), `${fromWinter.status} ${fromWinter.stdout} ${fromWinter.stderr}`);
+  want('source errors: the generator\'s own output for an off-season window exits 0 and says it vouches for nba, wnba, mlb and nhl', fromWinter.status === 0 && /none recorded for nba, wnba, mlb, nhl\./.test(fromWinter.stdout), `${fromWinter.status} ${fromWinter.stdout} ${fromWinter.stderr}`);
 } finally { rmSync(tmp, { recursive: true, force: true }); }
 
 // ─── 4. text: the workflows and the generator's own words ──────────────────────────────────────────────────────────────
@@ -591,10 +782,12 @@ const stepCode = (text, cmd) => {
   return text.slice(start, next < 0 ? undefined : next).split('\n').filter((l) => l.trim() && !l.trim().startsWith('#'));
 };
 const plain = (text, cmd) => { const c = stepCode(text, cmd); return !!c && c.length === 2 && c[0].startsWith('      - name: ') && c[1] === `        run: ${cmd}`; };
-const PATHS = ['scripts/nba-board.cjs', 'scripts/mlb-schedule.cjs', 'scripts/build-field-data.js', 'scripts/field-data-source-errors.cjs', 'scripts/check-nba-board.mjs', 'scripts/mutate-nba-board.mjs',
-               'outbox/fixture-nba-board-20261031.json', 'outbox/fixture-wnba-board-20261031.json', 'outbox/fixture-mlb-schedule-20261031.json', '.github/workflows/field-data.yml', '.github/workflows/nba-board-check.yml'];
+const PATHS = ['scripts/nba-board.cjs', 'scripts/mlb-schedule.cjs', 'scripts/nhl-scoreboard.cjs', 'scripts/build-field-data.js', 'scripts/field-data-source-errors.cjs', 'scripts/check-nba-board.mjs', 'scripts/mutate-nba-board.mjs',
+               'outbox/fixture-nba-board-20261031.json', 'outbox/fixture-wnba-board-20261031.json', 'outbox/fixture-mlb-schedule-20261031.json', 'outbox/fixture-nhl-scoreboard-20261031.json', 'outbox/fixture-nhl-mapped-20261031.json', '.github/workflows/field-data.yml', '.github/workflows/nba-board-check.yml'];
 want('text: field-data.yml no longer fetches the NBA CDN passthrough or writes /tmp/nba.json', !wf.includes('todaysScoreboard_00.json') && !wf.includes('/tmp/nba.json'));
-want('text: field-data.yml still fetches the NHL scoreboard into /tmp/nhl.json (untouched)', wf.includes('/nhl/v1/scoreboard/now') && wf.includes('/tmp/nhl.json'));
+const WF_CODE = wf.split('\n').filter((l) => !l.trim().startsWith('#')).join('\n');
+want('text: field-data.yml fetches nothing itself (no curl, no /tmp/nhl.json, no `|| echo \'{}\'` JSON fallback in any step; its comments explain the old one): every source is read by the generator', !WF_CODE.includes('curl') && !WF_CODE.includes('/tmp/nhl.json') && !/\|\| echo '\{\}'/.test(WF_CODE), WF_CODE.split('\n').filter((l) => /curl|nhl\.json|\|\| echo '\{\}'/.test(l)).join(' | '));
+want('text: the date step is exactly a name and the one run line that sets TODAY, once, before the build', plain(wf, 'echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV') && count(wf, 'TODAY=$(date -u') === 1 && at(wf, 'TODAY=$(date -u') < at(wf, STEP_BUILD), JSON.stringify(stepCode(wf, 'echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV')));
 want('text: field-data.yml holds no check or harness step (a check that asserts text must not sit in the publishing job)', !wf.includes('check-nba-board') && !wf.includes('mutate-nba-board'));
 want('text: the source-errors step runs once, after the push step, as the last step',
      count(wf, STEP_ERRS) === 1 && at(wf, STEP_ERRS) > at(wf, STEP_PUSH) && at(wf, STEP_PUSH) > at(wf, STEP_BUILD) && wf.indexOf('- name:', at(wf, STEP_ERRS)) === -1, JSON.stringify([at(wf, STEP_BUILD), at(wf, STEP_PUSH), at(wf, STEP_ERRS)]));
@@ -605,6 +798,8 @@ want('text: the check workflow runs on a push to every file it checks and on dis
 want('text: the check workflow cannot write to the repo (contents: read) and does not run on a schedule', cw.includes('permissions:\n  contents: read') && !/\n\s*schedule:/.test(cw));
 want('text: no step in either workflow may fail silently (no continue-on-error anywhere)', !wf.includes('continue-on-error') && !cw.includes('continue-on-error'));
 const GEN_CODE = GEN_SRC_TEXT.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+want('text: the generator requires the NHL scoreboard reader and calls it once', GEN_SRC_TEXT.includes("require('./nhl-scoreboard.cjs')") && count(GEN_SRC_TEXT, 'readNhlScoreboard(') === 1, String(count(GEN_SRC_TEXT, 'readNhlScoreboard(')));
+want('text: no line of code in the generator reads a file or names /tmp/nhl.json (its comments explain the old read)', !GEN_CODE.includes('readFileSync') && !GEN_CODE.includes('/tmp/nhl.json'), GEN_CODE.split('\n').filter((l) => /readFileSync|nhl\.json/.test(l)).join(' | '));
 want('text: the generator requires the MLB schedule reader and calls it once', GEN_SRC_TEXT.includes("require('./mlb-schedule.cjs')") && count(GEN_SRC_TEXT, 'readMlbSchedule(') === 1, String(count(GEN_SRC_TEXT, 'readMlbSchedule(')));
 want('text: no line of code in the generator still reads statsapi by https (its comments explain the old read)', !GEN_CODE.includes("hostname: 'statsapi.mlb.com'") && !GEN_CODE.includes('/api/v1/schedule'), GEN_CODE.split('\n').filter((l) => /statsapi|api\/v1\/schedule/.test(l)).join(' | '));
 want('text: the generator requires the shared board reader and calls each of its two readers once', GEN_SRC_TEXT.includes("require('./nba-board.cjs')") && count(GEN_SRC_TEXT, 'readNbaBoard(') === 1 && count(GEN_SRC_TEXT, 'readWnbaBoard(') === 1, JSON.stringify([count(GEN_SRC_TEXT, 'readNbaBoard('), count(GEN_SRC_TEXT, 'readWnbaBoard(')]));
@@ -615,8 +810,9 @@ want('text: the generator\'s source_errors record is written into _meta from the
 
 console.log(`\nchecked ${ran} case(s): ${tally['board']} on the relay board reader, NBA and WNBA (a fake fetch driven by the relay's real answers of 2026-10-31 and its real off-season days; error shapes read from the relay source, not observed), `
           + `${tally['mlb reader']} on the MLB schedule reader (statsapi's real answers: an off-day, the last game day, an invalid-date error, read by a runner on 2026-10-31; a 5xx, an HTML page and a two-date answer were not observed and are built), `
+          + `${tally['nhl reader']} on the NHL scoreboard reader (the relay's real passthrough body of 2026-10-31, trimmed to 3 dates; a failed passthrough, an off-season body and the old fallback \`{}\` are built), `
           + `${tally['generator']} on the generator run in full under node:vm (stubbed fs, https and fetch; ${unstubbedAll.length} request(s) no stub claimed; the MLB regular-season, postponed and GOTD cases run on bodies DERIVED from the one real game, their expected entries taken from the previous generator), `
           + `${tally['source errors']} on the last-step script (run as a subprocess), ${tally['text']} text assertions on the workflows and the generator. `
-          + `NOT executed here: the real servers (statsapi, the relay, ESPN), the generator against them, the AI note calls (no key set), the workflow itself. NOT observed: a statsapi 5xx or HTML answer, a doubleheader day, a real postponed or regular-season game.`);
+          + `NOT executed here: the real servers (statsapi, the relay, ESPN), the generator against them, the AI note calls (no key set), the workflow itself. NOT observed: a statsapi 5xx or HTML answer, a doubleheader day, a real postponed or regular-season game, an NHL off-season scoreboard (read from a relay document only), a failed NHL passthrough, a real NHL playoff game (the real fixture holds regular-season games only: every series, round and fallback path runs on bodies DERIVED from one real game, with the previous generator\'s output as the expected value).`);
 if (failed) { console.error(`FAIL — ${failed} case(s).`); process.exit(1); }
 console.log('PASS');

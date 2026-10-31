@@ -2,15 +2,15 @@
 // The last step of field-data.yml: turns the generator's own record of unread sources into a failed run.
 //
 // WHY A STEP AND NOT AN EXIT IN THE BUILD. A source that could not be read is written to the file as null with its reason
-// in _meta.source_errors (scripts/build-field-data.js), and the rest of the file is still good: MLS and NHL do not
-// depend on the NBA or WNBA boards or the MLB schedule. If the build step exited non-zero, "Push overlay" would not run and the day's good data would
+// in _meta.source_errors (scripts/build-field-data.js), and the rest of the file is still good: MLS does not
+// depend on the NBA, WNBA, MLB or NHL reads. If the build step exited non-zero, "Push overlay" would not run and the day's good data would
 // stay unpublished. So the build ships the honest file, the push step commits it, and this step then fails the run, which is
 // what makes the unread source visible without costing the day.
 //
 // ABSENCE IS NOT CLEAN. A file with no `_meta.source_errors` record at all fails here too: a generator that stopped writing
 // the record would otherwise read as "nothing went wrong". So does a file with no `_meta.source_errors_cover` list.
 //
-// WHAT A GREEN RUN VOUCHES FOR. Only the sources in `source_errors_cover`. The generator's other readers (NHL, MLS, the ESPN GOTD flags)
+// WHAT A GREEN RUN VOUCHES FOR. Only the sources in `source_errors_cover`. The generator's other readers (MLS, the ESPN GOTD flags)
 // still turn a failed read into [] without recording it, so this step says which sources it checked and that the rest are not.
 //
 // Usage: node scripts/field-data-source-errors.cjs <path to field-data-today.json>
