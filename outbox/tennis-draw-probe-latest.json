@@ -1,5 +1,5 @@
 {
-  "ts": "2026-11-01T19:42:57.636Z",
+  "ts": "2026-11-02T06:16:17.431Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "relayReachable": true,
@@ -7,56 +7,58 @@
   "pickedSeason": "2026",
   "relayDrawStatus": 200,
   "relayRounds": [
-    "Round of 64=21"
+    "Round of 64=24",
+    "Round of 32=8"
   ],
-  "relayMainDrawMatches": 21,
+  "relayMainDrawMatches": 32,
   "relayEdges": 0,
   "relayAnomalies": [],
   "relayChampion": null,
   "pageLoaded": true,
   "navLinkVisible": true,
   "sectionVisible": true,
-  "treeMatchCards": 21,
-  "listMatchRows": 21,
+  "treeMatchCards": 32,
+  "listMatchRows": 32,
   "columnHeads": [
     "R64",
+    "R32",
+    "R32",
     "R64"
   ],
   "championOnPage": null,
   "anomalyLineOnPage": false,
   "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 400 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 403 ()",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()",
     "Failed to load resource: the server responded with a status of 404 ()"
   ],
-  "failedRequests": [
-    "https://api.openf1.org/v1/sessions?date_start%3E=2026-11-01&session_type=Race,Qualifying,Sprint net::ERR_FAILED",
-    "https://api.openf1.org/v1/sessions?date_start%3E=2026-11-01&session_type=Race,Qualifying,Sprint net::ERR_FAILED"
-  ],
-  "renderWaitMs": 571,
+  "failedRequests": [],
+  "renderWaitMs": 666,
   "renderTimedOut": null,
-  "relayFetchMs": 542,
+  "relayFetchMs": 654,
   "urlLoaded": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt=1",
   "setupOverlayState": "suppressed by ?wpt",
-  "treeHeightPx": 591,
+  "treeHeightPx": 639,
   "treeWidthPx": 1440,
-  "pageHeightPx": 2765,
+  "pageHeightPx": 2813,
   "treeDisplay": "block",
   "listDisplay": "none",
   "listHeightPx": 0,
-  "cardsInViewport": 21,
-  "cardsCovered": 0,
-  "cardsCoveredBy": [],
+  "cardsInViewport": 32,
+  "cardsCovered": 1,
+  "cardsCoveredBy": [
+    "legend"
+  ],
   "firstCardVisible": true,
   "firstCardCoveredBy": null,
   "verdict": "PASS",
-  "reason": "196 Paris (masters_1000) 2026: 21 matches drawn in 1 round(s), 0 edge(s) joined",
-  "sampleText": "\n    \n      R64\n      \n      R64\n    \n    \n      \n    \n    A. Davidovich Fokina#15\n  \n    \n    M. Kouamé#176\n  \n    \n  \n    \n    A. Michelsen#34\n  \n    \n    J. Lehečka#21\n  \n    \n  \n    \n    A. Rublev#22\n  \n    \n    T. Etcheverry#29\n  \n    \n  \n    \n    A. Rinderknech#61\n  \n    \n    F. Cerundolo#19\n  \n    \n  \n    \n    B. Nakashima#17\n  \n    \n    M. Berrettini#48\n  \n    \n  \n    \n    D. Shapovalov#52"
+  "reason": "196 Paris (masters_1000) 2026: 32 matches drawn in 2 round(s), 0 edge(s) joined",
+  "sampleText": "\n    \n      R64R32\n      \n      R32R64\n    \n    \n      \n    \n    I. Buse#32\n  \n    \n    Z. Bergs#39\n  \n    \n  \n    \n    L. Musetti#26\n  \n    \n    H. Hurkacz#28\n  \n    \n  \n    \n    L. Darderi#23\n  \n    \n    R. Hijikata#85\n  \n    \n  \n    \n    A. Tabilo#30\n  \n    \n    R. Jódar#11\n  \n    \n  \n    \n    L. Van Assche#46\n  \n    \n    M. Navone#43\n  \n    \n  \n    \n    C. Norrie#41\n  \n    \n    M. Arnaldi#36\n "
 }
