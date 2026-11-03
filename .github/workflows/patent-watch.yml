@@ -82,5 +82,5 @@ jobs:
     uses: ./.github/workflows/patent-fulltext.yml
     with:
       patents: ${{ needs.watch.outputs.grant_hits }}
-      skip_drive: false
+      skip_dropbox: false
     secrets: inherit
