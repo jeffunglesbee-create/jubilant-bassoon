@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-03 — patent_watch.py reads PPUBS, and a week it did not read is a red run
+
+This commit (its hash is in the relay CC-CMD, TASK 4b, Observed). No client app code, no SW bump. Session doc: `outbox/cc-session-2026-11-03-patent-watch-ppubs.md`. Built on the owner's `Go with Claudes best recommendations` (2026-11-02, 23:35 ET), against the Rule 75 spec in relay `09677a77`.
+
+**What changed.** `patent_watch.py` no longer reads `bulkdata.uspto.gov` (no DNS record). It reads Patent Public Search for the grant Tuesday and the publication Thursday five days before it, two queries per watchlist term and day (assignee, and the term anywhere in the text), after five known-answer controls, and raises `Unread` (exit 1, `NOT READ:`, no manifest) for anything it cannot say it read: a control that fails, a day under 500 families, a counter that breaks the measured contract, a 429 that outlasts three retries. `patent-watch.yml` job `watch` gets a 30-minute limit, a push retry with a landing check, and a summary that says NOT READ. The false negative `outbox/patents/watch-2026-10-27.json` (`8e94848`) is deleted. The watchlist header describes the two forms; no term changed.
+
+**Proof.** Laboratory, against a stand-in of the host: `scripts/check-patent-watch.py` 206/206 in 32 scenarios; `scripts/mutate-patent-watch.py` 44 of 44 mutants caught. `actionlint` 0. The query forms, counters and rate limit were measured on the real host (probe runs 41580587437 and 41582509434). **Not measured:** this watcher on the real host (the laboratory's `patent-watch-rehearsal.yml` does that, with no token), and whether Tuesday's grants are indexed by Wednesday 16:00Z.
+
+**Open.** The first scheduled run, Wednesday 2026-11-04 16:00Z, may be red by design (an unindexed Tuesday, or a control that fails on the real host); the log names which. The dead-cron watch's reading of it is the relay scheduled task of 2026-11-04T22:30Z. The ODP key would be a second reader behind the same rule, not a fallback.
+
 ## 2026-11-02 (night) — patent-watch.yml's caller passes the input its callee declares, and its first run started a job and read nothing
 
 `8ff34ac` (the workflow), `3e7f07d` (the README). No client code, no SW bump. Session doc: `outbox/cc-session-2026-11-02-patent-watch-caller.md`. Built on the owner's `Next approved` (2026-11-02, 22:43 ET), given after the side effects were stated.

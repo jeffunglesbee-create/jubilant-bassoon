@@ -1,8 +1,16 @@
 # Patent watchlist for jubilant-bassoon.
 #
-# One assignee per line. Case-insensitive substring match against full XML
-# content of USPTO weekly grant + PGPub feeds.
-# Lines starting with # are ignored.
+# One term per line, no double quotes. Lines starting with # are ignored, and a
+# repeated term is read once.
+#
+# Each term is searched on USPTO Patent Public Search for the grant Tuesday
+# (database USPAT) and the publication Thursday before it (US-PGPUB), in two forms
+# (.github/scripts/patent_watch.py):
+#   "<term>".as.   the term is the patent's assignee or applicant
+#   "<term>"       the term appears anywhere in the document
+# A hit says which form found it. The first is the precise one; the second also
+# finds patents that only mention the term. A term that matches more than 500
+# families on one day is refused, not cut short.
 #
 # Run weekly via .github/workflows/patent-watch.yml on Wednesday 16:00 UTC.
 
@@ -27,4 +35,4 @@ Data Skrive
 Stats Perform
 Sportradar
 
-# Add more as needed. Re-runs are idempotent.
+# Add more as needed.

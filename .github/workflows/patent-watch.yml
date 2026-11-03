@@ -1,16 +1,21 @@
 name: Patent Watch (weekly)
 
-# Scans USPTO grant XML (Tuesdays) and pre-grant publication XML (Thursdays)
-# for assignees in .github/patent-watchlist.txt. Files a GitHub issue per
-# week when matches are found, AUTO-ASSIGNED to the repo owner so the
-# GitHub mobile app pushes a notification.
+# Reads USPTO Patent Public Search (PPUBS) for the grant Tuesday and the
+# publication Thursday before it, for every term in .github/patent-watchlist.txt.
+# Files a GitHub issue per scan when matches are found, AUTO-ASSIGNED to the repo
+# owner so the GitHub mobile app pushes a notification.
+#
+# A week is read completely or the run is red and no manifest is committed
+# (.github/scripts/patent_watch.py). The earlier version read bulkdata.uspto.gov,
+# whose DNS record is gone, and ended green on every fetch it failed.
 #
 # Auto-chains to patent-fulltext.yml for grant hits (cap 20) so the full
 # claim text + FIELD comparison + Dropbox upload happen in the same Actions run.
 
 on:
   schedule:
-    # Wednesday 16:00 UTC: after Tuesday grants and Thursday PGPub published.
+    # Wednesday 16:00 UTC: the day after the grant Tuesday; the PGPub Thursday it
+    # reads is the one before that Tuesday.
     - cron: '0 16 * * 3'
   workflow_dispatch:
     inputs:
@@ -27,6 +32,8 @@ permissions:
 jobs:
   watch:
     runs-on: ubuntu-latest
+    # About 70 paced calls (3 s apart) take 4 to 5 minutes; the default is 360.
+    timeout-minutes: 30
     outputs:
       grant_hits: ${{ steps.run_watcher.outputs.grant_hits }}
       grant_hits_count: ${{ steps.run_watcher.outputs.grant_hits_count }}
@@ -56,22 +63,36 @@ jobs:
           git add outbox/patents/
           if ! git diff --cached --quiet; then
             git commit -m "patent-watch: $(date -u +%Y-%m-%d) [skip ci]"
-            git push
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+              sleep $((i * 5))
+            done
+            git fetch -q origin "${GITHUB_REF_NAME}"
+            git merge-base --is-ancestor HEAD "origin/${GITHUB_REF_NAME}" \
+              || { echo "FAIL: the manifest push did not land after retries"; exit 1; }
           fi
 
       - name: Summary
         if: always()
+        env:
+          OUTCOME: ${{ steps.run_watcher.outcome }}
+          GRANT_HITS: ${{ steps.run_watcher.outputs.grant_hits }}
+          GRANT_HITS_COUNT: ${{ steps.run_watcher.outputs.grant_hits_count }}
         run: |
           {
             echo "## Patent watch results"
             echo ""
-            echo "Grant hits: \`${{ steps.run_watcher.outputs.grant_hits_count || '0' }}\`"
-            if [ -n "${{ steps.run_watcher.outputs.grant_hits }}" ]; then
-              echo "Auto-chaining patent-fulltext.yml for: \`${{ steps.run_watcher.outputs.grant_hits }}\`"
+            if [ "$OUTCOME" != "success" ]; then
+              echo "**NOT READ** (watcher step: $OUTCOME). This week was not read completely, no manifest was committed and nothing was chained. The reason is in the Run watcher step."
             else
-              echo "No grant hits this week; auto-chain skipped."
+              echo "Grant hits: \`${GRANT_HITS_COUNT:-0}\`"
+              if [ -n "$GRANT_HITS" ]; then
+                echo "Auto-chaining patent-fulltext.yml for: \`$GRANT_HITS\`"
+              else
+                echo "No grant hits this week; auto-chain skipped."
+              fi
             fi
-          } >> $GITHUB_STEP_SUMMARY
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # Auto-chain: if grant hits exist, run the full pipeline on them.
   # PGPub hits are intentionally NOT chained (different publication-number
