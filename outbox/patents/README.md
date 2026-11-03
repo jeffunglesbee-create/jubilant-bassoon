@@ -51,9 +51,9 @@ Plus a job summary in the Actions run with comparison highlights inline.
 
 ### `patent-fulltext.yml` (on-demand, one trigger)
 
-Steps: fetch -> compare -> Drive upload -> commit. Each step gated independently
-so a failure in any step doesn't block the others. Skip Drive with
-`-f skip_drive=true` for ad-hoc runs.
+Steps: fetch -> compare -> Dropbox upload -> commit. Each step gated independently
+so a failure in any step doesn't block the others. Skip the upload with
+`-f skip_dropbox=true` for ad-hoc runs.
 
 ### `patent-watch.yml` (weekly cron, auto-chains to patent-fulltext)
 
@@ -149,10 +149,10 @@ gh workflow run patent-fulltext.yml \
   -f patents=10846193,11182537,8335848,8533532,9571591,9509714
 ```
 
-Single patent without Drive upload (debugging):
+Single patent without the Dropbox upload (debugging):
 
 ```
-gh workflow run patent-fulltext.yml -f patents=10846193 -f skip_drive=true
+gh workflow run patent-fulltext.yml -f patents=10846193 -f skip_dropbox=true
 ```
 
 Manual watch run for a specific week:
