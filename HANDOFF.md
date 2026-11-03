@@ -1,5 +1,17 @@
 # FIELD HANDOFF
 
+## 2026-11-02 (night) — patent-watch.yml's caller passes the input its callee declares, and its first run started a job and read nothing
+
+`8ff34ac` (the workflow), `3e7f07d` (the README). No client code, no SW bump. Session doc: `outbox/cc-session-2026-11-02-patent-watch-caller.md`. Built on the owner's `Next approved` (2026-11-02, 22:43 ET), given after the side effects were stated.
+
+**What changed.** The `followup` job of `patent-watch.yml` passed `skip_drive` to `patent-fulltext.yml`, which declares `skip_dropbox`; `actionlint` named it and 21 of 21 scheduled runs (2026-06-10 to 2026-10-28) ended `startup_failure`. It now passes `skip_dropbox: false` (`8ff34ac`). `3e7f07d` (beyond the literal approval) fixes two README commands that passed the same dead name.
+
+**Proof.** `actionlint` one finding to none; the relay's workflow gate over 138 workflows, 0 failing; smoke 1066/0, units 70/0; CI at `3e7f07d` green (Smoke Test + Live Verify 41574578585, Outbox to Drive 41574578708, both viewport audits). One dispatch, run 41574599866: the `watch` job started and finished `success`. **It read nothing:** `bulkdata.uspto.gov` does not resolve (`No address associated with hostname`, the host ADR-PATENT-001 records as removed), both scans printed `0 ... matches`, and `patent_watch.py` exited 0 because it returns `[]` on any fetch error or non-OK status (run unmodified against a local stand-in answering 404 and 500, it exits 0 and writes `matches: []`). The run's `Commit results` pushed `8e94848`, `outbox/patents/watch-2026-10-27.json` with `matches: []`: a false negative, left in place.
+
+**Open (owner's calls).** TASK 4b (relay CC-CMD): Part 1, no input needed, `patent_watch.py` exits non-zero on a fetch it could not complete, the false-negative file is removed, a laboratory check holds it, and the Wednesday run turns red until Part 2; Part 2, the source: PPUBS (anonymous, undocumented) or the ODP bulk-data API (needs the ID.me-verified `USPTO_API_KEY`), with the pre-grant week fixed (a Wednesday run asks for the next day's Thursday file).
+
+**Armed.** 2026-11-04T22:30Z (relay scheduled task) reads the first scheduled run of `patent-watch.yml` through its own log: a `success` that fetched nothing is a false green, not a fix, even if the dead-cron watch stops listing the workflow.
+
 ## 2026-10-31 (night) — the generator's NHL read joins NBA, WNBA and MLB: an unread scoreboard is null, `smoke-and-verify` is green again
 
 `aefe51ff` (overlay `24749d46` from the dispatched run); `0998a285` first. No client code, no SW bump. Session doc: `outbox/cc-session-2026-10-31-generator-nba-source.md` ("Addendum 3 — the NHL read"). Built on the owner's `go. Fully finish all tasks before coming back to the user.`
