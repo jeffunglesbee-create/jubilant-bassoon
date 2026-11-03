@@ -45,7 +45,7 @@ TASK 4b in the relay CC-CMD, one decision with two parts. **Part 1, no input nee
 
 ## Armed
 
-The relay's scheduled task for 2026-11-04T22:30Z reads the first scheduled run of `patent-watch.yml` through its own log (Wednesday 2026-11-04; GitHub fires it about 20:00Z to 20:56Z) and writes "false green, not a fix" if the dead-cron watch stops listing the workflow on a run that fetched nothing.
+The relay's scheduled task for 2026-11-04T22:30Z reads the first scheduled run of `patent-watch.yml` through its own log (Wednesday 2026-11-04; its last eight ticks were created between 19:12Z and 21:11Z) and writes "false green, not a fix" if the dead-cron watch stops listing the workflow on a run that fetched nothing.
 
 ## Seen, not fixed
 
