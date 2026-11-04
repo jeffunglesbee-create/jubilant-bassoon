@@ -1,27 +1,27 @@
 {
   "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?pl-verify",
-  "runId": "41522590700",
-  "commit": "d29f0a710a81d22202782107fddda475c23dd9bd",
-  "timestamp": "2026-11-02T20:50:45.440Z",
+  "runId": "41889598743",
+  "commit": "01e5154387b69c161ec79fb0ed61ba1dbc91ccd9",
+  "timestamp": "2026-11-04T18:46:21.332Z",
   "cacheAccepted": true,
   "testApi": "pl-verify",
   "schema": "2.1",
-  "for_date": "2026-11-02",
+  "for_date": "2026-11-04",
   "window_dates": [
-    "2026-11-02",
-    "2026-11-03",
     "2026-11-04",
-    "2026-11-05"
+    "2026-11-05",
+    "2026-11-06",
+    "2026-11-07"
   ],
   "games_found_by_date": {
-    "2026-11-02": 19,
-    "2026-11-03": 0,
-    "2026-11-04": 0,
-    "2026-11-05": 0
+    "2026-11-04": 18,
+    "2026-11-05": 0,
+    "2026-11-06": 0,
+    "2026-11-07": 0
   },
   "days": [
     {
-      "iso": "2026-11-03",
+      "iso": "2026-11-05",
       "windowHasDay": true,
       "windowMlbCount": 0,
       "windowBySport": {
@@ -31,15 +31,15 @@
         "soccer": 0,
         "wnba": 0
       },
-      "navigated": true,
+      "navigated": false,
       "cardCount": 0,
       "sectionCount": 0,
       "mlbEnrichMatched": 0,
       "mlbEnrichAvailable": 0,
-      "error": null
+      "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation."
     },
     {
-      "iso": "2026-11-04",
+      "iso": "2026-11-06",
       "windowHasDay": true,
       "windowMlbCount": 0,
       "windowBySport": {
@@ -57,7 +57,7 @@
       "error": null
     },
     {
-      "iso": "2026-11-05",
+      "iso": "2026-11-07",
       "windowHasDay": true,
       "windowMlbCount": 0,
       "windowBySport": {
@@ -78,16 +78,16 @@
   "windowDaysReachingClient": 3,
   "windowMlbTotal": 0,
   "espnMlb": {
-    "asked_at": "2026-11-02T20:50:44.802Z",
+    "asked_at": "2026-11-04T18:46:17.644Z",
     "counts": {
-      "2026-11-03": 0,
-      "2026-11-04": 0,
-      "2026-11-05": 0
+      "2026-11-05": 0,
+      "2026-11-06": 0,
+      "2026-11-07": 0
     },
     "listed": {
-      "2026-11-03": 0,
-      "2026-11-04": 0,
-      "2026-11-05": 0
+      "2026-11-05": 0,
+      "2026-11-06": 0,
+      "2026-11-07": 0
     },
     "setAside": {},
     "errors": {}
@@ -96,98 +96,92 @@
   "totalEnrichMatched": 0,
   "totalEnrichAvailable": 0,
   "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 404 ()",
-    "Failed to load resource: the server responded with a status of 403 ()",
-    "Failed to load resource: the server responded with a status of 404 ()"
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=20261105&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=20261105&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20261105&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=20261105&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Access to fetch at 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261105&limit=50' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED"
   ],
   "mainFrameNavigations": [
     {
-      "at_ms": 553,
+      "at_ms": 490,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     },
     {
-      "at_ms": 1004,
+      "at_ms": 1198,
       "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev/?pl-verify"
     }
   ],
-  "readFailures": [
-    {
-      "attempt": 1,
-      "stage": "meta",
-      "error": "jsHandle.jsonValue: Execution context was destroyed, most likely because of a navigation"
-    }
-  ],
+  "readFailures": [],
   "metaError": null,
   "playwrightVersion": "1.64.1",
   "verdict": {
     "problems": [],
     "notes": [
-      "MLB enrichment NOT MEASURED: the window carries 0 MLB entries and ESPN lists 0 MLB games the generator carries on 2026-11-03, 2026-11-04, 2026-11-05, so the name match across ESPN and statsapi was not exercised"
+      "MLB enrichment NOT MEASURED: the window carries 0 MLB entries and ESPN lists 0 MLB games the generator carries on 2026-11-05, 2026-11-06, 2026-11-07, so the name match across ESPN and statsapi was not exercised"
     ],
     "mlb": {
       "state": "not-measured",
       "window_total": 0,
       "espn_counts": {
-        "2026-11-03": 0,
-        "2026-11-04": 0,
-        "2026-11-05": 0
+        "2026-11-05": 0,
+        "2026-11-06": 0,
+        "2026-11-07": 0
       },
       "espn_set_aside": {},
       "unasked": []
     }
   },
   "relaySports": {
-    "asked_at": "2026-11-02T20:50:45.072Z",
+    "asked_at": "2026-11-04T18:46:17.904Z",
     "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games",
     "counts": {
       "nfl": {
-        "2026-11-03": 0,
+        "2026-11-07": 0,
         "2026-11-05": 1,
-        "2026-11-04": 0
+        "2026-11-06": 0
       },
       "cfb": {
-        "2026-11-04": 3,
-        "2026-11-03": 2,
-        "2026-11-05": 2
+        "2026-11-05": 2,
+        "2026-11-06": 5,
+        "2026-11-07": 51
       },
       "nba": {
-        "2026-11-03": 0,
-        "2026-11-04": 14,
+        "2026-11-06": 9,
+        "2026-11-07": 7,
         "2026-11-05": 2
       },
       "nhl": {
         "2026-11-05": 11,
-        "2026-11-03": 11,
-        "2026-11-04": 4
+        "2026-11-07": 12,
+        "2026-11-06": 3
       }
     },
     "sources": {
       "nfl": {
-        "2026-11-03": "espn-wc",
+        "2026-11-07": "espn-wc",
         "2026-11-05": "espn-wc",
-        "2026-11-04": "espn-wc"
+        "2026-11-06": "espn-wc"
       },
       "cfb": {
-        "2026-11-04": "espn-wc",
-        "2026-11-03": "espn-wc",
-        "2026-11-05": "espn-wc"
+        "2026-11-05": "espn-wc",
+        "2026-11-06": "espn-wc",
+        "2026-11-07": "espn-wc"
       },
       "nba": {
-        "2026-11-03": "espn-wc",
-        "2026-11-04": "espn-wc",
+        "2026-11-06": "espn-wc",
+        "2026-11-07": "espn-wc",
         "2026-11-05": "espn-wc"
       },
       "nhl": {
         "2026-11-05": "nhle",
-        "2026-11-03": "nhle",
-        "2026-11-04": "nhle"
+        "2026-11-07": "nhle",
+        "2026-11-06": "nhle"
       }
     },
     "errors": {
@@ -198,38 +192,6 @@
     }
   },
   "coverage": [
-    {
-      "iso": "2026-11-03",
-      "window": {
-        "nhl": 0,
-        "nba": 0,
-        "mlb": 0,
-        "soccer": 0,
-        "wnba": 0
-      },
-      "relay": {
-        "nfl": 0,
-        "cfb": 2,
-        "nba": 0,
-        "nhl": 11
-      }
-    },
-    {
-      "iso": "2026-11-04",
-      "window": {
-        "nhl": 0,
-        "nba": 0,
-        "mlb": 0,
-        "soccer": 0,
-        "wnba": 0
-      },
-      "relay": {
-        "nfl": 0,
-        "cfb": 3,
-        "nba": 14,
-        "nhl": 4
-      }
-    },
     {
       "iso": "2026-11-05",
       "window": {
@@ -244,6 +206,38 @@
         "cfb": 2,
         "nba": 2,
         "nhl": 11
+      }
+    },
+    {
+      "iso": "2026-11-06",
+      "window": {
+        "nhl": 0,
+        "nba": 0,
+        "mlb": 0,
+        "soccer": 0,
+        "wnba": 0
+      },
+      "relay": {
+        "nfl": 0,
+        "cfb": 5,
+        "nba": 9,
+        "nhl": 3
+      }
+    },
+    {
+      "iso": "2026-11-07",
+      "window": {
+        "nhl": 0,
+        "nba": 0,
+        "mlb": 0,
+        "soccer": 0,
+        "wnba": 0
+      },
+      "relay": {
+        "nfl": 0,
+        "cfb": 51,
+        "nba": 7,
+        "nhl": 12
       }
     }
   ]
