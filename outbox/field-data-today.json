@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schema_version": "2.1",
-    "generated_at": "2026-11-05T15:42:05.933Z",
-    "for_date": "2026-11-05",
+    "generated_at": "2026-11-06T15:17:13.618Z",
+    "for_date": "2026-11-06",
     "source": "field-data workflow (automated)",
     "window_dates": [
-      "2026-11-05",
       "2026-11-06",
       "2026-11-07",
-      "2026-11-08"
+      "2026-11-08",
+      "2026-11-09"
     ],
     "windowed_sports": [
       "mlb",
@@ -27,20 +27,20 @@
       "nhl"
     ],
     "notes_for_dates": [
-      "2026-11-05"
+      "2026-11-06"
     ],
     "games_found": {
-      "nhl": 11,
-      "nba": 2,
+      "nhl": 3,
+      "nba": 9,
       "mlb": 0,
       "mls": 0,
       "wnba": 0
     },
     "games_found_by_date": {
-      "2026-11-05": 13,
-      "2026-11-06": 0,
+      "2026-11-06": 12,
       "2026-11-07": 0,
-      "2026-11-08": 0
+      "2026-11-08": 0,
+      "2026-11-09": 0
     },
     "ai_notes": true,
     "ai_backend": "gemini-3.1-flash-lite",
@@ -50,10 +50,10 @@
     "nhl": [
       {
         "sport": "NHL",
-        "home": "Montreal Canadiens",
-        "away": "Utah Hockey Club",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "Centre Bell",
+        "home": "Buffalo Sabres",
+        "away": "Columbus Blue Jackets",
+        "start_time": "2026-11-07T00:00:00Z",
+        "venue": "KeyBank Center",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -61,10 +61,10 @@
       },
       {
         "sport": "NHL",
-        "home": "Detroit Red Wings",
-        "away": "Vegas Golden Knights",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "Little Caesars Arena",
+        "home": "Minnesota Wild",
+        "away": "San Jose Sharks",
+        "start_time": "2026-11-07T01:00:00Z",
+        "venue": "Grand Casino Arena",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -72,98 +72,10 @@
       },
       {
         "sport": "NHL",
-        "home": "Tampa Bay Lightning",
-        "away": "Chicago Blackhawks",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "Benchmark International Arena",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "New Jersey Devils",
-        "away": "St. Louis Blues",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "Prudential Center",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "New York Islanders",
-        "away": "Carolina Hurricanes",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "UBS Arena",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "New York Rangers",
-        "away": "Philadelphia Flyers",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "Madison Square Garden",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "Pittsburgh Penguins",
-        "away": "Boston Bruins",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "PPG Paints Arena",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "Columbus Blue Jackets",
-        "away": "Dallas Stars",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "Nationwide Arena",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "Winnipeg Jets",
-        "away": "Vancouver Canucks",
-        "start_time": "2026-11-06T00:00:00Z",
-        "venue": "Canada Life Centre",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "Edmonton Oilers",
+        "home": "Calgary Flames",
         "away": "Anaheim Ducks",
-        "start_time": "2026-11-06T01:00:00Z",
-        "venue": "Rogers Place",
-        "seriesRecord": null,
-        "isPlayoff": false,
-        "round": null,
-        "confirmed": true
-      },
-      {
-        "sport": "NHL",
-        "home": "Colorado Avalanche",
-        "away": "Nashville Predators",
-        "start_time": "2026-11-06T02:30:00Z",
-        "venue": "Ball Arena",
+        "start_time": "2026-11-07T01:00:00Z",
+        "venue": "Scotiabank Saddledome",
         "seriesRecord": null,
         "isPlayoff": false,
         "round": null,
@@ -173,18 +85,74 @@
     "nba": [
       {
         "sport": "NBA",
-        "home": "Phoenix Suns",
-        "away": "Orlando Magic",
-        "start_time": "2026-11-06T02:00Z",
-        "venue": "Mortgage Matchup Center",
+        "home": "Atlanta Hawks",
+        "away": "Washington Wizards",
+        "start_time": "2026-11-07T00:00Z",
+        "venue": "State Farm Arena",
         "confirmed": true
       },
       {
         "sport": "NBA",
-        "home": "Golden State Warriors",
-        "away": "Miami Heat",
-        "start_time": "2026-11-06T03:00Z",
-        "venue": "Chase Center",
+        "home": "Charlotte Hornets",
+        "away": "Boston Celtics",
+        "start_time": "2026-11-07T00:00Z",
+        "venue": "Spectrum Center",
+        "confirmed": true
+      },
+      {
+        "sport": "NBA",
+        "home": "Cleveland Cavaliers",
+        "away": "Philadelphia 76ers",
+        "start_time": "2026-11-07T00:30Z",
+        "venue": "Rocket Arena",
+        "confirmed": true
+      },
+      {
+        "sport": "NBA",
+        "home": "Dallas Mavericks",
+        "away": "Utah Jazz",
+        "start_time": "2026-11-07T01:00Z",
+        "venue": "American Airlines Center",
+        "confirmed": true
+      },
+      {
+        "sport": "NBA",
+        "home": "Memphis Grizzlies",
+        "away": "Oklahoma City Thunder",
+        "start_time": "2026-11-07T01:00Z",
+        "venue": "FedExForum",
+        "confirmed": true
+      },
+      {
+        "sport": "NBA",
+        "home": "Milwaukee Bucks",
+        "away": "Toronto Raptors",
+        "start_time": "2026-11-07T01:00Z",
+        "venue": "Fiserv Forum",
+        "confirmed": true
+      },
+      {
+        "sport": "NBA",
+        "home": "New Orleans Pelicans",
+        "away": "Minnesota Timberwolves",
+        "start_time": "2026-11-07T01:00Z",
+        "venue": "Smoothie King Center",
+        "confirmed": true
+      },
+      {
+        "sport": "NBA",
+        "home": "Los Angeles Lakers",
+        "away": "Portland Trail Blazers",
+        "start_time": "2026-11-07T03:00Z",
+        "venue": "crypto.com Arena",
+        "confirmed": true
+      },
+      {
+        "sport": "NBA",
+        "home": "Sacramento Kings",
+        "away": "San Antonio Spurs",
+        "start_time": "2026-11-07T03:00Z",
+        "venue": "Golden 1 Center",
         "confirmed": true
       }
     ],
@@ -193,14 +161,14 @@
     "wnba": []
   },
   "schedules_by_date": {
-    "2026-11-05": {
+    "2026-11-06": {
       "nhl": [
         {
           "sport": "NHL",
-          "home": "Montreal Canadiens",
-          "away": "Utah Hockey Club",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "Centre Bell",
+          "home": "Buffalo Sabres",
+          "away": "Columbus Blue Jackets",
+          "start_time": "2026-11-07T00:00:00Z",
+          "venue": "KeyBank Center",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
@@ -208,10 +176,10 @@
         },
         {
           "sport": "NHL",
-          "home": "Detroit Red Wings",
-          "away": "Vegas Golden Knights",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "Little Caesars Arena",
+          "home": "Minnesota Wild",
+          "away": "San Jose Sharks",
+          "start_time": "2026-11-07T01:00:00Z",
+          "venue": "Grand Casino Arena",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
@@ -219,98 +187,10 @@
         },
         {
           "sport": "NHL",
-          "home": "Tampa Bay Lightning",
-          "away": "Chicago Blackhawks",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "Benchmark International Arena",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "New Jersey Devils",
-          "away": "St. Louis Blues",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "Prudential Center",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "New York Islanders",
-          "away": "Carolina Hurricanes",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "UBS Arena",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "New York Rangers",
-          "away": "Philadelphia Flyers",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "Madison Square Garden",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "Pittsburgh Penguins",
-          "away": "Boston Bruins",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "PPG Paints Arena",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "Columbus Blue Jackets",
-          "away": "Dallas Stars",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "Nationwide Arena",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "Winnipeg Jets",
-          "away": "Vancouver Canucks",
-          "start_time": "2026-11-06T00:00:00Z",
-          "venue": "Canada Life Centre",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "Edmonton Oilers",
+          "home": "Calgary Flames",
           "away": "Anaheim Ducks",
-          "start_time": "2026-11-06T01:00:00Z",
-          "venue": "Rogers Place",
-          "seriesRecord": null,
-          "isPlayoff": false,
-          "round": null,
-          "confirmed": true
-        },
-        {
-          "sport": "NHL",
-          "home": "Colorado Avalanche",
-          "away": "Nashville Predators",
-          "start_time": "2026-11-06T02:30:00Z",
-          "venue": "Ball Arena",
+          "start_time": "2026-11-07T01:00:00Z",
+          "venue": "Scotiabank Saddledome",
           "seriesRecord": null,
           "isPlayoff": false,
           "round": null,
@@ -320,28 +200,77 @@
       "nba": [
         {
           "sport": "NBA",
-          "home": "Phoenix Suns",
-          "away": "Orlando Magic",
-          "start_time": "2026-11-06T02:00Z",
-          "venue": "Mortgage Matchup Center",
+          "home": "Atlanta Hawks",
+          "away": "Washington Wizards",
+          "start_time": "2026-11-07T00:00Z",
+          "venue": "State Farm Arena",
           "confirmed": true
         },
         {
           "sport": "NBA",
-          "home": "Golden State Warriors",
-          "away": "Miami Heat",
-          "start_time": "2026-11-06T03:00Z",
-          "venue": "Chase Center",
+          "home": "Charlotte Hornets",
+          "away": "Boston Celtics",
+          "start_time": "2026-11-07T00:00Z",
+          "venue": "Spectrum Center",
+          "confirmed": true
+        },
+        {
+          "sport": "NBA",
+          "home": "Cleveland Cavaliers",
+          "away": "Philadelphia 76ers",
+          "start_time": "2026-11-07T00:30Z",
+          "venue": "Rocket Arena",
+          "confirmed": true
+        },
+        {
+          "sport": "NBA",
+          "home": "Dallas Mavericks",
+          "away": "Utah Jazz",
+          "start_time": "2026-11-07T01:00Z",
+          "venue": "American Airlines Center",
+          "confirmed": true
+        },
+        {
+          "sport": "NBA",
+          "home": "Memphis Grizzlies",
+          "away": "Oklahoma City Thunder",
+          "start_time": "2026-11-07T01:00Z",
+          "venue": "FedExForum",
+          "confirmed": true
+        },
+        {
+          "sport": "NBA",
+          "home": "Milwaukee Bucks",
+          "away": "Toronto Raptors",
+          "start_time": "2026-11-07T01:00Z",
+          "venue": "Fiserv Forum",
+          "confirmed": true
+        },
+        {
+          "sport": "NBA",
+          "home": "New Orleans Pelicans",
+          "away": "Minnesota Timberwolves",
+          "start_time": "2026-11-07T01:00Z",
+          "venue": "Smoothie King Center",
+          "confirmed": true
+        },
+        {
+          "sport": "NBA",
+          "home": "Los Angeles Lakers",
+          "away": "Portland Trail Blazers",
+          "start_time": "2026-11-07T03:00Z",
+          "venue": "crypto.com Arena",
+          "confirmed": true
+        },
+        {
+          "sport": "NBA",
+          "home": "Sacramento Kings",
+          "away": "San Antonio Spurs",
+          "start_time": "2026-11-07T03:00Z",
+          "venue": "Golden 1 Center",
           "confirmed": true
         }
       ],
-      "mlb": [],
-      "soccer": [],
-      "wnba": []
-    },
-    "2026-11-06": {
-      "nhl": [],
-      "nba": [],
       "mlb": [],
       "soccer": [],
       "wnba": []
@@ -354,6 +283,13 @@
       "wnba": []
     },
     "2026-11-08": {
+      "nhl": [],
+      "nba": [],
+      "mlb": [],
+      "soccer": [],
+      "wnba": []
+    },
+    "2026-11-09": {
       "nhl": [],
       "nba": [],
       "mlb": [],
