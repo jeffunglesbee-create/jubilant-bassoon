@@ -1,4 +1,5 @@
-// cfb_live_probe.js — the deployed page's college football cards against the scores ESPN and the relay actually served it, on a runner (CI-as-proxy, Rule 90).
+// live_score_probe.js — the deployed page's score cells for one league against the scores ESPN and the relay actually served it, on a runner (CI-as-proxy, Rule 90). Default: college football;
+// set LEAGUE (cfb | eflchamp | mls | ...) to read another league the relay serves. The first version of this file was cfb_live_probe.js.
 // Task 7 of field-relay-nba docs/CC-CMD-2026-08-08-fa-cup-coverage.md: findScore's fuzzy team match can show a card another game's score; this reads whether the LIVE page does.
 // Transport (see fa_cup_live_probe.js): a headless browser on a runner is answered empty by ESPN, so the page's ESPN scoreboard requests are answered here with Node's fetch, body
 // unchanged. The relay's /v2/games requests are fetched here too and passed through unchanged, so every score the page was handed for a game is on record.
@@ -9,7 +10,15 @@ const fs = require('fs');
 
 const BASE = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.workers.dev';
 const FIELD_URL = BASE + '?wpt';                       // ?wpt skips the first-visit modal (scripts/check-probe-wpt.mjs)
-const SECTIONS = ['College Football', 'CFB', 'NCAA Football'];
+// LEAGUE -> [card sections the page uses, the relay's V2 sport key, whether ESPN's scoreboard is also read for it (the live poller still polls college football from ESPN)]
+const LEAGUES = {
+  cfb:      { sections: ['College Football', 'CFB', 'NCAA Football'], relay: 'cfb',      espn: 'football/college-football' },
+  eflchamp: { sections: ['EFL Championship'],                           relay: 'eflchamp', espn: null },
+  mls:      { sections: ['MLS Soccer', 'MLS'],                          relay: 'mls',      espn: null },
+};
+const LEAGUE = process.env.LEAGUE === undefined ? 'cfb' : process.env.LEAGUE;
+if (LEAGUES[LEAGUE] === undefined) { console.error(`unknown LEAGUE ${LEAGUE}`); process.exit(2); }
+const SECTIONS = LEAGUES[LEAGUE].sections;
 const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
 
 (async () => {
@@ -35,7 +44,7 @@ const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
     } catch (e) { stats.failures += 1; body = JSON.stringify({ error: 'probe fetch threw: ' + e.message.slice(0, 80) }); }
     await route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body });
   };
-  await ctx.route(/^https:\/\/site\.api\.espn\.com\/apis\/site\/v2\/sports\/football\/college-football\/scoreboard/, proxy('espn', body => {
+  if (LEAGUES[LEAGUE].espn !== null) await ctx.route(new RegExp('^https://site\\.api\\.espn\\.com/apis/site/v2/sports/' + LEAGUES[LEAGUE].espn + '/scoreboard'), proxy('espn', body => {
     let j; try { j = JSON.parse(body); } catch (e) { return; }
     for (const ev of (Array.isArray(j.events) ? j.events : [])) {
       const cs = ev.competitions && ev.competitions[0] ? ev.competitions[0].competitors : null;
@@ -44,7 +53,7 @@ const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
       if (h && a && h.team && a.team) note(h.team.displayName, a.team.displayName, h.score, a.score);
     }
   }));
-  await ctx.route(/^https:\/\/field-relay-nba\.jeffunglesbee\.workers\.dev\/v2\/games\?sport=cfb/, proxy('relay', body => {
+  await ctx.route(new RegExp('^https://field-relay-nba\\.jeffunglesbee\\.workers\\.dev/v2/games\\?sport=' + LEAGUES[LEAGUE].relay + '(&|$)'), proxy('relay', body => {
     let j; try { j = JSON.parse(body); } catch (e) { return; }
     for (const g of (Array.isArray(j.games) ? j.games : [])) if (g.home && g.away) note(g.home.name, g.away.name, g.home.score, g.away.score);
   }));
@@ -71,7 +80,7 @@ const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
     cell: (c.querySelector('.game-time') ? c.querySelector('.game-time').textContent : '').replace(/\s+/g, ' ').trim(),
   })), { sections: SECTIONS });
 
-  const rows = cards.filter(c => c.live).map(c => {
+  const rows = cards.filter(c => c.live || SCORE_RX.test(c.cell)).map(c => {
     const m = SCORE_RX.exec(c.cell);
     const card = m ? `${parseInt(m[1], 10)}-${parseInt(m[2], 10)}` : null;
     const s = served[`${c.home}|${c.away}`];
@@ -79,7 +88,7 @@ const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
   });
   const wrong = rows.filter(r => r.card !== null && !r.servedForThisGame);
   const manifest = {
-    at: new Date().toISOString(), url: FIELD_URL, sawCards, settledAfterSeconds, proxied: stats,
+    league: LEAGUE, at: new Date().toISOString(), url: FIELD_URL, sawCards, settledAfterSeconds, proxied: stats,
     cards: cards.length, liveCards: rows.length, liveWithScore: rows.filter(r => r.card !== null).length,
     liveWithServedScoreForOwnGame: rows.filter(r => r.servedForThisGame).length,
     cardList: cards.map(c => ({ sport: c.sport, home: c.home, away: c.away, live: c.live, cell: c.cell })),
@@ -89,7 +98,7 @@ const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
     consoleErrors: errors.slice(0, 5),
   };
   const ts = manifest.at.replace(/[:.]/g, '-').slice(0, 19);
-  fs.writeFileSync(`outbox/cfb-live-probe-manifest-${ts}.json`, JSON.stringify(manifest, null, 2));
-  console.log(JSON.stringify({ at: manifest.at, cards: manifest.cards, live: manifest.liveCards, withScore: manifest.liveWithScore, ownGameServed: manifest.liveWithServedScoreForOwnGame, wrong: manifest.wrongCards, silent: manifest.wrongSilent, flagged: manifest.wrongFlagged, proxied: stats, settledAfterSeconds, wrongDetail: wrong.slice(0, 8) }));
+  fs.writeFileSync(`outbox/live-score-probe-manifest-${LEAGUE}-${ts}.json`, JSON.stringify(manifest, null, 2));
+  console.log(JSON.stringify({ league: LEAGUE, at: manifest.at, cards: manifest.cards, live: manifest.liveCards, withScore: manifest.liveWithScore, ownGameServed: manifest.liveWithServedScoreForOwnGame, wrong: manifest.wrongCards, silent: manifest.wrongSilent, flagged: manifest.wrongFlagged, proxied: stats, settledAfterSeconds, wrongDetail: wrong.slice(0, 8) }));
   await browser.close();
 })();
