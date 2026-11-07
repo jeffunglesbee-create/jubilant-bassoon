@@ -20473,21 +20473,35 @@ function findScore(game) {
   // PM-24: aggregate witnesses across all fuzzy-matched keys
   let espnWitness = null, apiWitness = null;
   const matchedKeys = [];
+  // EXACT BEATS FUZZY, for the ESPN witness (2026-11-07, jubilant-bassoon FA Cup live probe). espnTeamMatch shares ANY word longer than three
+  // characters, so on a day of lower-league football "Huddersfield Town v Exeter City" matches "York City v Northampton Town" (Town, City) and
+  // this loop took the FRESHEST ESPN witness across both keys: York's card showed Huddersfield's score, with no warning (run 6 of
+  // outbox/fa-cup-live-probe-manifest-2026-11-07T16-02-39.json, reproduced by execution in outbox/fa-cup-findscore-collision-2026-11-07.*).
+  // The ESPN slot has ONE writer (the ESPN poller, key `${displayName}|${displayName}`, the same strings the card was built from), so when an
+  // entry under this game's own two names exists, every other key's ESPN witness belongs to another game. The api-sports slot has several
+  // writers with different name forms and keeps the fuzzy aggregation PM-24 needs; with no exact ESPN entry nothing changes at all.
+  const _exactPair = (h, a) => (h === home && a === away) || (h === away && a === home);
+  const _hasExactEspn = Object.entries(_scoresBySource).some(([k, e]) => {
+    if (!e || !e.espn) return false;
+    const [h, a] = k.split('|').map(s => s.toLowerCase());
+    return _exactPair(h, a);
+  });
   for (const [key, entry] of Object.entries(_scoresBySource)) {
     if (!entry) continue;
     const [hn, an] = key.split('|').map(s => s.toLowerCase());
     const matches = (espnTeamMatch(hn, home) && espnTeamMatch(an, away)) ||
                     (espnTeamMatch(hn, away) && espnTeamMatch(an, home));
     if (!matches) continue;
+    const espnIsOtherGame = _hasExactEspn && !!entry.espn && !_exactPair(hn, an);
     // Same periodPrefix sport-guard as findESPNScore — apply to whichever source we use
-    const probe = entry.espn || entry.apisports;
+    const probe = (espnIsOtherGame ? null : entry.espn) || entry.apisports;
     if (!probe) continue;
     const pp = probe.periodPrefix || '';
     if (gameSoccer  && (pp === 'Q' || pp === 'H' || pp === 'P' || pp === 'T')) continue;
     if (!gameSoccer && (pp === "'" || pp === '1H' || pp === '2H')) continue;
     matchedKeys.push(key);
     // Take the freshest witness per source across all matched entries
-    if (entry.espn && (!espnWitness || (entry.espn.ts || 0) > (espnWitness.ts || 0))) {
+    if (entry.espn && !espnIsOtherGame && (!espnWitness || (entry.espn.ts || 0) > (espnWitness.ts || 0))) {
       espnWitness = entry.espn;
     }
     if (entry.apisports && (!apiWitness || (entry.apisports.ts || 0) > (apiWitness.ts || 0))) {
@@ -28498,7 +28512,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-07a';
+  const SW_VERSION = '2026-11-07b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

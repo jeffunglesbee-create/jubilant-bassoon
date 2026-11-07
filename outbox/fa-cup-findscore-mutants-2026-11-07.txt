@@ -1,0 +1,9 @@
+CAUGHT   S1 the exact-ESPN test is disabled  failed=['FS-1'] 1077 passed, 1 failed
+CAUGHT   S2 the exact-pair test is inverted  failed=['FS-1', 'FS-2'] 1076 passed, 2 failed
+CAUGHT   S3 the witness update ignores the other-game flag  failed=['FS-4'] 1077 passed, 1 failed
+CAUGHT   S4 the probe ignores the other-game flag  failed=['FS-4'] 1077 passed, 1 failed
+CAUGHT   S5 the exact preference is widened to every slot (api-sports short names dropped)  failed=['FS-2'] 1077 passed, 1 failed
+CAUGHT   S6 the fuzzy fallback is removed when no exact entry exists  failed=['FS-3'] 1077 passed, 1 failed
+CAUGHT   S7 the exact pair ignores the reversed orientation  failed=['FS-1'] 1077 passed, 1 failed
+restored control: 0 [] 1078 passed, 0 failed
+7 of 7 mutants caught

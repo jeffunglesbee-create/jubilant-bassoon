@@ -2,7 +2,7 @@
 
 Date: 2026-11-07. Scope: jubilant-bassoon (the served PWA). Owner order: **"Add a new key"** (2026-11-07), answering whether the FA Cup should reuse `LALIGA` or get its own `BUNDLES` key. That is an explicit owner override of the CC-CMD's "do not invent a bundle".
 
-HEAD progression: `ba7627d` (start) → the commit named in `HANDOFF.md` (end). Smoke 1066 → 1074 (FA-1..FA-8). Units 70 → 76 (six `espnListsBroadcast` tests). `SW_VERSION` `2026-10-29b` → `2026-11-07a` (`src/legacy/field.js` and `sw.js`).
+HEAD progression: `ba7627d` (start) → the commit named in `HANDOFF.md` (end). Smoke 1066 → 1078 (FA-1..FA-8, FS-1..FS-4). Units 70 → 76 (six `espnListsBroadcast` tests). `SW_VERSION` `2026-10-29b` → `2026-11-07a` (the FA Cup) → `2026-11-07b` (the `findScore` fix below), in `src/legacy/field.js` and `sw.js`.
 
 ## What was built
 
@@ -36,11 +36,31 @@ From field-relay-nba `outbox/probe-fa-cup-scoreboard-limit-2026-11-07T14-27-37-4
 
 Left alone on purpose: the match-brief card list (`isSoccerLeague`, a closed list of leagues; the EFL cups are not in it either) and the ember threshold (`return 52` for `efl`: a tuning number, not a sport router).
 
+## The live check, against ESPN's real data (8 runs of `fa-cup-live-probe.yml`, 15:43Z to 16:07Z, while the 33 first-round games were in play)
+
+The sandbox reaches neither ESPN nor the deployed page in a browser, so a dispatch-only runner probe (`fa_cup_live_probe.js`, CI-as-proxy, Rule 90) loads the deployed page in Chromium with `?wpt` and compares it with ESPN's own `eng.fa` scoreboard read in the same run. Each run's manifest is committed (`outbox/fa-cup-live-probe-manifest-2026-11-07T15-43-42.json` … `T16-07-24.json`). **What the first runs measured was the probe, not the page**, and each is kept as the evidence:
+
+| runs | what they showed | what it was |
+|---|---|---|
+| 1 (15:43Z) | 0 FA Cup cards; the in-page ESPN fetch answered 200 with 0 events, while the relay's runner probe read 33 for the same day at 15:44Z | ESPN answers a headless Chromium on a runner empty; Node's fetch on the same runner gets the data. The probe now answers the page's ESPN requests itself, with Node's fetch, body unchanged (it exercises the deployed bundle and ESPN's live data, not the browser's own route to ESPN) |
+| 2, 3 | 33 cards, but an empty time cell and an empty stream row on EVERY live soccer card, the Bundesliga's included, and ESPN+ on neither listed game | `innerText` is `''` for an element that is not rendered. The probe reads `textContent` and the chip's own selector now |
+| 4 (15:55Z, again 15:58Z) | **33 cards for ESPN's 33 events; ESPN+ on exactly the 2 games ESPN lists it for (Altrincham v Notts County, Peterborough United v Reading, both past the old limit-30 cut); 31 of 31 live FA Cup cells show a score, 8 of 8 on the other leagues** | the entry works against real data: `limit`, `bundleIfListed`, the router tokens |
+| 5 to 8 (16:00Z to 16:07Z) | 28 of 31 live FA Cup scores equal ESPN's. Three do not, in the same three games every run | below |
+
+**The three.** The last run recorded each card's raw cell text.
+- **Carlisle United v Salford City and Colchester United v Worcester City: `0–0 ⚠`, ESPN 1-0.** The page's own mismatch flag (`confidence: 'mismatch'`): a second score source disagrees with ESPN, the fresher one is shown and marked. Not an FA Cup defect and not a wrong card: the designed PM-20 behaviour. Which second source was not read (api-sports through the relay lagging a goal is the likely one, UNVERIFIED).
+- **York City v Northampton Town: `1–0 '2`, ESPN 0-3, no flag. A defect, found by this probe and not by any review.** The card showed **Huddersfield Town v Exeter City's** score. `espnTeamMatch` matches on any shared word longer than three characters ("Town", "City"), and `findScore` took the FRESHEST ESPN witness across every key it matched. Reproduced three ways before any change: by execution of the real `findScore` on the real 33 games seeded like the poller (`outbox/fa-cup-findscore-collision-2026-11-07.txt`: York wrong when the writes tie, Huddersfield wrong when they are 1 ms apart); by replaying those games into a local build of the page (`outbox/fa-cup-replay-2026-11-07.txt`: 1 live cell differs from ESPN, York's); and on the live page, in all four runs that compared scores. Pairs that match each other that day: Carlisle/Colchester ("United", "City"), Huddersfield/York ("Town", "City"). The same loop serves every sport (see Open).
+
+**The fix** (`src/legacy/field.js`, `findScore`; `SW_VERSION` 2026-11-07b): when an ESPN entry exists under the card's own two names, every other key's ESPN witness is another game's and is skipped. Scoped to the ESPN slot on purpose: it has ONE writer (the ESPN poller, line 19044, the same display names the card was built from), while the api-sports slot has three writers in several name forms and keeps the fuzzy aggregation PM-24 needs. With no exact ESPN entry nothing changes. The PM-24 text anchors A486 to A488 are untouched.
+- Differential, old against new, on the real games in three write orders (`outbox/fa-cup-findscore-collision-2026-11-07.txt`): OLD wrong on 1 card, NEW wrong on 0; the change altered exactly that 1 card and **none that was right before**.
+- Replay of the real games into a build of the fixed page: 0 live cells differ from ESPN (was 1).
+- Smoke FS-1 (two colliding games each get their own score, in both timestamp orders and with a reversed key), FS-2 (the PM-24 cross-source case still returns `verified` from two sources), FS-3 (no exact entry: the fuzzy fallback still finds one), FS-4 (the change is scoped to the ESPN slot). **7 of 7 mutants caught** (`outbox/fa-cup-findscore-mutants-2026-11-07.txt`, harness `.py`; the FA set is in `outbox/fa-cup-smoke-mutants-2026-11-07.*`). One mutant survived the first test set (the reversed orientation) and drove the reversed-key case in FS-1; one of my own lines was dead code (`continue` made redundant by `if (!probe) continue`) and was removed.
+
 ## Artifacts (Rule 90: each names the thing that proves it)
 
 | claim | artifact |
 |---|---|
-| smoke | `node smoke.js index.html` → `1074 passed, 0 failed` |
+| smoke | `node smoke.js index.html` → `1078 passed, 0 failed` |
 | units | `node field_unit.js` → 76 passed, 0 failed |
 | the CC-CMD's Task 4 artifact | `isDomesticLeagueInBreak('FA Cup', d)` EXECUTED: `2026-11-07 false`, `2027-01-10 false`, `2027-03-07 false`, `2027-05-16 false`; control `isDomesticLeagueInBreak('Bundesliga','2026-07-01')` → `true` (smoke FA-6) |
 | every soccer label routes as soccer | smoke FA-7, executed for `Bundesliga`, `EFL Cup`, `EFL Trophy`, `FA Cup` through `classifySport`, `findScore` (a live 2-1 comes back 2-1), `sportCountLabel`, `detectSportClass`, `sportContext`, `getFieldVoice` |
@@ -52,14 +72,17 @@ Left alone on purpose: the match-brief card list (`isSoccerLeague`, a closed lis
 
 **Coverage (Rule 91):** the render is one stubbed day (33 synthetic events), one viewport (1280 wide), the bundle served from `127.0.0.1`. The real eng.fa scoreboard was read by the relay's runner probe and, for the review, through a browser tool; the page never read it. Team names in the stub are invented. The render harness is **not a gate**: nothing runs it on a push. It is evidence; the gates are smoke FA-1..FA-8.
 
-**Not explained.** In the stub the live card's time cell reads `0–0` while its stage line reads the live 2-1 (`1–2 67'`, away–home). An EFL Cup control with the same live event in the same stub shows the same `0–0`, so it is not specific to the FA Cup. Not traced: the stub dates every game at 15:00Z, so the card's time guess calls all 33 live, which may be all it is. Unblock: the first live FA Cup match on the deployed page (2026-11-08). Verify: read `.game-time` and `.card-stage-content` of a live FA Cup card; they must agree on the score.
+**The stub's `0–0`.** In the stub render the live card's time cell read `0–0` while its stage line read the live 2-1, for an EFL Cup control as well. With real data the page's cells show the real scores (31 of 31 live, 28 equal to ESPN, the other three explained above), so the stub's cell is not the page's behaviour on real data; its cause was not traced and is immaterial now (the stub dates every game at 15:00Z, so the card's time guess calls all 33 live).
 
 ## Verified live vs STAGED
 
-- Live (after the deploy gate): `html_probe` of the deployed client, grep for the literal `eng.fa` (the pipeline minifies, so the spaced `section: 'FA Cup'` form does not survive). Result in `HANDOFF.md` after the deploy.
-- **STAGED:** the page against ESPN's real 2026-11-08 FA Cup games (4 events, all listing ESPN+). Unblocked when: the 2026-11-08 games are on the scoreboard. Verify: load the deployed page on 2026-11-08 and count `.game-card[data-sport="FA Cup"]` (expect 4, each showing ESPN+). The sandbox cannot load ESPN from a headless browser (Akamai "Access Denied"), so this needs a runner (CI-as-proxy, Rule 90).
+- **Live, `SW_VERSION 2026-11-07a`** (deploy gate run `42386741813` after the first push failed the ratchet): the Live Deploy Verify Probe (run `42387005410`) read HTTP 200, `SW_VERSION = "2026-11-07a"`, slugs `eng.fa`, `eng.league_cup`, `eng.trophy`, labels `"EFL Cup"`, `"EFL Trophy"`, `"FA Cup"`; the live probe above read the cards, ESPN+ and scores against ESPN's data.
+- **Live, `SW_VERSION 2026-11-07b`** (the `findScore` fix): recorded in `HANDOFF.md` and the relay CC-CMD after its deploy gate; the verification is the live probe's `everyLiveFaScoreWasServedByEspn` for the three games above, expected to hold for York City v Northampton Town (Carlisle and Colchester stay `⚠` while a second source disagrees).
+- **STAGED:** 2026-11-08's four games (all listing ESPN+). Unblocked when: they are on the scoreboard. Verify: dispatch `fa-cup-live-probe.yml` on 2026-11-08 and read `cardsMatchEspn`, `espnPlusMatchesEspn` (expect 4 of 4). The probe is read-only and needs no secret.
 
 ## Open
+
+- **The fuzzy match is wider than the FA Cup.** `espnTeamMatch` and `findScore` serve every sport; on 2026-11-07 the real FA Cup list alone had two colliding pairs among 33 games. Not measured: the same differential on a college football Saturday (generic words "State", "Southern", "University"), the NBA/NHL/MLB lists, and the api-sports slot, which this fix leaves fuzzy. The relay has a sibling of this defect in odds pairing: `docs/CC-CMD-2026-10-19-cfb-stage2-wrong-pair.md` ("a CFB game priced from another game", `odds-name-match.js`). Re-run `outbox/fa-cup-findscore-collision-2026-11-07.cjs` on a CFB scoreboard manifest to measure it.
 
 - Past-date navigation does not include the FA Cup, the EFL Cup or the EFL Trophy (`FIELD_V2_SOURCES` has no key for them): the relay CC-CMD carries it as an open task.
 - Not modelled: ESPN removing or adding a broadcast listing after the page loads (the stream list is fixed at load, and the date sweep caches its result for the tab session).

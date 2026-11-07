@@ -8137,5 +8137,52 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
     `${eflLines.length} EFL router lines read; without 'fa cup': ${eflMissing.map(l => l.trim().slice(0, 70)).join(' ;; ') || '(none)'}`);
 }
 
+// ── findScore: a game's ESPN score is its own (jubilant-bassoon FA Cup live probe, 2026-11-07) ─────────────────────────────────────────────
+// espnTeamMatch shares any word longer than three characters, and findScore took the FRESHEST ESPN witness across every key it matched, so on
+// a day of lower-league football a card showed another game's score with no warning: York City v Northampton Town showed Huddersfield Town v
+// Exeter City's 0-1 (live run, outbox/fa-cup-live-probe-manifest-2026-11-07T16-02-39.json; reproduced by execution in
+// outbox/fa-cup-findscore-collision-2026-11-07.*). FS-1..FS-4 EXECUTE findScore on seeded witnesses; what they hold:
+//  FS-1  two ESPN entries whose names match each other on 'Town'/'City': each card gets its own score, whichever entry is fresher.
+//  FS-2  the PM-24 cross-source aggregation still works (ESPN full names + api-sports short names for ONE game: verified, two sources).
+//  FS-3  with no exact ESPN entry the fuzzy match still finds one (nothing changes when the card's names differ from the key's).
+//  FS-4  the two source lines (anchors A487/A488 stay; this adds the exact-pair preference for the ESPN slot only, not the api-sports slot).
+{
+  const sliceDecl = (src, head) => {
+    const i = src.indexOf(head);
+    if (i < 0) return null;
+    let depth = 0;
+    for (let k = src.indexOf('{', i); k < src.length; k++) { if (src[k] === '{') depth++; else if (src[k] === '}' && --depth === 0) return src.slice(i, k + 1); }
+    return null;
+  };
+  const decls = [sliceDecl(html, 'function _gameSport('), sliceDecl(html, 'function classifySport('), sliceDecl(fieldUtilsSrc, 'function espnTeamMatch('), sliceDecl(html, 'function findScore(')];
+  const witness = (h, a, ts, extra) => Object.assign({ state: 'in', homeScore: h, awayScore: a, periodPrefix: "'", period: 2, ts }, extra);
+  const run = (sbs, game) => new Function('_scoresBySource', `${decls.join(';\n')};\nreturn findScore;`)(sbs)(game);
+  let fs1 = null, fs2 = null, fs3 = null;
+  try {
+    const York = { home: 'York City', away: 'Northampton Town', _sport: 'FA Cup', league: 'FA Cup' };
+    const Hud = { home: 'Huddersfield Town', away: 'Exeter City', _sport: 'FA Cup', league: 'FA Cup' };
+    const two = (tsYork, tsHud) => ({ 'York City|Northampton Town': { espn: witness(3, 0, tsYork) }, 'Huddersfield Town|Exeter City': { espn: witness(0, 1, tsHud) } });
+    const own = (r, h, a) => !!r && r.homeScore === h && r.awayScore === a;
+    // The ESPN key may name the pair in the other order than the card (a home/away swap between feeds): an exact REVERSED entry is exact too.
+    const rev = run({ 'Northampton Town|York City': { espn: witness(0, 3, 1) }, 'Huddersfield Town|Exeter City': { espn: witness(1, 0, 2) } }, York);
+    fs1 = { yorkOtherFresher: own(run(two(1, 2), York), 3, 0), yorkOtherStaler: own(run(two(2, 1), York), 3, 0), hudOtherFresher: own(run(two(2, 1), Hud), 0, 1), hudOtherStaler: own(run(two(1, 2), Hud), 0, 1),
+            reversedKeyOtherFresher: own(rev, 0, 3) };
+    const nba = { home: 'New York Knicks', away: 'San Antonio Spurs', _sport: 'NBA', league: 'NBA' };
+    const r2 = run({ 'New York Knicks|San Antonio Spurs': { espn: witness(100, 98, 5, { periodPrefix: 'Q' }) }, 'Knicks|Spurs': { apisports: witness(100, 98, 6, { periodPrefix: 'Q' }) } }, nba);
+    fs2 = { found: !!r2, confidence: r2 ? r2.confidence : null, sources: r2 ? r2.sources : null };
+    const r3 = run({ 'Manchester United|Arsenal': { espn: witness(1, 0, 3) } }, { home: 'Manchester United FC', away: 'Arsenal FC', _sport: 'Premier League', league: 'Premier League' });
+    fs3 = { found: !!r3, home: r3 ? r3.homeScore : null };
+  } catch (e) { fs1 = { error: e.message }; }
+  assert('FS-1 — findScore gives each of two fuzzy-colliding FA Cup games its OWN ESPN score, whichever entry is fresher (executed)',
+    !!fs1 && !fs1.error && fs1.yorkOtherFresher && fs1.yorkOtherStaler && fs1.hudOtherFresher && fs1.hudOtherStaler && fs1.reversedKeyOtherFresher, JSON.stringify(fs1));
+  assert('FS-2 — the PM-24 cross-source aggregation still returns verified from two sources for one game (executed)',
+    !!fs2 && fs2.found && fs2.confidence === 'verified' && Array.isArray(fs2.sources) && fs2.sources.length === 2, JSON.stringify(fs2));
+  assert('FS-3 — with no exact ESPN entry findScore still falls back to the fuzzy match (executed)',
+    !!fs3 && fs3.found && fs3.home === 1, JSON.stringify(fs3));
+  assert('FS-4 — the exact-pair preference is scoped to the ESPN slot: the api-sports aggregation line is unchanged',
+    html.includes('(entry.apisports.ts || 0) > (apiWitness.ts || 0)') && /entry\.espn && !espnIsOtherGame && \(!espnWitness/.test(html) && /const probe = \(espnIsOtherGame \? null : entry\.espn\) \|\| entry\.apisports;/.test(html),
+    'the ESPN slot has one writer; the api-sports slot has several name forms and needs its fuzzy aggregation');
+}
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
