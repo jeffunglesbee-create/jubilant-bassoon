@@ -70,7 +70,7 @@ async function espnFor(yyyymmdd) {
   const SCORE_RX = /\d+\s*[–-]\s*\d+/;
   const anyScore = () => page.evaluate(rx => {
     const re = new RegExp(rx);
-    return [...document.querySelectorAll('.game-card.live')].some(c => { const g = c.querySelector('.game-time'); return !!g && re.test(g.innerText); });
+    return [...document.querySelectorAll('.game-card.live')].some(c => { const g = c.querySelector('.game-time'); return !!g && re.test(g.textContent); });
   }, SCORE_RX.source);
   let settledAfterSeconds = null, settledBy = 'cap';
   for (let t = 3; t <= 75; t += 3) {
@@ -84,19 +84,22 @@ async function espnFor(yyyymmdd) {
 
   const read = await page.evaluate(({ plusGames, rx }) => {
     const re = new RegExp(rx);
-    const txt = (c, sel) => { const el = c.querySelector(sel); return el ? el.innerText.replace(/\s+/g, ' ').trim() : null; };
+    // textContent, not innerText: innerText is '' for an element that is not rendered (a collapsed section, a hidden tier), which read as "no score"
+    // and "no stream" on EVERY card, the Bundesliga's included, in the probe's first three runs. textContent does not depend on layout.
+    const txt = (c, sel) => { const el = c.querySelector(sel); return el ? el.textContent.replace(/\s+/g, ' ').trim() : null; };
+    const hasPlusChip = c => !!c.querySelector('a.stream-chip[data-srkey="espnplus"]');
     const soccerSections = ['FA Cup', 'EFL Cup', 'EFL Trophy', 'Bundesliga', 'Premier League', 'La Liga', 'Serie A', 'Ligue 1', 'MLS'];
     const card = c => ({
       sport: c.getAttribute('data-sport'), home: c.getAttribute('data-home'), away: c.getAttribute('data-away'), id: c.getAttribute('data-gameid'),
       live: c.classList.contains('live'), timeCell: txt(c, '.game-time'), stageLine: txt(c, '.card-stage-content'),
-      espnPlus: /ESPN\+/.test(c.innerText),
+      espnPlus: hasPlusChip(c), rendered: c.offsetParent !== null,
       streamRow: txt(c, '.stream-row'),
     });
     const fa = [...document.querySelectorAll('.game-card[data-sport="FA Cup"]')].map(card);
     const faAll = [...document.querySelectorAll('.game-card[data-sport="FA Cup"]')];
     const plus = plusGames.map(g => {
       const c = faAll.find(x => x.getAttribute('data-home') === g.home && x.getAttribute('data-away') === g.away);
-      return { home: g.home, away: g.away, cardFound: !!c, cardShowsEspnPlus: !!c && /ESPN\+/.test(c.innerText), streamRow: c ? txt(c, '.stream-row') : null };
+      return { home: g.home, away: g.away, cardFound: !!c, cardShowsEspnPlus: !!c && hasPlusChip(c), cardRendered: !!c && c.offsetParent !== null, streamRow: c ? txt(c, '.stream-row') : null };
     });
     const others = [...document.querySelectorAll('.game-card')].filter(c => c.classList.contains('live') && soccerSections.includes(c.getAttribute('data-sport')) && c.getAttribute('data-sport') !== 'FA Cup').map(card);
     const withScore = list => list.filter(c => c.timeCell !== null && re.test(c.timeCell)).length;
