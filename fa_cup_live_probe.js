@@ -40,7 +40,12 @@ async function espnFor(yyyymmdd) {
     const side = ha => { const c = cs.find(x => x.homeAway === ha); return c && c.team ? c.team.displayName : null; };
     return { id: ev.id, home: side('home'), away: side('away'), state: ev.status && ev.status.type ? ev.status.type.state : null };
   });
-  return { ok: true, status: r.status, events: events.length, listingEspnPlus: plusGames.length, plusGames, states };
+  const games = events.map(ev => {
+    const cs = ev.competitions[0].competitors;
+    const c = ha => cs.find(x => x.homeAway === ha);
+    return { home: c('home').team.displayName, away: c('away').team.displayName, homeScore: parseInt(c('home').score, 10), awayScore: parseInt(c('away').score, 10), state: ev.status.type.state };
+  });
+  return { ok: true, status: r.status, events: events.length, listingEspnPlus: plusGames.length, plusGames, games, states };
 }
 
 (async () => {
@@ -82,7 +87,7 @@ async function espnFor(yyyymmdd) {
   const etDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const espn = await espnFor(etDay.replace(/-/g, ''));
 
-  const read = await page.evaluate(({ plusGames, rx }) => {
+  const read = await page.evaluate(({ plusGames, games, rx }) => {
     const re = new RegExp(rx);
     // textContent, not innerText: innerText is '' for an element that is not rendered (a collapsed section, a hidden tier), which read as "no score"
     // and "no stream" on EVERY card, the Bundesliga's included, in the probe's first three runs. textContent does not depend on layout.
@@ -103,17 +108,26 @@ async function espnFor(yyyymmdd) {
     });
     const others = [...document.querySelectorAll('.game-card')].filter(c => c.classList.contains('live') && soccerSections.includes(c.getAttribute('data-sport')) && c.getAttribute('data-sport') !== 'FA Cup').map(card);
     const withScore = list => list.filter(c => c.timeCell !== null && re.test(c.timeCell)).length;
+    // The time cell reads away-home (buildCardTimeDisplay: `${away}-${home}`). Compare it with ESPN's score for the same pair, read seconds apart:
+    // a goal between the two reads is the only honest reason for a difference, and the list below names every difference so it can be judged.
+    const cmp = fa.filter(c => c.live).map(c => {
+      const g = games.find(x => x.home === c.home && x.away === c.away);
+      const m = c.timeCell === null ? null : re.exec(c.timeCell);
+      const nums = m ? m[0].split(/[–-]/).map(x => parseInt(x.trim(), 10)) : null;
+      return { home: c.home, away: c.away, card: nums ? `${nums[0]}-${nums[1]}` : null, espn: g ? `${g.awayScore}-${g.homeScore}` : null, agree: !!nums && !!g && nums[0] === g.awayScore && nums[1] === g.homeScore };
+    });
     const faLiveList = fa.filter(c => c.live);
     return {
       espnPlusGames: plus,
       faLiveWithScore: withScore(faLiveList), otherSoccerLiveWithScore: withScore(others),
+      faLiveScoreAgreeWithEspn: cmp.filter(x => x.agree).length, faLiveScoreDisagree: cmp.filter(x => !x.agree).slice(0, 10),
       swVersion: window.SW_VERSION === undefined ? null : window.SW_VERSION,
       faSections: document.querySelectorAll('.sport-section[data-sport="FA Cup"]').length,
       faCards: fa.length, faEspnPlus: fa.filter(c => c.espnPlus).length, faLive: fa.filter(c => c.live).length,
       faLiveCards: fa.filter(c => c.live).slice(0, 12), faFirstCards: fa.slice(0, 3),
       otherSoccerLive: others.length, otherSoccerLiveCards: others.slice(0, 8),
     };
-  }, { plusGames: espn.ok === true ? espn.plusGames : [], rx: SCORE_RX.source });
+  }, { plusGames: espn.ok === true ? espn.plusGames : [], games: espn.ok === true ? espn.games : [], rx: SCORE_RX.source });
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const shot = `outbox/fa-cup-live-probe-${ts}.png`;
@@ -130,11 +144,12 @@ async function espnFor(yyyymmdd) {
       cardsMatchEspn: espn.ok === true && read.faCards === espn.events,
       espnPlusMatchesEspn: espn.ok === true && read.faEspnPlus === espn.listingEspnPlus && read.espnPlusGames.length > 0 && read.espnPlusGames.every(g => g.cardFound && g.cardShowsEspnPlus),
       everyLiveFaCardShowsAScore: read.faLive > 0 && read.faLiveWithScore === read.faLive,
+      everyLiveFaScoreAgreesWithEspn: read.faLive > 0 && read.faLiveScoreAgreeWithEspn === read.faLive,
       faScoresAsPopulatedAsOtherLeagues: read.otherSoccerLive > 0 && read.faLive > 0 && read.faLiveWithScore / read.faLive >= read.otherSoccerLiveWithScore / read.otherSoccerLive,
     },
     consoleErrors: errors.slice(0, 5),
   };
   fs.writeFileSync(`outbox/fa-cup-live-probe-manifest-${ts}.json`, JSON.stringify(manifest, null, 2));
-  console.log(JSON.stringify({ etDay, espn, faSections: read.faSections, faCards: read.faCards, faEspnPlus: read.faEspnPlus, faLive: read.faLive, faLiveWithScore: read.faLiveWithScore, otherLive: read.otherSoccerLive, otherLiveWithScore: read.otherSoccerLiveWithScore, plusGames: read.espnPlusGames, settle: manifest.settle, verdict: manifest.verdict }));
+  console.log(JSON.stringify({ etDay, espn, faSections: read.faSections, faCards: read.faCards, faEspnPlus: read.faEspnPlus, faLive: read.faLive, faLiveWithScore: read.faLiveWithScore, otherLive: read.otherSoccerLive, otherLiveWithScore: read.otherSoccerLiveWithScore, scoreAgree: read.faLiveScoreAgreeWithEspn, scoreDisagree: read.faLiveScoreDisagree, plusGames: read.espnPlusGames, settle: manifest.settle, verdict: manifest.verdict }));
   await browser.close();
 })();
