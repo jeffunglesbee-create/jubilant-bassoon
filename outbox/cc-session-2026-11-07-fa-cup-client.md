@@ -77,7 +77,7 @@ The sandbox reaches neither ESPN nor the deployed page in a browser, so a dispat
 ## Verified live vs STAGED
 
 - **Live, `SW_VERSION 2026-11-07a`** (deploy gate run `42386741813` after the first push failed the ratchet): the Live Deploy Verify Probe (run `42387005410`) read HTTP 200, `SW_VERSION = "2026-11-07a"`, slugs `eng.fa`, `eng.league_cup`, `eng.trophy`, labels `"EFL Cup"`, `"EFL Trophy"`, `"FA Cup"`; the live probe above read the cards, ESPN+ and scores against ESPN's data.
-- **Live, `SW_VERSION 2026-11-07b`** (the `findScore` fix): recorded in `HANDOFF.md` and the relay CC-CMD after its deploy gate; the verification is the live probe's `everyLiveFaScoreWasServedByEspn` for the three games above, expected to hold for York City v Northampton Town (Carlisle and Colchester stay `⚠` while a second source disagrees).
+- **Live, `SW_VERSION 2026-11-07b`** (the `findScore` fix, `ad5d4b9`): deploy gate run `42390293724` `success`, its confirm step reading the live site serving `2026-11-07b`. The live probe (run `42390487517`, `outbox/fa-cup-live-probe-manifest-2026-11-07T16-18-21.json`, 33 events, 31 in play): 33 cards, ESPN+ on exactly the 2, 31 of 31 cells show a score, **29 of 31 scores were served by ESPN for that game, and York City v Northampton Town is no longer among the two that were not** (before the fix: 28 of 31, York silent). The remaining two, Carlisle and Colchester, read `0–0 ⚠`, the page's own mismatch flag.
 - **STAGED:** 2026-11-08's four games (all listing ESPN+). Unblocked when: they are on the scoreboard. Verify: dispatch `fa-cup-live-probe.yml` on 2026-11-08 and read `cardsMatchEspn`, `espnPlusMatchesEspn` (expect 4 of 4). The probe is read-only and needs no secret.
 
 ## Open
