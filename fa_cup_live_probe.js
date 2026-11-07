@@ -35,7 +35,12 @@ async function espnFor(yyyymmdd) {
   };
   const states = {};
   for (const ev of events) { const st = ev.status && ev.status.type ? ev.status.type.state : 'none'; states[st] = (states[st] === undefined ? 0 : states[st]) + 1; }
-  return { ok: true, status: r.status, events: events.length, listingEspnPlus: events.filter(lists).length, states };
+  const plusGames = events.filter(lists).map(ev => {
+    const cs = ev.competitions[0].competitors;
+    const side = ha => { const c = cs.find(x => x.homeAway === ha); return c && c.team ? c.team.displayName : null; };
+    return { id: ev.id, home: side('home'), away: side('away'), state: ev.status && ev.status.type ? ev.status.type.state : null };
+  });
+  return { ok: true, status: r.status, events: events.length, listingEspnPlus: plusGames.length, plusGames, states };
 }
 
 (async () => {
@@ -59,29 +64,53 @@ async function espnFor(yyyymmdd) {
   await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   let sawCards = true;
   try { await page.waitForSelector('.game-card[data-sport="FA Cup"]', { timeout: 45000 }); } catch (e) { sawCards = false; }
-  await page.waitForTimeout(12000);                     // the live poller's first pass, and one render of the score cells
+  // The live poller writes scores some seconds after boot, and the score cells follow its next render. Read when at least one live soccer card shows
+  // a score in its time cell, or at the cap, and record which (settledAfterSeconds, settledBy). A fixed short wait read the cells BEFORE any
+  // league's scores had arrived: the first run's empty time cells were on the Bundesliga, Premier League, La Liga and Serie A cards too.
+  const SCORE_RX = /\d+\s*[–-]\s*\d+/;
+  const anyScore = () => page.evaluate(rx => {
+    const re = new RegExp(rx);
+    return [...document.querySelectorAll('.game-card.live')].some(c => { const g = c.querySelector('.game-time'); return !!g && re.test(g.innerText); });
+  }, SCORE_RX.source);
+  let settledAfterSeconds = null, settledBy = 'cap';
+  for (let t = 3; t <= 75; t += 3) {
+    await page.waitForTimeout(3000);
+    if (await anyScore()) { settledAfterSeconds = t; settledBy = 'a live card showed a score'; break; }
+  }
+  await page.waitForTimeout(6000);                      // one more render so the rest of the leagues catch up
 
   const etDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const espn = await espnFor(etDay.replace(/-/g, ''));
 
-  const read = await page.evaluate(() => {
+  const read = await page.evaluate(({ plusGames, rx }) => {
+    const re = new RegExp(rx);
     const txt = (c, sel) => { const el = c.querySelector(sel); return el ? el.innerText.replace(/\s+/g, ' ').trim() : null; };
     const soccerSections = ['FA Cup', 'EFL Cup', 'EFL Trophy', 'Bundesliga', 'Premier League', 'La Liga', 'Serie A', 'Ligue 1', 'MLS'];
     const card = c => ({
       sport: c.getAttribute('data-sport'), home: c.getAttribute('data-home'), away: c.getAttribute('data-away'), id: c.getAttribute('data-gameid'),
       live: c.classList.contains('live'), timeCell: txt(c, '.game-time'), stageLine: txt(c, '.card-stage-content'),
       espnPlus: /ESPN\+/.test(c.innerText),
+      streamRow: txt(c, '.stream-row'),
     });
     const fa = [...document.querySelectorAll('.game-card[data-sport="FA Cup"]')].map(card);
+    const faAll = [...document.querySelectorAll('.game-card[data-sport="FA Cup"]')];
+    const plus = plusGames.map(g => {
+      const c = faAll.find(x => x.getAttribute('data-home') === g.home && x.getAttribute('data-away') === g.away);
+      return { home: g.home, away: g.away, cardFound: !!c, cardShowsEspnPlus: !!c && /ESPN\+/.test(c.innerText), streamRow: c ? txt(c, '.stream-row') : null };
+    });
     const others = [...document.querySelectorAll('.game-card')].filter(c => c.classList.contains('live') && soccerSections.includes(c.getAttribute('data-sport')) && c.getAttribute('data-sport') !== 'FA Cup').map(card);
+    const withScore = list => list.filter(c => c.timeCell !== null && re.test(c.timeCell)).length;
+    const faLiveList = fa.filter(c => c.live);
     return {
+      espnPlusGames: plus,
+      faLiveWithScore: withScore(faLiveList), otherSoccerLiveWithScore: withScore(others),
       swVersion: window.SW_VERSION === undefined ? null : window.SW_VERSION,
       faSections: document.querySelectorAll('.sport-section[data-sport="FA Cup"]').length,
       faCards: fa.length, faEspnPlus: fa.filter(c => c.espnPlus).length, faLive: fa.filter(c => c.live).length,
       faLiveCards: fa.filter(c => c.live).slice(0, 12), faFirstCards: fa.slice(0, 3),
       otherSoccerLive: others.length, otherSoccerLiveCards: others.slice(0, 8),
     };
-  });
+  }, { plusGames: espn.ok === true ? espn.plusGames : [], rx: SCORE_RX.source });
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const shot = `outbox/fa-cup-live-probe-${ts}.png`;
@@ -93,14 +122,16 @@ async function espnFor(yyyymmdd) {
   const manifest = {
     at: new Date().toISOString(), url: FIELD_URL, etDay, viewport: '1440x900', sawFaCupCards: sawCards, espnSameRun: espn, espnProxiedToThePage: proxied, page: read,
     coverage: `one viewport, one load, the ET day ${etDay}; ESPN read with Node's fetch in the same run and handed to the page unchanged (espnProxiedToThePage); first ${read.faLiveCards.length} live FA Cup cards and first ${read.otherSoccerLiveCards.length} other live soccer cards listed`,
+    settle: { settledAfterSeconds, settledBy },
     verdict: {
       cardsMatchEspn: espn.ok === true && read.faCards === espn.events,
-      espnPlusMatchesEspn: espn.ok === true && read.faEspnPlus === espn.listingEspnPlus,
-      everyLiveFaCardHasATimeCell: read.faLiveCards.every(c => c.timeCell !== null && c.timeCell !== ''),
+      espnPlusMatchesEspn: espn.ok === true && read.faEspnPlus === espn.listingEspnPlus && read.espnPlusGames.length > 0 && read.espnPlusGames.every(g => g.cardFound && g.cardShowsEspnPlus),
+      everyLiveFaCardShowsAScore: read.faLive > 0 && read.faLiveWithScore === read.faLive,
+      faScoresAsPopulatedAsOtherLeagues: read.otherSoccerLive > 0 && read.faLive > 0 && read.faLiveWithScore / read.faLive >= read.otherSoccerLiveWithScore / read.otherSoccerLive,
     },
     consoleErrors: errors.slice(0, 5),
   };
   fs.writeFileSync(`outbox/fa-cup-live-probe-manifest-${ts}.json`, JSON.stringify(manifest, null, 2));
-  console.log(JSON.stringify({ etDay, espn, faSections: read.faSections, faCards: read.faCards, faEspnPlus: read.faEspnPlus, faLive: read.faLive, verdict: manifest.verdict }));
+  console.log(JSON.stringify({ etDay, espn, faSections: read.faSections, faCards: read.faCards, faEspnPlus: read.faEspnPlus, faLive: read.faLive, faLiveWithScore: read.faLiveWithScore, otherLive: read.otherSoccerLive, otherLiveWithScore: read.otherSoccerLiveWithScore, plusGames: read.espnPlusGames, settle: manifest.settle, verdict: manifest.verdict }));
   await browser.close();
 })();
