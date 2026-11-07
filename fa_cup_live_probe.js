@@ -134,13 +134,13 @@ async function espnFor(yyyymmdd) {
       const g = games.find(x => x.home === c.home && x.away === c.away);
       const m = c.timeCell === null ? null : re.exec(c.timeCell);
       const nums = m ? m[0].split(/[–-]/).map(x => parseInt(x.trim(), 10)) : null;
-      return { home: c.home, away: c.away, card: nums ? `${nums[0]}-${nums[1]}` : null, espn: g ? `${g.awayScore}-${g.homeScore}` : null, agree: !!nums && !!g && nums[0] === g.awayScore && nums[1] === g.homeScore };
+      return { home: c.home, away: c.away, cell: c.timeCell, card: nums ? `${nums[0]}-${nums[1]}` : null, espn: g ? `${g.awayScore}-${g.homeScore}` : null, agree: !!nums && !!g && nums[0] === g.awayScore && nums[1] === g.homeScore };
     });
     const faLiveList = fa.filter(c => c.live);
     return {
       espnPlusGames: plus,
       faLiveWithScore: withScore(faLiveList), otherSoccerLiveWithScore: withScore(others),
-      faLiveCardScores: cmp.map(x => ({ home: x.home, away: x.away, card: x.card })),
+      faLiveCardScores: cmp.map(x => ({ home: x.home, away: x.away, card: x.card, cell: x.cell })),
       faLiveScoreAgreeWithEspn: cmp.filter(x => x.agree).length, faLiveScoreDisagree: cmp.filter(x => !x.agree).slice(0, 10),
       swVersion: window.SW_VERSION === undefined ? null : window.SW_VERSION,
       faSections: document.querySelectorAll('.sport-section[data-sport="FA Cup"]').length,
@@ -151,7 +151,7 @@ async function espnFor(yyyymmdd) {
   }, { plusGames: espn.ok === true ? espn.plusGames : [], games: espn.ok === true ? espn.games : [], rx: SCORE_RX.source });
 
   // read.faLiveCardScores: [{home, away, card}] gathered in-page below; compared here against what was served.
-  const vsServed = read.faLiveCardScores.map(c => ({ home: c.home, away: c.away, card: c.card, served: served[`${c.home}|${c.away}`] === undefined ? null : served[`${c.home}|${c.away}`],
+  const vsServed = read.faLiveCardScores.map(c => ({ home: c.home, away: c.away, card: c.card, cell: c.cell, served: served[`${c.home}|${c.away}`] === undefined ? null : served[`${c.home}|${c.away}`],
     servedByEspn: c.card !== null && served[`${c.home}|${c.away}`] !== undefined && served[`${c.home}|${c.away}`].includes(c.card) }));
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
