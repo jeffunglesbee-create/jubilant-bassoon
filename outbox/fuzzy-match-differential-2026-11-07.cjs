@@ -36,16 +36,17 @@ console.log(`${leagueKey} (${label}, prefix ${prefix}): ${games.length} games se
 for (const [name, ts] of scenarios) {
   const sbs = {}
   games.forEach((g, i) => { const e = {}; if (ts.espn) e.espn = witness(g, ts.espn(i)); if (ts.api) e.apisports = witness(g, ts.api(i)); sbs[`${g.home}|${g.away}`] = e })
-  const out = {}
+  const out = {}, bad = { OLD: new Set(), NEW: new Set() }
   for (const [v, field] of Object.entries(versions)) {
     const find = finder(field, sbs); let wrong = 0, flagged = 0, silent = 0
     for (const g of judged) {
       const r = find({ home: g.home, away: g.away, _sport: label, league: label })
-      const bad = !r || r.homeScore !== g.homeScore || r.awayScore !== g.awayScore
+      const isBad = !r || r.homeScore !== g.homeScore || r.awayScore !== g.awayScore
       const flag = !!r && r.confidence === 'mismatch'
-      if (bad) { wrong++; if (flag) flagged++; else silent++ }
+      if (isBad) { wrong++; bad[v].add(`${g.home}|${g.away}`); if (flag) flagged++; else silent++ }
     }
     out[v] = { wrong, flagged, silent }
   }
-  console.log(`  ${name.padEnd(54)} OLD wrong ${out.OLD.wrong} (flagged ${out.OLD.flagged}, silent ${out.OLD.silent}) | NEW wrong ${out.NEW.wrong} (flagged ${out.NEW.flagged}, silent ${out.NEW.silent})`)
+  const regressed = [...bad.NEW].filter(k => !bad.OLD.has(k)).length       // right before, wrong after
+  console.log(`  ${name.padEnd(54)} OLD wrong ${out.OLD.wrong} (flagged ${out.OLD.flagged}, silent ${out.OLD.silent}) | NEW wrong ${out.NEW.wrong} (flagged ${out.NEW.flagged}, silent ${out.NEW.silent}) | right-before-wrong-after ${regressed}`)
 }

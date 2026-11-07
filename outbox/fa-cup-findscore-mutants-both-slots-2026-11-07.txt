@@ -1,0 +1,13 @@
+CAUGHT   A1 the exact-ESPN test is disabled  failed=['FS-1', 'FS-5'] 1078 passed, 2 failed
+CAUGHT   A2 the exact-api-sports test is disabled (the previous ESPN-only fix)  failed=['FS-5', 'FS-6'] 1078 passed, 2 failed
+CAUGHT   A3 the exact-pair test is inverted  failed=['FS-1', 'FS-2', 'FS-5', 'FS-6'] 1076 passed, 4 failed
+CAUGHT   A4 the api-sports other-game flag is always false  failed=['FS-5', 'FS-6'] 1078 passed, 2 failed
+CAUGHT   A5 the api-sports witness update ignores the flag  failed=['FS-4'] 1079 passed, 1 failed
+CAUGHT   A6 the probe ignores the api-sports flag  failed=['FS-4', 'FS-5'] 1078 passed, 2 failed
+CAUGHT   A7 the preference is widened across slots (an exact ESPN entry drops api-sports short names)  failed=['FS-2'] 1079 passed, 1 failed
+CAUGHT   A8 the fuzzy fallback is removed when no exact api-sports entry exists  failed=['FA-7', 'FS-1', 'FS-2', 'FS-3', 'FS-6'] 1075 passed, 5 failed
+CAUGHT   A9 the exact pair ignores the reversed orientation  failed=['FS-1', 'FS-6'] 1078 passed, 2 failed
+CAUGHT   A10 the ESPN witness update ignores the flag  failed=['FS-4'] 1079 passed, 1 failed
+CAUGHT   A11 the probe ignores the ESPN flag  failed=['FS-4', 'FS-5'] 1078 passed, 2 failed
+restored control: 0 [] 1080 passed, 0 failed
+11 of 11 mutants caught

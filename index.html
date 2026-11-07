@@ -20473,28 +20473,32 @@ function findScore(game) {
   // PM-24: aggregate witnesses across all fuzzy-matched keys
   let espnWitness = null, apiWitness = null;
   const matchedKeys = [];
-  // EXACT BEATS FUZZY, for the ESPN witness (2026-11-07, jubilant-bassoon FA Cup live probe). espnTeamMatch shares ANY word longer than three
+  // EXACT BEATS FUZZY, per source (2026-11-07, jubilant-bassoon FA Cup and college football live probes). espnTeamMatch shares ANY word longer than three
   // characters, so on a day of lower-league football "Huddersfield Town v Exeter City" matches "York City v Northampton Town" (Town, City) and
-  // this loop took the FRESHEST ESPN witness across both keys: York's card showed Huddersfield's score, with no warning (run 6 of
-  // outbox/fa-cup-live-probe-manifest-2026-11-07T16-02-39.json, reproduced by execution in outbox/fa-cup-findscore-collision-2026-11-07.*).
-  // The ESPN slot has ONE writer (the ESPN poller, key `${displayName}|${displayName}`, the same strings the card was built from), so when an
-  // entry under this game's own two names exists, every other key's ESPN witness belongs to another game. The api-sports slot has several
-  // writers with different name forms and keeps the fuzzy aggregation PM-24 needs; with no exact ESPN entry nothing changes at all.
+  // this loop took the FRESHEST witness across both keys: York's card showed Huddersfield's score, with no warning (outbox/fa-cup-live-probe-manifest-2026-11-07T16-02-39.json,
+  // reproduced by execution in outbox/fa-cup-findscore-collision-2026-11-07.*). On a college football Saturday 15 of 51 games are in such a pair, and in the api-sports slot alone,
+  // which is the only source of the soccer leagues, NBA, NHL and MLB, one of 11 EFL Championship cards was wrong in every write order (outbox/fuzzy-match-measurement-2026-11-07.txt).
+  // Every writer of both slots keys on the strings the card was built from: the ESPN poller on its display names, the V2 loops and the SSE write (guarded to an existing key) on the
+  // relay's names. So when a slot holds an entry under THIS game's own two names (either order), every other key's witness in that slot belongs to another game and is skipped.
+  // A slot with no exact entry keeps the fuzzy aggregation PM-24 needs (ESPN full names against api-sports short names for one game), so nothing changes there.
   const _exactPair = (h, a) => (h === home && a === away) || (h === away && a === home);
-  const _hasExactEspn = Object.entries(_scoresBySource).some(([k, e]) => {
-    if (!e || !e.espn) return false;
+  const _exactIn = slot => Object.entries(_scoresBySource).some(([k, e]) => {
+    if (!e || !e[slot]) return false;
     const [h, a] = k.split('|').map(s => s.toLowerCase());
     return _exactPair(h, a);
   });
+  const _hasExactEspn = _exactIn('espn'), _hasExactApi = _exactIn('apisports');
   for (const [key, entry] of Object.entries(_scoresBySource)) {
     if (!entry) continue;
     const [hn, an] = key.split('|').map(s => s.toLowerCase());
     const matches = (espnTeamMatch(hn, home) && espnTeamMatch(an, away)) ||
                     (espnTeamMatch(hn, away) && espnTeamMatch(an, home));
     if (!matches) continue;
-    const espnIsOtherGame = _hasExactEspn && !!entry.espn && !_exactPair(hn, an);
+    const exactHere = _exactPair(hn, an);
+    const espnIsOtherGame = _hasExactEspn && !!entry.espn && !exactHere;
+    const apiIsOtherGame  = _hasExactApi  && !!entry.apisports && !exactHere;
     // Same periodPrefix sport-guard as findESPNScore — apply to whichever source we use
-    const probe = (espnIsOtherGame ? null : entry.espn) || entry.apisports;
+    const probe = (espnIsOtherGame ? null : entry.espn) || (apiIsOtherGame ? null : entry.apisports);
     if (!probe) continue;
     const pp = probe.periodPrefix || '';
     if (gameSoccer  && (pp === 'Q' || pp === 'H' || pp === 'P' || pp === 'T')) continue;
@@ -20504,7 +20508,7 @@ function findScore(game) {
     if (entry.espn && !espnIsOtherGame && (!espnWitness || (entry.espn.ts || 0) > (espnWitness.ts || 0))) {
       espnWitness = entry.espn;
     }
-    if (entry.apisports && (!apiWitness || (entry.apisports.ts || 0) > (apiWitness.ts || 0))) {
+    if (entry.apisports && !apiIsOtherGame && (!apiWitness || (entry.apisports.ts || 0) > (apiWitness.ts || 0))) {
       apiWitness = entry.apisports;
     }
   }
@@ -28512,7 +28516,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-07b';
+  const SW_VERSION = '2026-11-07c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

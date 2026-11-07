@@ -8145,7 +8145,10 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
 //  FS-1  two ESPN entries whose names match each other on 'Town'/'City': each card gets its own score, whichever entry is fresher.
 //  FS-2  the PM-24 cross-source aggregation still works (ESPN full names + api-sports short names for ONE game: verified, two sources).
 //  FS-3  with no exact ESPN entry the fuzzy match still finds one (nothing changes when the card's names differ from the key's).
-//  FS-4  the two source lines (anchors A487/A488 stay; this adds the exact-pair preference for the ESPN slot only, not the api-sports slot).
+//  FS-4  the text anchors: A487's two freshest-witness lines stay, and each slot carries its own exact-pair flag (espnIsOtherGame, apiIsOtherGame).
+//  FS-5  the same two colliding games in BOTH slots (a CFB card has an exact entry in each): each card gets its own score and the page calls it 'verified', not 'mismatch'.
+//  FS-6  the api-sports slot alone (the soccer leagues, NBA, NHL and MLB have no ESPN slot): two colliding games each get their own score in either write order, a reversed key
+//        included, and with no exact api-sports entry the fuzzy fallback still finds one.
 {
   const sliceDecl = (src, head) => {
     const i = src.indexOf(head);
@@ -8157,7 +8160,7 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
   const decls = [sliceDecl(html, 'function _gameSport('), sliceDecl(html, 'function classifySport('), sliceDecl(fieldUtilsSrc, 'function espnTeamMatch('), sliceDecl(html, 'function findScore(')];
   const witness = (h, a, ts, extra) => Object.assign({ state: 'in', homeScore: h, awayScore: a, periodPrefix: "'", period: 2, ts }, extra);
   const run = (sbs, game) => new Function('_scoresBySource', `${decls.join(';\n')};\nreturn findScore;`)(sbs)(game);
-  let fs1 = null, fs2 = null, fs3 = null;
+  let fs1 = null, fs2 = null, fs3 = null, fs5 = null, fs6 = null;
   try {
     const York = { home: 'York City', away: 'Northampton Town', _sport: 'FA Cup', league: 'FA Cup' };
     const Hud = { home: 'Huddersfield Town', away: 'Exeter City', _sport: 'FA Cup', league: 'FA Cup' };
@@ -8165,6 +8168,15 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
     const own = (r, h, a) => !!r && r.homeScore === h && r.awayScore === a;
     // The ESPN key may name the pair in the other order than the card (a home/away swap between feeds): an exact REVERSED entry is exact too.
     const rev = run({ 'Northampton Town|York City': { espn: witness(0, 3, 1) }, 'Huddersfield Town|Exeter City': { espn: witness(1, 0, 2) } }, York);
+    const apiTwo = (tsYork, tsHud) => ({ 'York City|Northampton Town': { apisports: witness(3, 0, tsYork) }, 'Huddersfield Town|Exeter City': { apisports: witness(0, 1, tsHud) } });
+    fs6 = {
+      yorkOtherFresher: own(run(apiTwo(1, 2), York), 3, 0), yorkOtherStaler: own(run(apiTwo(2, 1), York), 3, 0), hudOtherFresher: own(run(apiTwo(2, 1), Hud), 0, 1), hudOtherStaler: own(run(apiTwo(1, 2), Hud), 0, 1),
+      reversedKey: own(run({ 'Northampton Town|York City': { apisports: witness(0, 3, 1) }, 'Huddersfield Town|Exeter City': { apisports: witness(1, 0, 2) } }, York), 0, 3),
+      fuzzyFallback: (r => !!r && r.homeScore === 1)(run({ 'Manchester United|Arsenal': { apisports: witness(1, 0, 3) } }, { home: 'Manchester United FC', away: 'Arsenal FC', _sport: 'Premier League', league: 'Premier League' })),
+    };
+    const bothTwo = (tsYork, tsHud, tsYorkApi, tsHudApi) => ({ 'York City|Northampton Town': { espn: witness(3, 0, tsYork), apisports: witness(3, 0, tsYorkApi) }, 'Huddersfield Town|Exeter City': { espn: witness(0, 1, tsHud), apisports: witness(0, 1, tsHudApi) } });
+    const rb = run(bothTwo(1, 2, 3, 4), York), rb2 = run(bothTwo(4, 3, 2, 1), Hud);
+    fs5 = { yorkOwnVerified: own(rb, 3, 0) && rb.confidence === 'verified' && rb._pm24_matched.length === 1, hudOwnVerified: own(rb2, 0, 1) && rb2.confidence === 'verified' && rb2._pm24_matched.length === 1 };
     fs1 = { yorkOtherFresher: own(run(two(1, 2), York), 3, 0), yorkOtherStaler: own(run(two(2, 1), York), 3, 0), hudOtherFresher: own(run(two(2, 1), Hud), 0, 1), hudOtherStaler: own(run(two(1, 2), Hud), 0, 1),
             reversedKeyOtherFresher: own(rev, 0, 3) };
     const nba = { home: 'New York Knicks', away: 'San Antonio Spurs', _sport: 'NBA', league: 'NBA' };
@@ -8179,9 +8191,15 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
     !!fs2 && fs2.found && fs2.confidence === 'verified' && Array.isArray(fs2.sources) && fs2.sources.length === 2, JSON.stringify(fs2));
   assert('FS-3 — with no exact ESPN entry findScore still falls back to the fuzzy match (executed)',
     !!fs3 && fs3.found && fs3.home === 1, JSON.stringify(fs3));
-  assert('FS-4 — the exact-pair preference is scoped to the ESPN slot: the api-sports aggregation line is unchanged',
-    html.includes('(entry.apisports.ts || 0) > (apiWitness.ts || 0)') && /entry\.espn && !espnIsOtherGame && \(!espnWitness/.test(html) && /const probe = \(espnIsOtherGame \? null : entry\.espn\) \|\| entry\.apisports;/.test(html),
-    'the ESPN slot has one writer; the api-sports slot has several name forms and needs its fuzzy aggregation');
+  assert('FS-4 — each slot carries its own exact-pair flag; the freshest-witness anchors of A487 are untouched',
+    html.includes('(entry.espn.ts || 0) > (espnWitness.ts || 0)') && html.includes('(entry.apisports.ts || 0) > (apiWitness.ts || 0)') &&
+    /entry\.espn && !espnIsOtherGame && \(!espnWitness/.test(html) && /entry\.apisports && !apiIsOtherGame && \(!apiWitness/.test(html) &&
+    /const probe = \(espnIsOtherGame \? null : entry\.espn\) \|\| \(apiIsOtherGame \? null : entry\.apisports\);/.test(html),
+    'a slot with no exact entry keeps the fuzzy aggregation PM-24 needs (ESPN full names against api-sports short names for one game)');
+  assert('FS-5 — the same two colliding games in BOTH slots: each card gets its own score and the page calls it verified (executed)',
+    !!fs5 && fs5.yorkOwnVerified && fs5.hudOwnVerified, JSON.stringify(fs5));
+  assert('FS-6 — the api-sports slot alone: colliding games each get their own score in either write order, reversed key included, and the fuzzy fallback still finds one (executed)',
+    !!fs6 && fs6.yorkOtherFresher && fs6.yorkOtherStaler && fs6.hudOtherFresher && fs6.hudOtherStaler && fs6.reversedKey && fs6.fuzzyFallback, JSON.stringify(fs6));
 }
 
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);

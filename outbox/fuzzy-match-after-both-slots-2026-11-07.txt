@@ -1,0 +1,71 @@
+# AFTER the both-slots fix (working tree, SW_VERSION 2026-11-07c) against the parent of ad5d4b9 (before any exact-pair preference). Manifest outbox/espn-scoreboard-games-2026-11-07T20-38-30.json (read 2026-11-07T20:38Z, run in outbox/)
+## relay-cfb judged on the 15 cards the live page lists (CARDS_FROM outbox/cfb-live-probe-manifest-2026-11-07T20-36-15.json)
+relay-cfb (College Football, prefix Q): 51 games seeded, 15 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 1 (flagged 1, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## relay-cfb judged on every game
+relay-cfb (College Football, prefix Q): 51 games seeded, 51 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 6 (flagged 6, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 3 (flagged 3, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## relay-eflchamp judged on every game
+relay-eflchamp (EFL Championship, prefix '): 11 games seeded, 11 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 1 (flagged 0, silent 1) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 1 (flagged 1, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 1 (flagged 1, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## relay-mls judged on every game
+relay-mls (MLS Soccer, prefix '): 15 games seeded, 15 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## relay-nba judged on every game
+relay-nba (NBA, prefix Q): 7 games seeded, 7 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## relay-nhl judged on every game
+relay-nhl (NHL, prefix P): 12 games seeded, 12 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## cfb-poller judged on every game
+cfb-poller (College Football, prefix Q): 51 games seeded, 51 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 6 (flagged 6, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 3 (flagged 3, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
