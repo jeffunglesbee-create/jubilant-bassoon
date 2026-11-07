@@ -3,6 +3,12 @@
 // (Rule 90): the sandbox cannot load ESPN or the deployed page in a browser. The render harness (outbox/fa-cup-render-harness-2026-11-07.mjs)
 // answered with a STUB; this answers with what ESPN serves today.
 //
+// TRANSPORT, stated because it changes what "the page against real ESPN" means. A headless Chromium on a runner is refused or answered empty by
+// ESPN (the first run of this probe: the page's own request AND an in-page fetch both came back with 0 events for a day the relay's runner probe
+// read 33 for, minutes apart). So every request the page makes to site.api.espn.com is answered by THIS script, which reads ESPN with Node's fetch
+// (the same transport the relay's probe uses) and hands the page the body unchanged. The page's code is the deployed bundle; the data is ESPN's,
+// live at that moment; the browser's own network path to ESPN is the one thing not exercised. The manifest counts the requests and their statuses.
+//
 // What it reads, as booleans and counts in a manifest, not prose:
 //  - how many cards carry data-sport="FA Cup", in how many sections, and how many of them show ESPN+ (ESPN lists ESPN+ on 2 of 33 on 2026-11-07
 //    and 4 of 4 on 2026-11-08: the probe prints its own count next to ESPN's, read in the same run, so the page is compared with the source);
@@ -16,23 +22,20 @@ const BASE = process.env.FIELD_URL || 'https://jubilant-bassoon.jeffunglesbee.wo
 const FIELD_URL = BASE + '?wpt';                       // ?wpt skips the first-visit modal (scripts/check-probe-wpt.mjs)
 const ESPN = 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.fa/scoreboard';
 
-// ESPN's own listing for a date, read here in the same run. dates= is YYYYMMDD (ET calendar day of the page).
-async function espnFor(page, yyyymmdd) {
-  return page.evaluate(async ({ url, d }) => {
-    const r = await fetch(`${url}?dates=${d}&limit=100`);
-    if (!r.ok) return { ok: false, status: r.status };
-    const j = await r.json();
-    const events = Array.isArray(j.events) ? j.events : [];
-    const lists = ev => {
-      const bc = ev.competitions && ev.competitions[0] ? ev.competitions[0].broadcasts : null;
-      if (!Array.isArray(bc)) return false;
-      return bc.some(b => b && Array.isArray(b.names) && b.names.some(n => String(n).toLowerCase() === 'espn+'));
-    };
-    return {
-      ok: true, status: r.status, events: events.length, listingEspnPlus: events.filter(lists).length,
-      states: events.reduce((m, ev) => { const s = ev.status && ev.status.type ? ev.status.type.state : 'none'; m[s] = (m[s] === undefined ? 0 : m[s]) + 1; return m; }, {}),
-    };
-  }, { url: ESPN, d: yyyymmdd });
+// ESPN's own listing for a date, read here in the same run with Node's fetch. dates= is YYYYMMDD (the ET calendar day of the page).
+async function espnFor(yyyymmdd) {
+  const r = await fetch(`${ESPN}?dates=${yyyymmdd}&limit=100`);
+  if (!r.ok) return { ok: false, status: r.status };
+  const j = await r.json();
+  const events = Array.isArray(j.events) ? j.events : [];
+  const lists = ev => {
+    const bc = ev.competitions && ev.competitions[0] ? ev.competitions[0].broadcasts : null;
+    if (!Array.isArray(bc)) return false;
+    return bc.some(b => b && Array.isArray(b.names) && b.names.some(n => String(n).toLowerCase() === 'espn+'));
+  };
+  const states = {};
+  for (const ev of events) { const st = ev.status && ev.status.type ? ev.status.type.state : 'none'; states[st] = (states[st] === undefined ? 0 : states[st]) + 1; }
+  return { ok: true, status: r.status, events: events.length, listingEspnPlus: events.filter(lists).length, states };
 }
 
 (async () => {
@@ -42,13 +45,24 @@ async function espnFor(page, yyyymmdd) {
   const errors = [];
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 200)); });
 
+  const proxied = { requests: 0, byStatus: {} };
+  await ctx.route(/^https:\/\/site\.api\.espn\.com\//, async route => {
+    proxied.requests += 1;
+    let status = 502, body = '{"error":"probe could not read ESPN"}';
+    try {
+      const r = await fetch(route.request().url());
+      status = r.status; body = await r.text();
+    } catch (e) { body = JSON.stringify({ error: 'probe fetch threw: ' + e.message.slice(0, 80) }); }
+    proxied.byStatus[status] = (proxied.byStatus[status] === undefined ? 0 : proxied.byStatus[status]) + 1;
+    await route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body });
+  });
   await page.goto(FIELD_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   let sawCards = true;
   try { await page.waitForSelector('.game-card[data-sport="FA Cup"]', { timeout: 45000 }); } catch (e) { sawCards = false; }
   await page.waitForTimeout(12000);                     // the live poller's first pass, and one render of the score cells
 
   const etDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  const espn = await espnFor(page, etDay.replace(/-/g, ''));
+  const espn = await espnFor(etDay.replace(/-/g, ''));
 
   const read = await page.evaluate(() => {
     const txt = (c, sel) => { const el = c.querySelector(sel); return el ? el.innerText.replace(/\s+/g, ' ').trim() : null; };
@@ -77,8 +91,8 @@ async function espnFor(page, yyyymmdd) {
   } catch (e) { console.log('screenshot failed: ' + e.message.split('\n')[0]); }
 
   const manifest = {
-    at: new Date().toISOString(), url: FIELD_URL, etDay, viewport: '1440x900', sawFaCupCards: sawCards, espnSameRun: espn, page: read,
-    coverage: `one viewport, one load, the ET day ${etDay}; ESPN read from the runner's browser in the same run; first ${read.faLiveCards.length} live FA Cup cards and first ${read.otherSoccerLiveCards.length} other live soccer cards listed`,
+    at: new Date().toISOString(), url: FIELD_URL, etDay, viewport: '1440x900', sawFaCupCards: sawCards, espnSameRun: espn, espnProxiedToThePage: proxied, page: read,
+    coverage: `one viewport, one load, the ET day ${etDay}; ESPN read with Node's fetch in the same run and handed to the page unchanged (espnProxiedToThePage); first ${read.faLiveCards.length} live FA Cup cards and first ${read.otherSoccerLiveCards.length} other live soccer cards listed`,
     verdict: {
       cardsMatchEspn: espn.ok === true && read.faCards === espn.events,
       espnPlusMatchesEspn: espn.ok === true && read.faEspnPlus === espn.listingEspnPlus,
