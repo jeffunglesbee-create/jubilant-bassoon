@@ -7,6 +7,8 @@
 //   cfb-sweep    football/college-football?limit=50&groups=80 the date sweep (FETCH_LEAGUES), which builds cards
 //   ncaab-poller basketball/mens-college-basketball?limit=50  the live poller
 //   nfl, nba, nhl                                              the sweep's other football/basketball/hockey leagues
+// ALSO, the relay's V2 lists, which are what fills the page's 'apisports' score slot (the poller does not read these leagues from ESPN any more) and what creates their cards:
+//   relay-<key>  https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=<key>&date=<etDay>   for the V2 keys below. Same game shape in the manifest (home/away names are the relay's).
 // Output: outbox/espn-scoreboard-games-<ts>.json, { at, etDay, leagues: { <key>: { url, status, events, games: [{id, home, away, homeScore, awayScore, state}] } } },
 // the shape outbox/fa-cup-findscore-collision-2026-11-07.cjs reads (as espnSameRun.games).
 const fs = require('fs');
@@ -22,6 +24,27 @@ const LEAGUES = {
   'nba':          `${BASE}/basketball/nba/scoreboard?dates=${d}&limit=50`,
   'nhl':          `${BASE}/hockey/nhl/scoreboard?dates=${d}&limit=50`,
 };
+
+const RELAY = 'https://field-relay-nba.jeffunglesbee.workers.dev/v2/games';
+const V2_KEYS = ['cfb', 'nfl', 'nba', 'nhl', 'mls', 'epl', 'eflchamp', 'eflone', 'efltwo', 'laliga', 'seriea', 'bundesliga', 'ligue1'];
+
+async function readRelay(key) {
+  const url = `${RELAY}?sport=${key}&date=${etDay}`;
+  const rec = { url, status: null, events: null, games: [] };
+  try {
+    const r = await fetch(url);
+    rec.status = r.status;
+    if (!r.ok) return rec;
+    const j = await r.json();
+    const list = Array.isArray(j.games) ? j.games : [];
+    rec.events = list.length;
+    for (const g of list) {
+      if (!g.home || !g.away) continue;
+      rec.games.push({ id: g.id, home: g.home.name, away: g.away.name, homeScore: g.home.score, awayScore: g.away.score, state: g.state });
+    }
+  } catch (e) { rec.error = String(e.message).slice(0, 120); }
+  return rec;
+}
 
 async function read(url) {
   const rec = { url, status: null, events: null, games: [] };
@@ -50,6 +73,7 @@ async function read(url) {
 (async () => {
   const leagues = {};
   for (const [k, url] of Object.entries(LEAGUES)) leagues[k] = await read(url);
+  for (const k of V2_KEYS) leagues[`relay-${k}`] = await readRelay(k);
   const at = new Date().toISOString();
   fs.writeFileSync(`outbox/espn-scoreboard-games-${at.replace(/[:.]/g, '-').slice(0, 19)}.json`, JSON.stringify({ at, etDay, leagues }, null, 2));
   for (const [k, v] of Object.entries(leagues)) console.log(`${k}: status ${v.status}, events ${v.events}, games read ${v.games.length}${v.error === undefined ? '' : ', error ' + v.error}`);
