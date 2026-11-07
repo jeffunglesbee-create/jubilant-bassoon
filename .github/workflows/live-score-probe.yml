@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       league:
-        description: 'cfb, eflchamp or mls'
+        description: 'cfb, eflchamp, mls or nfl'
         required: false
         default: 'cfb'
 

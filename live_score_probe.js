@@ -1,5 +1,5 @@
 // live_score_probe.js — the deployed page's score cells for one league against the scores ESPN and the relay actually served it, on a runner (CI-as-proxy, Rule 90). Default: college football;
-// set LEAGUE (cfb | eflchamp | mls | ...) to read another league the relay serves. The first version of this file was cfb_live_probe.js.
+// set LEAGUE (cfb | eflchamp | mls | nfl | ...) to read another league the relay serves. The first version of this file was cfb_live_probe.js.
 // Task 7 of field-relay-nba docs/CC-CMD-2026-08-08-fa-cup-coverage.md: findScore's fuzzy team match can show a card another game's score; this reads whether the LIVE page does.
 // Transport (see fa_cup_live_probe.js): a headless browser on a runner is answered empty by ESPN, so the page's ESPN scoreboard requests are answered here with Node's fetch, body
 // unchanged. The relay's /v2/games requests are fetched here too and passed through unchanged, so every score the page was handed for a game is on record.
@@ -15,6 +15,7 @@ const LEAGUES = {
   cfb:      { sections: ['College Football', 'CFB', 'NCAA Football'], relay: 'cfb',      espn: 'football/college-football' },
   eflchamp: { sections: ['EFL Championship'],                           relay: 'eflchamp', espn: null },
   mls:      { sections: ['MLS Soccer', 'MLS'],                          relay: 'mls',      espn: null },
+  nfl:      { sections: ['NFL'],                                        relay: 'nfl',      espn: 'football/nfl' },
 };
 const LEAGUE = process.env.LEAGUE === undefined ? 'cfb' : process.env.LEAGUE;
 if (LEAGUES[LEAGUE] === undefined) { console.error(`unknown LEAGUE ${LEAGUE}`); process.exit(2); }
@@ -94,7 +95,7 @@ const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
     cardList: cards.map(c => ({ sport: c.sport, home: c.home, away: c.away, live: c.live, cell: c.cell })),
     wrongCards: wrong.length, wrongSilent: wrong.filter(r => !r.flagged).length, wrongFlagged: wrong.filter(r => r.flagged).length, wrong,
     unservedNoScore: rows.filter(r => r.card === null).length,
-    coverage: `one viewport, one load; live ${SECTIONS.join('/')} cards only; scores served by ESPN's college-football scoreboard and the relay's /v2/games?sport=cfb during the run; the page's other score sources (api-sports through other relay routes, SSE) are not recorded`,
+    coverage: `one viewport, one load; judged ${rows.length} of ${cards.length} ${SECTIONS.join('/')} cards (those live or showing a score; a card still showing a kickoff time is not judged); scores served by ${LEAGUES[LEAGUE].espn === null ? 'no ESPN scoreboard (this league has no ESPN slot) and' : `ESPN's ${LEAGUES[LEAGUE].espn} scoreboard and`} the relay's /v2/games?sport=${LEAGUES[LEAGUE].relay} during the run; the page's other score sources (api-sports through other relay routes, SSE) are not recorded`,
     consoleErrors: errors.slice(0, 5),
   };
   const ts = manifest.at.replace(/[:.]/g, '-').slice(0, 19);
