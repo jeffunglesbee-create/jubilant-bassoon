@@ -56,12 +56,32 @@ async function espnFor(yyyymmdd) {
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 200)); });
 
   const proxied = { requests: 0, byStatus: {} };
+  // Every score the runner HANDED THE PAGE for an eng.fa game during the run, as 'away-home' strings per 'home|away'. A card is compared with this set,
+  // not only with a separate read made seconds later: a goal between two reads is a fair reason for a one-goal difference and an unfair way to judge a
+  // card that shows a score ESPN never served. The ESPN read in this run (espnSameRun) is still kept, for the counts.
+  const served = {};
+  const note = body => {
+    let j;
+    try { j = JSON.parse(body); } catch (e) { return; }
+    if (!j || !Array.isArray(j.events)) return;
+    for (const ev of j.events) {
+      const cs = ev.competitions && ev.competitions[0] ? ev.competitions[0].competitors : null;
+      if (!Array.isArray(cs)) continue;
+      const h = cs.find(x => x.homeAway === 'home'), a = cs.find(x => x.homeAway === 'away');
+      if (!h || !a || !h.team || !a.team) continue;
+      const key = `${h.team.displayName}|${a.team.displayName}`;
+      if (served[key] === undefined) served[key] = [];
+      const st = `${parseInt(a.score, 10)}-${parseInt(h.score, 10)}`;
+      if (!served[key].includes(st)) served[key].push(st);
+    }
+  };
   await ctx.route(/^https:\/\/site\.api\.espn\.com\//, async route => {
     proxied.requests += 1;
     let status = 502, body = '{"error":"probe could not read ESPN"}';
     try {
       const r = await fetch(route.request().url());
       status = r.status; body = await r.text();
+      if (/\/soccer\/eng\.fa\/scoreboard/.test(route.request().url())) note(body);
     } catch (e) { body = JSON.stringify({ error: 'probe fetch threw: ' + e.message.slice(0, 80) }); }
     proxied.byStatus[status] = (proxied.byStatus[status] === undefined ? 0 : proxied.byStatus[status]) + 1;
     await route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body });
@@ -120,6 +140,7 @@ async function espnFor(yyyymmdd) {
     return {
       espnPlusGames: plus,
       faLiveWithScore: withScore(faLiveList), otherSoccerLiveWithScore: withScore(others),
+      faLiveCardScores: cmp.map(x => ({ home: x.home, away: x.away, card: x.card })),
       faLiveScoreAgreeWithEspn: cmp.filter(x => x.agree).length, faLiveScoreDisagree: cmp.filter(x => !x.agree).slice(0, 10),
       swVersion: window.SW_VERSION === undefined ? null : window.SW_VERSION,
       faSections: document.querySelectorAll('.sport-section[data-sport="FA Cup"]').length,
@@ -128,6 +149,10 @@ async function espnFor(yyyymmdd) {
       otherSoccerLive: others.length, otherSoccerLiveCards: others.slice(0, 8),
     };
   }, { plusGames: espn.ok === true ? espn.plusGames : [], games: espn.ok === true ? espn.games : [], rx: SCORE_RX.source });
+
+  // read.faLiveCardScores: [{home, away, card}] gathered in-page below; compared here against what was served.
+  const vsServed = read.faLiveCardScores.map(c => ({ home: c.home, away: c.away, card: c.card, served: served[`${c.home}|${c.away}`] === undefined ? null : served[`${c.home}|${c.away}`],
+    servedByEspn: c.card !== null && served[`${c.home}|${c.away}`] !== undefined && served[`${c.home}|${c.away}`].includes(c.card) }));
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const shot = `outbox/fa-cup-live-probe-${ts}.png`;
@@ -140,16 +165,18 @@ async function espnFor(yyyymmdd) {
     at: new Date().toISOString(), url: FIELD_URL, etDay, viewport: '1440x900', sawFaCupCards: sawCards, espnSameRun: espn, espnProxiedToThePage: proxied, page: read,
     coverage: `one viewport, one load, the ET day ${etDay}; ESPN read with Node's fetch in the same run and handed to the page unchanged (espnProxiedToThePage); first ${read.faLiveCards.length} live FA Cup cards and first ${read.otherSoccerLiveCards.length} other live soccer cards listed`,
     settle: { settledAfterSeconds, settledBy },
+    cardScoreVsServed: { checked: vsServed.length, servedByEspn: vsServed.filter(x => x.servedByEspn).length, notServed: vsServed.filter(x => !x.servedByEspn) },
     verdict: {
       cardsMatchEspn: espn.ok === true && read.faCards === espn.events,
       espnPlusMatchesEspn: espn.ok === true && read.faEspnPlus === espn.listingEspnPlus && read.espnPlusGames.length > 0 && read.espnPlusGames.every(g => g.cardFound && g.cardShowsEspnPlus),
       everyLiveFaCardShowsAScore: read.faLive > 0 && read.faLiveWithScore === read.faLive,
       everyLiveFaScoreAgreesWithEspn: read.faLive > 0 && read.faLiveScoreAgreeWithEspn === read.faLive,
+      everyLiveFaScoreWasServedByEspn: vsServed.length > 0 && vsServed.every(x => x.servedByEspn),
       faScoresAsPopulatedAsOtherLeagues: read.otherSoccerLive > 0 && read.faLive > 0 && read.faLiveWithScore / read.faLive >= read.otherSoccerLiveWithScore / read.otherSoccerLive,
     },
     consoleErrors: errors.slice(0, 5),
   };
   fs.writeFileSync(`outbox/fa-cup-live-probe-manifest-${ts}.json`, JSON.stringify(manifest, null, 2));
-  console.log(JSON.stringify({ etDay, espn, faSections: read.faSections, faCards: read.faCards, faEspnPlus: read.faEspnPlus, faLive: read.faLive, faLiveWithScore: read.faLiveWithScore, otherLive: read.otherSoccerLive, otherLiveWithScore: read.otherSoccerLiveWithScore, scoreAgree: read.faLiveScoreAgreeWithEspn, scoreDisagree: read.faLiveScoreDisagree, plusGames: read.espnPlusGames, settle: manifest.settle, verdict: manifest.verdict }));
+  console.log(JSON.stringify({ etDay, espn, faSections: read.faSections, faCards: read.faCards, faEspnPlus: read.faEspnPlus, faLive: read.faLive, faLiveWithScore: read.faLiveWithScore, otherLive: read.otherSoccerLive, otherLiveWithScore: read.otherSoccerLiveWithScore, scoreAgree: read.faLiveScoreAgreeWithEspn, scoreDisagree: read.faLiveScoreDisagree, notServed: manifest.cardScoreVsServed.notServed, servedByEspn: manifest.cardScoreVsServed.servedByEspn, plusGames: read.espnPlusGames, settle: manifest.settle, verdict: manifest.verdict }));
   await browser.close();
 })();
