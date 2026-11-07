@@ -6782,6 +6782,12 @@ const BUNDLES = {
     EPL_PEACOCK:  ["peacock","nbcsn","youtubetv","fubo","hulu","sling","directv"],  // EPL on Peacock
   EPL_ESPN:     ["espn","espn2","fubo","youtubetv","hulu","sling","directv"],          // FA Cup Final etc on ESPN + NBCSN linear simulcast (YouTube TV base plan + Xfinity Popular/Ultimate; NBCSN relaunched Nov 2025 as Peacock linear counterpart; NOT on USA Network or NBC OTA)
   EFL:          ["paramount","fubo","hulu"],                               // EFL: CBS/Paramount+
+  // FA Cup: ESPN+ alone, and attached only to a game ESPN itself lists on it (the eng.fa entry in SOCCER_LEAGUES sets bundleIfListed).
+  // A NEW key, by the owner's order 2026-11-07: no existing key is ESPN+ alone. LALIGA lists espnplus beside fubo/hulu/sling/youtubetv,
+  // none of which was probed for the FA Cup, and EFL, the key CC-CMD-2026-08-08-fa-cup-coverage named, is Paramount+, which the probe
+  // contradicts. What ESPN lists, read from its own scoreboard (field-relay-nba outbox/probe-fa-cup-scoreboard-limit-2026-11-07T14-27-37-477Z.json):
+  // ESPN+ on 2 of 33 first-round games on 2026-11-07 and nothing on the other 31; ESPN+ on 4 of 4 on 2026-11-08.
+  FA_CUP:       ["espnplus"],                                              // FA Cup: ESPN+ (US streaming), as ESPN lists it per game
   LALIGA:       ["espnplus","fubo","hulu","sling","youtubetv"],            // La Liga: ESPN+
   SERIE_A:      ["paramount","fubo","hulu"],                               // Serie A: CBS/Paramount+
   // Bundesliga 2026-27: Versant/USA Sports (English) + NBCUniversal Telemundo (Spanish)
@@ -7089,7 +7095,7 @@ function sportCountLabel(sport, n) {
   const meta = Object.values(SPORT_META).find(
     m => sport.toLowerCase().includes(m.label.toLowerCase()));
   if (meta) return n === 1 ? `1 ${meta.singular}` : `${n} ${meta.plural}`;
-  const isSoccer = /league|liga|bundesliga|ligue|champions|europa|conference|efl|mls|nwsl/i.test(sport);
+  const isSoccer = /league|liga|bundesliga|ligue|champions|europa|conference|efl|fa cup|mls|nwsl/i.test(sport);
   return isSoccer ? (n === 1 ? '1 match' : `${n} matches`) : (n === 1 ? '1 game' : `${n} games`);
 }
 
@@ -8490,7 +8496,7 @@ async function fetchESPNFixturesForDate(iso){
     // elsewhere in this codebase).
     {sport:"football",   league:"nfl",             section:"NFL",          prefix:"Q"},
     {sport:"football",   league:"college-football",section:"CFB",          prefix:"Q", groupsParam:"80"},
-    ...SOCCER_LEAGUES.map(l=>({sport:"soccer",league:l.league,section:l.section,bundle:l.bundle,prefix:"'"})),
+    ...SOCCER_LEAGUES.map(l=>({sport:"soccer",league:l.league,section:l.section,bundle:l.bundle,bundleIfListed:l.bundleIfListed,prefix:"'"})),
   ];
 
   const allSections = [];
@@ -8511,7 +8517,7 @@ async function fetchESPNFixturesForDate(iso){
   // recording real telemetry when any league fetch fails.
   let _leagueFailures = 0;
 
-  await Promise.all(FETCH_LEAGUES.map(async ({sport,league,section,bundle,prefix,groupsParam})=>{
+  await Promise.all(FETCH_LEAGUES.map(async ({sport,league,section,bundle,bundleIfListed,prefix,groupsParam})=>{
     try{
       const url = `${ESPN_BASE}/${sport}/${league}/scoreboard?dates=${dateStr}&limit=50`
         + (groupsParam ? `&groups=${groupsParam}` : "");
@@ -8599,7 +8605,7 @@ async function fetchESPNFixturesForDate(iso){
           league:section,
           start_time: ev.date||"",
           venue: (comp.venue?.fullName||""),
-          streams: resolveBundle(bundle),
+          streams: (bundleIfListed && !espnListsBroadcast(comp, bundleIfListed)) ? [] : resolveBundle(bundle),
         };
       }).filter(Boolean);
       if(games.length){ allSections.push({sport:section,games}); anyData=true; }
@@ -20334,6 +20340,24 @@ const SOCCER_LEAGUES = [
   // fixtures probed 2026-08-08 carried no US broadcast, which is correct for
   // this competition rather than a gap.
   { league: 'eng.trophy', section: 'EFL Trophy', bundle: 'EFL', leagueLabel: 'EFL Trophy' },
+  // FA Cup (eng.fa) — CC-CMD-2026-08-08-fa-cup-coverage, Task 4, the client half. Paired with the relay side (field-relay-nba):
+  // SOCCER_LEAGUE_LABELS.facup / V2_LEAGUES.facup / LEAGUES all use the label 'FA Cup', verified live: /v2/games?sport=facup returns
+  // league:"FA Cup". SOCCER_LEAGUES is the card-CREATION mechanism (V2 and FD only overlay scores onto cards that already exist), so
+  // the competition renders zero cards without this entry.
+  //
+  // Two fields no other entry sets, both from probing ESPN's eng.fa scoreboard on 2026-11-07
+  // (field-relay-nba outbox/probe-fa-cup-scoreboard-limit-2026-11-07T14-27-37-477Z.json):
+  //  - limit: 100. fetchSoccerFixtures asks ESPN for 30 events; ESPN served 33 first-round games for 2026-11-07, so limit=30 dropped 3
+  //    (ids 401931084, 401931097, 401931104). A round-one Saturday is the largest day the competition has; the date sweep and the live
+  //    poller already ask for 50.
+  //  - bundleIfListed: 'espn+'. The bundle is FA_CUP (ESPN+, a new key by the owner's order 2026-11-07), but a static bundle on every card
+  //    would have said ESPN+ for 31 of the 33 games that day, which ESPN lists no broadcast for. It is attached only to a game whose own
+  //    ESPN competition lists ESPN+ (espnListsBroadcast, field_utils.js); any other FA Cup game has no stream. Remove the field to get the
+  //    static behaviour of every other entry.
+  //
+  // Deliberately NOT added to DOMESTIC_LEAGUE_BREAK_2026, as with the EFL Cup above: 'FA Cup' contains none of its keys, so
+  // isDomesticLeagueInBreak is false on every date (executed for four dates with a positive control: the CC-CMD's Task 4 artifact).
+  { league: 'eng.fa', section: 'FA Cup', bundle: 'FA_CUP', leagueLabel: 'FA Cup', limit: 100, bundleIfListed: 'espn+' },
 ];
 
 let espnScores    = {}; // { "Home|Away": scoreObj }
@@ -25624,7 +25648,7 @@ async function fetchSoccerFixtures(){
     + String(today.getDate()).padStart(2,"0");
 
   const newSections = [];
-  await Promise.all(SOCCER_LEAGUES.map(async ({league,section,bundle,scoresOnly,leagueLabel})=>{
+  await Promise.all(SOCCER_LEAGUES.map(async ({league,section,bundle,scoresOnly,leagueLabel,limit,bundleIfListed})=>{
     // Domestic European leagues stop fetching during their summer break.
     // Belt-and-suspenders against re-enabling without clearing this gate.
     if (isDomesticLeagueInBreak(leagueLabel || section)) {
@@ -25632,7 +25656,7 @@ async function fetchSoccerFixtures(){
       return;
     }
     try{
-      const r = await fetch(`${ESPN_BASE}/soccer/${league}/scoreboard?dates=${dateStr}&limit=30`);
+      const r = await fetch(`${ESPN_BASE}/soccer/${league}/scoreboard?dates=${dateStr}&limit=${limit||30}`);
       if(!r.ok) return;
       const data = await r.json();
       const events = data.events||[];
@@ -25685,7 +25709,7 @@ async function fetchSoccerFixtures(){
           league:(leagueLabel||section), start_time:ev.date||"",
           confirmed:true,
           venue:(comp.venue?.fullName||""),
-          streams:resolveBundle(bundle),
+          streams:(bundleIfListed && !espnListsBroadcast(comp, bundleIfListed)) ? [] : resolveBundle(bundle),
           // Extract logo URLs from ESPN API; SOCCER_ESPNID table is the fallback for hardcoded games
           homeLogo: home.team?.logos?.[0]?.href || null,
           awayLogo: away.team?.logos?.[0]?.href || null,
@@ -25778,7 +25802,7 @@ function classifySport(game, espnScore){
   const isCricket=sp.includes('cricket')||sp.includes('ipl');
   const isRugby  =sp.includes('rugby');
   const isSoccer =pPrefix==="'"||
-                  /premier league|bundesliga|ligue 1|serie a|la liga|mls|champions|europa|conference league|efl|uecl|ucl|uel|soccer/i.test(sp);
+                  /premier league|bundesliga|ligue 1|serie a|la liga|mls|champions|europa|conference league|efl|fa cup|uecl|ucl|uel|soccer/i.test(sp);
   const isTennis =sp.includes('tennis')||sp.includes('atp')||sp.includes('wta');
   const isGolf   =sp.includes('golf')||sp.includes('pga');
   const isPlayoffs        =/playoff|playoffs/i.test(sp)||/playoff|playoffs/i.test(lg);
@@ -28474,7 +28498,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-10-29b';
+  const SW_VERSION = '2026-11-07a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -29753,6 +29777,19 @@ function _canonNationalTeam(name) {
   return _nationalTeamAlias[n] || n;
 }
 
+// Inlined from field_utils.js (smoke A191: a field_utils.js function used here must be defined here). The two copies are identical and
+// field_utils.js's is the one field_unit.js tests. True only when ESPN's own scoreboard competition lists a broadcast with this name
+// ("espn+"), compared for equality; absent, empty or unreadable broadcasts are "not listed", never a guess and never a throw. Used by
+// SOCCER_LEAGUES entries that set bundleIfListed (the FA Cup).
+function espnListsBroadcast(comp, name){
+  const bc = comp && comp.broadcasts;
+  if(!Array.isArray(bc)) return false;
+  for(const b of bc){
+    if(b && Array.isArray(b.names) && b.names.some(n => String(n).toLowerCase() === name)) return true;
+  }
+  return false;
+}
+
 function espnTeamMatch(espnName, fieldName){
   if(!espnName||!fieldName) return false;
   // Normalize: lowercase, remove diacritics, strip punctuation
@@ -30035,7 +30072,7 @@ function _fieldVoiceExemplarsForSport(sport) {
              : (sp.includes('soccer') || sp.includes('fifa') || sp.includes('world cup') ||
                 sp.includes('wc26')   || sp.includes('mls')  || sp.includes('epl') ||
                 sp.includes('premier league') || sp.includes('la liga') || sp.includes('serie a') ||
-                sp.includes('bundesliga') || sp.includes('ligue 1') || sp.includes('efl') ||
+                sp.includes('bundesliga') || sp.includes('ligue 1') || sp.includes('efl') || sp.includes('fa cup') ||
                 sp.includes('champions league') || sp.includes('europa') || sp.includes('conference league') ||
                 sp.includes('scottish premiership') || sp.includes('nwsl'))                            ? 'D'
              // Tennis — individual momentum, set-based; tonally closest to NHL C
@@ -30205,7 +30242,7 @@ function getFieldVoice(sport) {
   if (sp.includes('soccer') || sp.includes('football') || sp.includes('epl') ||
       sp.includes('mls') || sp.includes('liga') || sp.includes('ucl') ||
       sp.includes('bundesliga') || sp.includes('serie') || sp.includes('ligue') ||
-      sp.includes('efl') || sp.includes('uecl') || sp.includes('uel')) return FIELD_SOCCER_VOICE;
+      sp.includes('efl') || sp.includes('fa cup') || sp.includes('uecl') || sp.includes('uel')) return FIELD_SOCCER_VOICE;
   // AFL and CFL: no dedicated FIELD voice constant yet — inline guidance
   if (sp.includes('afl') || sp.includes('australian')) return 'Australian Rules Football: use marks, handballs, clearances, inside-50s. Score as goals.behinds.total (e.g. 12.5.77). MARGIN RULE: scores are in total points — a 6-point margin = one-goal margin, a 12-point margin = two-goal margin. NEVER equate point-difference directly to goals ("6-goals margin" for a 6-point win is WRONG). Avoid: points, goals-only totals without behinds.';
   if (sp.includes('cfl') || sp.includes('canadian football')) return 'Canadian Football (CFL): 3 downs, wider field, end zone rouge, no-yards penalties. Score in points. Avoid: four downs, calling it NFL, American football framing.';
@@ -30234,7 +30271,7 @@ function getQualityTarget(sport) {
       baseball:   ['mlb','baseball'],
       hockey:     ['nhl','hockey'],
       basketball: ['nba','wnba','basketball'],
-      soccer:     ['epl','mls','ucl','soccer','liga','football','bundesliga','serie','ligue','efl','wc26','world cup'],
+      soccer:     ['epl','mls','ucl','soccer','liga','football','bundesliga','serie','ligue','efl','fa cup','wc26','world cup'],
       nfl:        ['nfl','american football'],
       afl:        ['afl','australian'],
       cfl:        ['cfl','canadian football'],
@@ -30906,7 +30943,7 @@ function detectSportClass(sport) {
   if (sp.includes('soccer') || sp.includes('football') || sp.includes('league') ||
       sp.includes('mls') || sp.includes('epl') || sp.includes('liga') ||
       sp.includes('serie') || sp.includes('ligue') || sp.includes('bundesliga') ||
-      sp.includes('ucl') || sp.includes('efl')) return 'soccer';
+      sp.includes('ucl') || sp.includes('efl') || sp.includes('fa cup')) return 'soccer';
   if (sp.includes('hockey') || sp.includes('nhl')) return 'hockey';
   if (sp.includes('basketball') || sp.includes('nba') || sp.includes('wnba')) return 'basketball';
   if (sp.includes('afl') || sp.includes('australian')) return 'afl';
@@ -40824,7 +40861,7 @@ function renderWatchWindow(){
   if(!best||bestRank<_wwMinRank){el.style.display='none';if(_wwInterval){clearInterval(_wwInterval);_wwInterval=null;}return;}
   const {g,sec,minsAway}=best;
   const _wwSport=(sec.sport||'').toLowerCase();
-  const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')||_wwSport.includes('world cup')||_wwSport.includes('fifa')||_wwSport.includes('wc26')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
+  const _wwVerb=_wwSport.includes('baseball')?'First pitch':_wwSport.includes('hockey')||_wwSport.includes('nhl')?'Puck drop':_wwSport.includes('football')||_wwSport.includes('nfl')||_wwSport.includes('soccer')||_wwSport.includes('league')||_wwSport.includes('mls')||_wwSport.includes('efl')||_wwSport.includes('fa cup')||_wwSport.includes('world cup')||_wwSport.includes('fifa')||_wwSport.includes('wc26')?'Kickoff':_wwSport.includes('afl')||_wwSport.includes('aussie')?'Bounce':'Tip-off';
   // 35+ min: softer "Up Next" label; <35 min: "Coming Up" with urgency
   const wwHeader = minsAway > 35 ? 'Up Next' : 'Coming Up';
   const minsStr=minsAway<=1?'Starting now':minsAway<=5?_wwVerb+' in '+Math.ceil(minsAway)+' min':minsAway<=35?'Starting in '+Math.ceil(minsAway)+' min':'In ~'+Math.round(minsAway)+' min';
@@ -45224,7 +45261,7 @@ async function fetchNightOwlFromClaude(topGame){
     ? 'Sport: Tennis. Score by SETS and GAMES (not points except tiebreaks). Close match = deciding set. Use: break points, aces, double faults, set score, game score.'
     : _sp.includes('soccer') || _sp.includes('football') || _sp.includes('league') ||
       _sp.includes('mls') || _sp.includes('liga') || _sp.includes('serie') ||
-      _sp.includes('ligue') || _sp.includes('efl') || _sp.includes('ucl') ||
+      _sp.includes('ligue') || _sp.includes('efl') || _sp.includes('fa cup') || _sp.includes('ucl') ||
       _sp.includes('uel') || _sp.includes('uecl') || _sp.includes('epl') ||
       _sp.includes('bundesliga') || _sp.includes('laliga')
     ? 'Sport: Football (soccer). Score in GOALS (NEVER "points"). Close game = one-goal game. Extra period = extra time (NEVER "overtime" or "OT"). NEVER use: basket, possession-game framing, interior scoring, one-possession, touchdown. Use: shots, possession percentage, xG, clean sheet, pressing.'
@@ -45695,7 +45732,7 @@ function sportContext(sport){
   const sp=(sport||'').toLowerCase();
   // Normalise ISO clock PT09M05.00S → '9:05' before display in period labels
   const fmtC=c=>c&&typeof fmtESPNClock==='function'?fmtESPNClock(c):c||'';
-  if(sp.includes('soccer')||sp.includes('mls')||sp.includes('premier')||sp.includes('liga')||sp.includes('ligue')||sp.includes('serie')||sp.includes('efl')||sp.includes('championship'))
+  if(sp.includes('soccer')||sp.includes('mls')||sp.includes('premier')||sp.includes('liga')||sp.includes('ligue')||sp.includes('serie')||sp.includes('efl')||sp.includes('fa cup')||sp.includes('championship'))
     return {periodFmt:(p,c)=>(p===1?'1H':'2H')+(fmtC(c)?' '+fmtC(c):''),unit:'goal',units:'goals',runTh:2,otP:2,gap:(n)=>n===1?'1 goal':n+' goals'};
   if(sp.includes('hockey')||sp.includes('nhl'))
     return {periodFmt:(p,c)=>'P'+p+(fmtC(c)?' '+fmtC(c):''),unit:'goal',units:'goals',runTh:3,otP:3,gap:(n)=>n===1?'1 goal':n+' goals'};
@@ -46223,7 +46260,7 @@ function buildLifeStageContent(game, eData, stage) {
       const net = gameNetwork(game);
       const countdownLabel = sp.includes('baseball') ? 'First pitch'
         : sp.includes('hockey') || sp.includes('nhl') ? 'Puck drop'
-        : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') || sp.includes('efl') || sp.includes('world cup') || sp.includes('fifa') || sp.includes('wc26') ? 'Kickoff'
+        : sp.includes('football') || sp.includes('nfl') || sp.includes('soccer') || sp.includes('league') || sp.includes('epl') || sp.includes('mls') || sp.includes('ucl') || sp.includes('uel') || sp.includes('uecl') || sp.includes('efl') || sp.includes('fa cup') || sp.includes('world cup') || sp.includes('fifa') || sp.includes('wc26') ? 'Kickoff'
         : sp.includes('afl') || sp.includes('aussie') ? 'Bounce'
         : 'Tip-off';
       return `<div class="card-stage-content card-stage-soon"><span class="stage-countdown">${countdownLabel} in ${minsLeft} min</span>${net?' · '+net:''}</div>`;

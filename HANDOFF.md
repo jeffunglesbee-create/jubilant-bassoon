@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-07 (afternoon) — the FA Cup (eng.fa) is a competition the page renders: a new `FA_CUP` bundle key, ESPN+ only where ESPN lists it, and a `'fa cup'` token at ten soccer routers
+
+This commit (its hash is in the relay CC-CMD `docs/CC-CMD-2026-08-08-fa-cup-coverage.md`, Task 4, Built). Client code, **`SW_VERSION` 2026-10-29b → 2026-11-07a**, smoke 1066 → 1074, units 70 → 76. Session doc: `outbox/cc-session-2026-11-07-fa-cup-client.md`. Built on the owner's `Add a new key` (2026-11-07), an explicit override of the CC-CMD's "do not invent a bundle".
+
+**What changed.** `BUNDLES.FA_CUP = ["espnplus"]` (no existing key is ESPN+ alone) and a `SOCCER_LEAGUES` entry for `eng.fa` with two fields no other entry sets: `limit: 100` (the default of 30 dropped 3 of the 33 first-round games of 2026-11-07) and `bundleIfListed: 'espn+'` (ESPN lists ESPN+ on 2 of 33 games on 11-07 and 4 of 4 on 11-08; the bundle is attached only where ESPN lists it, in both card-creating paths). **Correction to the owner:** "every FA Cup game streams on ESPN+" was wrong for 11-07; delete `bundleIfListed` for the static behaviour. An independent review (15 agents) found the entry would have rendered cards that never scored: `classifySport` and nine other label routers match substrings and `'FA Cup'` contains none of them. The token is now at all ten (`findScore` on a live 2-1: HEAD `null`, fixed `2-1`).
+
+**Proof.** Smoke FA-1..FA-8 (FA-6 is the CC-CMD's artifact: `isDomesticLeagueInBreak('FA Cup', d)` false on four dates, `Bundesliga` control true; FA-7 executes five routers plus `findScore` for every `SOCCER_LEAGUES` label; FA-3/FA-4/FA-8 read comment-blanked source). **25 of 25 mutants caught** (`outbox/fa-cup-smoke-mutants-2026-11-07.txt`). A routed render of the esbuild bundle with 33 synthetic events: 1 section, 33 cards, ESPN+ on exactly the 2 listed (one past the old limit); four mutant builds change it. **Not proven:** the page against ESPN's real FA Cup response (the relay's runner probe and the review read it, the page did not), and the render harness is evidence, not a gate. **Not explained:** the stub's live card time cell reads `0–0` while its stage line reads the live 2-1, and an EFL Cup control does the same (session doc, "Not explained").
+
+**Open.** Past-date navigation has no FA Cup, EFL Cup or EFL Trophy (relay CC-CMD, open task). STAGED: 2026-11-08 FA Cup games on the deployed page (4 events, all ESPN+); unblocked when they are on the scoreboard; verify with a runner (the sandbox cannot load ESPN). Live grep for `eng.fa` after the deploy gate is recorded in the relay CC-CMD.
+
 ## 2026-11-03 — patent_watch.py reads PPUBS, and a week it did not read is a red run
 
 This commit (its hash is in the relay CC-CMD, TASK 4b, Observed). No client app code, no SW bump. Session doc: `outbox/cc-session-2026-11-03-patent-watch-ppubs.md`. Built on the owner's `Go with Claudes best recommendations` (2026-11-02, 23:35 ET), against the Rule 75 spec in relay `09677a77`.

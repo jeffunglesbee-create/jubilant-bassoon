@@ -8004,5 +8004,138 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
   !/data-slot="odds"/.test(html) && !/function oddsLine\(/.test(html),
   'renderCard and updateCard are not paths the slate uses; leaving both would be two surfaces for one feature');
 
+// ── The FA Cup entry (CC-CMD-2026-08-08-fa-cup-coverage, Task 4) ─────────────
+// What these hold, each failed on purpose before it was trusted (the mutants are in the commit message):
+//  FA-1  every SOCCER_LEAGUES entry names a bundle that exists. resolveBundle(BUNDLES[key] || []) turns a typo'd key into NO STREAMS, silently.
+//  FA-2  the eng.fa entry, and that its bundle is ESPN+ alone, the key the owner ordered on 2026-11-07.
+//  FA-3  eng.fa asks ESPN for more than 30 events. fetchSoccerFixtures' default of 30 dropped 3 of 33 first-round games on 2026-11-07
+//        (field-relay-nba outbox/probe-fa-cup-scoreboard-limit-2026-11-07T14-27-37-477Z.json).
+//  FA-4  both card-creating paths, fetchSoccerFixtures and the date sweep, attach the bundle only where ESPN lists it, when the entry says so.
+//  FA-5  the two copies of espnListsBroadcast (field_utils.js, which field_unit.js tests, and the inline one that runs) are identical.
+//  FA-6  isDomesticLeagueInBreak('FA Cup', d) EXECUTED, false on four dates across the competition, with a positive control that is true.
+//  FA-7  the label routers EXECUTED for every SOCCER_LEAGUES label: classifySport (live scores), sportCountLabel, detectSportClass, sportContext,
+//        getFieldVoice. 'FA Cup' contains none of the substrings these match ('efl', 'liga', 'league' ...), so without its own token the card
+//        renders and never shows a live or final score (independent review, 2026-11-07: findScore and findESPNScore returned null for a live 2-1).
+//  FA-8  every soccer router that names the EFL family on one line also names the FA Cup on it (the prompt, voice, vocab and countdown sites FA-7
+//        cannot execute without half the page). The ember threshold line is the one exemption: a tuning number, not a sport router.
+// FA-3/FA-4/FA-8 read the source with comments blanked (the state machine of scripts/check-js-var-tokens.mjs): a gate or a limit template that
+// survives only inside a comment is not code (review mutants M27a, M27b, M28 passed the raw-text form of FA-3/FA-4).
+{
+  const sliceDecl = (src, head) => {          // text of a declaration, from `head` to its balanced close
+    const i = src.indexOf(head);
+    if (i < 0) return null;
+    let depth = 0, j = src.indexOf('{', i);
+    for (let k = j; k < src.length; k++) { if (src[k] === '{') depth++; else if (src[k] === '}' && --depth === 0) return src.slice(i, k + 1); }
+    return null;
+  };
+  const blankComments = src => {              // a state machine, not a regex: `//` is inside URLs and template literals throughout field.js
+    const out = src.split('');
+    let i = 0, state = 'code', quote = '';
+    while (i < src.length) {
+      const c = src[i], d = src[i + 1];
+      if (state === 'code') {
+        if (c === '/' && d === '*') { state = 'block'; out[i] = out[i + 1] = ' '; i += 2; continue; }
+        if (c === '/' && d === '/') { state = 'line'; out[i] = out[i + 1] = ' '; i += 2; continue; }
+        if (c === '"' || c === "'" || c === '`') { state = 'str'; quote = c; }
+      } else if (state === 'str') {
+        if (c === '\\') { i += 2; continue; }
+        if (c === quote) state = 'code';
+      } else if (state === 'line') {
+        if (c === '\n') { state = 'code'; i++; continue; }
+        out[i] = ' ';
+      } else if (state === 'block') {
+        if (c === '*' && d === '/') { out[i] = out[i + 1] = ' '; state = 'code'; i += 2; continue; }
+        if (c !== '\n') out[i] = ' ';
+      }
+      i++;
+    }
+    return out.join('');
+  };
+  const code = blankComments(html);
+  const bundlesText = html.match(/const BUNDLES\s*=\s*\{([\s\S]*?)\n\};/)?.[1] || '';
+  const leaguesText = html.match(/const SOCCER_LEAGUES\s*=\s*\[([\s\S]*?)\n\];/)?.[1] || '';
+  const entries = [...leaguesText.matchAll(/^\s*\{\s*league:\s*'([^']+)'[^\n]*\}/gm)].map(m => m[0]);
+  const bundleOf = line => line.match(/bundle:\s*'([^']+)'/)?.[1];
+  const missingBundles = entries.map(bundleOf).filter(k => !new RegExp('^\\s*' + k + ':\\s*\\[', 'm').test(bundlesText));
+  assert('FA-1 — every SOCCER_LEAGUES entry names a bundle that exists in BUNDLES',
+    entries.length >= 4 && missingBundles.length === 0,
+    `${entries.length} entries read; no such bundle: ${missingBundles.join(', ') || '(none)'}`);
+
+  const fa = entries.find(l => /league:\s*'eng\.fa'/.test(l)) || '';
+  assert('FA-2 — the eng.fa entry exists and its bundle FA_CUP is ESPN+ alone',
+    /section:\s*'FA Cup'/.test(fa) && /leagueLabel:\s*'FA Cup'/.test(fa) && bundleOf(fa) === 'FA_CUP' &&
+    /^\s*FA_CUP:\s*\["espnplus"\],/m.test(bundlesText),
+    'the FA Cup needs its entry and the ESPN+ key the owner ordered (a new key, not LALIGA or EFL)');
+  const limitOf = Number(fa.match(/\blimit:\s*(\d+)/)?.[1]);
+  assert('FA-3 — the eng.fa entry asks ESPN for more than the default 30 events',
+    limitOf >= 40 && /limit=\$\{limit\|\|30\}/.test(code),
+    `limit ${limitOf}; fetchSoccerFixtures must read it (a round-one Saturday has 33 games)`);
+  const fsf = sliceDecl(code, 'async function fetchSoccerFixtures(') || '';
+  const sweep = sliceDecl(code, 'async function fetchESPNFixturesForDate(') || '';
+  // The names must be BOUND where they are read. A name dropped from either destructure is a ReferenceError inside the per-league try, whose
+  // catch is silent unless FIELD_DEBUG: every soccer league vanishes and nothing else fails (review mutants M10a, M10b, M9).
+  const boundIn = (src, mapHead) => (src.match(new RegExp(mapHead + '\\(async \\(\\{([^}]*)\\}\\)'))?.[1] || '').split(',').map(x => x.trim());
+  const fsfBound = boundIn(fsf, 'SOCCER_LEAGUES\\.map'), sweepBound = boundIn(sweep, 'FETCH_LEAGUES\\.map');
+  const gate = /streams:\s*\(bundleIfListed && !espnListsBroadcast\(comp, bundleIfListed\)\) \? \[\] : resolveBundle\(bundle\)/;
+  assert('FA-4 — fetchSoccerFixtures and the date sweep attach the bundle only where ESPN lists it, when the entry says so',
+    /bundleIfListed:\s*'espn\+'/.test(fa) && gate.test(fsf) && gate.test(sweep) &&
+    /bundleIfListed:l\.bundleIfListed/.test(sweep) &&
+    fsfBound.includes('limit') && fsfBound.includes('bundleIfListed') && sweepBound.includes('bundleIfListed'),
+    `entry ${/bundleIfListed:\s*'espn\+'/.test(fa)}, fetchSoccerFixtures ${gate.test(fsf)}, sweep ${gate.test(sweep)}, sweep carries the field ${/bundleIfListed:l\.bundleIfListed/.test(sweep)}, ` +
+    `bound in fetchSoccerFixtures [${fsfBound.join(',')}], bound in the sweep [${sweepBound.join(',')}]`);
+  const copyOf = src => sliceDecl(src, 'function espnListsBroadcast(');
+  assert('FA-5 — the two copies of espnListsBroadcast (field_utils.js and the inline one) are identical',
+    !!copyOf(html) && copyOf(html) === copyOf(fieldUtilsSrc),
+    'smoke A191 requires the inline copy and field_unit.js tests the other: a drift tests one and runs the other');
+
+  // FA-6: EXECUTE it. The substring match is the thing under test; reading it is the inference that failed before.
+  const table = sliceDecl(html, 'const DOMESTIC_LEAGUE_BREAK_2026 =');
+  const fn = sliceDecl(html, 'function isDomesticLeagueInBreak(');
+  let ran = null;
+  try {
+    const run = new Function(`${table};\n${fn};\nreturn isDomesticLeagueInBreak;`)();
+    ran = { dates: ['2026-11-07', '2027-01-10', '2027-03-07', '2027-05-16'].map(d => [d, run('FA Cup', d)]), control: run('Bundesliga', '2026-07-01') };
+  } catch (e) { ran = { error: e.message }; }
+  assert('FA-6 — isDomesticLeagueInBreak(\'FA Cup\', d) executed: false on four dates across the competition, true for the Bundesliga control in its break',
+    !!ran && !ran.error && ran.dates.every(([, v]) => v === false) && ran.control === true,
+    JSON.stringify(ran));
+
+  // FA-7: EXECUTE the label routers for every label SOCCER_LEAGUES can put on a card. Each is a substring match on the section label, and
+  // 'FA Cup' contains none of the tokens the others rely on, so a router missing its token fails silently: the card renders, never scores.
+  const labels = [...new Set(entries.flatMap(l => [l.match(/section:\s*'([^']+)'/)?.[1], l.match(/leagueLabel:\s*'([^']+)'/)?.[1]]).filter(Boolean))];
+  let routed = null;
+  try {
+    // findScore is the consumer that matters: it reads classifySport and returns null for a soccer game whose label is not recognised, which is
+    // how a live 2-1 vanished from the FA Cup card. It reads a module-level _scoresBySource, seeded here with one live ESPN witness per label.
+    const liveEspn = { espn: { state: 'in', homeScore: 2, awayScore: 1, periodPrefix: "'", period: 2, ts: 1 } };
+    const seeded = {}; for (const lab of labels) seeded[`Home Town|Away United ${lab}`] = liveEspn;
+    const mk = (decls, names) => new Function('FIELD_SOCCER_VOICE', 'FIELD_BASEBALL_VOICE', 'FIELD_HOCKEY_VOICE', '_scoresBySource', `${decls};\nreturn {${names}};`)('SOCCER-VOICE', 'BASEBALL-VOICE', 'HOCKEY-VOICE', seeded);
+    const R = mk([sliceDecl(code, 'const SPORT_META ='), sliceDecl(code, 'function _gameSport('), sliceDecl(code, 'function classifySport('),
+      sliceDecl(code, 'function sportCountLabel('), sliceDecl(code, 'function detectSportClass('), sliceDecl(code, 'function sportContext('),
+      sliceDecl(code, 'function getFieldVoice('), sliceDecl(code, 'function findScore('), sliceDecl(fieldUtilsSrc, 'function espnTeamMatch(')].join(';\n'),
+      'classifySport, sportCountLabel, detectSportClass, sportContext, getFieldVoice, findScore');
+    routed = labels.map(lab => ({
+      lab,
+      scores: R.classifySport({ _sport: lab, league: lab }, null).isSoccer === true,      // findScore and findESPNScore drop a live score otherwise
+      live: (r => !!r && r.homeScore === 2 && r.awayScore === 1 && r.state === 'in')(R.findScore({ home: 'Home Town', away: `Away United ${lab}`, _sport: lab, league: lab })),
+      count: R.sportCountLabel(lab, 2) === '2 matches',
+      cls: R.detectSportClass(lab) === 'soccer',
+      ctx: R.sportContext(lab).unit === 'goal',
+      voice: R.getFieldVoice(lab) === 'SOCCER-VOICE',
+    }));
+  } catch (e) { routed = { error: e.message }; }
+  assert('FA-7 — every SOCCER_LEAGUES label routes as soccer through classifySport, findScore (a live 2-1 comes back 2-1), sportCountLabel, detectSportClass, sportContext and getFieldVoice (executed)',
+    Array.isArray(routed) && routed.length >= 4 && routed.some(r => r.lab === 'FA Cup') && routed.every(r => r.scores && r.live && r.count && r.cls && r.ctx && r.voice),
+    Array.isArray(routed) ? routed.map(r => `${r.lab}: ${['scores', 'live', 'count', 'cls', 'ctx', 'voice'].map(k => k + '=' + r[k]).join(' ')}`).join(' | ') : JSON.stringify(routed));
+
+  // FA-8: the routers FA-7 cannot execute (the Night Owl prompt, the voice exemplar, the jq tags, the countdown verbs) and the executed ones' twins.
+  // Each names the EFL family on one line; the FA Cup must be on that line too. The ember threshold line is a tuning number, not a router.
+  const eflLines = code.split('\n').filter(l => /includes\('efl'\)|'efl',|\|efl\|/.test(l) && !/return 52/.test(l));
+  const eflMissing = eflLines.filter(l => !/fa cup/.test(l));
+  assert('FA-8 — every soccer router line that names the EFL family also names the FA Cup',
+    eflLines.length >= 10 && eflMissing.length === 0,
+    `${eflLines.length} EFL router lines read; without 'fa cup': ${eflMissing.map(l => l.trim().slice(0, 70)).join(' ;; ') || '(none)'}`);
+}
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

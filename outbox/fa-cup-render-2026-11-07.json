@@ -1,0 +1,163 @@
+{
+ "what": "FA Cup client entry: routed render of the esbuild bundle (final tree, SW_VERSION 2026-11-07a) with a stubbed eng.fa scoreboard: 33 SYNTHETIC events, 2 listing ESPN+ (games 5 and 32; 32 is past the old limit of 30), game 7 live at 2-1 (67')",
+ "coverage": "one stubbed day, one viewport (1280 wide), bundle served from 127.0.0.1, ESPN answered by the harness. Team names are invented. Not the real ESPN response (that is the relay's runner probe) and not the deployed page.",
+ "expect": {
+  "faSections": 1,
+  "faCards": 33,
+  "cardsShowingESPNplus": 2,
+  "plusGames": [
+   "Home Town 5",
+   "Home Town 32"
+  ],
+  "lastCard": "Home Town 33"
+ },
+ "real": {
+  "at": "2026-11-07T15:22:25.749Z",
+  "etDay": "2026-11-07",
+  "base": "http://127.0.0.1:8781",
+  "limitsAsked": [
+   "50",
+   "100",
+   "100"
+  ],
+  "liveCardStageLine": "1\u20132 67''",
+  "liveCardTimeCell": "0\u20130",
+  "liveCardCircadian": "preview",
+  "swVersion": "2026-11-07a",
+  "faSections": 1,
+  "faCards": 33,
+  "cardsShowingESPNplus": 2,
+  "plusGames": [
+   "Home Town 5",
+   "Home Town 32"
+  ],
+  "lastCard": "Home Town 33"
+ },
+ "mutants": {
+  "S the 'fa cup' token removed from classifySport": {
+   "at": "2026-11-07T15:22:32.546Z",
+   "etDay": "2026-11-07",
+   "base": "http://127.0.0.1:8782",
+   "limitsAsked": [
+    "50",
+    "100",
+    "100"
+   ],
+   "liveCardStageLine": "1\u20132 67''",
+   "liveCardTimeCell": "",
+   "liveCardCircadian": "late",
+   "swVersion": "2026-11-07a",
+   "faSections": 1,
+   "faCards": 33,
+   "cardsShowingESPNplus": 2,
+   "plusGames": [
+    "Home Town 5",
+    "Home Town 32"
+   ],
+   "lastCard": "Home Town 33"
+  },
+  "A no bundleIfListed (a static ESPN+ on every card)": {
+   "at": "2026-11-07T15:22:39.409Z",
+   "etDay": "2026-11-07",
+   "base": "http://127.0.0.1:8783",
+   "limitsAsked": [
+    "50",
+    "100",
+    "100"
+   ],
+   "liveCardStageLine": "1\u20132 67''",
+   "liveCardTimeCell": "0\u20130",
+   "liveCardCircadian": "preview",
+   "swVersion": "2026-11-07a",
+   "faSections": 1,
+   "faCards": 33,
+   "cardsShowingESPNplus": 33,
+   "plusGames": [
+    "Home Town 1",
+    "Home Town 2",
+    "Home Town 3",
+    "Home Town 4",
+    "Home Town 5",
+    "Home Town 6",
+    "Home Town 7",
+    "Home Town 8",
+    "Home Town 9",
+    "Home Town 10",
+    "Home Town 11",
+    "Home Town 12",
+    "Home Town 13",
+    "Home Town 14",
+    "Home Town 15",
+    "Home Town 16",
+    "Home Town 17",
+    "Home Town 18",
+    "Home Town 19",
+    "Home Town 20",
+    "Home Town 21",
+    "Home Town 22",
+    "Home Town 23",
+    "Home Town 24",
+    "Home Town 25",
+    "Home Town 26",
+    "Home Town 27",
+    "Home Town 28",
+    "Home Town 29",
+    "Home Town 30",
+    "Home Town 31",
+    "Home Town 32",
+    "Home Town 33"
+   ],
+   "lastCard": "Home Town 33"
+  },
+  "B limit not set (30 events asked)": {
+   "at": "2026-11-07T15:22:46.302Z",
+   "etDay": "2026-11-07",
+   "base": "http://127.0.0.1:8784",
+   "limitsAsked": [
+    "50",
+    "30",
+    "30"
+   ],
+   "liveCardStageLine": "1\u20132 67''",
+   "liveCardTimeCell": "0\u20130",
+   "liveCardCircadian": "preview",
+   "swVersion": "2026-11-07a",
+   "faSections": 1,
+   "faCards": 30,
+   "cardsShowingESPNplus": 1,
+   "plusGames": [
+    "Home Town 5"
+   ],
+   "lastCard": "Home Town 30"
+  },
+  "C a bundle key that does not exist": {
+   "at": "2026-11-07T15:22:53.279Z",
+   "etDay": "2026-11-07",
+   "base": "http://127.0.0.1:8785",
+   "limitsAsked": [
+    "50",
+    "50",
+    "100",
+    "100"
+   ],
+   "liveCardStageLine": "1\u20132 67''",
+   "liveCardTimeCell": "0\u20130",
+   "liveCardCircadian": "preview",
+   "swVersion": "2026-11-07a",
+   "faSections": 1,
+   "faCards": 33,
+   "cardsShowingESPNplus": 0,
+   "plusGames": [],
+   "lastCard": "Home Town 33"
+  }
+ },
+ "verdict": {
+  "real_matches_expected": true,
+  "S_differs_in_live_card": true,
+  "real_time_cell_not_empty": true,
+  "A_differs": true,
+  "B_differs": true,
+  "C_differs": true
+ },
+ "not_explained": "The time cell reads '0\u20130' in the real build while the stage line reads the live 2-1 ('1\u20132 67'' away\u2013home). An EFL Cup control with the same live event in the same stub shows the same '0\u20130', so it is not specific to the FA Cup; its cause was not traced (the stub dates every game at 15:00Z, so the card's time guess calls all 33 live)."
+}

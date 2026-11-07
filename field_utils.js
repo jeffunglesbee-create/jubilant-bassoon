@@ -385,6 +385,24 @@ function espnTeamMatch(espnName, fieldName){
       || b.split(" ").some(w=>w.length>3&&a.includes(w));
 }
 
+/**
+ * True only when ESPN's own scoreboard competition lists a broadcast with this name.
+ * Used by SOCCER_LEAGUES entries that set `bundleIfListed` (the FA Cup): the competition's
+ * bundle is attached to a game ESPN itself lists on that service, and to no other game.
+ * Absent, empty or unreadable broadcasts are "not listed", never a guess and never a throw.
+ * @param {object} comp — competitions[0] of an ESPN scoreboard event ({ broadcasts: [{ market, names: [...] }] })
+ * @param {string} name — lower-case broadcast name to look for, compared for equality ("espn+")
+ * @returns {boolean}
+ */
+function espnListsBroadcast(comp, name){
+  const bc = comp && comp.broadcasts;
+  if(!Array.isArray(bc)) return false;
+  for(const b of bc){
+    if(b && Array.isArray(b.names) && b.names.some(n => String(n).toLowerCase() === name)) return true;
+  }
+  return false;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ── WC GROUP-STAGE PERMUTATIONS ENGINE ─────────────────────────────────────────
 //
@@ -954,7 +972,7 @@ if (typeof module !== 'undefined' && module.exports) {
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
     toImpliedNum, dramaTier, isAmnestyState, scheduleForDate, fieldTodayIso,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
-    espnTeamMatch,
+    espnTeamMatch, espnListsBroadcast,
     // WC Permutations Engine
     computeGroupScenarios,
     wcSortByTiebreakers,

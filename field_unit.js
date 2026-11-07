@@ -10,6 +10,7 @@ const {
   trimToCompleteSentence,
   toImpliedNum,
   espnTeamMatch,
+  espnListsBroadcast,
   wxAlert,
   parseMatchweek,
   dramaTier,
@@ -830,6 +831,38 @@ test('fieldTodayIso: the ET date until 4am ET, a calendar day back before it, ac
     assertEqual(fieldTodayIso(new Date(at)), want, `fieldTodayIso at ${at} (${wall})`);
   }
   assertEqual(cases.length, 9, 'all 9 enumerated instants must run');
+});
+
+// ── espnListsBroadcast ───────────────────────────
+// The FA Cup entry in SOCCER_LEAGUES attaches its ESPN+ bundle only to a game whose own ESPN competition lists ESPN+. ESPN listed it on 2 of
+// 33 games on 2026-11-07 and on 4 of 4 on 2026-11-08 (field-relay-nba outbox/probe-fa-cup-scoreboard-limit-2026-11-07T14-27-37-477Z.json);
+// the shape below is what that probe read: competitions[0].broadcasts = [{ market, names: ['ESPN+'] }].
+test('espnListsBroadcast: a competition that lists ESPN+ is true', () => {
+  assert(espnListsBroadcast({ broadcasts: [{ market: 'national', names: ['ESPN+'] }] }, 'espn+'));
+});
+test('espnListsBroadcast: the name is compared case-insensitively against a lower-case needle', () => {
+  assert(espnListsBroadcast({ broadcasts: [{ names: ['espn+'] }] }, 'espn+'));
+  assert(espnListsBroadcast({ broadcasts: [{ names: ['ESPN+'] }] }, 'espn+'));
+});
+test('espnListsBroadcast: found in a later broadcast, past an entry with no names and a null entry', () => {
+  assert(espnListsBroadcast({ broadcasts: [null, { market: 'x' }, { names: ['ESPN2', 'ESPN+'] }] }, 'espn+'));
+});
+test('espnListsBroadcast: a game ESPN lists nothing for is false (empty names, empty broadcasts, none at all)', () => {
+  assert(!espnListsBroadcast({ broadcasts: [{ names: [] }] }, 'espn+'));
+  assert(!espnListsBroadcast({ broadcasts: [] }, 'espn+'));
+  assert(!espnListsBroadcast({}, 'espn+'));
+});
+test('espnListsBroadcast: another ESPN service is not ESPN+ (equality, not substring)', () => {
+  assert(!espnListsBroadcast({ broadcasts: [{ names: ['ESPN'] }] }, 'espn+'));
+  assert(!espnListsBroadcast({ broadcasts: [{ names: ['ESPN2'] }] }, 'espn+'));
+  assert(!espnListsBroadcast({ broadcasts: [{ names: ['ESPN+'] }] }, 'espn'), 'espn must not match espn+');
+});
+test('espnListsBroadcast: unreadable input is false, never a throw', () => {
+  assert(!espnListsBroadcast(null, 'espn+'));
+  assert(!espnListsBroadcast(undefined, 'espn+'));
+  assert(!espnListsBroadcast({ broadcasts: 'ESPN+' }, 'espn+'));
+  assert(!espnListsBroadcast({ broadcasts: [{ names: 'ESPN+' }] }, 'espn+'));
+  assert(!espnListsBroadcast({ broadcasts: [{ names: [null, 7] }] }, 'espn+'));
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────

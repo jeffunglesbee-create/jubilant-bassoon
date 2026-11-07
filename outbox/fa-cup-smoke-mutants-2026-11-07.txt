@@ -1,0 +1,27 @@
+CAUGHT   F7a classifySport drops fa cup  failed=['FA-7', 'FA-8'] 1072 passed, 2 failed
+CAUGHT   F7b sportCountLabel drops fa cup  failed=['FA-7', 'FA-8'] 1072 passed, 2 failed
+CAUGHT   F7c detectSportClass drops fa cup  failed=['FA-7', 'FA-8'] 1072 passed, 2 failed
+CAUGHT   F7d sportContext drops fa cup  failed=['FA-7', 'FA-8'] 1072 passed, 2 failed
+CAUGHT   F7e getFieldVoice drops fa cup  failed=['FA-7', 'FA-8'] 1072 passed, 2 failed
+CAUGHT   F8a voice exemplar drops fa cup  failed=['FA-8'] 1073 passed, 1 failed
+CAUGHT   F8b jq tags drop fa cup  failed=['FA-8'] 1073 passed, 1 failed
+CAUGHT   F8c wwVerb drops fa cup  failed=['FA-8'] 1073 passed, 1 failed
+CAUGHT   F8d Night Owl prompt drops fa cup  failed=['FA-8'] 1073 passed, 1 failed
+CAUGHT   F8e countdown drops fa cup  failed=['FA-8'] 1073 passed, 1 failed
+CAUGHT   F7f findScore stops treating a soccer game as soccer  failed=['FA-7'] 1073 passed, 1 failed
+CAUGHT   F7g findScore keys the witness on the wrong team order  failed=['FA-7'] 1073 passed, 1 failed
+CAUGHT   G1 gate removed in fetchSoccerFixtures  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   G2 gate removed in the sweep  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   G3 limit back to 30  failed=['FA-3'] 1073 passed, 1 failed
+CAUGHT   M27a gate survives only in a trailing comment (fetchSoccerFixtures)  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   M27b gate survives only in a trailing comment (sweep)  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   M28 limit template survives only in a trailing comment  failed=['FA-3'] 1073 passed, 1 failed
+CAUGHT   M10a limit dropped from the fetchSoccerFixtures destructure  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   M10b bundleIfListed dropped from the fetchSoccerFixtures destructure  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   M9 bundleIfListed dropped from the sweep destructure  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   M9b sweep stops carrying the field into FETCH_LEAGUES  failed=['FA-4'] 1073 passed, 1 failed
+CAUGHT   E1 FA_CUP key is not ESPN+ alone  failed=['FA-2'] 1073 passed, 1 failed
+CAUGHT   E2 entry names a bundle that does not exist  failed=['FA-1', 'FA-2'] 1072 passed, 2 failed
+CAUGHT   E3 FA Cup label added to the domestic-break table  failed=['FA-6'] 1073 passed, 1 failed
+restored control: 0 [] 1074 passed, 0 failed
+25 of 25 mutants caught
