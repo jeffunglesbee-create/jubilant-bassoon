@@ -41,9 +41,9 @@ await page.route('**/*', route => {
   if (u.hostname === '127.0.0.1') return route.continue()
   const cors = { 'access-control-allow-origin': '*' }
   if (u.hostname === 'site.api.espn.com' && u.pathname.endsWith('/soccer/eng.fa/scoreboard')) {
-    const lim = Number(u.searchParams.get('limit') || 0)
-    asked.push(u.searchParams.get('limit'))
-    return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ events: lim ? ALL.slice(0, lim) : ALL }) })
+    const rawLimit = u.searchParams.get('limit')          // null when the page sent none: ESPN then serves its default, here the whole list
+    asked.push(rawLimit)
+    return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ events: rawLimit === null ? ALL : ALL.slice(0, Number(rawLimit)) }) })
   }
   return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: '{"events":[],"games":[],"results":[]}' })
 })
