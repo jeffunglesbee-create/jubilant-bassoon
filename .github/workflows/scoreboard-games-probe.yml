@@ -1,0 +1,43 @@
+name: Scoreboard Games Probe
+# Reads ESPN's real scoreboards (the URLs the page asks for) into outbox/espn-scoreboard-games-<ts>.json, for the fuzzy-team-match measurement,
+# Task 7 of field-relay-nba docs/CC-CMD-2026-08-08-fa-cup-coverage.md. Dispatch-only, read-only, no secret, no credit.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Read the scoreboards
+        run: node scoreboard_games_probe.js
+
+      - name: Commit result
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Scoreboard Games Probe"
+          git add outbox/espn-scoreboard-games-*.json
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "scoreboard games probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
+          # The loop above exits 0 when EVERY attempt fails (its last command is `sleep`), so a lost artifact would report green.
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: push did not land after retries"; exit 1; }
