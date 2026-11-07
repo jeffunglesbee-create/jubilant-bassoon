@@ -82,6 +82,7 @@ const SCORE_RX = /(\d+)\s*[–-]\s*(\d+)/;
     at: new Date().toISOString(), url: FIELD_URL, sawCards, settledAfterSeconds, proxied: stats,
     cards: cards.length, liveCards: rows.length, liveWithScore: rows.filter(r => r.card !== null).length,
     liveWithServedScoreForOwnGame: rows.filter(r => r.servedForThisGame).length,
+    cardList: cards.map(c => ({ sport: c.sport, home: c.home, away: c.away, live: c.live, cell: c.cell })),
     wrongCards: wrong.length, wrongSilent: wrong.filter(r => !r.flagged).length, wrongFlagged: wrong.filter(r => r.flagged).length, wrong,
     unservedNoScore: rows.filter(r => r.card === null).length,
     coverage: `one viewport, one load; live ${SECTIONS.join('/')} cards only; scores served by ESPN's college-football scoreboard and the relay's /v2/games?sport=cfb during the run; the page's other score sources (api-sports through other relay routes, SSE) are not recorded`,
