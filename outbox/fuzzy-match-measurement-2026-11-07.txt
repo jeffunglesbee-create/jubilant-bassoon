@@ -1,0 +1,58 @@
+# outbox/espn-scoreboard-games-2026-11-07T20-22-22.json (read 2026-11-07T20:22Z by scoreboard_games_probe.js, run 42410656723)
+## collisions (node outbox/fuzzy-match-collisions-2026-11-07.cjs outbox/espn-scoreboard-games-2026-11-07T20-22-22.json)
+cfb-poller: 51 games, 17 colliding pair(s), 15 game(s) involved
+   Duke Blue Devils @ NC State Wolfpack  ~  Delaware Blue Hens @ Kennesaw State Owls (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Georgia State Panthers @ App State Mountaineers (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Boise State Broncos @ Colorado State Rams (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Fresno State Bulldogs @ Utah State Aggies (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+   Georgia State Panthers @ App State Mountaineers  ~  Missouri State Bears @ Florida International Panthers (rev)
+   Georgia State Panthers @ App State Mountaineers  ~  Boise State Broncos @ Colorado State Rams (fwd)
+   Georgia State Panthers @ App State Mountaineers  ~  Fresno State Bulldogs @ Utah State Aggies (fwd)
+   Georgia State Panthers @ App State Mountaineers  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+   Oregon Ducks @ Ohio State Buckeyes  ~  Texas State Bobcats @ Oregon State Beavers (rev)
+   Penn State Nittany Lions @ Washington Huskies  ~  Northern Illinois Huskies @ San José State Spartans (rev)
+   Western Kentucky Hilltoppers @ Middle Tennessee Blue Raiders  ~  Kentucky Wildcats @ Tennessee Volunteers (fwd)
+   Western Kentucky Hilltoppers @ Middle Tennessee Blue Raiders  ~  West Virginia Mountaineers @ Texas Tech Red Raiders (fwd)
+   Boise State Broncos @ Colorado State Rams  ~  Colorado Buffaloes @ Arizona State Sun Devils (rev)
+   Boise State Broncos @ Colorado State Rams  ~  Fresno State Bulldogs @ Utah State Aggies (fwd)
+   Boise State Broncos @ Colorado State Rams  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+   Fresno State Bulldogs @ Utah State Aggies  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+cfb-sweep: 51 games, 17 colliding pair(s), 15 game(s) involved
+   Duke Blue Devils @ NC State Wolfpack  ~  Delaware Blue Hens @ Kennesaw State Owls (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Georgia State Panthers @ App State Mountaineers (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Boise State Broncos @ Colorado State Rams (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Fresno State Bulldogs @ Utah State Aggies (fwd)
+   Oklahoma State Cowboys @ Kansas State Wildcats  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+   Georgia State Panthers @ App State Mountaineers  ~  Missouri State Bears @ Florida International Panthers (rev)
+   Georgia State Panthers @ App State Mountaineers  ~  Boise State Broncos @ Colorado State Rams (fwd)
+   Georgia State Panthers @ App State Mountaineers  ~  Fresno State Bulldogs @ Utah State Aggies (fwd)
+   Georgia State Panthers @ App State Mountaineers  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+   Oregon Ducks @ Ohio State Buckeyes  ~  Texas State Bobcats @ Oregon State Beavers (rev)
+   Penn State Nittany Lions @ Washington Huskies  ~  Northern Illinois Huskies @ San José State Spartans (rev)
+   Western Kentucky Hilltoppers @ Middle Tennessee Blue Raiders  ~  Kentucky Wildcats @ Tennessee Volunteers (fwd)
+   Western Kentucky Hilltoppers @ Middle Tennessee Blue Raiders  ~  West Virginia Mountaineers @ Texas Tech Red Raiders (fwd)
+   Boise State Broncos @ Colorado State Rams  ~  Colorado Buffaloes @ Arizona State Sun Devils (rev)
+   Boise State Broncos @ Colorado State Rams  ~  Fresno State Bulldogs @ Utah State Aggies (fwd)
+   Boise State Broncos @ Colorado State Rams  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+   Fresno State Bulldogs @ Utah State Aggies  ~  Texas State Bobcats @ Oregon State Beavers (fwd)
+ncaab-poller: 2 games, 0 colliding pair(s), 0 game(s) involved
+nfl: 0 games, 0 colliding pair(s), 0 game(s) involved
+nba: 7 games, 0 colliding pair(s), 0 game(s) involved
+nhl: 12 games, 0 colliding pair(s), 0 game(s) involved
+
+## old against new findScore, College Football cards, both slots seeded like the writers (node outbox/fuzzy-match-differential-2026-11-07.cjs outbox/espn-scoreboard-games-2026-11-07T20-22-22.json cfb-poller 'College Football' Q)
+cfb-poller (College Football, prefix Q): 51 games, old ref ad5d4b9^
+  ESPN slot only, writes tie                             OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0)
+  ESPN slot only, ts rises in event order                OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0)
+  both slots, api-sports newer, same order               OLD wrong 3 (flagged 0, silent 3) | NEW wrong 3 (flagged 3, silent 0)
+  both slots, api-sports newer, reverse order            OLD wrong 6 (flagged 6, silent 0) | NEW wrong 6 (flagged 6, silent 0)
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 3 (flagged 3, silent 0) | NEW wrong 0 (flagged 0, silent 0)
+
+## CANDIDATE, not committed: the same exact-pair preference in the api-sports slot too (NEW_FILE = the patched copy; patch in outbox/fuzzy-match-both-slots-candidate-2026-11-07.patch)
+cfb-poller (College Football, prefix Q): 51 games, old ref ad5d4b9^
+  ESPN slot only, writes tie                             OLD wrong 6 (flagged 0, silent 6) | NEW wrong 0 (flagged 0, silent 0)
+  ESPN slot only, ts rises in event order                OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0)
+  both slots, api-sports newer, same order               OLD wrong 3 (flagged 0, silent 3) | NEW wrong 0 (flagged 0, silent 0)
+  both slots, api-sports newer, reverse order            OLD wrong 6 (flagged 6, silent 0) | NEW wrong 0 (flagged 0, silent 0)
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 3 (flagged 3, silent 0) | NEW wrong 0 (flagged 0, silent 0)

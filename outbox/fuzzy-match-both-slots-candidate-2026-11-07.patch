@@ -1,0 +1,37 @@
+--- src/legacy/field.js	2026-11-07 16:14:23.559396558 +0000
++++ /tmp/claude-0/-home-user/dfa35103-8193-50fb-8b54-7f960ab15595/scratchpad/field-both.js	2026-11-07 20:23:54.669321957 +0000
+@@ -15425,6 +15425,11 @@
+     const [h, a] = k.split('|').map(s => s.toLowerCase());
+     return _exactPair(h, a);
+   });
++  const _hasExactApi = Object.entries(_scoresBySource).some(([k, e]) => {
++    if (!e || !e.apisports) return false;
++    const [h, a] = k.split('|').map(s => s.toLowerCase());
++    return _exactPair(h, a);
++  });
+   for (const [key, entry] of Object.entries(_scoresBySource)) {
+     if (!entry) continue;
+     const [hn, an] = key.split('|').map(s => s.toLowerCase());
+@@ -15432,8 +15437,12 @@
+                     (espnTeamMatch(hn, away) && espnTeamMatch(an, home));
+     if (!matches) continue;
+     const espnIsOtherGame = _hasExactEspn && !!entry.espn && !_exactPair(hn, an);
++    const apiIsOtherGame = _hasExactApi && !!entry.apisports && !_exactPair(hn, an);
++    if (espnIsOtherGame && apiIsOtherGame) continue;
++    if (espnIsOtherGame && !entry.apisports) continue;
++    if (apiIsOtherGame && !entry.espn) continue;
+     // Same periodPrefix sport-guard as findESPNScore — apply to whichever source we use
+-    const probe = (espnIsOtherGame ? null : entry.espn) || entry.apisports;
++    const probe = (espnIsOtherGame ? null : entry.espn) || (apiIsOtherGame ? null : entry.apisports);
+     if (!probe) continue;
+     const pp = probe.periodPrefix || '';
+     if (gameSoccer  && (pp === 'Q' || pp === 'H' || pp === 'P' || pp === 'T')) continue;
+@@ -15443,7 +15452,7 @@
+     if (entry.espn && !espnIsOtherGame && (!espnWitness || (entry.espn.ts || 0) > (espnWitness.ts || 0))) {
+       espnWitness = entry.espn;
+     }
+-    if (entry.apisports && (!apiWitness || (entry.apisports.ts || 0) > (apiWitness.ts || 0))) {
++    if (entry.apisports && !apiIsOtherGame && (!apiWitness || (entry.apisports.ts || 0) > (apiWitness.ts || 0))) {
+       apiWitness = entry.apisports;
+     }
+   }

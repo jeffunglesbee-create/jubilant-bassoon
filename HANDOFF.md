@@ -8,7 +8,7 @@ Commits `dfd5712` (the FA Cup), `bbed0c0` (a ratchet fix: the first push failed 
 
 **Proof.** Live probe (`fa-cup-live-probe.yml`, 8 runs, ESPN's real games in play): 33 cards for 33 events, ESPN+ on exactly the 2 listed, 31 of 31 live cells show a score, 28 equal ESPN's; of the other 3, two are the page's own `⚠` mismatch flag (Carlisle, Colchester: a second source disagrees, by design) and one was York's silent wrong score. The fix: old against new `findScore` on the real games in three write orders, OLD wrong on 1 card, NEW on 0, no card that was right before altered; replay into a build of the fixed page, 0 live cells differ (was 1). Smoke FA-1..FA-8 and FS-1..FS-4 (executed; FA-6 is the CC-CMD's artifact); **25 of 25 and 7 of 7 mutants caught**. **Not proven:** the same differential on other sports (a college football Saturday's "State", the NBA/NHL/MLB lists) and on the api-sports slot; the page on 11-08's games (STAGED, dispatch the probe).
 
-**Open.** Past-date navigation has no FA Cup, EFL Cup or EFL Trophy (relay CC-CMD Task 6). The fuzzy match across sports (session doc, "Open"); relay sibling `docs/CC-CMD-2026-10-19-cfb-stage2-wrong-pair.md`.
+**Open.** Past-date navigation has no FA Cup, EFL Cup or EFL Trophy (relay CC-CMD Task 6). **The fuzzy match across sports: measured 2026-11-07 on CFB (51 games, 15 in a colliding pair; `ad5d4b9` fixes the ESPN slot only, so 3 to 6 CFB cards can still show another game's score, flagged `⚠`); a both-slots candidate patch gives 0 wrong and awaits the owner's go (session doc, "Open")**; relay sibling `docs/CC-CMD-2026-10-19-cfb-stage2-wrong-pair.md`.
 
 ## 2026-11-03 — patent_watch.py reads PPUBS, and a week it did not read is a red run
 
