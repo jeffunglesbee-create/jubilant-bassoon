@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-08 — `patent-fulltext.yml` no longer loses its output to a rejected push; the six patents of the 2026-11-04 weekly run are on main
+
+Commits `e4093fa` (the workflow) and `458f17a` (the recovered output, made by the pipeline itself). No client app code, no SW bump, no deploy path touched. Session doc: field-relay-nba `outbox/cc-session-2026-11-08-patent-fulltext-push-race.md`.
+
+**What changed.** The "Commit results" step of `.github/workflows/patent-fulltext.yml` ended in a bare `git push`. On the 2026-11-04 weekly run (run 41919349025, chained from `patent-watch.yml`) it was rejected `fetch first` because `main` moved during the run, and the six grant hits' full text and comparison tables (already uploaded to Dropbox) were lost with the runner. That one failed scheduled run is what put `patent-watch.yml` in the dead-cron ratchet as new decay. The step now uses the rebase-and-retry loop `patent-watch.yml` already has, and a push that has not landed fails the job.
+
+**Proof.** A local race harness (the workflow's real step text, a second actor pushing between a depth-1 clone and the step): before the fix 2 of 4 scenarios, after 4 of 4, three mutants caught (`outbox/patent-push-race-*-2026-11-08.txt` in the relay). Recovery: dispatch 42508334232 (`skip_dropbox=true`), `success`, 21 files, a comparison table for each of the 6 patents. Client smoke 1080 passed, 0 failed.
+
+**Open.** Not proved live: a race (none occurred in the recovery run). The ratchet clears when a scheduled `patent-watch.yml` run works: the next is Wednesday 2026-11-11; the relay CC-CMD `docs/CC-CMD-2026-11-02-scheduled-job-skipped-every-time.md` (done condition 8) and a follow-up read on 2026-11-12 hold it. 16 other workflows here also end in a bare `git push`; a read-only probe of their run history found no push-rejected failure among them (relay `docs/CC-CMD-2026-11-08-client-workflows-bare-push.md`), so none was changed.
+
 ## 2026-11-07 (afternoon) — the FA Cup (eng.fa) is a competition the page renders: a new `FA_CUP` bundle key, ESPN+ only where ESPN lists it, the soccer routers know the label, and a card no longer shows another game's score
 
 Commits `dfd5712` (the FA Cup), `bbed0c0` (a ratchet fix: the first push failed Rule 99 on a `|| 0` in an `outbox/` harness and deployed nothing), then the probe commits, then the `findScore` fix for the ESPN slot (`ad5d4b9`) and, after a CFB Saturday measurement and the owner's "Go", for the api-sports slot (`a67ff32`). Client code, **`SW_VERSION` 2026-10-29b → 2026-11-07a → 2026-11-07b → 2026-11-07c**, smoke 1066 → 1080, units 70 → 76. Session doc: `outbox/cc-session-2026-11-07-fa-cup-client.md`. Built on the owner's `Add a new key` (2026-11-07), an explicit override of the CC-CMD's "do not invent a bundle".
