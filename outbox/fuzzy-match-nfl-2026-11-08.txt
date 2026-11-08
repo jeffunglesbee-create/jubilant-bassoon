@@ -1,0 +1,27 @@
+# NFL, Sunday 2026-11-08, read 19:07Z. Task 7 of field-relay-nba docs/CC-CMD-2026-08-08-fa-cup-coverage.md. Both manifests are runner-written files in this directory.
+# scoreboard: outbox/espn-scoreboard-games-2026-11-08T19-07-19.json   live page: outbox/live-score-probe-manifest-nfl-2026-11-08T19-07-57.json
+## collisions (node outbox/fuzzy-match-collisions-2026-11-07.cjs outbox/espn-scoreboard-games-2026-11-08T19-07-19.json)
+nfl: 13 games, 0 colliding pair(s), 0 game(s) involved
+relay-nfl: 13 games, 0 colliding pair(s), 0 game(s) involved
+## differential, all 13 games (node outbox/fuzzy-match-differential-2026-11-07.cjs outbox/espn-scoreboard-games-2026-11-08T19-07-19.json relay-nfl NFL Q)
+relay-nfl (NFL, prefix Q): 13 games seeded, 13 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## differential, the 13 cards the live page lists (CARDS_FROM=outbox/live-score-probe-manifest-nfl-2026-11-08T19-07-57.json)
+relay-nfl (NFL, prefix Q): 13 games seeded, 13 cards judged, old ref ad5d4b9^
+  api-sports slot only, writes tie                       OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts rises in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  api-sports slot only, ts falls in event order          OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, writes tie                             OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  ESPN slot only, ts rises in event order                OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, same order               OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, api-sports newer, reverse order            OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+  both slots, ESPN newer, api-sports in reverse order    OLD wrong 0 (flagged 0, silent 0) | NEW wrong 0 (flagged 0, silent 0) | right-before-wrong-after 0
+## live page (live-score-probe.yml league=nfl): cards 13, liveCards 8 (judged: 7 live + 1 final), wrongCards 0, wrongSilent 0, wrongFlagged 0, liveWithServedScoreForOwnGame 8, proxied espn 2 relay 2 failures 0
+## judged cells, each equal to ESPN's own score for its own game: Dallas @ Indianapolis 10-7 Q2 | NY Jets @ Kansas City 9-14 Q2 | Detroit @ Miami 6-3 Q2 | Cleveland @ New Orleans 3-3 Q2 | NY Giants @ Philadelphia 6-8 Q2 | LA Rams @ Washington 3-10 Q2 | Denver @ Carolina 10-0 Q2 | Cincinnati @ Atlanta 34-17 final
