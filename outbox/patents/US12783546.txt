@@ -1,0 +1,89 @@
+US12783546
+Title: Automated replication and reconciliation of source data from an on-premises database into a cloud database
+Grant date: 2026-11-03
+Assignee: FMR LLC
+Inventors: Bhaskara Gorantla, Nanda Kumar Subramani, Gopinath Narasimhan, Nirmal Kumar Gandi, Sriram Margapuri, Sravya Vemparala, Dhruv Naik, Ashwin Veeravalli Gopalakrishnan
+Source: ppubs
+PPUBS GUID: US-12783546-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A system for automated replication and reconciliation of source data from an on-premises database into a cloud database, the system comprising a server computing device having a memory for storing computer-executable instructions and a processor that executes the computer-executable instructions to: identify a source database schema from a source database in an on-premises computing environment for replication to a target cloud database in a cloud computing environment, the source database schema comprising one or more data structures containing source data; define a target database schema comprising one or more data structures in the target cloud database that correspond to the data structures in the source database schema, including generating connection parameters for the target cloud database when defining the target database schema; capture, from a transaction message platform, one or more data streams comprising messages containing the source data from the identified source database schema; transform the source data from the data stream messages into a form compatible with the target cloud database; store the transformed source data in one or more data structures in the target cloud database; publish one or more replication health metrics for consumption by a replication monitoring system; allow one or more applications in the cloud computing environment to consume the transformed source data from the target cloud database when the replication health metrics satisfy one or more performance criteria; and reconcile the transformed source data in the target cloud database with the source data in the source database.
+
+Claim 2 [dep on 1]:
+The system of claim 1, wherein the source database is hosted by a mainframe computing system in the on-premises computing environment.
+
+Claim 3 [dep on 1]:
+The system of claim 1, wherein each of the one or more data streams in the transaction message platform is associated with source data for a different application workflow.
+
+Claim 4 [dep on 3]:
+The system of claim 3, wherein the server computing device captures messages from a plurality of the data streams in parallel.
+
+Claim 5 [dep on 1]:
+The system of claim 1, wherein transforming the source data from the data stream messages into a form compatible with the target cloud database comprises converting a data type of one or more data elements in the source data to match a target data type acceptable by the target cloud database.
+
+Claim 6 [dep on 5]:
+The system of claim 5, wherein the server computing device validates the transformed source data prior to storage in the target cloud database.
+
+Claim 7 [dep on 1]:
+The system of claim 1, wherein the replication health metrics include one or more of a replication latency, a replication data error count, and a replication connection error count.
+
+Claim 8 [dep on 7]:
+The system of claim 7, wherein the server computing device determines the replication latency by comparing a timestamp associated with the source data from the source database to a timestamp associated with corresponding transformed source data stored in the cloud database.
+
+Claim 9 [dep on 7]:
+The system of claim 7, wherein the server computing device prevents one or more applications in the cloud computing environment from consuming the transformed source data from the target cloud database when the replication latency is greater than a maximum latency threshold.
+
+Claim 10 [dep on 1]:
+The system of claim 1, wherein reconciling the transformed source data in the target cloud database with the source data in the source database comprises: extracting one or more data elements from the source data; extracting one or more data elements from the transformed source data that correspond to the data elements from the source data; and comparing the extracted data elements from the source data to the extracted data elements from the transformed source data to identify one or more discrepancies including: (i) one or more data elements in the source data that are missing in the transformed source data; (ii) one or more data elements in the transformed source data that are missing in the source data; and (iii) one or more data elements in the source data that do not match the corresponding data elements in the transformed source data.
+
+Claim 11 [dep on 10]:
+The system of claim 10, wherein the server computing device transmits a notification message to a remote computing system upon identifying one or more discrepancies.
+
+Claim 12 [dep on 10]:
+The system of claim 10, wherein the server computing device updates one or more data elements in the source data to correct the one or more discrepancies.
+
+Claim 13 [dep on 10]:
+The system of claim 10, wherein the server computing device updates one or more data elements in the transformed source data to correct the one or more discrepancies.
+
+Claim 14 [independent]:
+A computerized method of automated replication and reconciliation of source data from an on-premises database into a cloud database, the method comprising: identifying, by a server computing device, a source database schema from a source database in an on-premises computing environment for replication to a target cloud database in a cloud computing environment, the source database schema comprising one or more data structures containing source data; defining, by the server computing device, a target database schema comprising one or more data structures in the target cloud database that correspond to the data structures in the source database schema, including generating connection parameters for the target cloud database when defining the target database schema; capturing, by the server computing device from a transaction message platform, one or more data streams comprising messages containing the source data from the identified source database schema; transforming, by the server computing device, the source data from the data stream messages into a form compatible with the target cloud database; storing, by the server computing device, the transformed source data in one or more data structures in the target cloud database; publishing, by the server computing device, one or more replication health metrics for consumption by a replication monitoring system; allowing, by the server computing device, one or more applications in the cloud computing environment to consume the transformed source data from the target cloud database when the replication health metrics satisfy one or more performance criteria; and reconciling by the server computing device, the transformed source data in the target cloud database with the source data in the source database.
+
+Claim 15 [dep on 14]:
+The method of claim 14, wherein the source database is hosted by a mainframe computing system in the on-premises computing environment.
+
+Claim 16 [dep on 14]:
+The method of claim 14, wherein each of the one or more data streams in the transaction message platform is associated with source data for a different application workflow.
+
+Claim 17 [dep on 16]:
+The method of claim 16, further comprising capturing, by the server computing device, messages from a plurality of the data streams in parallel.
+
+Claim 18 [dep on 14]:
+The method of claim 14, wherein transforming the source data from the data stream messages into a form compatible with the target cloud database comprises converting a data type of one or more data elements in the source data to match a target data type acceptable by the target cloud database.
+
+Claim 19 [dep on 18]:
+The method of claim 18, further comprising validating, by the server computing device, the transformed source data prior to storage in the target cloud database.
+
+Claim 20 [dep on 14]:
+The method of claim 14, wherein the replication health metrics include one or more of a replication latency, a replication data error count, and a replication connection error count.
+
+Claim 21 [dep on 20]:
+The method of claim 20, further comprising determining, by the server computing device, the replication latency by comparing a timestamp associated with the source data from the source database to a timestamp associated with corresponding transformed source data stored in the cloud database.
+
+Claim 22 [dep on 20]:
+The method of claim 20, further comprising preventing, by the server computing device, one or more applications in the cloud computing environment from consuming the transformed source data from the target cloud database when the replication latency is greater than a maximum latency threshold.
+
+Claim 23 [dep on 14]:
+The method of claim 14, wherein reconciling the transformed source data in the target cloud database with the source data in the source database comprises: extracting one or more data elements from the source data; extracting one or more data elements from the transformed source data that correspond to the data elements from the source data; and comparing the extracted data elements from the source data to the extracted data elements from the transformed source data to identify one or more discrepancies including: (i) one or more data elements in the source data that are missing in the transformed source data; (ii) one or more data elements in the transformed source data that are missing in the source data; and (iii) one or more data elements in the source data that do not match the corresponding data elements in the transformed source data.
+
+Claim 24 [dep on 23]:
+The method of claim 23, further comprising transmitting, by the server computing device, a notification message to a remote computing system upon identifying one or more discrepancies.
+
+Claim 25 [dep on 23]:
+The method of claim 23, further comprising updating, by the server computing device, one or more data elements in the source data to correct the one or more discrepancies.
+
+Claim 26 [dep on 23]:
+The method of claim 23, further comprising updating, by the server computing device, one or more data elements in the transformed source data to correct the one or more discrepancies.

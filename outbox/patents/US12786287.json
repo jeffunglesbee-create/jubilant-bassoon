@@ -1,0 +1,89 @@
+{
+  "_ppubs_guid": "US-12786287-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Akamai Technologies, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method of content handling in an edge region of a content delivery network, the edge region comprising a set of peer machines, wherein each peer machine of the set comprises a processor, and a cache, comprising: receiving a request at a first one of the peer machines, the request having associated therewith a hostname having a value that points to peer machines in the edge region to facilitate load balancing, the value configured for use as a cache key, the request being one of a set of requests associated with the hostname received in the edge region; in response to receiving the request, hashing the cache key that includes the value to create a hashed value that also points to one or more other peer machines in the set of peer machines; based on the hashed value, forwarding the request to at least one other peer machine pointed to by the hashed value; and at the other peer machine, using the hashed value as a cache key for responding to the request; wherein hashing of the cache key and forwarding of the request facilitate spreading of the set of requests associated with the hostname across the set of peer machines."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method as described in claim 1 wherein the value is a serial number."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The method as described in claim 1 wherein the set of peer machines are connected to one another across a back-end interface in the edge region."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 4,
+      "claim_text": "The method as described in claim 3 wherein hashing the cache key spreads the value across the set of peer machines."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The method as described in claim 1 further including configuring each of the peer machines of the set of peer machines to perform the hashing of the cache key and forwarding of the request."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method as described in claim 1 wherein the set of peer machines comprise a tier of a cache hierarchy."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The method as described in claim 1 wherein the request is associated with a content object."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 8,
+      "claim_text": "The method as described in claim 7 wherein, based on a number of requests per a given time period, the content object is defined as cold content."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 9,
+      "claim_text": "The method as described in claim 8 wherein the other peer machine serves the cold content and caches it in its cache."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 10,
+      "claim_text": "The method as described in claim 9 wherein the cold content is spread across the set of peer machines."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Taelor",
+      "examiner_name_last": "Kim"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Laszlo",
+      "inventor_name_last": "Kovacs"
+    },
+    {
+      "inventor_name_first": "Keith E.",
+      "inventor_name_last": "Oslakovic"
+    },
+    {
+      "inventor_name_first": "Mangesh",
+      "inventor_name_last": "Kasbekar"
+    },
+    {
+      "inventor_name_first": "Zewei",
+      "inventor_name_last": "Chen"
+    }
+  ],
+  "patent_date": "2026-11-03",
+  "patent_id": "12786287",
+  "patent_title": "Content delivery network (CDN) cold content handling"
+}

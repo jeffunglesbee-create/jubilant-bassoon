@@ -1,0 +1,132 @@
+{
+  "_ppubs_guid": "US-12785971-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Sachdeva; Harpreet"
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method for secured and private onboarding of a user in a social media platform, comprising: installing an application onto a user device; launching the application, wherein the application displays a launch screen; initiating an application programming interface (API) call from a web server to a user identifier (ID) service upon receiving instruction from the application of the user device, wherein the API call requests the generation of at least one 16-digit random unique user identifier; receiving, by the web server, the at least one 16-digit random unique user identifier from the user ID service; generating, by the web server, a public key and a private key upon receipt of the at least one 16-digit random unique user identifier; creating, by the web server, a circle object and a circle of influence (COI) object associated with the at least one 16-digit random unique user identifier, wherein the circle object comprises of one or more attributes and functions that represent a group of users created for one or more specific purposes, and wherein the COI object comprises of one or more attributes and functions to track and update the circle object based on the user activities in the social media platform; creating, by the web server, a circle hash address of the circle object and a circle of influence hash address of the circle of influence (COI) object, wherein the circle hash address is based on a circle identifier and the at least one 16-digit random unique user identifier, and wherein the circle of influence hash address is based on the circle hash address and a circle of influence identifier; encrypting, by the web server, the circle hash address of the circle object and the circle of influence hash address of the Circle of Influence (COI) object using the generated public key; transmitting, by the web server, the at least one 16-digit random unique user identifier, the encrypted circle hash address, the encrypted circle of influence hash address, and the private key back to the application on the user device wherein the at least one 16-digit random unique user identifier, the encrypted circle hash address, the encrypted circle of influence hash address, and the private key constitute user identity data stored securely on the user device and embedded within the application, the user identity data being synchronized with a server arrangement to verify the user before allowing access to the server arrangement."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method as claimed in claim 1, wherein the user ID service comprises of one or more algorithms to generate the at least one 16-digit random unique user identifier."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The method as claimed in claim 1, wherein the one or more attributes of the circle object comprises of circle identifier, user identifier, circle name, data of circle creation, members, permissions, activity feed, and visibility settings, wherein the one or more functions of the circle object comprises of member management functions, content management functions, notification functions, moderation functions and analytics functions."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The method as claimed in claim 1, wherein the one or more attributes of the circle of influence comprises of circle of influence identifier, influence score, interaction metrics, role definitions and content visibility, wherein the one or more functions of the circle of influence comprises of influence calculation functions, role management functions, content prioritization functions and insight functions."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The method as claimed in claim 1, further comprising displaying a user interface on the user device to allow the user to modify values in the one or more attributes of the created circle object."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method as claimed in claim 1, wherein the public and private keys are generated using an asymmetric cryptographic algorithm."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The method as claimed in claim 1, further comprising storing the at least one 16-digit random unique user identifier, the encrypted circle hash address, the encrypted circle of influence hash address and the private key in a secure storage area of the user device."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The method as claimed in claim 1, wherein the encryption of the circle hash address and the circle of influence hash address is performed using the Advanced Encryption Standard (AES) algorithm."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 9,
+      "claim_text": "The method as claimed in claim 1, wherein the web server periodically updates the one or more attributes of the circle based on user activity and interactions detected by the circle of influence objects."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 10,
+      "claim_text": "The method as claimed in claim 1, wherein the launch screen includes an animation or progress indicator to inform the user of the ongoing onboarding process."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 11,
+      "claim_text": "The method as claimed in claim 1, further comprises verifying the user based on OTP or task-based captcha for human verification."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 12,
+      "claim_text": "A system for secure and private onboarding a user, comprising: a user device comprising a secure storage area and a processor, configured to: install an application; and launch the application, wherein the application displays a launch screen;  a server arrangement communicatively coupled with the user device, the server arrangement comprises, a web server configured to initiate an application programming interface (API) call to a user identifier (ID) service upon receiving instruction from the application of the user device, the API call requesting the generation of at least one 16-digit unique user identifier; the user ID service configured to generate and transmit the at least one 16-digit unique user identifier to the web server; the web server further configured to: receive the at least one 16-digit unique user identifier from the user ID service; generate a public key and a private key based on the at least one 16-digit unique user identifier; create a circle object and a circle of influence (COI) object associated with the at least one 16-digit unique user identifier, wherein the circle object comprises one or more attributes and functions to represent a group of users for one or more specific purposes, and wherein the COI object comprises one or more attributes and functions to track and update the circle object based on the user activities in the social media platform; create, a circle hash address of the circle object and a circle of influence hash address of the circle of influence (COI) object, wherein the circle hash address is based on a circle identifier and the at least one 16-digit random unique user identifier, and wherein the circle of influence hash address is based on the circle hash address and a circle of influence identifier; encrypt, the circle hash address of the circle object and the circle of influence hash address of the Circle of Influence (COI) object using the generated public key; transmit, the at least one 16-digit random unique user identifier, the encrypted circle hash address, the encrypted circle of influence hash address, and the private key back to the application on the user device wherein the at least one 16-digit random unique user identifier, the encrypted circle hash address, the encrypted circle of influence hash address, and the private key constitute user identity data stored securely on the user device and embedded within the application, the user identity data being synchronized with the server arrangement to verify the user before allowing access to the server arrangement."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 13,
+      "claim_text": "The system as claimed in claim 12, wherein the user ID service comprises of one or more algorithms to generate the at least one 16-digit random unique user identifier."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 14,
+      "claim_text": "The system as claimed in claim 12, wherein the one or more attributes of the circle object comprises of circle identifier, user identifier, circle name, data of circle creation, members, permissions, activity feed, and visibility settings, wherein the one or more functions of the circle object comprises of member management functions, content management functions, notification functions, moderation functions, and analytics functions."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 15,
+      "claim_text": "The system as claimed in claim 12, wherein the one or more attributes of the circle of influence comprises of circle of influence identifier, influence score, interaction metrics, role definitions, and content visibility, wherein the one or more functions of the circle of influence comprises of influence calculation functions, role management functions, content prioritization functions, and insight functions."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 16,
+      "claim_text": "The system as claimed in claim 12, wherein the application displays a user interface on the user device to allow the user to modify values in the one or more attributes of the created circle object."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 17,
+      "claim_text": "The system as claimed in claim 12, wherein the public and private keys are generated using an asymmetric cryptographic algorithm."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 18,
+      "claim_text": "The system as claimed in claim 12, wherein the application stores the at least one 16-digit unique user identifier, the encrypted circle hash address, the encrypted circle of influence hash address and the private key in a secure storage area of the user device."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 19,
+      "claim_text": "The system as claimed in claim 12, wherein the encryption of the circle hash address and the circle of influence hash address is performed using the Advanced Encryption Standard (AES) algorithm."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 20,
+      "claim_text": "The system as claimed in claim 12, wherein the web server periodically updates the one or more attributes of the circle based on user activity and interactions detected by the circle of influence objects."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 21,
+      "claim_text": "The system as claimed in claim 12, wherein the launch screen includes an animation or progress indicator to inform the user of the ongoing onboarding process."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Moeen",
+      "examiner_name_last": "Khan"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Harpreet",
+      "inventor_name_last": "Sachdeva"
+    }
+  ],
+  "patent_date": "2026-11-03",
+  "patent_id": "12785971",
+  "patent_title": "Method and system for secured and private onboarding of a user in a social media application"
+}

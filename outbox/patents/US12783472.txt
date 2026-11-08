@@ -1,0 +1,71 @@
+US12783472
+Title: Dynamic schematization for information technology generative operations
+Grant date: 2026-11-03
+Assignee: NEUBIRD INC.
+Inventors: Goutham Rao, Vinod Jayaraman
+Source: ppubs
+PPUBS GUID: US-12783472-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A method, comprising: obtaining Information Technology (IT) telemetry data from a plurality of disparate IT platforms including a plurality of servers, network devices, and applications, the IT telemetry data associated with log files, system traces, metrics, alerts, and infrastructure configurations for monitoring and troubleshooting an enterprise IT system; dynamically schematizing the IT telemetry data from the plurality of disparate IT platforms, wherein the IT telemetry data is dynamically schematized into a IT telemetry structured database; providing the IT telemetry structured database to a Large Language Model (LLM), the Large Language Model generating a plurality of schematic inferences from the IT telemetry structured database; and receiving a first query from an enterprise IT administrator regarding the enterprise IT system and generating a response using the LLM and the IT telemetry structured database.
+
+Claim 2 [dep on 1]:
+The method of claim 1, wherein a first subset of the IT telemetry data is selected based on the first query from the enterprise IT administrator.
+
+Claim 3 [dep on 1]:
+The method of claim 1, wherein a second subset of the IT telemetry data is selected based on a first response to the first query from the enterprise IT administrator.
+
+Claim 4 [dep on 1]:
+The method of claim 1, wherein Foreign Data Wrappers (FDWs) are used to dynamically schematize the IT telemetry data into the IT telemetry structured database.
+
+Claim 5 [dep on 4]:
+The method of claim 4, wherein the FDWs are used to generate dynamic virtual tables and create the IT telemetry structured database.
+
+Claim 6 [dep on 5]:
+The method of claim 5, wherein a first FDW is associated with a first external data source and a second FDW is associated with a second external data source.
+
+Claim 7 [dep on 6]:
+The method of claim 6, wherein the first FDW allows for on-the-fly schema generation and transformation.
+
+Claim 8 [dep on 7]:
+The method of claim 7, wherein a repository of domain-specific information including best practices, troubleshooting guides, and comprehensive documentation is provided along with IT telemetry data.
+
+Claim 9 [dep on 8]:
+The method of claim 8, wherein the IT telemetry structured database and the LLM are provided as Software as a Service (SaaS) connected to a Virtual Private Cloud (VPC).
+
+Claim 10 [independent]:
+A system, comprising: a network interface configured to continuously obtain Information Technology (IT) telemetry data from a plurality of disparate IT platforms including a plurality of servers, network devices, and applications, the IT telemetry data associated with log files, system traces, metrics, alerts, and infrastructure configurations for monitoring and troubleshooting an enterprise IT system; a processor configured to dynamically schematize the IT telemetry data from the plurality of disparate IT platforms, wherein the IT telemetry data is dynamically schematized into a IT telemetry structured database; memory configured to store an IT telemetry structured database associated with a Large Language Model (LLM), the Large Language Model generating a plurality of schematic inferences from the IT telemetry structured database; and an input interface configured to receive a first query from an enterprise IT administrator regarding the enterprise IT system and generate a response using the LLM and the IT telemetry structured database.
+
+Claim 11 [dep on 10]:
+The system of claim 10, wherein a first subset of the IT telemetry data is selected based on the first query from the enterprise IT administrator.
+
+Claim 12 [dep on 10]:
+The system of claim 10, wherein a second subset of the IT telemetry data is selected based on a first response to the first query from the enterprise IT administrator.
+
+Claim 13 [dep on 10]:
+The system of claim 10, wherein Foreign Data Wrappers (FDWs) are used to dynamically schematize the IT telemetry data into the IT telemetry structured database.
+
+Claim 14 [dep on 13]:
+The system of claim 13, wherein the FDWs are used to generate dynamic virtual tables and create the IT telemetry structured database.
+
+Claim 15 [dep on 14]:
+The system of claim 14, wherein a first FDW is associated with a first external data source and a second FDW is associated with a second external data source.
+
+Claim 16 [dep on 15]:
+The system of claim 15, wherein the first FDW allows for on-the-fly schema generation and transformation.
+
+Claim 17 [dep on 16]:
+The system of claim 16, wherein a repository of domain-specific information including best practices, troubleshooting guides, and comprehensive documentation is provided along with IT telemetry data.
+
+Claim 18 [dep on 17]:
+The system of claim 17, wherein the IT telemetry structured database and the LLM are provided as Software as a Service (SaaS) connected to a Virtual Private Cloud (VPC).
+
+Claim 19 [independent]:
+A system, comprising: means for continuously obtaining Information Technology (IT) telemetry data from a plurality of disparate IT platforms including a plurality of servers, network devices, and applications, the IT telemetry data associated with log files, system traces, metrics, alerts, and infrastructure configurations for monitoring and troubleshooting an enterprise IT system; means for dynamically schematizing the IT telemetry data from the plurality of disparate IT platforms, wherein the IT telemetry data is dynamically schematized into a IT telemetry structured database; means for providing the IT telemetry structured database to a Large Language Model (LLM), the Large Language Model generating a plurality of schematic inferences from the IT telemetry structured database; and means for receiving a first query from an enterprise IT administrator regarding the enterprise IT system and generating a response using the LLM and the IT telemetry structured database.
+
+Claim 20 [dep on 19]:
+The system of claim 19, wherein a first subset of the IT telemetry data is selected based on the first query from the enterprise IT administrator.

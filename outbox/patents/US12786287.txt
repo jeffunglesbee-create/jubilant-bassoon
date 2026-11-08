@@ -1,0 +1,41 @@
+US12786287
+Title: Content delivery network (CDN) cold content handling
+Grant date: 2026-11-03
+Assignee: Akamai Technologies, Inc.
+Inventors: Laszlo Kovacs, Keith E. Oslakovic, Mangesh Kasbekar, Zewei Chen
+Source: ppubs
+PPUBS GUID: US-12786287-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A method of content handling in an edge region of a content delivery network, the edge region comprising a set of peer machines, wherein each peer machine of the set comprises a processor, and a cache, comprising: receiving a request at a first one of the peer machines, the request having associated therewith a hostname having a value that points to peer machines in the edge region to facilitate load balancing, the value configured for use as a cache key, the request being one of a set of requests associated with the hostname received in the edge region; in response to receiving the request, hashing the cache key that includes the value to create a hashed value that also points to one or more other peer machines in the set of peer machines; based on the hashed value, forwarding the request to at least one other peer machine pointed to by the hashed value; and at the other peer machine, using the hashed value as a cache key for responding to the request; wherein hashing of the cache key and forwarding of the request facilitate spreading of the set of requests associated with the hostname across the set of peer machines.
+
+Claim 2 [dep on 1]:
+The method as described in claim 1 wherein the value is a serial number.
+
+Claim 3 [dep on 1]:
+The method as described in claim 1 wherein the set of peer machines are connected to one another across a back-end interface in the edge region.
+
+Claim 4 [dep on 3]:
+The method as described in claim 3 wherein hashing the cache key spreads the value across the set of peer machines.
+
+Claim 5 [dep on 1]:
+The method as described in claim 1 further including configuring each of the peer machines of the set of peer machines to perform the hashing of the cache key and forwarding of the request.
+
+Claim 6 [dep on 1]:
+The method as described in claim 1 wherein the set of peer machines comprise a tier of a cache hierarchy.
+
+Claim 7 [dep on 1]:
+The method as described in claim 1 wherein the request is associated with a content object.
+
+Claim 8 [dep on 7]:
+The method as described in claim 7 wherein, based on a number of requests per a given time period, the content object is defined as cold content.
+
+Claim 9 [dep on 8]:
+The method as described in claim 8 wherein the other peer machine serves the cold content and caches it in its cache.
+
+Claim 10 [dep on 9]:
+The method as described in claim 9 wherein the cold content is spread across the set of peer machines.

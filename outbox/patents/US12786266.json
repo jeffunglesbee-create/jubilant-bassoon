@@ -1,0 +1,127 @@
+{
+  "_ppubs_guid": "US-12786266-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Cisco Technology, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method, comprising: identifying, by a device, compute nodes for a distributed application and services executed by the distributed application; identifying, by the device, inter-process connections between the services; generating, by the device, a graph with the inter-process connections as edges of the graph, the graph being structured for hierarchical visualization to enable comprehension of increasing numbers of processes and inter-process connections in a single interface, wherein a first zoom level provides a view of the compute nodes and at least one further zoom level provides, for a given one of the compute nodes, a view of the services executed by the distributed application on the given one of the compute nodes and inter-process connections between the services; and providing, by the device, the graph for display."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method as in claim 1, wherein the compute nodes are selected from a group comprising: route processors, forwarding processors, or interface cards."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The method as in claim 1, further comprising: providing the graph in a single web user interface window; and providing a mechanism to zoom in or out on the graph within the single web user interface window to alter an amount of detail visible on the graph."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The method as in claim 1, wherein the graph allows visualization of at least ten thousand objects to be displayed in a single web user interface window."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The method as in claim 1, wherein the graph is generated as a backend process."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method as in claim 1, wherein the compute nodes comprise virtual machines."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The method as in claim 1, wherein the compute nodes comprise operating system level virtualized computing instances."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The method as in claim 1, wherein the graph provides information to troubleshoot the compute nodes."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 9,
+      "claim_text": "The method as in claim 1, wherein the graph includes geographical information . . . associated with the compute nodes."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 10,
+      "claim_text": "The method as in claim 1, wherein the graph is generated in a layout selected from a group comprising: a force-directed graph layout, a radial graph layout, a circle packed graph layout, or a tree graph layout."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 11,
+      "claim_text": "The method as in claim 1, wherein the graph is generated according to a geographical JavaScript object notation (GeoJSON) format."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 12,
+      "claim_text": "The method as in claim 1, further comprising: providing a mechanism to zoom in or out on the graph within a single web user interface window to alter an amount of detail visible on the graph, wherein: a second zoom level provides the view of the services, a third zoom level provides an application service graph for the services of the distributed application, and a fourth zoom level provides a view of names of the services and the inter-process connections."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 13,
+      "claim_text": "The method as in claim 12, wherein: a fifth zoom level provides a heat map overlay."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 14,
+      "claim_text": "The method as in claim 1, further comprising: applying, by the device, a desired layout algorithm to the services for a particular compute node around a center of a view of the graph; calculating, by the device, a centroid for services of the particular compute node to generate a service reference point; translating, by the device, coordinates for each service circle and inter-process connections line edge to the particular compute node; and centering, by the device, a reference point with the centroid for the services of the particular compute node."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 15,
+      "claim_text": "A tangible, non-transitory, computer-readable medium having computer-executable instructions stored thereon that, when executed by a processor on a computer, cause the computer to perform a method comprising: identifying compute nodes for a distributed application and services executed by the distributed application; identifying inter-process connections between the services; generating a graph with the inter-process connections as edges of the graph, the graph being structured for hierarchical visualization to enable comprehension of increasing numbers of processes and inter-process connections in a single interface, wherein a first zoom level provides a view of the compute nodes and at least one further zoom level provides, for a given one of the compute nodes, a view of the services executed by the distributed application on the given one of the compute nodes and inter-process connections between the services; and providing the graph for display."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 16,
+      "claim_text": "The tangible, non-transitory, computer-readable medium as in claim 15, wherein the instructions are further executable to perform the method comprising: providing the graph in a single web user interface window; and providing a mechanism to zoom in or out on the graph within the single web user interface window to alter an amount of detail visible on the graph."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 17,
+      "claim_text": "The tangible, non-transitory, computer-readable medium as in claim 15, wherein the instructions are further executable to perform the method comprising: providing a mechanism to zoom in or out on the graph within a single web user interface window to alter an amount of detail visible on the graph, wherein: a second zoom level provides the view of the services, a third zoom level provides an application service graph for the services of the distributed application, and a fourth zoom level provides a view of names of the services and the inter-process connections."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 18,
+      "claim_text": "The tangible, non-transitory, computer-readable medium as in claim 17, wherein the instructions are further executable to perform the method comprising: a fifth zoom level provides a heat map overlay."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 19,
+      "claim_text": "The tangible, non-transitory, computer-readable medium as in claim 15, wherein the graph provides information to troubleshoot the compute nodes."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 20,
+      "claim_text": "An apparatus, comprising: one or more network interfaces to communicate with a network; a processor coupled to the one or more network interfaces and configured to execute one or more processes; and a memory configured to store a process that is executable by the processor, the process, when executed, configured to: identify compute nodes for a distributed application and services executed by the distributed application; identify inter-process connections between the services; generate a graph with the inter-process connections as edges of the graph, the graph being structured for hierarchical visualization to enable comprehension of increasing numbers of processes and inter-process connections in a single interface, wherein a first zoom level provides a view of the compute nodes and at least one further zoom level provides, for a given one of the compute nodes, a view of the services executed by the distributed application on the given one of the compute nodes and inter-process connections between the services; and provide the graph for display."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Jeffery A",
+      "examiner_name_last": "Brier"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Clinton",
+      "inventor_name_last": "Grant"
+    }
+  ],
+  "patent_date": "2026-11-03",
+  "patent_id": "12786266",
+  "patent_title": "Framework for application observability"
+}
