@@ -84,7 +84,16 @@ jobs:
           git add outbox/patents/
           if ! git diff --cached --quiet; then
             git commit -m "patents: fetch+compare ${{ inputs.patents }} [skip ci]"
-            git push
+            # The same loop as patent-watch.yml's "Commit results": a bare `git push` was rejected "fetch first"
+            # on the 2026-11-04 weekly run (jubilant-bassoon run 41919349025) because main had moved during the run,
+            # and the pipeline's whole output was lost with the runner. A push that still has not landed fails the job.
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+              sleep $((i * 5))
+            done
+            git fetch -q origin "${GITHUB_REF_NAME}"
+            git merge-base --is-ancestor HEAD "origin/${GITHUB_REF_NAME}" \
+              || { echo "FAIL: the patent results push did not land after retries"; exit 1; }
           else
             echo "No changes (idempotent re-run)"
           fi
