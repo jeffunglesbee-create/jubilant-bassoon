@@ -1,109 +1,90 @@
 {
-  "ts": "2026-11-07T18:39:05.077Z",
+  "ts": "2026-11-08T02:21:28.577Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
-  "sw": "2026-11-07b",
+  "sw": "2026-11-07c",
   "triggered_by": "schedule",
   "relayReachable": true,
-  "relayLiveMatches": 18,
-  "relayLiveMatchesAllTiers": 115,
+  "relayLiveMatches": 13,
+  "relayLiveMatchesAllTiers": 153,
   "tiersSeen": [
     "atp_250",
     "challenger",
     "masters_1000",
+    "other",
     "utr",
     "wta_250"
   ],
-  "startedCards": 18,
-  "dayFeedCount": 115,
+  "startedCards": 0,
+  "dayFeedCount": 153,
   "dayFeedTruncated": false,
   "expectedTournaments": [
-    "Cali, Colombia",
     "Chennai",
     "Hong Kong",
     "Luanda, Angola",
     "Paris",
-    "Stockholm"
+    "Stockholm",
+    "WTA Finals"
   ],
   "pageLoaded": true,
   "tennisSectionPresent": true,
-  "tennisCardCount": 18,
-  "cardsWithSetScore": 18,
-  "cardsWithOpponent": 18,
+  "tennisCardCount": 13,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 13,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
-      "home": "A. Shubladze v C. Liu",
-      "chip": "5-7 4-6"
+      "home": "C. Liu v A. Eala",
+      "chip": "(no chip)"
     },
     {
-      "home": "M. Sakkari v A. Eala",
-      "chip": "5-7 6-3 4-6"
+      "home": "A. Blinkova v S. Lansere",
+      "chip": "(no chip)"
     },
     {
-      "home": "A. Blinkova v Y. Kabbaj",
-      "chip": "6-2 2-6 6-4"
+      "home": "N. Basilashvili v B. Gojo",
+      "chip": "(no chip)"
     },
     {
-      "home": "M. Brunold v B. Gojo",
-      "chip": "5-7 6-4 6-7(7)"
+      "home": "I. Montes-de la Torre v L. Sonego",
+      "chip": "(no chip)"
     },
     {
-      "home": "N. Basilashvili v F. Passaro",
-      "chip": "6-4 6-3"
+      "home": "A. Mannarino v T. Samuel",
+      "chip": "(no chip)"
     },
     {
-      "home": "O. Wallin v L. Sonego",
-      "chip": "4-6 6-7(6)"
+      "home": "J. Fearnley v A. Shevchenko",
+      "chip": "(no chip)"
     },
     {
-      "home": "J. Tjen v R. Montgomery",
-      "chip": "6-3 6-4"
+      "home": "J. Tjen v M. Linette",
+      "chip": "(no chip)"
     },
     {
-      "home": "S. Lansere v N. Noha Akugue",
-      "chip": "7-6(6) 6-2"
+      "home": "B. Shelton v C. Alcaraz",
+      "chip": "(no chip)"
     },
     {
-      "home": "D. Džumhur v I. Montes-de la Torre",
-      "chip": "5-7 3-6"
+      "home": "E. Ymer v J. Cerundolo",
+      "chip": "(no chip)"
     },
     {
-      "home": "L. Van Assche v B. Shelton",
-      "chip": "7-5 3-6 4-6"
+      "home": "T. Tirante v J. Munar",
+      "chip": "(no chip)"
     },
     {
-      "home": "K. Friberg v T. Samuel",
-      "chip": "6-7(5) 2-6"
+      "home": "E. Rybakina v L. Noskova",
+      "chip": "(no chip)"
     },
     {
-      "home": "M. Linette v A. Zakharova",
-      "chip": "2-6 6-2 6-3"
+      "home": "M. Kostyuk v L. Noskova",
+      "chip": "(no chip)"
     },
     {
-      "home": "V. Durasović v A. Shevchenko",
-      "chip": "1-6 1-6"
-    },
-    {
-      "home": "A. Blinkova v G. Feistel",
-      "chip": "5-7 6-4 6-2"
-    },
-    {
-      "home": "A. Mannarino v J. Simonsson",
-      "chip": "6-4 6-1"
-    },
-    {
-      "home": "J. Fearnley v A. Nagel",
-      "chip": "6-0 6-2"
-    },
-    {
-      "home": "C. Ruud v C. Alcaraz",
-      "chip": "4-6 4-6"
-    },
-    {
-      "home": "B. Andreescu v L. Romero Gormaz",
-      "chip": "6-7(4) 3-5 · 15-0 ●"
+      "home": "C. Gauff v J. Pegula",
+      "chip": "(no chip)"
     }
   ],
   "consoleErrors": [
@@ -123,52 +104,60 @@
   "failedRequests": [
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-07 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-11-07&session_type=Race,Qualifying,Sprint — net::ERR_FAILED",
-    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-11-07&session_type=Race,Qualifying,Sprint — net::ERR_FAILED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401869968 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401858517 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401856742 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401871098 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401871074 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401864534 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401862821 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401856850 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401871076 — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-07",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-07",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live"
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-08",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-08"
   ],
   "renderedTournaments": [
-    "Cali, Colombia",
     "Chennai",
     "Hong Kong",
     "Luanda, Angola",
     "Paris",
-    "Stockholm"
+    "Stockholm",
+    "WTA Finals"
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:9",
-  "feedByDateOutcome": "ok:115",
-  "rowsBeforeTier": 115,
-  "rowsAfterTier": 18,
-  "sectionReturned": 18,
+  "feedLiveOutcome": "ok:14",
+  "feedByDateOutcome": "ok:153",
+  "rowsBeforeTier": 153,
+  "rowsAfterTier": 13,
+  "sectionReturned": 13,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 4,
-    "structuralRenders": 1,
+    "scheduled": 6,
+    "structuralRenders": 2,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 76049,
+  "tennisSectionHtmlLength": 79182,
   "sectionsInModel": [
     "Bundesliga",
+    "Canadian Football (CFL)",
     "College Football",
     "EFL Championship",
+    "Golf",
     "La Liga",
     "Ligue 1",
     "MLS Soccer",
     "NBA",
+    "NFL",
     "NHL",
     "Premier League",
     "Serie A",
@@ -182,12 +171,13 @@
     "Ligue 1",
     "MLS Soccer",
     "NBA",
+    "NFL",
     "NHL",
     "Premier League",
     "Serie A",
     "Tennis"
   ],
-  "tennisGamesInModel": 18,
+  "tennisGamesInModel": 13,
   "tennisSectionAnatomy": {
     "tag": "div",
     "className": "sport-section",
@@ -197,7 +187,7 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">18 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late scout-pick-card\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Shubladze v C. Liu\" data-away="
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">13 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview scout-pick-card\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"C. Liu v A. Eala\" data-away=\"\""
   },
   "domSectionCardCounts": [
     {
@@ -205,12 +195,16 @@
       "cards": 15
     },
     {
+      "sport": "NFL",
+      "cards": 14
+    },
+    {
       "sport": "NHL",
-      "cards": 12
+      "cards": 21
     },
     {
       "sport": "NBA",
-      "cards": 7
+      "cards": 22
     },
     {
       "sport": "MLS Soccer",
@@ -218,23 +212,23 @@
     },
     {
       "sport": "Premier League",
-      "cards": 4
+      "cards": 9
     },
     {
       "sport": "La Liga",
-      "cards": 4
+      "cards": 9
     },
     {
       "sport": "Serie A",
-      "cards": 4
+      "cards": 9
     },
     {
       "sport": "Bundesliga",
-      "cards": 5
+      "cards": 8
     },
     {
       "sport": "Ligue 1",
-      "cards": 2
+      "cards": 8
     },
     {
       "sport": "EFL Championship",
@@ -242,10 +236,10 @@
     },
     {
       "sport": "Tennis",
-      "cards": 18
+      "cards": 13
     }
   ],
-  "sampleCardText": "📌★ A. Shubladze v C. Liu5-7 4-6 Hong Kong · Semifinals · hard + Multiview Hong Kong ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › Scout's Pick 1:00 AM T",
+  "sampleCardText": "📌★ C. Liu v A. Eala Hong Kong · Final · hard + Multiview Hong Kong ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › Scout's Pick 3:00 AM Tennis ChannelTV l",
   "verdict": "PASS",
-  "reason": "relay 18 live, page 18 card(s), 18 of 18 STARTED with a set score (0 not yet under way, correctly chipless), 18 with an opponent; tournaments proven on the page: Cali, Colombia, Chennai, Hong Kong, Luanda, Angola, Paris, Stockholm"
+  "reason": "relay 13 live, page 13 card(s), 0 of 0 STARTED with a set score (13 not yet under way, correctly chipless), 13 with an opponent; tournaments proven on the page: Chennai, Hong Kong, Luanda, Angola, Paris, Stockholm, WTA Finals"
 }
