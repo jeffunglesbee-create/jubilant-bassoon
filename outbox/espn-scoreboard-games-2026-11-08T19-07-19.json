@@ -1,0 +1,772 @@
+{
+  "at": "2026-11-08T19:07:19.622Z",
+  "etDay": "2026-11-08",
+  "leagues": {
+    "cfb-poller": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20261108&limit=50",
+      "status": 200,
+      "events": 0,
+      "games": []
+    },
+    "cfb-sweep": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20261108&limit=50&groups=80",
+      "status": 200,
+      "events": 0,
+      "games": []
+    },
+    "ncaab-poller": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=20261108&limit=50",
+      "status": 200,
+      "events": 4,
+      "games": [
+        {
+          "id": "401920424",
+          "home": "Virginia Cavaliers",
+          "away": "Arkansas Razorbacks",
+          "homeScore": 46,
+          "awayScore": 27,
+          "state": "in"
+        },
+        {
+          "id": "401924646",
+          "home": "St. John's Red Storm",
+          "away": "Iona Gaels",
+          "homeScore": 104,
+          "awayScore": 65,
+          "state": "post"
+        },
+        {
+          "id": "401918053",
+          "home": "California Golden Bears",
+          "away": "Houston Cougars",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401919029",
+          "home": "Wichita State Shockers",
+          "away": "USC Trojans",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "nfl": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20261108&limit=50",
+      "status": 200,
+      "events": 13,
+      "games": [
+        {
+          "id": "401873040",
+          "home": "Indianapolis Colts",
+          "away": "Dallas Cowboys",
+          "homeScore": 7,
+          "awayScore": 10,
+          "state": "in"
+        },
+        {
+          "id": "401873045",
+          "home": "Kansas City Chiefs",
+          "away": "New York Jets",
+          "homeScore": 14,
+          "awayScore": 9,
+          "state": "in"
+        },
+        {
+          "id": "401873042",
+          "home": "Miami Dolphins",
+          "away": "Detroit Lions",
+          "homeScore": 3,
+          "awayScore": 6,
+          "state": "in"
+        },
+        {
+          "id": "401873039",
+          "home": "New Orleans Saints",
+          "away": "Cleveland Browns",
+          "homeScore": 3,
+          "awayScore": 3,
+          "state": "in"
+        },
+        {
+          "id": "401873044",
+          "home": "Philadelphia Eagles",
+          "away": "New York Giants",
+          "homeScore": 8,
+          "awayScore": 6,
+          "state": "in"
+        },
+        {
+          "id": "401873043",
+          "home": "Washington Commanders",
+          "away": "Los Angeles Rams",
+          "homeScore": 10,
+          "awayScore": 3,
+          "state": "in"
+        },
+        {
+          "id": "401873041",
+          "home": "Carolina Panthers",
+          "away": "Denver Broncos",
+          "homeScore": 0,
+          "awayScore": 10,
+          "state": "in"
+        },
+        {
+          "id": "401873038",
+          "home": "Atlanta Falcons",
+          "away": "Cincinnati Bengals",
+          "homeScore": 17,
+          "awayScore": 34,
+          "state": "post"
+        },
+        {
+          "id": "401873046",
+          "home": "Los Angeles Chargers",
+          "away": "Houston Texans",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401873049",
+          "home": "New England Patriots",
+          "away": "Green Bay Packers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401873047",
+          "home": "San Francisco 49ers",
+          "away": "Las Vegas Raiders",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401873048",
+          "home": "Seattle Seahawks",
+          "away": "Arizona Cardinals",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401873050",
+          "home": "Chicago Bears",
+          "away": "Tampa Bay Buccaneers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "nba": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20261108&limit=50",
+      "status": 200,
+      "events": 7,
+      "games": [
+        {
+          "id": "401909945",
+          "home": "Chicago Bulls",
+          "away": "Philadelphia 76ers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401909946",
+          "home": "Detroit Pistons",
+          "away": "Los Angeles Lakers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401909947",
+          "home": "Minnesota Timberwolves",
+          "away": "Utah Jazz",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401909948",
+          "home": "Dallas Mavericks",
+          "away": "Brooklyn Nets",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401909949",
+          "home": "Milwaukee Bucks",
+          "away": "Boston Celtics",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401909950",
+          "home": "LA Clippers",
+          "away": "New Orleans Pelicans",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401909951",
+          "home": "Sacramento Kings",
+          "away": "Miami Heat",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "nhl": {
+      "url": "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=20261108&limit=50",
+      "status": 200,
+      "events": 6,
+      "games": [
+        {
+          "id": "401892674",
+          "home": "Boston Bruins",
+          "away": "Florida Panthers",
+          "homeScore": 3,
+          "awayScore": 1,
+          "state": "in"
+        },
+        {
+          "id": "401892675",
+          "home": "Buffalo Sabres",
+          "away": "Vegas Golden Knights",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401892677",
+          "home": "Winnipeg Jets",
+          "away": "Tampa Bay Lightning",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401892676",
+          "home": "Toronto Maple Leafs",
+          "away": "New Jersey Devils",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401892678",
+          "home": "Calgary Flames",
+          "away": "Philadelphia Flyers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "401892679",
+          "home": "Anaheim Ducks",
+          "away": "Pittsburgh Penguins",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "relay-cfb": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=cfb&date=2026-11-08",
+      "status": 200,
+      "events": 0,
+      "games": []
+    },
+    "relay-nfl": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nfl&date=2026-11-08",
+      "status": 200,
+      "events": 13,
+      "games": [
+        {
+          "id": "espn:401873040",
+          "home": "Indianapolis Colts",
+          "away": "Dallas Cowboys",
+          "homeScore": 7,
+          "awayScore": 10,
+          "state": "live"
+        },
+        {
+          "id": "espn:401873045",
+          "home": "Kansas City Chiefs",
+          "away": "New York Jets",
+          "homeScore": 14,
+          "awayScore": 9,
+          "state": "live"
+        },
+        {
+          "id": "espn:401873042",
+          "home": "Miami Dolphins",
+          "away": "Detroit Lions",
+          "homeScore": 3,
+          "awayScore": 6,
+          "state": "live"
+        },
+        {
+          "id": "espn:401873039",
+          "home": "New Orleans Saints",
+          "away": "Cleveland Browns",
+          "homeScore": 3,
+          "awayScore": 3,
+          "state": "live"
+        },
+        {
+          "id": "espn:401873044",
+          "home": "Philadelphia Eagles",
+          "away": "New York Giants",
+          "homeScore": 8,
+          "awayScore": 6,
+          "state": "live"
+        },
+        {
+          "id": "espn:401873043",
+          "home": "Washington Commanders",
+          "away": "Los Angeles Rams",
+          "homeScore": 10,
+          "awayScore": 3,
+          "state": "live"
+        },
+        {
+          "id": "espn:401873041",
+          "home": "Carolina Panthers",
+          "away": "Denver Broncos",
+          "homeScore": 0,
+          "awayScore": 10,
+          "state": "live"
+        },
+        {
+          "id": "espn:401873038",
+          "home": "Atlanta Falcons",
+          "away": "Cincinnati Bengals",
+          "homeScore": 17,
+          "awayScore": 34,
+          "state": "post"
+        },
+        {
+          "id": "espn:401873046",
+          "home": "Los Angeles Chargers",
+          "away": "Houston Texans",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401873049",
+          "home": "New England Patriots",
+          "away": "Green Bay Packers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401873047",
+          "home": "San Francisco 49ers",
+          "away": "Las Vegas Raiders",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401873048",
+          "home": "Seattle Seahawks",
+          "away": "Arizona Cardinals",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401873050",
+          "home": "Chicago Bears",
+          "away": "Tampa Bay Buccaneers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "relay-nba": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nba&date=2026-11-08",
+      "status": 200,
+      "events": 7,
+      "games": [
+        {
+          "id": "espn:401909945",
+          "home": "Chicago Bulls",
+          "away": "Philadelphia 76ers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401909946",
+          "home": "Detroit Pistons",
+          "away": "Los Angeles Lakers",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401909947",
+          "home": "Minnesota Timberwolves",
+          "away": "Utah Jazz",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401909948",
+          "home": "Dallas Mavericks",
+          "away": "Brooklyn Nets",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401909949",
+          "home": "Milwaukee Bucks",
+          "away": "Boston Celtics",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401909950",
+          "home": "LA Clippers",
+          "away": "New Orleans Pelicans",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        },
+        {
+          "id": "espn:401909951",
+          "home": "Sacramento Kings",
+          "away": "Miami Heat",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "relay-nhl": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=nhl&date=2026-11-08",
+      "status": 200,
+      "events": 6,
+      "games": [
+        {
+          "id": "nhl:2026020277",
+          "home": "Boston Bruins",
+          "away": "Florida Panthers",
+          "homeScore": 3,
+          "awayScore": 1,
+          "state": "live"
+        },
+        {
+          "id": "nhl:2026020278",
+          "home": "Buffalo Sabres",
+          "away": "Vegas Golden Knights",
+          "homeScore": null,
+          "awayScore": null,
+          "state": "pre"
+        },
+        {
+          "id": "nhl:2026020280",
+          "home": "Winnipeg Jets",
+          "away": "Tampa Bay Lightning",
+          "homeScore": null,
+          "awayScore": null,
+          "state": "pre"
+        },
+        {
+          "id": "nhl:2026020279",
+          "home": "Toronto Maple Leafs",
+          "away": "New Jersey Devils",
+          "homeScore": null,
+          "awayScore": null,
+          "state": "pre"
+        },
+        {
+          "id": "nhl:2026020281",
+          "home": "Calgary Flames",
+          "away": "Philadelphia Flyers",
+          "homeScore": null,
+          "awayScore": null,
+          "state": "pre"
+        },
+        {
+          "id": "nhl:2026020282",
+          "home": "Anaheim Ducks",
+          "away": "Pittsburgh Penguins",
+          "homeScore": null,
+          "awayScore": null,
+          "state": "pre"
+        }
+      ]
+    },
+    "relay-mls": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=mls&date=2026-11-08",
+      "status": 200,
+      "events": 0,
+      "games": []
+    },
+    "relay-epl": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=epl&date=2026-11-08",
+      "status": 200,
+      "events": 5,
+      "games": [
+        {
+          "id": "espn:401879244",
+          "home": "Brighton & Hove Albion",
+          "away": "Brentford",
+          "homeScore": 2,
+          "awayScore": 0,
+          "state": "final"
+        },
+        {
+          "id": "espn:401879243",
+          "home": "Crystal Palace",
+          "away": "Liverpool",
+          "homeScore": 1,
+          "awayScore": 3,
+          "state": "final"
+        },
+        {
+          "id": "espn:401878759",
+          "home": "Ipswich Town",
+          "away": "AFC Bournemouth",
+          "homeScore": 1,
+          "awayScore": 2,
+          "state": "final"
+        },
+        {
+          "id": "espn:401879239",
+          "home": "Sunderland",
+          "away": "Chelsea",
+          "homeScore": 1,
+          "awayScore": 0,
+          "state": "final"
+        },
+        {
+          "id": "espn:401879240",
+          "home": "Manchester United",
+          "away": "Aston Villa",
+          "homeScore": 4,
+          "awayScore": 4,
+          "state": "final"
+        }
+      ]
+    },
+    "relay-eflchamp": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=eflchamp&date=2026-11-08",
+      "status": 200,
+      "events": 0,
+      "games": []
+    },
+    "relay-eflone": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=eflone&date=2026-11-08",
+      "status": 200,
+      "events": 0,
+      "games": []
+    },
+    "relay-efltwo": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=efltwo&date=2026-11-08",
+      "status": 200,
+      "events": 0,
+      "games": []
+    },
+    "relay-laliga": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=laliga&date=2026-11-08",
+      "status": 200,
+      "events": 5,
+      "games": [
+        {
+          "id": "espn:401882814",
+          "home": "Elche",
+          "away": "Real Betis",
+          "homeScore": 0,
+          "awayScore": 2,
+          "state": "final"
+        },
+        {
+          "id": "espn:401882810",
+          "home": "Real Sociedad",
+          "away": "Rayo Vallecano",
+          "homeScore": 1,
+          "awayScore": 0,
+          "state": "final"
+        },
+        {
+          "id": "espn:401882815",
+          "home": "Celta Vigo",
+          "away": "Levante",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "live"
+        },
+        {
+          "id": "espn:401882807",
+          "home": "Villarreal",
+          "away": "Getafe",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "live"
+        },
+        {
+          "id": "espn:401882816",
+          "home": "Atlético Madrid",
+          "away": "Barcelona",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "relay-seriea": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=seriea&date=2026-11-08",
+      "status": 200,
+      "events": 5,
+      "games": [
+        {
+          "id": "espn:401874810",
+          "home": "Napoli",
+          "away": "Lazio",
+          "homeScore": 1,
+          "awayScore": 1,
+          "state": "final"
+        },
+        {
+          "id": "espn:401875018",
+          "home": "Genoa",
+          "away": "AC Milan",
+          "homeScore": 1,
+          "awayScore": 2,
+          "state": "final"
+        },
+        {
+          "id": "espn:401874800",
+          "home": "Monza",
+          "away": "Atalanta",
+          "homeScore": 0,
+          "awayScore": 1,
+          "state": "final"
+        },
+        {
+          "id": "espn:401874808",
+          "home": "Internazionale",
+          "away": "Como",
+          "homeScore": 2,
+          "awayScore": 0,
+          "state": "final"
+        },
+        {
+          "id": "espn:401875003",
+          "home": "Fiorentina",
+          "away": "Juventus",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    },
+    "relay-bundesliga": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=bundesliga&date=2026-11-08",
+      "status": 200,
+      "events": 3,
+      "games": [
+        {
+          "id": "espn:401884738",
+          "home": "FC Cologne",
+          "away": "Bayer Leverkusen",
+          "homeScore": 1,
+          "awayScore": 2,
+          "state": "final"
+        },
+        {
+          "id": "espn:401884741",
+          "home": "SC Freiburg",
+          "away": "1. FC Union Berlin",
+          "homeScore": 2,
+          "awayScore": 0,
+          "state": "final"
+        },
+        {
+          "id": "espn:401884742",
+          "home": "TSG Hoffenheim",
+          "away": "Schalke 04",
+          "homeScore": 2,
+          "awayScore": 0,
+          "state": "live"
+        }
+      ]
+    },
+    "relay-ligue1": {
+      "url": "https://field-relay-nba.jeffunglesbee.workers.dev/v2/games?sport=ligue1&date=2026-11-08",
+      "status": 200,
+      "events": 6,
+      "games": [
+        {
+          "id": "espn:401876406",
+          "home": "Stade Rennais",
+          "away": "Lille",
+          "homeScore": 1,
+          "awayScore": 2,
+          "state": "final"
+        },
+        {
+          "id": "espn:401876412",
+          "home": "Angers",
+          "away": "Nice",
+          "homeScore": 0,
+          "awayScore": 2,
+          "state": "final"
+        },
+        {
+          "id": "espn:401876410",
+          "home": "Brest",
+          "away": "Lyon",
+          "homeScore": 2,
+          "awayScore": 0,
+          "state": "final"
+        },
+        {
+          "id": "espn:401876409",
+          "home": "Le Havre AC",
+          "away": "Lorient",
+          "homeScore": 0,
+          "awayScore": 2,
+          "state": "final"
+        },
+        {
+          "id": "espn:401876408",
+          "home": "Le Mans",
+          "away": "AS Monaco",
+          "homeScore": 1,
+          "awayScore": 1,
+          "state": "final"
+        },
+        {
+          "id": "espn:401876404",
+          "home": "Lens",
+          "away": "Marseille",
+          "homeScore": 0,
+          "awayScore": 0,
+          "state": "pre"
+        }
+      ]
+    }
+  }
+}
