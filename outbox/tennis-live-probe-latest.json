@@ -1,12 +1,12 @@
 {
-  "ts": "2026-11-09T02:35:58.611Z",
+  "ts": "2026-11-09T23:22:20.736Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-07c",
   "triggered_by": "schedule",
   "relayReachable": true,
   "relayLiveMatches": 17,
-  "relayLiveMatchesAllTiers": 209,
+  "relayLiveMatchesAllTiers": 179,
   "tiersSeen": [
     "atp_250",
     "challenger",
@@ -14,8 +14,8 @@
     "utr",
     "wta_250"
   ],
-  "startedCards": 0,
-  "dayFeedCount": 209,
+  "startedCards": 17,
+  "dayFeedCount": 177,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "Chennai",
@@ -26,103 +26,92 @@
   "pageLoaded": true,
   "tennisSectionPresent": true,
   "tennisCardCount": 17,
-  "cardsWithSetScore": 0,
+  "cardsWithSetScore": 17,
   "cardsWithOpponent": 17,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
       "home": "J. Tjen v M. Linette",
-      "chip": "(no chip)"
+      "chip": "7-5 1-6 4-6"
     },
     {
       "home": "A. Michelsen v Y. Hanfmann",
-      "chip": "(no chip)"
+      "chip": "6-2 6-3"
     },
     {
       "home": "J. Duckworth v C. Norrie",
-      "chip": "(no chip)"
+      "chip": "5-7 0-6"
     },
     {
       "home": "T. Machač v B. Gojo",
-      "chip": "(no chip)"
+      "chip": "3-6 4-6"
     },
     {
       "home": "A. Vallejo v U. Humbert",
-      "chip": "(no chip)"
+      "chip": "4-6 3-6"
     },
     {
       "home": "L. Pigossi v D. Jakupović",
-      "chip": "(no chip)"
+      "chip": "6-3 6-3"
     },
     {
       "home": "P. Hercog v V. Lepchenko",
-      "chip": "(no chip)"
+      "chip": "6-2 7-6(3)"
     },
     {
       "home": "T. Maria v L. Giovannini",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "E. Mandlik v V. Erjavec",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "M. Herazo González v M. Bassols Ribera",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "S. Costoulas v A. E. Usech",
-      "chip": "(no chip)"
+      "chip": "4-6 7-5 7-5"
     },
     {
       "home": "T. Etcheverry v M. Dahlin",
-      "chip": "(no chip)"
+      "chip": "6-4 6-7(6) 6-3"
     },
     {
-      "home": "I. Burillo v Y. Lizarazo",
-      "chip": "(no chip)"
+      "home": "M. Herazo González v M. Bassols Ribera",
+      "chip": "1-6 4-6"
+    },
+    {
+      "home": "E. Mandlik v V. Erjavec",
+      "chip": "6-3 4-6 6-2"
+    },
+    {
+      "home": "S. Costoulas v A. E. Usech",
+      "chip": "6-0 6-1"
     },
     {
       "home": "T. Zidanšek v J. Grabher",
-      "chip": "(no chip)"
+      "chip": "2-6 4-6"
     },
     {
       "home": "L. Borg v T. Samuel",
-      "chip": "(no chip)"
+      "chip": "3-6 2-6"
+    },
+    {
+      "home": "I. Burillo v Y. Lizarazo",
+      "chip": "6-2 6-2"
     },
     {
       "home": "A. Sabalenka v K. Muchova",
-      "chip": "(no chip)"
+      "chip": "7-6(2) 7-5"
     },
     {
       "home": "M. Andreeva v E. Svitolina",
-      "chip": "(no chip)"
+      "chip": "6-4 1-0 · A-40 ●"
     }
   ],
   "consoleErrors": [
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()"
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
   ],
   "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-09 — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401892677 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401909946 — net::ERR_ABORTED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401931098 — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-09",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-09"
   ],
   "renderedTournaments": [
@@ -133,44 +122,30 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:11",
-  "feedByDateOutcome": "ok:209",
-  "rowsBeforeTier": 209,
+  "feedLiveOutcome": "ok:15",
+  "feedByDateOutcome": "ok:177",
+  "rowsBeforeTier": 179,
   "rowsAfterTier": 17,
   "sectionReturned": 17,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 4,
-    "structuralRenders": 2,
+    "scheduled": 2,
+    "structuralRenders": 1,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 101514,
+  "tennisSectionHtmlLength": 69095,
   "sectionsInModel": [
-    "Bundesliga",
     "College Football",
-    "La Liga",
-    "Ligue 1",
     "NBA",
     "NFL",
     "NHL",
-    "Premier League",
-    "Serie A",
     "Tennis"
   ],
   "sectionsInDom": [
-    "Bundesliga",
-    "College Football",
-    "La Liga",
-    "Ligue 1",
-    "NBA",
-    "NFL",
-    "NHL",
-    "Premier League",
-    "Serie A",
     "Tennis"
   ],
   "tennisGamesInModel": 17,
@@ -183,51 +158,15 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">17 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"J. Tjen v M. Linette\" data-away=\"\" data-startt"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">17 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"J. Tjen v M. Linette\" data-away=\"\" da"
   },
   "domSectionCardCounts": [
-    {
-      "sport": "College Football",
-      "cards": 3
-    },
-    {
-      "sport": "NFL",
-      "cards": 14
-    },
-    {
-      "sport": "NHL",
-      "cards": 16
-    },
-    {
-      "sport": "NBA",
-      "cards": 21
-    },
-    {
-      "sport": "Premier League",
-      "cards": 5
-    },
-    {
-      "sport": "La Liga",
-      "cards": 5
-    },
-    {
-      "sport": "Serie A",
-      "cards": 5
-    },
-    {
-      "sport": "Bundesliga",
-      "cards": 3
-    },
-    {
-      "sport": "Ligue 1",
-      "cards": 6
-    },
     {
       "sport": "Tennis",
       "cards": 17
     }
   ],
-  "sampleCardText": "📌★ J. Tjen v M. Linette Chennai · Final · hard + Multiview Chennai ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 12:30 AM Tennis ChannelTV loginCable/sa",
+  "sampleCardText": "📌★ J. Tjen v M. Linette7-5 1-6 4-6 Chennai · Final · hard + Multiview Chennai ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 12:30 AM Tennis ChannelTV lo",
   "verdict": "PASS",
-  "reason": "relay 17 live, page 17 card(s), 0 of 0 STARTED with a set score (17 not yet under way, correctly chipless), 17 with an opponent; tournaments proven on the page: Chennai, Sopo, Colombia, Stockholm, WTA Finals"
+  "reason": "relay 17 live, page 17 card(s), 17 of 17 STARTED with a set score (0 not yet under way, correctly chipless), 17 with an opponent; tournaments proven on the page: Chennai, Sopo, Colombia, Stockholm, WTA Finals"
 }
