@@ -1,0 +1,52 @@
+name: Past-date cups probe
+# CI-as-proxy (Rule 90) for relay CC-CMD-2026-08-08-fa-cup-coverage Task 6: loads the DEPLOYED page in a real browser, calls its own goToDate on PAST dates and compares the
+# FA Cup, EFL Cup and EFL Trophy cards it draws with the relay's /v2/games read in the same run. Dispatch-only: read-only, no push trigger.
+# Result: outbox/past-date-cups-probe-manifest-<ts>.json and a screenshot, committed back.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install @playwright/test
+          npx playwright install chromium --with-deps
+
+      - name: Run the past-date cups probe
+        run: node past_date_cups_probe.js
+        env:
+          FIELD_URL: https://jubilant-bassoon.jeffunglesbee.workers.dev
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.email "probe@field"
+          git config user.name "Past-date cups probe"
+          git add outbox/past-date-cups-probe-*.png outbox/past-date-cups-probe-manifest-*.json
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "past-date cups probe result [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push origin main && break
+            sleep $((i * 5))
+          done
+          # The loop above exits 0 when EVERY attempt fails (its last command is `sleep`), so a lost artifact would report green.
+          # is-ancestor, not HEAD equality: another bot pushing after us is routine and must not read as our failure.
+          git fetch -q origin main
+          git merge-base --is-ancestor HEAD origin/main \
+            || { echo "FAIL: push did not land after retries"; exit 1; }
