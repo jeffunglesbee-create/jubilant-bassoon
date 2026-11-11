@@ -2,7 +2,7 @@
 
 Relay CC-CMD `docs/CC-CMD-2026-08-08-fa-cup-coverage.md`, Task 6. Owner's decision, 2026-11-11: "Task 6, yes all 3" (the EFL Cup and the EFL Trophy join the FA Cup).
 
-**HEAD progression (jubilant-bassoon, all on `main`).** `225f4a0` at the start. `2d5b6df` the change. `349b86a` the dispatch-only probe and its workflow. `225f70c` the probe takes "past" from the page. `e72cf05` the probe's crash fixed, and a check that runs it against a stub. The close-out commit follows this document.
+**HEAD progression (jubilant-bassoon, all on `main`).** `225f4a0` at the start. `2d5b6df` the change. `349b86a` the dispatch-only probe and its workflow. `225f70c` the probe takes "past" from the page. `e72cf05` the probe's crash fixed, and a check that runs it against a stub. `76fd41b` the close-out documents. `c640125` the Rule 99 ratchet fix below.
 **Smoke:** 1080 to 1083 (PD-1, PD-2, PD-3). **SW_VERSION:** `2026-11-07c` to `2026-11-10a` (`index.html` and `sw.js`).
 
 ## What was built (`2d5b6df`, `src/legacy/field.js`, synced to `index.html`)
@@ -22,6 +22,8 @@ Relay CC-CMD `docs/CC-CMD-2026-08-08-fa-cup-coverage.md`, Task 6. Owner's decisi
 4. **The probe's own fix is tested.** `scripts/check-past-date-cups-probe.mjs` runs the real `past_date_cups_probe.js` unchanged against a stub browser and relay: four scenarios (PASS, FAIL, BROKEN-DATE twice) and four mutants of the date guard (guard removed, scan includes the page's today, `<` relaxed to `<=`, `pastBranch` always true), each changing a verdict: 8 of 8. It tests the probe's flow and its verdict logic. It does not test the page, the relay, Playwright or the DOM selectors. Replay of run 1's manifest under the new guard: 11-10 is not past, so BROKEN-DATE.
 
 **Coverage of the PASS (Rule 91):** one viewport (1440x900, America/New_York), one load, 8 dates (2 controls, 6 cup cases), counts and name sets only. Scores, streams and live behaviour are NOT judged. Past-date cards for every sport are drawn by the same builder; what a past card shows beyond the pairing (score, `FT`) was not read here.
+
+5. **CI went red on `e72cf05` and `76fd41b`, and the cause was mine.** `Smoke Test + Live Verify`, job "Smoke test (static)", step "Absence-collapse ratchet (Rule 99)": `jubilant-bassoon flagged [|| ''] 11 > baseline 9`, two new sites, both in `scripts/check-past-date-cups-probe.mjs` (`process.env.STUB_DEFECT || ''` and the child's `e.stderr || ''`). Run `42954380166` (and `42953986270` for `e72cf05`; `225f70c` was green). **Why my local runs missed it:** before pushing the change I ran the 26 commands of `deploy-gate.yml`; this ratchet is a step of `smoke-and-verify.yml`, a different workflow, and I did not run that one's steps for the later commits. Fixed in `c640125` with no default at all (an unset `STUB_DEFECT` is `undefined` and never equals `'trophy-empty'`; the stderr text is only printed). Reproduced locally first, from a checkout named like the repo (the ratchet keys its baseline on the directory name): RATCHET FAILED 11 > 9 on the committed script, ratchet OK on the fixed one; then every static step of that workflow: smoke 1083 passed, units 76 passed, document citations, exposed credentials, credential-from-literal, push-lands all pass, and the stub check still holds 8 of 8. Before any push that adds a file now: run the steps of BOTH workflows, `deploy-gate.yml` and `smoke-and-verify.yml`.
 
 ## Recorded, not changed (TOUCH-ONLY)
 
