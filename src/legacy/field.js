@@ -16136,6 +16136,18 @@ const V2_SECTION_LABEL = {
   wc26: 'FIFA World Cup 2026',
 };
 
+// PAST-DATE-ONLY sources: relay sport keys that fetchRelayDateSections asks for in addition to the FIELD_V2_SOURCES ones
+// (relay CC-CMD-2026-08-08-fa-cup-coverage, Task 6; owner's order 2026-11-11: "yes all 3").
+//
+// The FA Cup, the EFL Cup and the EFL Trophy are cards the ESPN fixture sweep CREATES (the three SOCCER_LEAGUES entries); V2 only ever
+// overlays scores. They are deliberately NOT FIELD_V2_SOURCES keys: that object also drives fetchV2AllScores, the live poll, so a key
+// there would start polling /v2/games for it on every cycle, feed a second score slot for these cards, and need a V2_PERIOD_PREFIX
+// entry they do not have. Task 6 as first written ("a client edit in FIELD_V2_SOURCES and V2_SECTION_LABEL") would have done all three;
+// this keeps the live path exactly as it was and changes only what a PAST day shows. The labels are the SOCCER_LEAGUES section labels,
+// verbatim, so the same competition has the same section name yesterday as today; check-v2-section-labels.mjs asserts that, and asserts
+// these keys are in neither FIELD_V2_SOURCES nor V2_SECTION_LABEL.
+const V2_PAST_DATE_ONLY = { facup: 'FA Cup', eflcup: 'EFL Cup', efltrophy: 'EFL Trophy' };
+
 // One game object, built the same way whether it came from the live V2 poll
 // (espnScores) or from a dated /v2/games fetch. Extracted so the two callers
 // cannot drift: a field added for one is added for both.
@@ -16245,7 +16257,10 @@ function injectV2SportSection(sportKey, sectionLabel) {
 // Returns null when every enabled sport is empty, so the caller's existing
 // no-events branch still handles a genuinely empty day.
 async function fetchRelayDateSections(iso) {
-  const enabled = Object.entries(FIELD_V2_SOURCES).filter(([, v]) => v).map(([k]) => k);
+  const enabled = [
+    ...Object.entries(FIELD_V2_SOURCES).filter(([, v]) => v).map(([k]) => k),
+    ...Object.keys(V2_PAST_DATE_ONLY),
+  ];
   // allSettled, not all. fetchV2Games catches everything and returns [] today,
   // so no rejection is reachable through it right now — but Promise.all makes
   // that a load-bearing property of a function this one does not own, and one
@@ -16253,7 +16268,7 @@ async function fetchRelayDateSections(iso) {
   // once. Measured, not reasoned: check-relay-date-sections.mjs assertion 2b
   // read `got undefined` against the Promise.all version.
   const settled = (await Promise.allSettled(enabled.map(async key => {
-    const label = V2_SECTION_LABEL[key];
+    const label = V2_SECTION_LABEL[key] ?? V2_PAST_DATE_ONLY[key];
     // A sport with no label would silently vanish; say so rather than drop it.
     if (!label) { captureFieldError('relay-date-sections:no-label', new Error(key), false); return null; }
     // fetchV2Games already carries the timeout, the !r.ok path and the error
@@ -23455,7 +23470,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-07c';
+  const SW_VERSION = '2026-11-10a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)

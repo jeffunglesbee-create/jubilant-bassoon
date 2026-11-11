@@ -19,7 +19,8 @@
 // what Rule 91 is about — so all three counts print, not just a verdict.
 
 import fs from 'node:fs';
-const src = fs.readFileSync('src/legacy/field.js', 'utf8');
+// FIELD_SRC points the check at a mutated COPY (scripts/mutate-past-date-cups.mjs); the default is the real file.
+const src = fs.readFileSync(process.env.FIELD_SRC || 'src/legacy/field.js', 'utf8');
 
 const mapBlock = src.match(/const V2_SECTION_LABEL = \{([\s\S]*?)\n\};/);
 if (!mapBlock) { console.error('FAIL — V2_SECTION_LABEL not found. Nothing checked.'); process.exit(1); }
@@ -57,6 +58,44 @@ for (const key of map.keys()) {
   if (!v2Keys.has(key)) { failed++; console.error(`  UNKNOWN   ${key} is in the map but not a FIELD_V2_SOURCES key`); }
 }
 
+
+// ── 4. past-date-only keys (relay CC-CMD-2026-08-08-fa-cup-coverage Task 6, owner's order 2026-11-11: "yes all 3") ──
+// fetchRelayDateSections asks for V2_PAST_DATE_ONLY's keys IN ADDITION to the FIELD_V2_SOURCES ones. They are the ESPN-sweep cups
+// (SOCCER_LEAGUES creates their cards), and they must stay OUT of FIELD_V2_SOURCES: that object also drives fetchV2AllScores, the live
+// poll, which would start calling /v2/games for them every cycle. Four obligations, each printed:
+//   a. the map parses to exactly the three keys (a parse that finds fewer would pass every other line of this section vacuously);
+//   b. none is a FIELD_V2_SOURCES key (the live-poll leak) and none is in V2_SECTION_LABEL (directions 2 and 3 above would then disagree
+//      with the poll about which set a key belongs to);
+//   c. each label equals the section label of the SOCCER_LEAGUES entry for the same ESPN league, verbatim, so the competition has the
+//      same section name on a past day as on today;
+//   d. that SOCCER_LEAGUES entry exists (a rename of the entry would otherwise make c compare against nothing).
+// The relay sport key -> ESPN slug pairs below are the relay's own (field-relay-nba src/index.js SOCCER_LEAGUES: facup eng.fa,
+// eflcup eng.league_cup, efltrophy eng.trophy), read there on 2026-11-11; /v2/games?sport=facup and ?sport=eflcup were probed live
+// the same day (33 and 5 games on 2026-11-07 and 2026-10-28); efltrophy answered 200 with no games on four dates.
+const PAST_SLUG = { facup: 'eng.fa', eflcup: 'eng.league_cup', efltrophy: 'eng.trophy' };
+const pastBlock = src.match(/const V2_PAST_DATE_ONLY = \{([^}]*)\};/);
+if (!pastBlock) { console.error('FAIL — V2_PAST_DATE_ONLY not found. Section 4 checked nothing.'); process.exit(1); }
+const past = new Map([...pastBlock[1].matchAll(/([a-z0-9]+):\s*'([^']+)'/g)].map(m => [m[1], m[2]]));
+for (const key of Object.keys(PAST_SLUG)) {
+  if (!past.has(key)) { failed++; console.error(`  PAST-MISSING ${key} is not in V2_PAST_DATE_ONLY — its games vanish from every past-date slate`); }
+}
+for (const key of past.keys()) {
+  if (!(key in PAST_SLUG)) { failed++; console.error(`  PAST-UNKNOWN ${key} is in V2_PAST_DATE_ONLY but this check has no ESPN league for it; add it to PAST_SLUG with the relay's slug`); }
+}
+const sweepBySlug = new Map();
+for (const m of src.matchAll(/\{\s*league:\s*'([^']+)',\s*section:\s*'([^']+)'/g)) {
+  if (!sweepBySlug.has(m[1])) sweepBySlug.set(m[1], []);
+  sweepBySlug.get(m[1]).push(m[2]);
+}
+for (const [key, label] of past) {
+  if (v2Keys.has(key)) { failed++; console.error(`  LIVE-LEAK ${key} is a FIELD_V2_SOURCES key AND a V2_PAST_DATE_ONLY key — the live poll would call /v2/games for it every cycle`); }
+  if (map.has(key))    { failed++; console.error(`  PAST-IN-LABEL-MAP ${key} is in V2_SECTION_LABEL as well; that map is for FIELD_V2_SOURCES keys (direction 3 above)`); }
+  const slug = PAST_SLUG[key];
+  const sweep = slug ? sweepBySlug.get(slug) : null;
+  if (!sweep || !sweep.length) { failed++; console.error(`  NO-SWEEP-ENTRY ${key}: no SOCCER_LEAGUES entry for ${slug}; nothing to hold its label against`); }
+  else if (sweep.some(s => s !== label)) { failed++; console.error(`  PAST-LABEL-DRIFT ${key}: past-date label '${label}' vs SOCCER_LEAGUES section(s) ${JSON.stringify(sweep)} for ${slug}`); }
+}
+
 // A FIELD_V2_SOURCES key with no injectV2SportSection call renders no section
 // from the V2 poll. Some legitimately do not need one — their section is built
 // by a different path. That set must be ENUMERATED WITH A REASON, not inferred
@@ -86,7 +125,9 @@ console.log(`checked ${sites.length} injector call site(s) across ${uniqueSites.
           + `and all ${v2Keys.size} FIELD_V2_SOURCES key(s), against ${map.size} map entries `
           + `(${v2Keys.size - uniqueSites.size} key(s) have no injector, each named in `
           + `SECTION_BUILT_ELSEWHERE with the path that builds it: `
-          + `${Object.keys(SECTION_BUILT_ELSEWHERE).join(', ')})`);
+          + `${Object.keys(SECTION_BUILT_ELSEWHERE).join(', ')}); `
+          + `plus ${past.size} past-date-only key(s) (${[...past.entries()].map(([k, l]) => `${k}='${l}'`).join(', ')}) checked as: all ${Object.keys(PAST_SLUG).length} present, `
+          + `none in FIELD_V2_SOURCES or V2_SECTION_LABEL, each label equal to its SOCCER_LEAGUES section (${[...past.keys()].map(k => PAST_SLUG[k]).join(', ')})`);
 
 if (failed) { console.error(`FAIL — ${failed} mismatch(es).`); process.exit(1); }
 console.log('PASS');

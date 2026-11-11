@@ -8202,5 +8202,59 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
     !!fs6 && fs6.yorkOtherFresher && fs6.yorkOtherStaler && fs6.hudOtherFresher && fs6.hudOtherStaler && fs6.reversedKey && fs6.fuzzyFallback, JSON.stringify(fs6));
 }
 
+// ── past-date navigation includes the FA Cup, the EFL Cup and the EFL Trophy (relay CC-CMD-2026-08-08-fa-cup-coverage Task 6; owner: "yes all 3", 2026-11-11) ──
+// fetchRelayDateSections (the PAST-date slate source) walked FIELD_V2_SOURCES only, and the three cups are ESPN-sweep cards, not V2-polled sports, so
+// "Yesterday" showed no cup games. They are asked for through V2_PAST_DATE_ONLY, which is deliberately NOT FIELD_V2_SOURCES: that object also drives
+// fetchV2AllScores, the live poll. Smoke is structural (it cannot see what the function RETURNS; scripts/check-relay-date-sections.mjs executes it, deploy-gate
+// runs that), so these three hold the wiring the check cannot be sure survived: comment-blanked source, so a mention in a comment proves nothing.
+//  PD-1  the map holds exactly the three keys with their labels, and fetchRelayDateSections both asks for them and labels from it.
+//  PD-2  none of the three is a FIELD_V2_SOURCES key (the live-poll leak).
+//  PD-3  each label equals the section label of its SOCCER_LEAGUES entry, verbatim: the same competition has the same name on a past day as on today.
+{
+  const blank = src => {                      // the same state machine as above: `//` is inside URLs and template literals throughout field.js
+    const out = src.split('');
+    let i = 0, state = 'code', quote = '';
+    while (i < src.length) {
+      const c = src[i], d = src[i + 1];
+      if (state === 'code') {
+        if (c === '/' && d === '*') { state = 'block'; out[i] = out[i + 1] = ' '; i += 2; continue; }
+        if (c === '/' && d === '/') { state = 'line'; out[i] = out[i + 1] = ' '; i += 2; continue; }
+        if (c === '"' || c === "'" || c === '`') { state = 'str'; quote = c; }
+      } else if (state === 'str') {
+        if (c === '\\') { i += 2; continue; }
+        if (c === quote) state = 'code';
+      } else if (state === 'line') {
+        if (c === '\n') { state = 'code'; i++; continue; }
+        out[i] = ' ';
+      } else if (state === 'block') {
+        if (c === '*' && d === '/') { out[i] = out[i + 1] = ' '; state = 'code'; i += 2; continue; }
+        if (c !== '\n') out[i] = ' ';
+      }
+      i++;
+    }
+    return out.join('');
+  };
+  const code = blank(html);
+  const pastDecls = [...code.matchAll(/const V2_PAST_DATE_ONLY = \{([^}]*)\};/g)];
+  const past = pastDecls.length === 1 ? new Map([...pastDecls[0][1].matchAll(/([a-z0-9]+):\s*'([^']+)'/g)].map(m => [m[1], m[2]])) : new Map();
+  const fetchDecls = [...code.matchAll(/async function fetchRelayDateSections\(iso\) \{[\s\S]*?\n\}/g)];
+  const fetchBody = fetchDecls.length === 1 ? fetchDecls[0][0] : '';
+  const wanted = { facup: 'FA Cup', eflcup: 'EFL Cup', efltrophy: 'EFL Trophy' };
+  assert('PD-1 — V2_PAST_DATE_ONLY holds exactly facup/eflcup/efltrophy, and fetchRelayDateSections asks for them and labels from it',
+    pastDecls.length === 1 && past.size === 3 && Object.entries(wanted).every(([k, l]) => past.get(k) === l) &&
+    /\.\.\.Object\.keys\(V2_PAST_DATE_ONLY\)/.test(fetchBody) && /V2_SECTION_LABEL\[key\]\s*\?\?\s*V2_PAST_DATE_ONLY\[key\]/.test(fetchBody),
+    `declarations ${pastDecls.length}, keys ${JSON.stringify([...past.entries()])}, asks ${/\.\.\.Object\.keys\(V2_PAST_DATE_ONLY\)/.test(fetchBody)}, labels ${/V2_PAST_DATE_ONLY\[key\]/.test(fetchBody)}`);
+  const v2Block = (code.match(/const FIELD_V2_SOURCES = \{[\s\S]*?\n\};/) || [''])[0];
+  assert('PD-2 — none of the three cups is a FIELD_V2_SOURCES key: the live poll (fetchV2AllScores walks that object) does not gain them',
+    v2Block.length > 200 && !/(?:^|[{,\s])(facup|eflcup|efltrophy)\s*:/.test(v2Block),
+    `FIELD_V2_SOURCES block ${v2Block.length} chars; cup keys found: ${(v2Block.match(/(?:^|[{,\s])(facup|eflcup|efltrophy)\s*:/g) || []).join(' ')}`);
+  const leaguesText = code.match(/const SOCCER_LEAGUES\s*=\s*\[([\s\S]*?)\n\];/)?.[1] || '';
+  const sweepSection = slug => (leaguesText.match(new RegExp(`\\{\\s*league:\\s*'${slug.replace('.', '\\.')}',\\s*section:\\s*'([^']+)'`)) || [])[1];
+  const slugs = { facup: 'eng.fa', eflcup: 'eng.league_cup', efltrophy: 'eng.trophy' };
+  assert('PD-3 — each cup\'s past-date label equals the section label of its SOCCER_LEAGUES entry, verbatim (eng.fa, eng.league_cup, eng.trophy)',
+    leaguesText.length > 500 && Object.entries(slugs).every(([k, slug]) => !!past.get(k) && past.get(k) === sweepSection(slug)),
+    JSON.stringify(Object.fromEntries(Object.entries(slugs).map(([k, slug]) => [k, { past: past.get(k) || null, sweep: sweepSection(slug) || null }]))));
+}
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);
