@@ -1,0 +1,59 @@
+US12792610
+Title: High performance data filtering
+Grant date: 2026-11-10
+Assignee: Dynatrace LLC
+Inventors: Pawel Gutkowski, Tomasz Wozniak, Pawel Pszczolinski
+Source: ppubs
+PPUBS GUID: US-12792610-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A computer-implemented method for filtering a data record against a set of pre-defined rules, comprising: receiving, by a computer processor, a set of pre-defined rules where the number of rules is on the order of thousands or more, each rule in the set of pre-defined rules includes one or more conditions and an action taken when the one or more conditions are satisfied; enumerating, by the computer processor, conditions in the set of pre-defined rules for form an ordered list of conditions, where each entry in the ordered list of conditions represents one condition from the set of pre-defined rules and each condition in the ordered list of conditions depends on only one field in a given data record; filtering conditions from the ordered list of conditions by removing conditions preceded in the ordered list of conditions by an identical condition having identical fields and values and removing conditions preceded in the ordered list of conditions by a logically complementary condition having identical fields and values; for each given rule in the set of pre-defined rules, connecting, by the computer processor, conditions in the ordered list of conditions that are associated with a given rule by logical operators to form a transformed rule corresponding to the given rule in the set of pre-defined rules, thereby forming a set of transformed rules; receiving, by the computer processor, a data record having one or more data fields; and evaluating, by the computer processor, the data record in relation to the set of transformed rules.
+
+Claim 2 [dep on 1]:
+The method of claim 1 further comprises receiving another data record, and evaluating the another data record in relation to the set of transformed rules.
+
+Claim 3 [dep on 1]:
+The method of claim 1 wherein evaluating the data record further comprises processing the set of transformed rules sequentially in ascending order.
+
+Claim 4 [dep on 3]:
+The method of claim 3 wherein the data record is evaluated in relation to the set of transformed rules by evaluating each condition in the ordered list of conditions in relation to the data record; evaluating the logical operators in the set of transformed rules; and for each transformed rule in the set of transformed rules, executing the action associated with a given transformed rule when the data record matches the given transformed rule.
+
+Claim 5 [dep on 4]:
+The method of claim 4 wherein evaluating the logical operators in the set of transformed rules includes skipping select rules, where the select rules have at least one condition that is not satisfied by the data record.
+
+Claim 6 [dep on 4]:
+The method of claim 4 further comprises executing an action for a particular transformed rule that modifies value of a given data field in the data record; re-evaluating conditions in the ordered list of conditions that depend upon the value of the given data field; re-evaluating the logical operators in the set of transformed rules; and continue processing the set of transformed rules sequentially starting from the particular transformed rule.
+
+Claim 7 [dep on 6]:
+The method of claim 6 further comprises continue processing the set of transformed rules sequentially starting from a first transformed rule in the set of transformed rules when at least one logical operator is a negation operator.
+
+Claim 8 [dep on 1]:
+The method of claim 1 further comprises grouping conditions in the ordered list of conditions by data field prior to the step of evaluating the data record in relation to the set of transformed rules.
+
+Claim 9 [independent]:
+A non-transitory computer-readable medium having computer-executable instructions that, upon execution of the instructions by a processor of a computer, cause the computer to perform: receiving a set of pre-defined rules where the number of rules is on the order of thousands or more, each rule in the set of pre-defined rules includes one or more conditions and an action taken when the one or more conditions are satisfied; enumerating conditions in the set of pre-defined rules for form an ordered list of conditions, where each entry in the ordered list of conditions represents one condition from the set of pre-defined rules and each condition in the ordered list of conditions depends on only one field in a given data record; filtering conditions from the ordered list of conditions by removing conditions preceded in the ordered list of conditions by an identical condition having identical fields and values and removing conditions preceded in the ordered list of conditions by a logically complementary condition having identical fields and values; for each given rule in the set of pre-defined rules, connecting conditions in the ordered list of conditions that are associated with a given rule by logical operators to form a transformed rule corresponding to the given rule in the set of pre-defined rules, thereby forming a set of transformed rules; receiving a data record having one or more data fields; and evaluating the data record in relation to the set of transformed rules.
+
+Claim 10 [dep on 9]:
+The non-transitory computer-readable medium of claim 9, wherein the computer program instructions further perform to receive another data record, and evaluate the another data record in relation to the set of transformed rules.
+
+Claim 11 [dep on 9]:
+The non-transitory computer-readable medium of claim 9, wherein the computer program instructions further perform to process the set of transformed rules sequentially in ascending order.
+
+Claim 12 [dep on 11]:
+The non-transitory computer-readable medium of claim 11, wherein the data record is evaluated in relation to the set of transformed rules by evaluating each condition in the ordered list of conditions in relation to the data record; evaluating the logical operators in the set of transformed rules; and for each transformed rule in the set of transformed rules, executing the action associated with a given transformed rule when conditions for the given transformed rule are satisfied by the data record.
+
+Claim 13 [dep on 12]:
+The non-transitory computer-readable medium of claim 12, wherein evaluating the logical operators in the set of transformed rules includes skipping select rules, where the select rules have at least one condition that is not satisfied by the data record.
+
+Claim 14 [dep on 12]:
+The non-transitory computer-readable medium of claim 12, wherein the computer program instructions further perform to execute an action for a particular transformed rule that modifies value of a given data field in the data record; re-evaluate conditions in the ordered list of conditions that depend upon the value of the given data field; re-evaluate the logical operators in the set of transformed rules; and continue processing the set of transformed rules sequentially starting from the particular transformed rule.
+
+Claim 15 [dep on 14]:
+The non-transitory computer-readable medium of claim 14, wherein the computer program instructions continue processing the set of transformed rules sequentially starting from a first transformed rule in the set of transformed rules when at least one logical operator is a negation operator.
+
+Claim 16 [dep on 9]:
+The non-transitory computer-readable medium of claim 9, wherein the computer program instructions further perform to group conditions in the ordered list of conditions by data field prior to the step of evaluating the data record in relation to the set of transformed rules.

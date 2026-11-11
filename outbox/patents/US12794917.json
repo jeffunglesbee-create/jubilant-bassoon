@@ -1,0 +1,192 @@
+{
+  "_ppubs_guid": "US-12794917-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "BlueVoyant LLC"
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method for streamlining and standardizing the ingest of data in a security monitoring system across a plurality of tenant networks, the security monitoring system comprising an edge module, a central control plane module, and a plurality of data gateway modules, each of the plurality of data gateway modules associated with a different log source, each of the plurality of tenant networks comprising at least one log source, the method comprising: receiving, by each of the plurality of data gateway modules of the security monitoring system, raw log data from the log source associated therewith; generating, by each of the plurality of data gateway modules of the security monitoring system, formatted log data based on the raw log data by processing the raw log data received from the log source associated therewith, the processing comprising: filtering the raw log data to include only security fields used for Security, Information, and Event Management (SIEM) detection to generate the formatted log data; and normalizing the raw log data based on a standard schema to generate the formatted log data;  ingesting, by the edge module of the security monitoring system, the formatted log data from the plurality of data gateway modules; automatically updating, by the central control plane module of the security monitoring system, a configuration of at least one of the plurality of data gateway modules, wherein automatically updating the configuration of at least one of the plurality of data gateway modules comprises updating any one or more of filtering rules or normalization parameters of the at least one data gateway module, and wherein the central control plane module automatically updates the configuration of the at least one of the plurality of data gateway modules based on a change to the log source(s) associated therewith; and implementing, by the security monitoring system, a security action related to at least one of the plurality of tenant networks based on the ingested formatted data."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method of claim 1, further comprising: updating, by the central control plane module of the security monitoring system, the filtering of the raw log data performed by the plurality of gateway modules based on an update to the relevant security fields."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The method of claim 1, further comprising: routing, by each of the plurality of data gateway modules of the security monitoring system, the raw log data to a tenant storage archive; and routing, by each of the plurality of data gateway modules of the security monitoring system, the formatted log data to a SIEM detection engine."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 4,
+      "claim_text": "The method of claim 3, further comprising: hosting the edge module by a SIEM provider server; hosting the SIEM detection engine by the SIEM provider server; and hosting the tenant storage archive by a tenant server."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 5,
+      "claim_text": "The method of claim 3, further comprising: hosting the edge module by a SIEM provider server; hosting the SIEM detection engine by the SIEM provider server, and hosting the tenant storage archive by the SIEM provider server."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 6,
+      "claim_text": "The method of claim 3, further comprising: hosting the SIEM detection engine by a third party server; hosting the edge module by the third party server; hosting the tenant storage archive by the tenant server."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 7,
+      "claim_text": "The method of claim 3, further comprising: hosting the SIEM detection engine by a third-party server; and hosting the tenant storage system by the third-party server."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The method of claim 1, further comprising: simultaneously updating, by the central control plane module of the security monitoring system, a configuration of the plurality of gateway modules based on a common change to the log sources associated therewith; and updating, by the central control plane module of the security monitoring system, a configuration of at least one of the plurality of gateway modules based on an exception related to the log source(s) associated therewith."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 9,
+      "claim_text": "The method of claim 1, further comprising: generating, by the central control plane module of the security monitoring system, a new gateway module to be associated with a new log source."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 10,
+      "claim_text": "The method of claim 1, wherein at least one of the plurality of tenant networks of the security monitoring system comprises a cloud-based log source and an on-premises log source, the method further comprising: generating the raw log data by the cloud-based log source; and generating the raw log data by the on-premises log source."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 11,
+      "claim_text": "The method of claim 1, further comprising: hosting the edge module by a SIEM provider server; and hosting the central control plane module by the SIEM provider server."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 12,
+      "claim_text": "The method of claim 1, further comprising: identifying, by the central control plane module, a log source that is no longer generating raw log data."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 13,
+      "claim_text": "The method of claim 1, wherein implementing the security action comprises generating a security alert to be transmitted to an administrator of the at least one tenant network."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 14,
+      "claim_text": "The method of claim 1, wherein implementing the security action comprises removing access to the at least one tenant network from one or more devices configured to access the at least one tenant network."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 15,
+      "claim_text": "A security monitoring system capable of streamlining and standardizing the ingest of data across a plurality of tenant networks, each of the plurality of tenant networks comprising at least one log source, the security monitoring system comprising: a plurality of data gateway modules, each of the plurality of data gateway modules associated with a different log source, each of the plurality of data gateway modules configured to: receive raw log data from the log source associated therewith; and generate formatted log data based on the raw log data by processing only the raw log data received from the log source associated therewith, wherein, to process the raw log data, each of the plurality of data gateway modules is configured to: filter the raw log data to include only security fields used for Security, Information, and Event Management (SIEM) detection to generate the formatted log data; and normalize the raw log data based on a standard schema to generate the formatted log data;   an edge module configured to: ingest the formatted log data from the plurality of data gateway modules; and  a central control plane module configured to: automatically update the configuration of at least one of the plurality of gateway modules in response to a change to the log source(s) associated therewith;  wherein the security monitoring system is configured to implement a security action related to at least one of the plurality of tenant networks based on the ingested formatted data."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 16,
+      "claim_text": "The system of claim 15, wherein the central control plane module is configured to update the configuration of the plurality of gateway modules to update the filtration of the raw log data based on an update to the relevant security fields."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 17,
+      "claim_text": "The system of claim 15, wherein at least one of the plurality of data gateway modules is configured to: route the raw log data to a tenant storage archive; and route the formatted log data to a SIEM detection engine."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 18,
+      "claim_text": "The system of claim 17, wherein the edge module is hosted by a SIEM provider server, wherein the SIEM detection engine is hosted by the SIEM provider server, and wherein the tenant storage archive is hosted by a tenant server."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 19,
+      "claim_text": "The system of claim 17, wherein the edge module is hosted by a SIEM provider server, wherein the SIEM detection engine is hosted by the SIEM provider server, and wherein the tenant storage archive is hosted by the SIEM provider server."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 20,
+      "claim_text": "The system of claim 17, wherein the SIEM detection engine is hosted by a third-party server, wherein the edge module is hosted by the third-party server, and wherein the tenant storage archive is hosted by a tenant server."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 21,
+      "claim_text": "The system of claim 17, wherein the SIEM detection engine is hosted by a third-party server, and wherein the tenant storage archive is hosted by the third-party server."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 22,
+      "claim_text": "The system of claim 15, wherein the central control plane module is configured to: simultaneously update the configuration of the plurality of gateway modules based on a common change to the log sources associated therewith; and update the configuration of at least one of the plurality of gateway modules based on an exception related to the log source(s) associated therewith."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 23,
+      "claim_text": "The system of claim 15, wherein the central control plane module is configured to generate a new gateway module to be associated with a new log source."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 24,
+      "claim_text": "The system of claim 15, wherein at least one of the plurality of tenant networks comprises a cloud-based log source and an on-premises log source."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 25,
+      "claim_text": "The system of claim 15, wherein the edge module is hosted by a SIEM provider server, and wherein the central control plane module is hosted by the SIEM provider server."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 26,
+      "claim_text": "The system of claim 15, wherein the central control plane module is configured to identify a log source that is no longer generating raw log data."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 27,
+      "claim_text": "The system of claim 15, wherein the security action comprises generating a security alert to be transmitted to an administrator of the at least one tenant network."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 28,
+      "claim_text": "The system of claim 15, wherein the security action comprises removing access to the at least one tenant network from one or more devices configured to access the at least one tenant network."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 29,
+      "claim_text": "A system for streamlining and standardizing the ingest of security data, the system comprising: a plurality of tenant networks, each of the plurality of tenant networks comprising at least one log source; and a security monitoring subsystem comprising: a plurality of data gateway modules, each of the plurality of data gateway modules associated with a different log source, each of the plurality of data gateway modules configured to: receive raw log data from the log source associated therewith; and generate formatted log data based on the raw log data by processing only the raw log data received from the log source associated therewith, wherein, to process the raw log data, each of the plurality of data gateway modules is configured to: filter the raw log data to include only security fields used for Security, Information, and Event Management (SIEM) detection to generate the formatted log data; and normalize the raw log data based on a standard schema to generate the formatted log data;  an edge module configured to: ingest the formatted log data from the plurality of data gateway modules; and  a central control plane module configured to: automatically update the configuration of at least one of the plurality of gateway modules in response to a change to the log source(s) associated therewith;  wherein the security monitoring subsystem is configured to implement a security action related to at least one of the plurality of tenant networks based on the ingested formatted data."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Thomas J",
+      "examiner_name_last": "Dailey"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Chris",
+      "inventor_name_last": "White"
+    },
+    {
+      "inventor_name_first": "Jake",
+      "inventor_name_last": "Vance"
+    },
+    {
+      "inventor_name_first": "Allen",
+      "inventor_name_last": "Duet"
+    },
+    {
+      "inventor_name_first": "Ed",
+      "inventor_name_last": "Schernau"
+    },
+    {
+      "inventor_name_first": "Neel",
+      "inventor_name_last": "Arora"
+    },
+    {
+      "inventor_name_first": "Chris",
+      "inventor_name_last": "Surel"
+    }
+  ],
+  "patent_date": "2026-11-10",
+  "patent_id": "12794917",
+  "patent_title": "Devices, systems, and methods for streamlining and standardizing the ingest of security data across multiple tenants"
+}

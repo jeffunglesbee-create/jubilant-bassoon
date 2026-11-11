@@ -1,0 +1,32 @@
+US12793110
+Title: Systems and methods for performing vendor- agnostic CTO/QTO (configure to order/quote to order)
+Grant date: 2026-11-10
+Assignee: Ingram Micro Inc.
+Inventors: Sanjib Sahoo, Jim Annes
+Source: ppubs
+PPUBS GUID: US-12793110-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A system for managing vendor-agnostic configure to order (CTO) and quote to order (QTO) processes, comprising: a Real-Time Data Mesh (RTDM) configured to aggregate, standardize, and normalize real-time data from diverse sources, including ERPs, CRM systems, and market intelligence, for structured and unstructured data processing, the RTDM implementing a data lake and comprising a plurality of purposive data stores, each purposive data store configured to persist standardized data aligned to particular analytical or operational requirements, the purposive data stores including at least a compliance data store, a pricing data store, and a market intelligence data store; a Single Pane of Glass User Interface (SPOG UI) configured to facilitate user interaction with features for instant conversion of shopping carts into subscription-based models, dynamic pricing tools, and real-time visibility into vendor performance and strategic partnerships; an Advanced Analytics and Machine-Learning (AAML) Module for analyzing product compatibility, optimizing subscription models, dynamic pricing strategies, sentiment analysis, trend forecasting, and behavioral analytics based on deep learning capabilities and machine learning algorithms; a Vendor-Agnostic CTO/QTO Integration Module (VACIM) comprising: a Process Standardization Engine configured to identify variations in vendor-specific quoting processes and uniformly implement processes across vendors to enforce uniform quoting logic using a rule engine based on predefined rule sets; a Vendor Data Transformation Gateway configured to convert raw vendor data into a standardized format; and an Adaptive Rebate Management System configured to perform dynamic rebate calculations.
+
+Claim 2 [dep on 1]:
+The system of claim 1, wherein the RTDM is configured to perform an ETL process for data integration and normalization to ensure uniformity and accessibility.
+
+Claim 3 [dep on 1]:
+The system of claim 1, further comprising a Geographical Market Mapper to align product offerings with regional demand patterns and compliance requirements.
+
+Claim 4 [dep on 1]:
+The system of claim 1, wherein the SPOG UI integrates a one-click conversion feature to streamline the transition to subscription-based models.
+
+Claim 5 [dep on 1]:
+The system of claim 1, wherein the AAML Module integrates with the Vendor Compatibility Analyzer for assessing product interoperability across vendors.
+
+Claim 6 [dep on 1]:
+The system of claim 1, further comprising a Global Pricing Harmonizer to ensure pricing parity across different markets, considering currency fluctuations and purchasing power parity.
+
+Claim 7 [dep on 1]:
+The system of claim 1, wherein the VACIM dynamically adjusts processes and pricing strategies based on machine learning-informed insights into market trends and vendor performance.

@@ -1,0 +1,127 @@
+{
+  "_ppubs_guid": "US-12792607-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "NetApp, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A storage system monitoring method, comprising: obtaining a segment of storage system monitoring data; generating a compressed segment from the segment and a reconstructed segment from the compressed segment; identifying locations in the reconstructed segment based on a comparison of the segment and the reconstructed segment, wherein the identified locations comprise anomalous values in the reconstructed segment; determining original values for the identified locations, wherein the original values are associated with indices in the reconstructed segment mapped to segment times; receiving a query indicating a portion of the storage system monitoring data; in response to the query, retrieving the identified locations, the original values and the compressed segment; and reconstructing the portion using the original values to replace the anomalous values at the identified locations."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method of claim 1, wherein: the locations are identified based on a difference between: the original values, first derivative, or second derivative of the segment and corresponding original values, first derivative, or second derivative of the reconstructed segment."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The method of claim 2, wherein: the locations are identified based on a position-dependent threshold."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The method of claim 1, wherein: the original values for the identified locations are values of the segment at the locations, or values for the identified locations are based on the values of the segment at the locations and corresponding values of the reconstructed segment at the locations."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The method of claim 1, wherein: the compressed segment is generated using a lossy compression method."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method of claim 1, wherein: the compressed segment is generated using at least one of polynomial approximation, frequency domain transformation, or audio encoding."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The method of claim 1, wherein: the storage system monitoring data includes CPU I/O wait time, CPU Guest Usage, CPU usage, System Status, number of connected clients, network usage, memory usage, disk usage, read latency, write latency, or operating system load."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The method of claim 1, wherein: identifying the locations occurs during the generation of the compressed segment."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 9,
+      "claim_text": "A monitoring system, comprising: at least one processor; and at least one computer-readable medium containing instruction that, when executed by the at least one processor, cause the monitoring system to perform operations comprising: obtaining a segment of storage system monitoring data; generating a compressed segment from the segment and a reconstructed segment from the compressed segment; identifying locations in the reconstructed segment based on a comparison of the segment and the reconstructed segment, wherein the identified locations comprise anomalous values in the reconstructed segment; determining original values for the identified locations, wherein the original values are associated with indices in the reconstructed segment mapped to segment times; receiving a query indicating a portion of the storage system monitoring data; in response to the query, retrieving the identified locations, the original values and the compressed segment; and reconstructing the portion using the original values to replace the anomalous values at the identified locations."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 10,
+      "claim_text": "The monitoring system of claim 9, wherein: the locations are identified based on a difference between: the original values, first derivative, or second derivative of the segment and corresponding original values, first derivative, or second derivative of the reconstructed segment."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 11,
+      "claim_text": "The monitoring system of claim 10, wherein: the locations are identified based on a position-dependent threshold."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 12,
+      "claim_text": "The monitoring system of claim 9, wherein: the original values for the identified locations are values of the segment at the locations, or values for the identified locations are based on the values of the segment at the locations and corresponding values of the reconstructed segment at the locations."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 13,
+      "claim_text": "The monitoring system of claim 9, wherein: the compressed segment is generated using a lossy compression method."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 14,
+      "claim_text": "The monitoring system of claim 9, wherein: the compressed segment is generated using at least one of polynomial approximation, frequency domain transformation, or audio encoding."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 15,
+      "claim_text": "The monitoring system of claim 9, wherein: the storage system monitoring data includes a table metric channel, a message metric channel, a streaming metric channel, a compaction metric channel, a commit log metric channel, a storage metric channel, a hint metric channel, an index metric channel, a buffer pool metric channel, a client management metric channel, a batch metric channel, or a virtual machine metric channel."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 16,
+      "claim_text": "The monitoring system of claim 9, wherein: identifying the locations occurs during the generation of the compressed segment."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 17,
+      "claim_text": "A non-transitory, computer-readable medium containing instruction that, when executed by at least one processor of a system, cause the system to perform operations comprising: obtaining a segment of storage system monitoring data; generating a compressed segment from the segment and a reconstructed segment from the compressed segment; identifying locations in the reconstructed segment based on a comparison of the segment and the reconstructed segment, wherein the identified locations comprise anomalous values in the reconstructed segment; determining original values for the identified locations, wherein the original values are associated with indices in the reconstructed segment mapped to segment times; receiving a query indicating a portion of the storage system monitoring data; in response to the query, retrieving the identified locations, the original values and the compressed segment; and reconstructing the portion using the original values to replace the anomalous values at the identified locations."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 18,
+      "claim_text": "The non-transitory, computer-readable medium of claim 17, wherein: the compressed segment is generated using at least one of polynomial approximation, frequency domain transformation, or audio encoding."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 19,
+      "claim_text": "The non-transitory, computer-readable medium of claim 17, wherein: the storage system monitoring data includes a table metric channel, a message metric channel, a streaming metric channel, a compaction metric channel, a commit log metric channel, a storage metric channel, a hint metric channel, an index metric channel, a buffer pool metric channel, a client management metric channel, a batch metric channel, or a virtual machine metric channel."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 20,
+      "claim_text": "The non-transitory, computer-readable medium of claim 17, wherein: identifying the locations occurs during the generation of the compressed segment."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Nam T",
+      "examiner_name_last": "Tran"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Carlos",
+      "inventor_name_last": "Rolo"
+    }
+  ],
+  "patent_date": "2026-11-10",
+  "patent_id": "12792607",
+  "patent_title": "Systems and methods for managing storage system monitoring data using value detection"
+}

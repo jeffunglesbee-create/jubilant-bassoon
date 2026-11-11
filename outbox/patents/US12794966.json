@@ -1,0 +1,151 @@
+{
+  "_ppubs_guid": "US-12794966-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "CISCO TECHNOLOGY, INC."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A computer-implemented method comprising: obtaining, from a monitoring agent, telemetry data associated with one or more network communications provided to a web-based service; generating web performance telemetry data from the telemetry data by injecting one or more attributes about at least one of the monitoring agent or the one or more network communications, wherein the one or more attributes are obtained separately from the telemetry data; and streaming the web performance telemetry data to one or more observability services by: instantiating, for each integration specifying a respective observability service of the one or more observability services, a dedicated exporter instance, replicating the web performance telemetry data for each instantiated dedicated exporter instance, and exporting the replicated web performance telemetry data to each respective observability service."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The computer-implemented method of claim 1, wherein the one or more network communications include a synthetic test having a plurality of requests, and the telemetry data is responsive to the synthetic test and includes page load performance metrics."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The computer-implemented method of claim 2, further comprising: converting the telemetry data from a Hypertext Transfer Protocol (HTTP) archive (HAR) format into an Open Telemetry Protocol (OTLP) format."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 4,
+      "claim_text": "The computer-implemented method of claim 2, further comprising: translating each of the plurality of requests into a span that includes metadata of a respective request, and the page load performance metrics including a start time of the respective request and an end time of the respective request; and generating at least one trace that includes a first identifier of the monitoring agent, a second identifier of the synthetic test, and a plurality of spans for the plurality of requests."
+    },
+    {
+      "claim_dependent": 4,
+      "claim_sequence": 5,
+      "claim_text": "The computer-implemented method of claim 4, wherein generating the web performance telemetry data further includes: periodically querying an external service associated with the monitoring agent for the one or more attributes; and storing the one or more attributes in a local storage."
+    },
+    {
+      "claim_dependent": 5,
+      "claim_sequence": 6,
+      "claim_text": "The computer-implemented method of claim 5, wherein generating the web performance telemetry data further includes: removing one or more stale performance metrics from the telemetry data based on a predetermined time threshold to generate real-time telemetry data; obtaining, from the local storage, the one or more attributes based on the real-time telemetry data; and adding the one or more attributes to the real-time telemetry data."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 7,
+      "claim_text": "An apparatus comprising: a memory; a network interface configured to enable network communications; and a processor, wherein the processor is configured to perform a method comprising: obtaining, from a monitoring agent, telemetry data associated with one or more network communications provided to a web-based service; generating web performance telemetry data from the telemetry data by injecting one or more attributes about at least one of the monitoring agent or the one or more network communications, wherein the one or more attributes are obtained separately from the telemetry data; and streaming the web performance telemetry data to one or more observability services by: instantiating, for each integration specifying a respective observability service of the one or more observability services, a dedicated exporter instance, replicating the web performance telemetry data for each instantiated dedicated exporter instance, and exporting the replicated web performance telemetry data to each respective observability service."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 8,
+      "claim_text": "The apparatus of claim 7, wherein the one or more network communications include a synthetic test having a plurality of requests, and the telemetry data is responsive to the synthetic test and includes page load performance metrics."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 9,
+      "claim_text": "The apparatus of claim 8, wherein the processor is further configured to perform: converting the telemetry data from a Hypertext Transfer Protocol (HTTP) archive (HAR) format into an Open Telemetry Protocol (OTLP) format."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 10,
+      "claim_text": "The apparatus of claim 8, wherein the processor is further configured to perform: translating each of the plurality of requests into a span that includes metadata of a respective request, and the page load performance metrics including a start time of the respective request and an end time of the respective request; and generating at least one trace that includes a first identifier of the monitoring agent, a second identifier of the synthetic test, and a plurality of spans for the plurality of requests."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 11,
+      "claim_text": "The apparatus of claim 10, wherein the processor is configured to generate the web performance telemetry data by: periodically querying an external service associated with the monitoring agent for the one or more attributes; and storing the one or more attributes in a local storage."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 12,
+      "claim_text": "The apparatus of claim 11, wherein the processor is configured to generate the web performance telemetry data further by: removing one or more stale performance metrics from the telemetry data based on a predetermined time threshold to generate real-time telemetry data; obtaining, from the local storage, the one or more attributes based on the real-time telemetry data; and adding the one or more attributes to the real-time telemetry data."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 13,
+      "claim_text": "One or more non-transitory computer readable storage media encoded with software comprising computer executable instructions that, when executed by a processor, cause the processor to perform a method including: obtaining, from a monitoring agent, telemetry data associated with one or more network communications provided to a web-based service; generating web performance telemetry data from the telemetry data by injecting one or more attributes about at least one of the monitoring agent or the one or more network communications, wherein the one or more attributes are obtained separately from the telemetry data; and streaming the web performance telemetry data to one or more observability services by: instantiating, for each integration specifying a respective observability service of the one or more observability services, a dedicated exporter instance, replicating the web performance telemetry data for the instantiated dedicated exporter instance, and exporting the replicated web performance telemetry data to the respective observability service."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 14,
+      "claim_text": "The one or more non-transitory computer readable storage media according to claim 13, wherein the one or more network communications include a synthetic test having a plurality of requests, and the telemetry data is responsive to the synthetic test and includes page load performance metrics."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 15,
+      "claim_text": "The one or more non-transitory computer readable storage media according to claim 14, wherein the computer executable instructions cause the processor to perform: converting the telemetry data from a Hypertext Transfer Protocol (HTTP) archive (HAR) format into an Open Telemetry Protocol (OTLP) format."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 16,
+      "claim_text": "The one or more non-transitory computer readable storage media according to claim 14, wherein the computer executable instructions cause the processor to perform: translating each of the plurality of requests into a span that includes metadata of a respective request, and the page load performance metrics including a start time of the respective request and an end time of the respective request; and generating at least one trace that includes a first identifier of the monitoring agent, a second identifier of the synthetic test, and a plurality of spans for the plurality of requests."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 17,
+      "claim_text": "The computer-implemented method of claim 1, wherein the one or more network communications include a synthetic test having a plurality of requests for testing loading speed of a plurality of elements within a Document Object Model (DOM) of a web page of the web-based service, the telemetry data being responsive to the plurality of requests and being in a form of a waterfall chart including, for each of a plurality of objects on the web page, one or more individual timings."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 18,
+      "claim_text": "The computer-implemented method of claim 1, further comprising: querying a metadata service for test identifiers having associated integration with one or more observability services; and filtering the obtained telemetry data to remove messages that have test identifiers that do not match the test identifiers obtained from the metadata service."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 19,
+      "claim_text": "The computer-implemented method of claim 2, wherein the one or more attributes include an integration identifier that uniquely identifies an integration between the synthetic test and a target observability service of the one or more observability services."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 20,
+      "claim_text": "The computer-implemented method of claim 19, further comprising: maintaining, for the integration, a list of associated synthetic tests and determining, based on the list of associated synthetic tests, whether the web performance telemetry data for the synthetic test is to be exported to the target observability service."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Joseph L",
+      "examiner_name_last": "Greene"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Antonio",
+      "inventor_name_last": "Jimenez Martinez"
+    },
+    {
+      "inventor_name_first": "Vu Thien Nga",
+      "inventor_name_last": "Nguyen"
+    },
+    {
+      "inventor_name_first": "Sergio Augusto Sousa",
+      "inventor_name_last": "Freitas"
+    },
+    {
+      "inventor_name_first": "Xavier",
+      "inventor_name_last": "Vilaca"
+    },
+    {
+      "inventor_name_first": "Pedro",
+      "inventor_name_last": "Rocha Gonçalves"
+    },
+    {
+      "inventor_name_first": "Vitaly",
+      "inventor_name_last": "Kumov"
+    },
+    {
+      "inventor_name_first": "Serhiy",
+      "inventor_name_last": "Boychenko"
+    }
+  ],
+  "patent_date": "2026-11-10",
+  "patent_id": "12794966",
+  "patent_title": "Telemetry based synthetic data tracing for network and application performance"
+}
