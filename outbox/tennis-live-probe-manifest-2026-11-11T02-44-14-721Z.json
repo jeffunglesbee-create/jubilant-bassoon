@@ -1,0 +1,164 @@
+{
+  "ts": "2026-11-11T02:44:14.721Z",
+  "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "sw": "2026-11-07c",
+  "triggered_by": "schedule",
+  "relayReachable": true,
+  "relayLiveMatches": 15,
+  "relayLiveMatchesAllTiers": 165,
+  "tiersSeen": [
+    "atp_250",
+    "challenger",
+    "other",
+    "utr",
+    "wta_250"
+  ],
+  "startedCards": 0,
+  "dayFeedCount": 161,
+  "dayFeedTruncated": false,
+  "expectedTournaments": [
+    "Sopo, Colombia",
+    "Stockholm",
+    "WTA Finals"
+  ],
+  "pageLoaded": true,
+  "tennisSectionPresent": true,
+  "tennisCardCount": 15,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 15,
+  "cardsMissingScore": [],
+  "cardsMissingOpponent": [],
+  "chips": [
+    {
+      "home": "L. Sonego v A. Tabilo",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "T. Fritz v C. Norrie",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "B. Gojo v U. Humbert",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "P. Hercog v C. Monnet",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "T. Maria v A. Tubello",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "A. Lazaro Garcia v J. Ortenzi",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "I. Burillo v J. Grabher",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "L. Samson v S. Costoulas",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "L. Bronzetti v E. Mandlik",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "A. Shevchenko v C. Ruud",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "B. Andreescu v L. Pigossi",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "M. Carle v M. Bassols Ribera",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "M. Kecmanović v H. Rune",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "E. Svitolina v K. Muchova",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "A. Sabalenka v M. Andreeva",
+      "chip": "(no chip)"
+    }
+  ],
+  "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
+    "GET https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/outbox/mlbn-schedule.json — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-10 — net::ERR_ABORTED",
+    "GET https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/outbox/mlbn-schedule.json — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
+  ],
+  "relayCallsFromPage": [
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-11",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-11"
+  ],
+  "renderedTournaments": [
+    "Sopo, Colombia",
+    "Stockholm",
+    "WTA Finals"
+  ],
+  "missingTournaments": [],
+  "diagRan": true,
+  "feedLiveOutcome": "ok:16",
+  "feedByDateOutcome": "ok:161",
+  "rowsBeforeTier": 165,
+  "rowsAfterTier": 15,
+  "sectionReturned": 15,
+  "sectionInAllData": true,
+  "producerThrew": null,
+  "renderPipeline": {
+    "absent": false,
+    "scheduled": 2,
+    "structuralRenders": 1,
+    "skippedStructuralRenders": 0
+  },
+  "tennisSectionCount": 1,
+  "tennisSectionParent": "main#main.main",
+  "tennisSectionHtmlLength": 89711,
+  "sectionsInModel": [
+    "Tennis"
+  ],
+  "sectionsInDom": [
+    "Tennis"
+  ],
+  "tennisGamesInModel": 15,
+  "tennisSectionAnatomy": {
+    "tag": "div",
+    "className": "sport-section",
+    "id": "(none)",
+    "heading": "(no heading)",
+    "childTags": [
+      "div.section-head",
+      "div.games-list"
+    ],
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">15 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"L. Sonego v A. Tabilo\" data-away=\""
+  },
+  "domSectionCardCounts": [
+    {
+      "sport": "Tennis",
+      "cards": 15
+    }
+  ],
+  "sampleCardText": "📌★ L. Sonego v A. Tabilo Stockholm · Round of 16 · hard + Multiview Stockholm ALONE ON SCREEN $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 7:00 AM Tennis ChannelTV loginCable/satel",
+  "verdict": "PASS",
+  "reason": "relay 15 live, page 15 card(s), 0 of 0 STARTED with a set score (15 not yet under way, correctly chipless), 15 with an opponent; tournaments proven on the page: Sopo, Colombia, Stockholm, WTA Finals"
+}
