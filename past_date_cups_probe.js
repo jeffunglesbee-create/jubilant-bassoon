@@ -15,6 +15,11 @@
 // The EFL Trophy's dates are DISCOVERED (the relay answered 200 with no games on every date tried by hand), by scanning the relay for the dates with games; how many dates were
 // scanned and found is printed, and a Trophy with no date found is reported as such, not as a pass.
 //
+// "PAST" IS THE PAGE'S, NOT UTC'S. The first run (2026-11-11T03:23Z, which is 22:23 on 11-10 in New York) judged the Trophy on 2026-11-10, a date the relay lists and the page calls TODAY:
+// goToDate takes its today branch (fetchSchedule, the ESPN sweep), not the relay path under test, and the headless browser is answered empty by ESPN, so it drew 0 cards and the verdict
+// read FAIL for a reason that was the probe's. Now every scan starts from the page's own window.TODAY_ISO minus one day, every case records pastBranch (date < TODAY_ISO), and a case
+// that is not on the past branch makes the verdict BROKEN-DATE instead of a verdict about the cups.
+//
 // Output: outbox/past-date-cups-probe-manifest-<ts>.json (booleans and counts, not prose) and outbox/past-date-cups-probe-<ts>.png (the FA Cup section, 2026-11-07).
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
@@ -42,17 +47,6 @@ const addDays = (iso, n) => new Date(Date.parse(iso + 'T12:00:00Z') + n * 864000
 
 (async () => {
   const out = { at: new Date().toISOString(), url: FIELD_URL, relay: RELAY, cases: [], controls: {}, errors: [], coverage: '' };
-  const todayUtc = out.at.slice(0, 10);
-
-  // discover the EFL Trophy's dates: the past 90 days, 6 requests at a time
-  const scanDays = Array.from({ length: 90 }, (_, i) => addDays(todayUtc, -(i + 1)));
-  const found = [];
-  for (let i = 0; i < scanDays.length; i += 6) {
-    const batch = await Promise.all(scanDays.slice(i, i + 6).map(async d => ({ d, r: await relayGames('efltrophy', d) })));
-    for (const b of batch) if (b.r.ok && b.r.games.length) found.push({ date: b.d, games: b.r.games.length });
-  }
-  out.trophyScan = { scanned: scanDays.length, datesWithGames: found };
-  CUPS[2].dates = found.slice(0, 2).map(f => f.date);
 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US', timezoneId: 'America/New_York' });
@@ -62,6 +56,20 @@ const addDays = (iso, n) => new Date(Date.parse(iso + 'T12:00:00Z') + n * 864000
   await page.waitForFunction(() => typeof window.goToDate === 'function', null, { timeout: 60000 });
   await page.waitForTimeout(6000);
   out.swVersion = await page.evaluate(() => window.SW_VERSION || null);
+  const todayIso = await page.evaluate(() => window.TODAY_ISO || null);   // the page's own today (ET, rolls over at 04:00): what goToDate compares with
+  out.todayIso = todayIso;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(todayIso || '')) { out.verdict = 'BROKEN-READING'; out.coverage = 'window.TODAY_ISO was not readable, so no date can be called past'; fs.mkdirSync('outbox', { recursive: true }); fs.writeFileSync(`outbox/past-date-cups-probe-manifest-${out.at.replace(/[:.]/g, '-')}.json`, JSON.stringify(out, null, 2)); console.log(JSON.stringify({ verdict: out.verdict, todayIso })); await browser.close(); process.exit(1); }
+
+  // discover the EFL Trophy's dates: the 90 days BEFORE the page's today, 6 requests at a time, and keep the two most recent with games
+  const scanDays = Array.from({ length: 90 }, (_, i) => addDays(todayIso, -(i + 1)));
+  const found = [];
+  for (let i = 0; i < scanDays.length; i += 6) {
+    const batch = await Promise.all(scanDays.slice(i, i + 6).map(async d => ({ d, r: await relayGames('efltrophy', d) })));
+    for (const b of batch) if (b.r.ok && b.r.games.length) found.push({ date: b.d, games: b.r.games.length });
+  }
+  found.sort((a, b) => (a.date < b.date ? 1 : -1));
+  out.trophyScan = { scanned: scanDays.length, from: scanDays[scanDays.length - 1], to: scanDays[0], datesWithGames: found };
+  CUPS[2].dates = found.slice(0, 2).map(f => f.date);
 
   // goToDate(iso), then wait for the slate to settle: the card count is non-zero and unchanged for two reads 1.5 s apart, or the page shows its empty note
   const settle = async () => {
@@ -85,7 +93,7 @@ const addDays = (iso, n) => new Date(Date.parse(iso + 'T12:00:00Z') + n * 864000
     const [pg, rl] = await Promise.all([read(label), relayGames(key, iso)]);
     const pgSet = new Set(pg.cards), rlSet = new Set(rl.games);
     const missing = [...rlSet].filter(x => !pgSet.has(x)), extra = [...pgSet].filter(x => !rlSet.has(x));
-    return { label, key, date: iso, settled: s.settled, pageCardsTotal: s.cards, relayOk: rl.ok, relayGames: rl.games.length, sections: pg.sections, cards: pg.cards.length,
+    return { label, key, date: iso, pastBranch: iso < todayIso, settled: s.settled, pageCardsTotal: s.cards, relayOk: rl.ok, relayGames: rl.games.length, sections: pg.sections, cards: pg.cards.length,
              countEqual: pg.cards.length === rl.games.length, namesEqual: missing.length === 0 && extra.length === 0, missingOnPage: missing.slice(0, 5), extraOnPage: extra.slice(0, 5) };
   };
 
@@ -107,16 +115,18 @@ const addDays = (iso, n) => new Date(Date.parse(iso + 'T12:00:00Z') + n * 864000
   const perCup = Object.fromEntries(CUPS.map(c => [c.key, out.cases.filter(x => x.key === c.key)]));
   out.summary = {
     controlsOk: out.controls.ok,
+    allDatesOnThePastBranch: allPast,
     casesRun: out.cases.length,
     cupsWithNoDateToJudge: CUPS.filter(c => !(c.dates || []).length).map(c => c.key),
     perCup: Object.fromEntries(Object.entries(perCup).map(([k, v]) => [k, { dates: v.map(x => x.date), allSettled: v.every(x => x.settled), allSectionsPresent: v.length > 0 && v.every(x => x.sections === 1), allCountsEqual: v.length > 0 && v.every(x => x.relayGames > 0 && x.countEqual), allNamesEqual: v.length > 0 && v.every(x => x.namesEqual) }])),
   };
+  const allPast = [out.controls.positive, out.controls.negative, ...out.cases].every(c => c.pastBranch === true);
   const cupsPass = cupsWithDates.length === 3 && Object.values(out.summary.perCup).every(c => c.allSettled && c.allSectionsPresent && c.allCountsEqual && c.allNamesEqual);
-  out.verdict = !out.controls.ok ? 'BROKEN-READING' : cupsPass ? 'PASS' : (out.summary.cupsWithNoDateToJudge.length ? 'PARTIAL-NO-DATE-FOR-' + out.summary.cupsWithNoDateToJudge.join(',').toUpperCase() : 'FAIL');
-  out.coverage = `one viewport (1440x900, America/New_York), one load of ${BASE}; window.goToDate called for ${out.cases.length + 2} dates (2 controls); cards compared with the relay's /v2/games read in the same run (counts and home|away sets); the EFL Trophy's dates were found by scanning ${scanDays.length} days (${found.length} with games); scores, streams and live behaviour are NOT judged here, only which games a past day lists`;
+  out.verdict = !allPast ? 'BROKEN-DATE' : !out.controls.ok ? 'BROKEN-READING' : cupsPass ? 'PASS' : (out.summary.cupsWithNoDateToJudge.length ? 'PARTIAL-NO-DATE-FOR-' + out.summary.cupsWithNoDateToJudge.join(',').toUpperCase() : 'FAIL');
+  out.coverage = `one viewport (1440x900, America/New_York), one load of ${BASE}; window.goToDate called for ${out.cases.length + 2} dates (2 controls); cards compared with the relay's /v2/games read in the same run (counts and home|away sets); the page's own today was ${todayIso} and every judged date is before it; the EFL Trophy's dates were found by scanning the ${scanDays.length} days ${scanDays[scanDays.length - 1]}..${scanDays[0]} (${found.length} with games); scores, streams and live behaviour are NOT judged here, only which games a past day lists`;
   fs.mkdirSync('outbox', { recursive: true });
   fs.writeFileSync(`outbox/past-date-cups-probe-manifest-${out.at.replace(/[:.]/g, '-')}.json`, JSON.stringify(out, null, 2));
-  console.log(JSON.stringify({ verdict: out.verdict, controls: out.controls.ok, summary: out.summary, trophyScan: out.trophyScan, swVersion: out.swVersion }, null, 2));
+  console.log(JSON.stringify({ verdict: out.verdict, todayIso, controls: out.controls.ok, summary: out.summary, trophyScan: out.trophyScan, swVersion: out.swVersion }, null, 2));
   await browser.close();
   process.exit(out.verdict === 'PASS' ? 0 : 1);
 })().catch(e => { console.error('probe crashed:', e); process.exit(2); });
