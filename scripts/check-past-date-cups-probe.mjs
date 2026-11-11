@@ -17,7 +17,7 @@ process.on('exit', () => rmSync(root, { recursive: true, force: true }));
 
 const STUB = `
 const TODAY = process.env.STUB_TODAY || '2026-11-10';
-const DEFECT = process.env.STUB_DEFECT || '';
+const DEFECT = process.env.STUB_DEFECT;
 const GAMES = {
   'epl|2026-11-07': [['Arsenal','Chelsea'],['Spurs','Leeds']],
   'facup|2026-11-07': [['A','B'],['C','D'],['E','F']], 'facup|2026-11-08': [['G','H'],['I','J']],
@@ -49,7 +49,7 @@ const run = (src, env) => {
   const d = join(root, 'run' + n++); mkdirSync(d);
   writeFileSync(join(d, 'probe.js'), src); cpSync(join(root, 'stub/node_modules'), join(d, 'node_modules'), { recursive: true });
   let code = 0, err = '';
-  try { execFileSync('node', ['probe.js'], { cwd: d, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000 }); } catch (e) { code = e.status ?? 1; err = String(e.stderr || ''); }
+  try { execFileSync('node', ['probe.js'], { cwd: d, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000 }); } catch (e) { code = e.status ?? 1; err = String(e.stderr); }
   let verdict = null;
   try { const f = JSON.parse(readFileSync(join(d, 'outbox', readdirOutbox(d)), 'utf8')); verdict = f.verdict; } catch { verdict = 'NO-MANIFEST ' + err.slice(0, 160).replace(/\n/g, ' '); }
   return { code, verdict };
