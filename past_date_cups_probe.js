@@ -111,6 +111,7 @@ const addDays = (iso, n) => new Date(Date.parse(iso + 'T12:00:00Z') + n * 864000
       if (sec) { await sec.scrollIntoViewIfNeeded(); await sec.screenshot({ path: `outbox/past-date-cups-probe-${out.at.replace(/[:.]/g, '-')}.png` }).catch(e => out.errors.push('screenshot: ' + e.message)); }
     }
   }
+  const allPast = [out.controls.positive, out.controls.negative, ...out.cases].every(c => c.pastBranch === true);
   const cupsWithDates = CUPS.filter(c => (c.dates || []).length).map(c => c.key);
   const perCup = Object.fromEntries(CUPS.map(c => [c.key, out.cases.filter(x => x.key === c.key)]));
   out.summary = {
@@ -120,7 +121,6 @@ const addDays = (iso, n) => new Date(Date.parse(iso + 'T12:00:00Z') + n * 864000
     cupsWithNoDateToJudge: CUPS.filter(c => !(c.dates || []).length).map(c => c.key),
     perCup: Object.fromEntries(Object.entries(perCup).map(([k, v]) => [k, { dates: v.map(x => x.date), allSettled: v.every(x => x.settled), allSectionsPresent: v.length > 0 && v.every(x => x.sections === 1), allCountsEqual: v.length > 0 && v.every(x => x.relayGames > 0 && x.countEqual), allNamesEqual: v.length > 0 && v.every(x => x.namesEqual) }])),
   };
-  const allPast = [out.controls.positive, out.controls.negative, ...out.cases].every(c => c.pastBranch === true);
   const cupsPass = cupsWithDates.length === 3 && Object.values(out.summary.perCup).every(c => c.allSettled && c.allSectionsPresent && c.allCountsEqual && c.allNamesEqual);
   out.verdict = !allPast ? 'BROKEN-DATE' : !out.controls.ok ? 'BROKEN-READING' : cupsPass ? 'PASS' : (out.summary.cupsWithNoDateToJudge.length ? 'PARTIAL-NO-DATE-FOR-' + out.summary.cupsWithNoDateToJudge.join(',').toUpperCase() : 'FAIL');
   out.coverage = `one viewport (1440x900, America/New_York), one load of ${BASE}; window.goToDate called for ${out.cases.length + 2} dates (2 controls); cards compared with the relay's /v2/games read in the same run (counts and home|away sets); the page's own today was ${todayIso} and every judged date is before it; the EFL Trophy's dates were found by scanning the ${scanDays.length} days ${scanDays[scanDays.length - 1]}..${scanDays[0]} (${found.length} with games); scores, streams and live behaviour are NOT judged here, only which games a past day lists`;
