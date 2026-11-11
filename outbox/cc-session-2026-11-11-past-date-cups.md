@@ -1,0 +1,34 @@
+# Session 2026-11-11: past-date navigation shows the FA Cup, the EFL Cup and the EFL Trophy
+
+Relay CC-CMD `docs/CC-CMD-2026-08-08-fa-cup-coverage.md`, Task 6. Owner's decision, 2026-11-11: "Task 6, yes all 3" (the EFL Cup and the EFL Trophy join the FA Cup).
+
+**HEAD progression (jubilant-bassoon, all on `main`).** `225f4a0` at the start. `2d5b6df` the change. `349b86a` the dispatch-only probe and its workflow. `225f70c` the probe takes "past" from the page. `e72cf05` the probe's crash fixed, and a check that runs it against a stub. The close-out commit follows this document.
+**Smoke:** 1080 to 1083 (PD-1, PD-2, PD-3). **SW_VERSION:** `2026-11-07c` to `2026-11-10a` (`index.html` and `sw.js`).
+
+## What was built (`2d5b6df`, `src/legacy/field.js`, synced to `index.html`)
+
+`const V2_PAST_DATE_ONLY = { facup: 'FA Cup', eflcup: 'EFL Cup', efltrophy: 'EFL Trophy' }`, and `fetchRelayDateSections` now asks for `FIELD_V2_SOURCES`' switched-on keys PLUS `Object.keys(V2_PAST_DATE_ONLY)` and labels a section with `V2_SECTION_LABEL[key] ?? V2_PAST_DATE_ONLY[key]`.
+
+**Deviation from the CC-CMD's text, and why.** Task 6 said "a client edit in `FIELD_V2_SOURCES` and `V2_SECTION_LABEL`". `FIELD_V2_SOURCES` also drives `fetchV2AllScores`, the live poll: the cups added there would be polled every cycle, would feed a second score slot, and `V2_PERIOD_PREFIX` has no entry for them. The three cups are `SOCCER_LEAGUES` cards, not V2-polled sports. A separate past-date-only map asks the relay for past days and leaves the live path alone. Re-verified against the source (Rule 72), not inherited. The labels are held equal to the `SOCCER_LEAGUES` section names (`eng.fa` 'FA Cup', `eng.league_cup` 'EFL Cup', `eng.trophy` 'EFL Trophy') by `scripts/check-v2-section-labels.mjs`.
+
+## Verification, in the order it happened
+
+1. **Local.** Smoke 1083 passed, 0 failed. All 26 deploy-gate commands (16 `check-*`, 10 `mutate-*`) 0 red; my first pass ran only the `check-*` ones, and the review caught that `mutate-relay-date-sections.mjs` M2 would then fail for the wrong reason (a crash on null, because tests 1 to 4 now asked for cups): fixed with `NO_PAST` in `scripts/check-relay-date-sections.mjs` (tests 1 to 4 keep their original meaning), the rest of the review's findings (an off-key in 5a, `sport` and `_section` asserted) fixed too. `scripts/mutate-past-date-cups.mjs`: 15 of 15 mutants caught, each by a red line that names the clause it breaks, all 15 named new assertions reached.
+2. **Deploy.** The live `sw.js` read `const SW_VERSION = '2026-11-10a'` (`html_probe`, 2026-11-11 03:2xZ).
+3. **Live probe, `past-date-cups-probe.yml` (dispatch-only, CI-as-proxy, Rule 90).** It loads the deployed page, calls `window.goToDate(iso)` and compares the cards with the relay's `/v2/games?sport=<key>&date=<iso>` read in the same run, as counts and as sets of `home|away` names. Three runs:
+   - **Run `42952315599`: FAIL, and the defect was the probe's.** Manifest `outbox/past-date-cups-probe-manifest-2026-11-11T03-23-44-891Z.json`. FA Cup 2026-11-07 33 of 33 and 2026-11-08 4 of 4, EFL Cup 2026-10-28 5 of 5 and 2026-10-27 2 of 2, EFL Trophy 2026-11-03 4 of 4 all passed; EFL Trophy 2026-11-10 read 0 cards for the relay's 17 games. The run was 22:23 in New York on 11-10, so the page's `TODAY_ISO` was `2026-11-10` and `goToDate('2026-11-10')` took its today branch (`fetchSchedule`, the ESPN sweep), not the relay path under test. The probe had scanned dates from UTC. The page drew 15 cards in total on that date and none for the Trophy; the cause of that zero was NOT investigated (an earlier probe measured that ESPN answers a headless browser empty; that is the likely reading and it is UNVERIFIED here). It is evidence about nothing Task 6 changed.
+   - **Run `42952726748`: crashed.** `ReferenceError: Cannot access 'allPast' before initialization`: my edit for the fix above put `allPast` into the summary before its `const`, and the edit had not been executed. No manifest (an orphan screenshot, `outbox/past-date-cups-probe-2026-11-11T03-27-16-315Z.png`, was committed by the run's commit step).
+   - **Run `42953985795`: PASS at `e72cf05`.** Manifest `outbox/past-date-cups-probe-manifest-2026-11-11T03-38-44-397Z.json`, screenshot `outbox/past-date-cups-probe-2026-11-11T03-38-44-397Z.png` (the FA Cup section of 2026-11-07, 33 matches). The page's own `TODAY_ISO` `2026-11-10`; all 8 dates before it. Controls: positive Premier League 2026-11-07, 4 cards for 4 relay games, names equal; negative FA Cup 2026-10-20, relay 0, page 0 sections and 0 cards. Cases: FA Cup 2026-11-07 33/33, 2026-11-08 4/4; EFL Cup 2026-10-28 5/5, 2026-10-27 2/2; EFL Trophy 2026-11-03 4/4, 2026-10-27 4/4 (dates found by scanning 2026-08-12..2026-11-09, 11 with games). Every case: one `.sport-section` for the label, count equal, name sets equal, nothing missing, nothing extra. `swVersion` read from the page: `2026-11-10a`.
+4. **The probe's own fix is tested.** `scripts/check-past-date-cups-probe.mjs` runs the real `past_date_cups_probe.js` unchanged against a stub browser and relay: four scenarios (PASS, FAIL, BROKEN-DATE twice) and four mutants of the date guard (guard removed, scan includes the page's today, `<` relaxed to `<=`, `pastBranch` always true), each changing a verdict: 8 of 8. It tests the probe's flow and its verdict logic. It does not test the page, the relay, Playwright or the DOM selectors. Replay of run 1's manifest under the new guard: 11-10 is not past, so BROKEN-DATE.
+
+**Coverage of the PASS (Rule 91):** one viewport (1440x900, America/New_York), one load, 8 dates (2 controls, 6 cup cases), counts and name sets only. Scores, streams and live behaviour are NOT judged. Past-date cards for every sport are drawn by the same builder; what a past card shows beyond the pairing (score, `FT`) was not read here.
+
+## Recorded, not changed (TOUCH-ONLY)
+
+- The pre-existing `Promise.allSettled` isolation guard (assertion 2a in `scripts/check-relay-date-sections.mjs`) is caught by a crash, not by the assertion that names it, when `Promise.all` replaces it: measured while writing `mutate-past-date-cups.mjs`. Adjacent to this change.
+- `scripts/check-probe-meta-read.mjs` exits 1 in this sandbox on a clean HEAD too: Playwright's headless shell is not installed here (`chromium_headless_shell-1228`). It runs on a runner in `forward-window-probe.yml`. Not part of this work.
+- The date sweep caches its result for the tab session (relay CC-CMD Task 6's last sentence), unchanged.
+
+## Done condition
+
+Task 6's own: on a past date with FA Cup games `goToDate(iso)` renders a section labelled `FA Cup`. Read: run `42953985795`, FA Cup 2026-11-07, 1 section, 33 cards, equal to the relay's 33. The same for the EFL Cup and the EFL Trophy. No carry-forward.

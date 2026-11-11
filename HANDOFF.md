@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-11 — past-date navigation shows the FA Cup, the EFL Cup and the EFL Trophy
+
+Commits `2d5b6df` (the change, `SW_VERSION 2026-11-10a`), `349b86a`, `225f70c` and `e72cf05` (the live probe and its fixes). Session doc: `outbox/cc-session-2026-11-11-past-date-cups.md`. The owner's "yes all 3" decided that the two EFL cups join the FA Cup (relay CC-CMD `docs/CC-CMD-2026-08-08-fa-cup-coverage.md`, Task 6).
+
+**What changed.** `V2_PAST_DATE_ONLY` (`facup`, `eflcup`, `efltrophy` to the three section labels) in `src/legacy/field.js`; `fetchRelayDateSections` asks the relay for those keys on top of `FIELD_V2_SOURCES`' switched-on ones. NOT in `FIELD_V2_SOURCES`: that map also drives the live poll (a second score slot, no `V2_PERIOD_PREFIX` entry), which the three cups must not join. The labels are held equal to the `SOCCER_LEAGUES` sections by `check-v2-section-labels.mjs`, `check-relay-date-sections.mjs` (5a to 5g) and smoke PD-1 to PD-3 (1080 to 1083).
+
+**Proof.** `mutate-past-date-cups.mjs` 15 of 15 mutants caught. Live, run `42953985795` (`past-date-cups-probe.yml`, manifest `outbox/past-date-cups-probe-manifest-2026-11-11T03-38-44-397Z.json`): PASS, both controls ok, FA Cup 33/33 and 4/4, EFL Cup 5/5 and 2/2, EFL Trophy 4/4 and 4/4, every judged date before the page's own `TODAY_ISO`. Two earlier runs were the probe's own defects and are in the session doc (a date that was "today" in New York; a crash from an unexecuted edit), now guarded by `check-past-date-cups-probe.mjs` (8 of 8, runs the probe against a stub).
+
+**Open.** Nothing for Task 6. Recorded, not changed: the pre-existing `allSettled` guard is caught by a crash rather than by its named assertion; scores on past-date cards were not judged by the probe.
+
 ## 2026-11-08 — `patent-fulltext.yml` no longer loses its output to a rejected push; the six patents of the 2026-11-04 weekly run are on main
 
 Commits `e4093fa` (the workflow) and `458f17a` (the recovered output, made by the pipeline itself). No client app code, no SW bump, no deploy path touched. Session doc: field-relay-nba `outbox/cc-session-2026-11-08-patent-fulltext-push-race.md`.
