@@ -1,0 +1,777 @@
+{
+  "probed_at": "2026-11-12T22:15:04.752Z",
+  "url": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "triggered_by": "schedule",
+  "window": {
+    "cron": "16:10Z European window",
+    "delay_minutes": 365,
+    "trigger": "schedule",
+    "et_hour": 17,
+    "today_likely_complete": false,
+    "step_back_days": 1,
+    "step_back_source": "scheduled-default-1",
+    "reads_complete_slate": true,
+    "zero_debriefs_is_evidence": true
+  },
+  "sw_version": "2026-11-10a",
+  "cards_seen": 0,
+  "odds_slot_present_in_dom": true,
+  "slots_hidden": 0,
+  "slots_visible": 13,
+  "states": {
+    "no_odds": {
+      "game": "nhl:2026020293",
+      "text": "(no movement line — buildOddsMovement returned null; 8 of 21 rendered debriefs)"
+    },
+    "opened_only": null,
+    "unchanged": {
+      "game": "espn:401909973",
+      "text": "Home moneyline +150 (40% implied), unchanged from open"
+    },
+    "moved": {
+      "game": "espn:401909966",
+      "text": "Home moneyline -155 → -154, 0.2 pts toward away"
+    }
+  },
+  "debriefs_total": 21,
+  "debriefs_with_movement_line": 13,
+  "debriefs_no_movement_line": 8,
+  "date_label": "Yesterday",
+  "stepped_back_days": 1,
+  "setup_overlay_dismissed": false,
+  "date_nav_error": null,
+  "slate_by_step": [
+    {
+      "step": 0,
+      "label": "Today",
+      "cards": 43
+    },
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "cards": 21
+    }
+  ],
+  "slate_settle_series": [
+    {
+      "step": 1,
+      "label": "Yesterday",
+      "series": [
+        {
+          "at_s": 5,
+          "cards": 21
+        },
+        {
+          "at_s": 10,
+          "cards": 21
+        },
+        {
+          "at_s": 15,
+          "cards": 21
+        },
+        {
+          "at_s": 20,
+          "cards": 21
+        }
+      ]
+    }
+  ],
+  "slate_settle_series_step0": [
+    {
+      "at_s": 5,
+      "total": 43,
+      "since_nav_ms": 18924,
+      "by_sport": {
+        "Tennis": 10,
+        "College Football": 5,
+        "NFL": 1,
+        "NHL": 13,
+        "NBA": 13,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 10,
+      "total": 43,
+      "since_nav_ms": 23929,
+      "by_sport": {
+        "Tennis": 10,
+        "College Football": 5,
+        "NFL": 1,
+        "NHL": 13,
+        "NBA": 13,
+        "Golf": 1
+      }
+    },
+    {
+      "at_s": 15,
+      "total": 43,
+      "since_nav_ms": 28933,
+      "by_sport": {
+        "Tennis": 10,
+        "College Football": 5,
+        "NFL": 1,
+        "NHL": 13,
+        "NBA": 13,
+        "Golf": 1
+      }
+    }
+  ],
+  "slate_by_sport": {
+    "Tennis": 10,
+    "College Football": 5,
+    "NFL": 1,
+    "NHL": 13,
+    "NBA": 13,
+    "Golf": 1
+  },
+  "slate_sections_present": [
+    "Tennis",
+    "College Football",
+    "NFL",
+    "NHL",
+    "NBA",
+    "Golf"
+  ],
+  "slate_sections_present_date_label": "Today",
+  "slate_sections_at_model_read": [
+    "NBA",
+    "NHL",
+    "College Football",
+    "EFL Trophy"
+  ],
+  "slate_sections_at_model_read_date_label": "Yesterday",
+  "gap_compared_on": "Yesterday",
+  "gap_pre_step_census_was": "Today",
+  "slate_read_at_ms": 28933,
+  "slate_settled_at_s": 15,
+  "slate_settle_reached": true,
+  "slate_cards_date_label": "Yesterday",
+  "slate_cards_after_steps": 1,
+  "empty_note": null,
+  "main_state": null,
+  "page_errors": [],
+  "page_error_count": 0,
+  "date_nav_check": {
+    "label": "Tue, Nov 10",
+    "cards": 33,
+    "empty_note": null,
+    "loading_wraps": 0,
+    "loading_wrap_in_main": 0,
+    "main_children": [
+      "section#field-newspaper.field-newspaper",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section",
+      "div.sport-section"
+    ],
+    "lcp_anchor_anywhere": 0,
+    "lcp_anchor_in_main": 0,
+    "rejections": [],
+    "failure_kind": null,
+    "ok": true
+  },
+  "context_game_requests": [
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020309",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909966",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909967",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909968",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909969",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909970",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909971",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909972",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909973",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909974",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401909975",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020293",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020294",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020295",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020296",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020297",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/nhl%3A2026020298",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401866461",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401866462",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401866463",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401911177",
+    "https://field-relay-nba.jeffunglesbee.workers.dev/context/game/espn%3A401906340"
+  ],
+  "context_id_forms": {
+    "other": 7,
+    "espn_prefixed": 15
+  },
+  "v2_games_requests": 144,
+  "v2_games_by_sport": {
+    "bundesliga": 7,
+    "nba": 5,
+    "nhl": 5,
+    "mlb": 5,
+    "wnba": 5,
+    "mls": 29,
+    "afl": 5,
+    "epl": 5,
+    "ucl": 5,
+    "europa": 5,
+    "conference": 5,
+    "uclqual": 5,
+    "europaqual": 5,
+    "conferencequal": 5,
+    "eflchamp": 5,
+    "eflone": 5,
+    "efltwo": 5,
+    "laliga": 5,
+    "seriea": 5,
+    "ligue1": 5,
+    "wc26": 5,
+    "nfl": 5,
+    "cfb": 5,
+    "facup": 1,
+    "eflcup": 1,
+    "efltrophy": 1
+  },
+  "v2_games_dates": {
+    "2026-11-12": 52,
+    "2026-11-13": 46,
+    "2026-11-11": 30,
+    "2026-11-10": 4,
+    "2026-11-09": 4,
+    "2026-11-08": 4,
+    "2026-11-07": 4
+  },
+  "espn_scores_by_sport": {
+    "nhl": 13,
+    "nba": 13,
+    "cfb": 5,
+    "nfl": 1,
+    "(no _sport)": 50
+  },
+  "slate_state": {
+    "renderLedger": {
+      "renders": 5,
+      "lastRenderAt": 1794521735067,
+      "lastPushAt": 1794521707474,
+      "lastPushSport": "nba",
+      "pushesSinceLastRender": 0
+    },
+    "allData": {
+      "sportsIsArray": true,
+      "sportsLength": 4,
+      "sportsLabels": [
+        "NBA",
+        "NHL",
+        "College Football",
+        "EFL Trophy"
+      ],
+      "sportsGameCounts": [
+        {
+          "label": "NBA",
+          "sport": "NBA",
+          "games": 10
+        },
+        {
+          "label": "NHL",
+          "sport": "NHL",
+          "games": 6
+        },
+        {
+          "label": "College Football",
+          "sport": "College Football",
+          "games": 3
+        },
+        {
+          "label": "EFL Trophy",
+          "sport": "EFL Trophy",
+          "games": 2
+        }
+      ]
+    },
+    "v2SectionInjected": {
+      "cfb": true,
+      "nfl": true,
+      "nhl": true,
+      "nba": true
+    }
+  },
+  "render_after_last_push_ms": 27593,
+  "sections_model_not_in_dom": [],
+  "gap_split": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "section_key_mismatches": [],
+  "gap_on_dom_key": [],
+  "gap_split_on_dom_key": {
+    "dropped": [],
+    "empty": [],
+    "unknown": []
+  },
+  "render_trace": {
+    "at": 1794521735135,
+    "outcome": "rendered",
+    "activeFilter": "all",
+    "myTeamsFilter": false,
+    "rivalsFilter": false,
+    "freeOnlyFilter": false,
+    "sportsIn": 4,
+    "visibleCount": 4,
+    "filteredCount": 4,
+    "modelSections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 10
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 6
+      },
+      {
+        "sport": "College Football",
+        "label": "College Football",
+        "games": 3
+      },
+      {
+        "sport": "EFL Trophy",
+        "label": "EFL Trophy",
+        "games": 2
+      }
+    ],
+    "sections": [
+      {
+        "sport": "NBA",
+        "label": "NBA",
+        "games": 10,
+        "emitted": true,
+        "chars": 29382
+      },
+      {
+        "sport": "NHL",
+        "label": "NHL",
+        "games": 6,
+        "emitted": true,
+        "chars": 17320
+      },
+      {
+        "sport": "College Football",
+        "label": "College Football",
+        "games": 3,
+        "emitted": true,
+        "chars": 7932
+      },
+      {
+        "sport": "EFL Trophy",
+        "label": "EFL Trophy",
+        "games": 2,
+        "emitted": true,
+        "chars": 5272
+      }
+    ]
+  },
+  "render_trace_age_ms": 19466,
+  "gap_verdicts": [],
+  "gap_verdict_census": {},
+  "field_errors": [
+    {
+      "fn": "user:fetch-state",
+      "err": "HTTP 404",
+      "ts": 1794521709059
+    },
+    {
+      "fn": "standings:nba-parsed",
+      "err": "all 3 fallback sources failed (ESPN, NBA CDN relay, BDL)",
+      "ts": 1794521710245
+    },
+    {
+      "fn": "scores:find-espn-score-no-match",
+      "err": "no match found: Massachusetts Minutemen @ Toledo Rockets",
+      "ts": 1794521735124
+    }
+  ],
+  "field_error_count": 3,
+  "field_errors_by_fn": {
+    "user:fetch-state": 1,
+    "standings:nba-parsed": 1,
+    "scores:find-espn-score-no-match": 1
+  },
+  "visible_samples": [
+    {
+      "id": "espn:401909966",
+      "label": "Washington Wizards @ Indiana Pacers",
+      "hidden": false,
+      "text": "Home moneyline -155 → -154, 0.2 pts toward away"
+    },
+    {
+      "id": "espn:401909967",
+      "label": "Cleveland Cavaliers @ New York Knicks",
+      "hidden": false,
+      "text": "Home moneyline -166 → -205, 4.8 pts toward home"
+    },
+    {
+      "id": "espn:401909968",
+      "label": "Boston Celtics @ Toronto Raptors",
+      "hidden": false,
+      "text": "Home moneyline +228 → +170, 6.5 pts toward home"
+    },
+    {
+      "id": "espn:401909969",
+      "label": "San Antonio Spurs @ Chicago Bulls",
+      "hidden": false,
+      "text": "Home moneyline +750 → +740, 0.1 pts toward home"
+    },
+    {
+      "id": "espn:401909970",
+      "label": "Denver Nuggets @ Memphis Grizzlies",
+      "hidden": false,
+      "text": "Home moneyline +146 → +136, 1.7 pts toward home"
+    },
+    {
+      "id": "espn:401909971",
+      "label": "Los Angeles Lakers @ Milwaukee Bucks",
+      "hidden": false,
+      "text": "Home moneyline +458 → +620, 4.0 pts toward away"
+    },
+    {
+      "id": "espn:401909972",
+      "label": "Brooklyn Nets @ New Orleans Pelicans",
+      "hidden": false,
+      "text": "Home moneyline -186 → -142, 6.4 pts toward away"
+    },
+    {
+      "id": "espn:401909973",
+      "label": "Orlando Magic @ Utah Jazz",
+      "hidden": false,
+      "text": "Home moneyline +150 (40% implied), unchanged from open"
+    }
+  ],
+  "error": null,
+  "slate_cards": 21,
+  "debrief_injected": 21,
+  "debrief_visible": 21,
+  "existing_odds_layers": 13,
+  "debrief_cards": [
+    {
+      "gameid": "espn:401909966",
+      "sport": "NBA",
+      "home": "Indiana Pacers",
+      "away": "Washington Wizards",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909967",
+      "sport": "NBA",
+      "home": "New York Knicks",
+      "away": "Cleveland Cavaliers",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909968",
+      "sport": "NBA",
+      "home": "Toronto Raptors",
+      "away": "Boston Celtics",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909969",
+      "sport": "NBA",
+      "home": "Chicago Bulls",
+      "away": "San Antonio Spurs",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909970",
+      "sport": "NBA",
+      "home": "Memphis Grizzlies",
+      "away": "Denver Nuggets",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909971",
+      "sport": "NBA",
+      "home": "Milwaukee Bucks",
+      "away": "Los Angeles Lakers",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909972",
+      "sport": "NBA",
+      "home": "New Orleans Pelicans",
+      "away": "Brooklyn Nets",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909973",
+      "sport": "NBA",
+      "home": "Utah Jazz",
+      "away": "Orlando Magic",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909974",
+      "sport": "NBA",
+      "home": "Houston Rockets",
+      "away": "Golden State Warriors",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401909975",
+      "sport": "NBA",
+      "home": "Portland Trail Blazers",
+      "away": "Oklahoma City Thunder",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020293",
+      "sport": "NHL",
+      "home": "Buffalo Sabres",
+      "away": "Tampa Bay Lightning",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020294",
+      "sport": "NHL",
+      "home": "Calgary Flames",
+      "away": "New York Rangers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020295",
+      "sport": "NHL",
+      "home": "Edmonton Oilers",
+      "away": "Philadelphia Flyers",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020296",
+      "sport": "NHL",
+      "home": "Vegas Golden Knights",
+      "away": "Utah Mammoth",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020297",
+      "sport": "NHL",
+      "home": "Anaheim Ducks",
+      "away": "Nashville Predators",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "nhl:2026020298",
+      "sport": "NHL",
+      "home": "San Jose Sharks",
+      "away": "Pittsburgh Penguins",
+      "layers": [
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401866461",
+      "sport": "College Football",
+      "home": "Ball State Cardinals",
+      "away": "Buffalo Bulls",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401866462",
+      "sport": "College Football",
+      "home": "Central Michigan Chippewas",
+      "away": "Sacramento State Hornets",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401866463",
+      "sport": "College Football",
+      "home": "Toledo Rockets",
+      "away": "Massachusetts Minutemen",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text",
+        "debrief-odds",
+        "debrief-odds__scenario",
+        "debrief-odds__line",
+        "debrief-odds-movement"
+      ]
+    },
+    {
+      "gameid": "espn:401911177",
+      "sport": "EFL Trophy",
+      "home": "Barnsley",
+      "away": "Oldham Athletic",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    },
+    {
+      "gameid": "espn:401906340",
+      "sport": "EFL Trophy",
+      "home": "Sheffield Wednesday",
+      "away": "Accrington Stanley",
+      "layers": [
+        "debrief-drama",
+        "debrief-drama__bar-track",
+        "debrief-drama__bar",
+        "debrief-drama__chips",
+        "debrief-prediction",
+        "debrief-prediction__text"
+      ]
+    }
+  ],
+  "odds_layer_present_in_dom": true
+}
