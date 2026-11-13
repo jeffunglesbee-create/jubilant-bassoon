@@ -1,12 +1,12 @@
 {
-  "ts": "2026-11-13T03:22:53.461Z",
+  "ts": "2026-11-13T20:50:19.265Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-10a",
   "triggered_by": "schedule",
   "relayReachable": true,
-  "relayLiveMatches": 6,
-  "relayLiveMatchesAllTiers": 131,
+  "relayLiveMatches": 7,
+  "relayLiveMatchesAllTiers": 133,
   "tiersSeen": [
     "atp_250",
     "challenger",
@@ -14,8 +14,8 @@
     "utr",
     "wta_250"
   ],
-  "startedCards": 0,
-  "dayFeedCount": 131,
+  "startedCards": 5,
+  "dayFeedCount": 132,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "Sopo, Colombia",
@@ -24,31 +24,35 @@
   ],
   "pageLoaded": true,
   "tennisSectionPresent": true,
-  "tennisCardCount": 6,
-  "cardsWithSetScore": 0,
-  "cardsWithOpponent": 6,
+  "tennisCardCount": 7,
+  "cardsWithSetScore": 5,
+  "cardsWithOpponent": 7,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
       "home": "A. Tabilo v T. Tirante",
-      "chip": "(no chip)"
+      "chip": "5-7 6-7(1)"
     },
     {
       "home": "L. Samson v E. Mandlik",
-      "chip": "(no chip)"
+      "chip": "3-6 3-6"
     },
     {
       "home": "T. Fritz v L. Musetti",
-      "chip": "(no chip)"
+      "chip": "6-4 6-2"
     },
     {
       "home": "P. Hercog v B. Andreescu",
-      "chip": "(no chip)"
+      "chip": "1-6 4-6"
     },
     {
       "home": "M. Andreeva v K. Muchova",
       "chip": "(no chip)"
+    },
+    {
+      "home": "M. Andreeva v D. Shnaider",
+      "chip": "6-2 0-1 · 0-0 ●"
     },
     {
       "home": "A. Sabalenka v E. Svitolina",
@@ -56,11 +60,7 @@
     }
   ],
   "consoleErrors": [
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 400 ()",
     "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 404 ()",
@@ -69,9 +69,8 @@
   "failedRequests": [
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-12 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=golf_401850980 — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
@@ -86,29 +85,29 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:10",
-  "feedByDateOutcome": "ok:131",
-  "rowsBeforeTier": 131,
-  "rowsAfterTier": 6,
-  "sectionReturned": 6,
+  "feedLiveOutcome": "ok:16",
+  "feedByDateOutcome": "ok:132",
+  "rowsBeforeTier": 133,
+  "rowsAfterTier": 7,
+  "sectionReturned": 7,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 3,
+    "scheduled": 2,
     "structuralRenders": 2,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 36972,
+  "tennisSectionHtmlLength": 33128,
   "sectionsInModel": [
     "Tennis"
   ],
   "sectionsInDom": [
     "Tennis"
   ],
-  "tennisGamesInModel": 6,
+  "tennisGamesInModel": 7,
   "tennisSectionAnatomy": {
     "tag": "div",
     "className": "sport-section",
@@ -118,15 +117,15 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">6 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Tabilo v T. Tirante\" data-away=\""
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">7 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Tabilo v T. Tirante\" data-away=\"\" data-starttim"
   },
   "domSectionCardCounts": [
     {
       "sport": "Tennis",
-      "cards": 6
+      "cards": 7
     }
   ],
-  "sampleCardText": "📌★ A. Tabilo v T. Tirante Stockholm · Semifinals · hard + Multiview Stockholm ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 8:00 AM Tennis ChannelTV log",
+  "sampleCardText": "📌★ A. Tabilo v T. Tirante5-7 6-7(1) Stockholm · Semifinals · hard + Multiview Stockholm ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 8:00 AM Tennis Cha",
   "verdict": "PASS",
-  "reason": "relay 6 live, page 6 card(s), 0 of 0 STARTED with a set score (6 not yet under way, correctly chipless), 6 with an opponent; tournaments proven on the page: Sopo, Colombia, Stockholm, WTA Finals"
+  "reason": "relay 7 live, page 7 card(s), 5 of 5 STARTED with a set score (2 not yet under way, correctly chipless), 7 with an opponent; tournaments proven on the page: Sopo, Colombia, Stockholm, WTA Finals"
 }
