@@ -1,12 +1,12 @@
 {
-  "ts": "2026-11-12T21:25:03.910Z",
+  "ts": "2026-11-13T03:22:53.461Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-10a",
   "triggered_by": "schedule",
   "relayReachable": true,
-  "relayLiveMatches": 10,
-  "relayLiveMatchesAllTiers": 139,
+  "relayLiveMatches": 6,
+  "relayLiveMatchesAllTiers": 131,
   "tiersSeen": [
     "atp_250",
     "challenger",
@@ -14,8 +14,8 @@
     "utr",
     "wta_250"
   ],
-  "startedCards": 8,
-  "dayFeedCount": 139,
+  "startedCards": 0,
+  "dayFeedCount": 131,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "Sopo, Colombia",
@@ -24,54 +24,39 @@
   ],
   "pageLoaded": true,
   "tennisSectionPresent": true,
-  "tennisCardCount": 10,
-  "cardsWithSetScore": 8,
-  "cardsWithOpponent": 10,
+  "tennisCardCount": 6,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 6,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
-      "home": "A. Michelsen v A. Tabilo",
-      "chip": "5-7 6-7(2)"
-    },
-    {
-      "home": "T. Tirante v A. Shevchenko",
-      "chip": "7-6(5) 6-7(5) 6-3"
-    },
-    {
-      "home": "E. Mandlik v A. Lazaro Garcia",
-      "chip": "6-0 7-6(5)"
-    },
-    {
-      "home": "L. Samson v I. Burillo",
-      "chip": "7-5 6-3"
-    },
-    {
-      "home": "A. Tubello v P. Hercog",
-      "chip": "2-6 3-6"
-    },
-    {
-      "home": "B. Andreescu v M. Bassols Ribera",
-      "chip": "6-4 4-2 ○"
-    },
-    {
-      "home": "T. Fritz v H. Rune",
+      "home": "A. Tabilo v T. Tirante",
       "chip": "(no chip)"
     },
     {
-      "home": "L. Musetti v U. Humbert",
-      "chip": "7-6(5) 3-6 0-1 · 40-40 ○"
+      "home": "L. Samson v E. Mandlik",
+      "chip": "(no chip)"
     },
     {
-      "home": "M. Kostyuk v C. Gauff",
-      "chip": "4-6 3-0 · 0-0 ●"
+      "home": "T. Fritz v L. Musetti",
+      "chip": "(no chip)"
     },
     {
-      "home": "J. Pegula v L. Noskova",
+      "home": "P. Hercog v B. Andreescu",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "M. Andreeva v K. Muchova",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "A. Sabalenka v E. Svitolina",
       "chip": "(no chip)"
     }
   ],
   "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
@@ -82,16 +67,17 @@
     "error: Failed to load resource: the server responded with a status of 404 ()"
   ],
   "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=2026020309 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/live/ambient — net::ERR_ABORTED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-12 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-12",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-12"
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-13",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-13",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live"
   ],
   "renderedTournaments": [
     "Sopo, Colombia",
@@ -100,37 +86,29 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:17",
-  "feedByDateOutcome": "ok:139",
-  "rowsBeforeTier": 139,
-  "rowsAfterTier": 10,
-  "sectionReturned": 10,
+  "feedLiveOutcome": "ok:10",
+  "feedByDateOutcome": "ok:131",
+  "rowsBeforeTier": 131,
+  "rowsAfterTier": 6,
+  "sectionReturned": 6,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 4,
+    "scheduled": 3,
     "structuralRenders": 2,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 47373,
+  "tennisSectionHtmlLength": 36972,
   "sectionsInModel": [
-    "College Football",
-    "NBA",
-    "NFL",
-    "NHL",
     "Tennis"
   ],
   "sectionsInDom": [
-    "College Football",
-    "NBA",
-    "NFL",
-    "NHL",
     "Tennis"
   ],
-  "tennisGamesInModel": 10,
+  "tennisGamesInModel": 6,
   "tennisSectionAnatomy": {
     "tag": "div",
     "className": "sport-section",
@@ -140,31 +118,15 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">10 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late scout-pick-card\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Michelsen v A. Tabilo\" data-aw"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">6 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"A. Tabilo v T. Tirante\" data-away=\""
   },
   "domSectionCardCounts": [
     {
       "sport": "Tennis",
-      "cards": 10
-    },
-    {
-      "sport": "College Football",
-      "cards": 5
-    },
-    {
-      "sport": "NFL",
-      "cards": 1
-    },
-    {
-      "sport": "NHL",
-      "cards": 13
-    },
-    {
-      "sport": "NBA",
-      "cards": 13
+      "cards": 6
     }
   ],
-  "sampleCardText": "📌★ A. Michelsen v A. Tabilo5-7 6-7(2) Stockholm · Quarterfinals · hard + Multiview Stockholm ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › Scout's Pick ",
+  "sampleCardText": "📌★ A. Tabilo v T. Tirante Stockholm · Semifinals · hard + Multiview Stockholm ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 8:00 AM Tennis ChannelTV log",
   "verdict": "PASS",
-  "reason": "relay 10 live, page 10 card(s), 8 of 8 STARTED with a set score (2 not yet under way, correctly chipless), 10 with an opponent; tournaments proven on the page: Sopo, Colombia, Stockholm, WTA Finals"
+  "reason": "relay 6 live, page 6 card(s), 0 of 0 STARTED with a set score (6 not yet under way, correctly chipless), 6 with an opponent; tournaments proven on the page: Sopo, Colombia, Stockholm, WTA Finals"
 }
