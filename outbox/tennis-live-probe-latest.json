@@ -1,20 +1,20 @@
 {
-  "ts": "2026-11-16T02:41:33.530Z",
+  "ts": "2026-11-16T23:18:34.383Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-10a",
   "triggered_by": "schedule",
   "relayReachable": true,
   "relayLiveMatches": 10,
-  "relayLiveMatchesAllTiers": 205,
+  "relayLiveMatchesAllTiers": 195,
   "tiersSeen": [
     "challenger",
     "other",
     "utr",
     "wta_250"
   ],
-  "startedCards": 0,
-  "dayFeedCount": 201,
+  "startedCards": 10,
+  "dayFeedCount": 195,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "ATP Finals",
@@ -23,70 +23,62 @@
   "pageLoaded": true,
   "tennisSectionPresent": true,
   "tennisCardCount": 10,
-  "cardsWithSetScore": 0,
+  "cardsWithSetScore": 10,
   "cardsWithOpponent": 10,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
       "home": "C. Alcaraz v F. Tiafoe",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "G. Maristany v M. Trevisan",
-      "chip": "(no chip)"
+      "chip": "6-2 6-2"
     },
     {
       "home": "K. Scott v A. Zolotareva",
-      "chip": "(no chip)"
+      "chip": "2-6 4-6"
     },
     {
       "home": "R. Masarova v D. Cherubini",
-      "chip": "(no chip)"
+      "chip": "7-5 6-3"
     },
     {
       "home": "S. Costoulas v N. Brancaccio",
-      "chip": "(no chip)"
+      "chip": "6-2 6-4"
+    },
+    {
+      "home": "G. Maristany v M. Trevisan",
+      "chip": "6-2 6-3"
     },
     {
       "home": "L. Romero Gormaz v I. Oz",
-      "chip": "(no chip)"
+      "chip": "2-6 7-5 6-1"
     },
     {
       "home": "V. Jimenez Kasintseva v C. Monnet",
-      "chip": "(no chip)"
+      "chip": "5-7 6-3 0-6"
     },
     {
       "home": "D. Medvedev v F. Cobolli",
-      "chip": "(no chip)"
+      "chip": "7-6(4) 6-3"
     },
     {
       "home": "V. Strakhova v A. Tikhonova",
-      "chip": "(no chip)"
+      "chip": "5-3"
     },
     {
       "home": "L. Giovannini v A. Geerlings",
-      "chip": "(no chip)"
+      "chip": "4-6 0-2 · 0-15 ●"
     }
   ],
   "consoleErrors": [
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 400 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 ()"
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()"
   ],
   "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-15 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-16 — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
@@ -101,27 +93,23 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:14",
-  "feedByDateOutcome": "ok:201",
-  "rowsBeforeTier": 205,
+  "feedLiveOutcome": "ok:18",
+  "feedByDateOutcome": "ok:195",
+  "rowsBeforeTier": 195,
   "rowsAfterTier": 10,
   "sectionReturned": 10,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 4,
+    "scheduled": 2,
     "structuralRenders": 1,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 60096,
+  "tennisSectionHtmlLength": 42367,
   "sectionsInModel": [
-    "College Football",
-    "NBA",
-    "NFL",
-    "NHL",
     "Tennis"
   ],
   "sectionsInDom": [
@@ -137,7 +125,7 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">10 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"C. Alcaraz v F. Tiafoe\" data-away="
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">10 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"C. Alcaraz v F. Tiafoe\" data-away=\"\" "
   },
   "domSectionCardCounts": [
     {
@@ -145,7 +133,7 @@
       "cards": 10
     }
   ],
-  "sampleCardText": "📌★ C. Alcaraz v F. Tiafoe ATP Finals · hard + Multiview ATP Finals Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 8:00 AM Tennis ChannelTV loginCable/satellite login req",
+  "sampleCardText": "📌★ C. Alcaraz v F. Tiafoe6-2 6-2 ATP Finals · hard + Multiview ATP Finals ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 8:00 AM Tennis ChannelTV loginCa",
   "verdict": "PASS",
-  "reason": "relay 10 live, page 10 card(s), 0 of 0 STARTED with a set score (10 not yet under way, correctly chipless), 10 with an opponent; tournaments proven on the page: ATP Finals, Santiago, Chile"
+  "reason": "relay 10 live, page 10 card(s), 10 of 10 STARTED with a set score (0 not yet under way, correctly chipless), 10 with an opponent; tournaments proven on the page: ATP Finals, Santiago, Chile"
 }
