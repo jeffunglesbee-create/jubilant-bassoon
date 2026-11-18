@@ -13860,6 +13860,14 @@ function saveGolfRoundFinal(pgaData) {
       sport: 'golf', league: 'PGA Tour', date: today,
       home: evName, away: 'R' + round,
       home_score: leader?.toPar ?? null,
+      // The round's real first tee, UTC, from the relay (/v2/golf/enriched
+      // `roundStart`, the earliest teeTime of the round's competitors). Only a
+      // string from the relay is sent; ESPN's event `startDate` is a midnight
+      // placeholder it marks timeValid false and is never used here.
+      // field-relay-nba docs/CC-CMD-2026-11-16-golf-tee-times.md, Task 3.
+      // `roundStart` is the relay's read of the same round this row saves (`round`
+      // above is `pgaData.round`), so no second round check is needed here.
+      ...(typeof pgaData.roundStart === 'string' ? { start_time: pgaData.roundStart } : {}),
       venue: pgaData.venue || '',
       source_id: 'golf_' + (eventId || today),
       note: leaderNote,
@@ -23470,7 +23478,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-10a';
+  const SW_VERSION = '2026-11-17a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
