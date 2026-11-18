@@ -1,0 +1,53 @@
+US12801759
+Title: Method and system for data flow monitoring to identify application security vulnerabilities and to detect and prevent attacks
+Grant date: 2026-11-17
+Assignee: Dynatrace LLC
+Inventors: Andreas Berger, Christian Schwarzbauer
+Source: ppubs
+PPUBS GUID: US-12801759-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A computer-implemented method for identifying a security vulnerability in an application executing across processes on a host computing device in a distributed computing environment, comprising: reporting, by a source sensor, input data received by a frontend portion of the application to a first agent, where the input data is received from a source external to the host computing device, the source sensor is instrumented in a request handling method of the frontend portion of the application, and the frontend portion of the application and the first agent are executed on a first process; reporting, by a sanitization sensor, sanitization of the input data to the first agent, where the reporting of the sanitization is in response to execution of a data sanitization method within the frontend portion of the application and the sanitization sensor is instrumented in the data sanitization method; reporting, by a first communication sensor, usage of the input data to the first agent by an outgoing communication method, where the first communication sensor is instrumented in the outgoing communication method; reporting, by the first agent, first observation data to a monitoring server, where first observation data includes an indicator of the sanitization of the input data and usage of the input data by the outgoing communication method, and the monitoring server is located remote from the host computing device; reporting, by a second communication sensor, receipt of the input data by a backend portion of the application to a second agent, where the backend portion of the application and the second agent are executed on a second process which differs from the first process; reporting, by a sink sensor, a sink call made by the backend portion of the application to the second agent, where the reporting of the sink call is in response to execution of the sink call and the execution of the sink call uses at least a portion of the input data reported by the second communication sensor; and determining, by the second agent, whether parameter values for the sink call were sanitized and identifying a security vulnerability in the backend portion of the application in response to a determination that at least a portion of one parameter value for the sink call was not sanitized.
+
+Claim 2 [dep on 1]:
+The method of claim 1 further comprises reporting, by the second agent, the security vulnerability to the monitoring server; and ignoring, by the monitoring server, the security vulnerability based on the indicator of the sanitization of the input data received from the first agent.
+
+Claim 3 [dep on 1]:
+The method of claim 1 further comprises linking, by the monitoring server, the second observation data to the first observation data using correlation data, where the first observation data further includes the correlation data and the second observation data further includes the correlation data.
+
+Claim 4 [dep on 3]:
+The method of claim 3 further comprises adding, by the first communication sensor, the correlation data to messages sent by the outgoing communication method.
+
+Claim 5 [dep on 4]:
+The method of claim 4 further comprises extracting, by the second communication sensor, the correlation data from the messages and reporting the correlation data to the second agent.
+
+Claim 6 [dep on 1]:
+The method of claim 1 further comprises determining, by the second agent, a path taken by the input data from the request handling method to the sink call; removing, by the second agent, non-static data from the path to create static path data; computing, by the second agent, a hash value from the static path data; and storing, by the second agent, the hash value in a data store accessible to the second agent.
+
+Claim 7 [dep on 6]:
+The method of claim 6 further comprises identifying, by the second agent, a second security vulnerability; computing, by the second agent, a second hash value for the second security vulnerability; and comparing, by the second agent, the second hash value to the hash value stored in the data store.
+
+Claim 8 [dep on 7]:
+The method of claim 7 further comprises reporting, by the second agent, only the second hash value to the monitoring server in response to a match between the second hash value to the hash value stored in the data store; and reporting, by the second agent, the second security vulnerability to the monitoring server in response to a mismatch between the second hash value to the hash value stored in the data store, where the reporting of the second security vulnerability includes an indicator for the sink call and at least a portion of one parameter value for the sink call was not sanitized.
+
+Claim 9 [dep on 1]:
+The method of claim 1 further comprises reporting, by the second agent, second observation data to the monitoring server, where the second observation data includes receipt of the input data and an indicator of the sink call using the received input data; and determining, by the monitoring server, whether parameter values for the sink call were sanitized and identifying a security vulnerability in the application in response to a determination that at least a portion of one parameter value for the sink call was not sanitized.
+
+Claim 10 [dep on 1]:
+The method of claim 1 further comprises receiving, by the first agent, bytecode for the application; and instrumenting, by the first agent, the bytecode with at least one of the source sensor, the sanitization sensor and the first communication sensor.
+
+Claim 11 [dep on 1]:
+The method of claim 1 wherein the request handling method extracts data from an incoming HTTP request.
+
+Claim 12 [dep on 1]:
+The method of claim 1 further comprises receiving, by the second agent, bytecode for the application and instrumenting, by the second agent the bytecode with at least one of the second communication sensor and the sink sensor.
+
+Claim 13 [independent]:
+A computer-implemented system for identifying a security vulnerability in an application executing across processes on a host computing device in a distributed computing environment, comprising: a source sensor instrumented in a request handling method of a frontend portion of the application and configured to report input data received by the frontend portion of the application to a first agent, where the input data is received from a source external to the host computing device, and the frontend portion of the application and the first agent are executed on a first process; a sanitization sensor instrumented in a data sanitization method within the frontend portion of the application and configured to report sanitization of the input data to the first agent; a first communication sensor is instrumented in an outgoing communication method and configured to report usage of the input data by the outgoing communication method to the first agent; wherein the first agent is implemented by computer program instructions executed by a processor of the host computing device and reports first observation data to a monitoring server, where first observation data includes an indicator of the sanitization of the input data and usage of the input data by the outgoing communication method, and the monitoring server is located remote from the host computing device; a second communication sensor configured to report receipt of the input data by a backend portion of the application to a second agent, where the backend portion of the application and the second agent are executed on a second process which differs from the first process; and a sink sensor configured to report a sink call made by the backend portion of the application to the second agent, where the reporting of the sink call is in response to execution of the sink call and the execution of the sink call uses at least a portion of the input data reported by the second communication sensor; wherein the second agent determines whether parameter values for the sink call were sanitized and identifies a security vulnerability in the backend portion of the application in response to a determination that at least a portion of one parameter value for the sink call was not sanitized.
+
+Claim 14 [dep on 13]:
+The computer-implemented system of claim 13 wherein the second agent reports the security vulnerability to the monitoring server; and the monitoring server ignores the security vulnerability based on the indicator of the sanitization of the input data received from the first agent.

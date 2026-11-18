@@ -1,0 +1,80 @@
+US12804031
+Title: Network interface device to select a target service based on proximity of the target service
+Grant date: 2026-11-17
+Assignee: Intel Corporation
+Inventors: Patrick G. Kutch, Carolyn Wyborny, Ziye Yang
+Source: ppubs
+PPUBS GUID: US-12804031-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A network interface device comprising: a host interface; a direct memory access (DMA) circuitry; and a network interface and circuitry to: receive a request to perform a service;  select a servicing node based on network latency and proximity of the requested service to the network interface device, wherein the proximity of the requested service includes execution in the network interface device; for the request to perform the service, select the network interface device to perform the service.
+
+Claim 2 [dep on 1]:
+The network interface device of claim 1, wherein the circuitry is to associate a quality of service with the request, wherein the quality of service comprises a range of number of network device hops to the servicing node.
+
+Claim 3 [dep on 1]:
+The network interface device of claim 1, wherein the circuitry is to: based on a quality of service, select an instance of the requested service that is executed by the network interface device.
+
+Claim 4 [dep on 1]:
+The network interface device of claim 1, wherein the circuitry is to: based on a quality of service, select an instance of the requested service that is executed by a server that executes an issuer of the request to perform the service.
+
+Claim 5 [dep on 1]:
+The network interface device of claim 1, wherein the circuitry is to: based on a quality of service, select an instance of the requested service that is executed by a server in a same rack as a server that executes an issuer of the request to perform the service.
+
+Claim 6 [dep on 1]:
+The network interface device of claim 1, comprising: second circuitry that is to: in response to a request to construct a container, construct the container from an encrypted root file system and provide access to the container to a host system.
+
+Claim 7 [dep on 1]:
+The network interface device of claim 1, wherein the network interface device comprises one or more of: network interface controller (NIC), SmartNIC, router, forwarding element, infrastructure processing unit (IPU), or data processing unit (DPU).
+
+Claim 8 [dep on 1]:
+The network interface device of claim 1, comprising a server that executes a process that is to issue the request, wherein the process is to specify a quality of service for the request.
+
+Claim 9 [dep on 1]:
+The network interface device of claim 1, wherein the circuitry is to: for a second request to perform a second service, select a second servicing node remote from the network interface device to perform the second service based on second network latency and second proximity of the second service to the network interface device.
+
+Claim 10 [independent]:
+At least one non-transitory computer-readable medium comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure a network interface device to: associate a quality of service with a request to perform a service; and select a servicing node based on network latency and proximity of the requested service to the network interface device, wherein the proximity of the requested service includes execution in the network interface device; for the request to perform the service, select the network interface device to perform the service.
+
+Claim 11 [dep on 10]:
+The at least one non-transitory computer-readable medium of claim 10, wherein the quality of service comprises a range of number of network device hops to the servicing node.
+
+Claim 12 [dep on 10]:
+The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: based on the quality of service, select an instance of the requested service that is executed by the network interface device.
+
+Claim 13 [dep on 10]:
+The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: based on the quality of service, select an instance of the requested service that is executed by a server that executes an issuer of the request to perform the service.
+
+Claim 14 [dep on 10]:
+The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: based on the quality of service, select an instance of the requested service that is executed by a server in a same rack as a server that executes an issuer of the request to perform the service.
+
+Claim 15 [dep on 10]:
+The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: in response to a request to construct a container, construct the container from an encrypted root file system and provide access to the container to a host system.
+
+Claim 16 [dep on 10]:
+The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: for a second request to perform a second service, select a second servicing node remote from the network interface device to perform the second service based on second network latency and second proximity of the second service to the network interface device.
+
+Claim 17 [independent]:
+A method performed by a network interface device comprising a host interface, network interface, and direct memory access (DMA) circuitry, the method comprising: determining a quality of service associated with a request to perform a service; selecting a servicing node based on network latency and proximity of the requested service to a network interface device, wherein the proximity of the requested service includes execution in the network interface device; selecting, for the request to perform the service, the network interface device to perform the service.
+
+Claim 18 [dep on 17]:
+The method of claim 17, wherein the quality of service specifies a limit on number of network device hops to the servicing node.
+
+Claim 19 [dep on 17]:
+The method of claim 17, further comprising: selecting, based on the quality of service, an instance of the requested service that is executed by the network interface device.
+
+Claim 20 [dep on 17]:
+The method of claim 17, further comprising: selecting, based on the quality of service, an instance of the requested service that is executed by a server that executes an issuer of the request to perform the service.
+
+Claim 21 [dep on 17]:
+The method of claim 17, further comprising: selecting, based on the quality of service, an instance of the requested service that is executed by a server in a same rack as a server that executes an issuer of the request to perform the service.
+
+Claim 22 [dep on 17]:
+The method of claim 17, further comprising: constructing, in response to a request to construct a container, the container from an encrypted root file system and providing access to the container to a host system.
+
+Claim 23 [dep on 17]:
+The method of claim 17, further comprising: selecting, for a second request to perform a second service, a second servicing node remote from the network interface device to perform the second service based on second network latency and second proximity of the second service to the network interface device.

@@ -1,0 +1,71 @@
+US12801636
+Title: Database group management
+Grant date: 2026-11-17
+Assignee: Nutanix, Inc.
+Inventors: Tarun Mehta, Suseendran Babu N, Shravan Dhawan, Akshay Chandak
+Source: ppubs
+PPUBS GUID: US-12801636-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A non-transitory computer-readable media comprising computer-readable instructions stored thereon that when executed by a processor of a database management system cause the processor to: select a database from a list of databases that are not part of another database group to add to a database group; receive selection of a Service Level Agreement (“SLA”) and a protection schedule, wherein the protection schedule defines a frequency of capturing snapshots and transactional logs; and associate the database group with the SLA and the protection schedule and add the database to the database group, wherein the database is protected using the same SLA and the protection schedule that is associated with the database group.
+
+Claim 2 [dep on 1]:
+The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is a stand-alone database.
+
+Claim 3 [dep on 2]:
+The non-transitory computer-readable media of claim 2, wherein each of the plurality of databases in the database group resides on a database server virtual machine on which the database group is created.
+
+Claim 4 [dep on 1]:
+The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is part of a same logical cluster.
+
+Claim 5 [dep on 1]:
+The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are part of a first logical cluster and remaining databases of the plurality of databases are part of a second logical cluster.
+
+Claim 6 [dep on 1]:
+The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are stand-alone databases and remaining databases of the plurality of databases are part of one or more logical clusters.
+
+Claim 7 [dep on 1]:
+The non-transitory computer-readable media of claim 1, wherein the processor further executes computer-readable instructions to: enable an auto-registration feature in the database group; receive request to register a new database on a database server virtual machine on which the database group resides; and upon determining that the auto-registration feature in the database group is enabled, automatically add the new database to the database group, wherein, upon being added to the database group, the new database is protected using the same SLA and the protection schedule as at least one database.
+
+Claim 8 [independent]:
+A system comprising: a memory having computer-readable instructions stored thereon; and a processor that executes the computer-readable instructions to: select a database from a list of databases that are not part of another database group to add to a database group; receive selection of a Service Level Agreement (“SLA”) and a protection schedule, wherein the protection schedule defines a frequency of capturing snapshots and transactional logs; and associate the database group with the SLA and the protection schedule and add the database to the database group, wherein the database is protected using the same SLA and the protection schedule that is associated with the database group.
+
+Claim 9 [dep on 8]:
+The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is a stand-alone database.
+
+Claim 10 [dep on 9]:
+The system of claim 9, wherein each of the plurality of databases in the database group resides on a database server virtual machine on which the database group is created.
+
+Claim 11 [dep on 8]:
+The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is part of a same logical cluster.
+
+Claim 12 [dep on 8]:
+The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are part of a first logical cluster and remaining databases of the plurality of databases are part of a second logical cluster.
+
+Claim 13 [dep on 8]:
+The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are stand-alone databases and remaining databases of the plurality of databases are part of one or more logical clusters.
+
+Claim 14 [independent]:
+A method comprising: select a database from a list of databases that are not part of another database group to add to a database group; receiving selection of a Service Level Agreement (“SLA”) and a protection schedule, wherein the protection schedule defines a frequency of capturing snapshots and transactional logs; and associate the database group with the SLA and the protection schedule and add the database to the database group, wherein the database is protected using the same SLA and the protection schedule that is associated with the database group.
+
+Claim 15 [dep on 14]:
+The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is a stand-alone database.
+
+Claim 16 [dep on 15]:
+The method of claim 15, wherein each of the plurality of databases in the database group resides on a database server virtual machine on which the database group is created.
+
+Claim 17 [dep on 14]:
+The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is part of a same logical cluster.
+
+Claim 18 [dep on 14]:
+The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are part of a first logical cluster and remaining databases of the plurality of databases are part of a second logical cluster.
+
+Claim 19 [dep on 14]:
+The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are stand-alone databases and remaining databases of the plurality of databases are part of one or more logical clusters.
+
+Claim 20 [dep on 14]:
+The method of claim 14, further comprising: enabling an auto-registration feature in the database group; receiving request to register a new database on a database server virtual machine on which the database group resides; and upon determining that the auto-registration feature in the database group is enabled, automatically adding the new database to the database group, wherein, upon being added to the database group, the new database is protected using the same SLA and the protection schedule as at least one database.

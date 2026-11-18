@@ -1,0 +1,139 @@
+{
+  "_ppubs_guid": "US-12801636-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Nutanix, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A non-transitory computer-readable media comprising computer-readable instructions stored thereon that when executed by a processor of a database management system cause the processor to: select a database from a list of databases that are not part of another database group to add to a database group; receive selection of a Service Level Agreement (“SLA”) and a protection schedule, wherein the protection schedule defines a frequency of capturing snapshots and transactional logs; and associate the database group with the SLA and the protection schedule and add the database to the database group, wherein the database is protected using the same SLA and the protection schedule that is associated with the database group."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is a stand-alone database."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The non-transitory computer-readable media of claim 2, wherein each of the plurality of databases in the database group resides on a database server virtual machine on which the database group is created."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is part of a same logical cluster."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are part of a first logical cluster and remaining databases of the plurality of databases are part of a second logical cluster."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The non-transitory computer-readable media of claim 1, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are stand-alone databases and remaining databases of the plurality of databases are part of one or more logical clusters."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The non-transitory computer-readable media of claim 1, wherein the processor further executes computer-readable instructions to: enable an auto-registration feature in the database group; receive request to register a new database on a database server virtual machine on which the database group resides; and upon determining that the auto-registration feature in the database group is enabled, automatically add the new database to the database group, wherein, upon being added to the database group, the new database is protected using the same SLA and the protection schedule as at least one database."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 8,
+      "claim_text": "A system comprising: a memory having computer-readable instructions stored thereon; and a processor that executes the computer-readable instructions to: select a database from a list of databases that are not part of another database group to add to a database group; receive selection of a Service Level Agreement (“SLA”) and a protection schedule, wherein the protection schedule defines a frequency of capturing snapshots and transactional logs; and associate the database group with the SLA and the protection schedule and add the database to the database group, wherein the database is protected using the same SLA and the protection schedule that is associated with the database group."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 9,
+      "claim_text": "The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is a stand-alone database."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 10,
+      "claim_text": "The system of claim 9, wherein each of the plurality of databases in the database group resides on a database server virtual machine on which the database group is created."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 11,
+      "claim_text": "The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is part of a same logical cluster."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 12,
+      "claim_text": "The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are part of a first logical cluster and remaining databases of the plurality of databases are part of a second logical cluster."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 13,
+      "claim_text": "The system of claim 8, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are stand-alone databases and remaining databases of the plurality of databases are part of one or more logical clusters."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 14,
+      "claim_text": "A method comprising: select a database from a list of databases that are not part of another database group to add to a database group; receiving selection of a Service Level Agreement (“SLA”) and a protection schedule, wherein the protection schedule defines a frequency of capturing snapshots and transactional logs; and associate the database group with the SLA and the protection schedule and add the database to the database group, wherein the database is protected using the same SLA and the protection schedule that is associated with the database group."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 15,
+      "claim_text": "The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is a stand-alone database."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 16,
+      "claim_text": "The method of claim 15, wherein each of the plurality of databases in the database group resides on a database server virtual machine on which the database group is created."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 17,
+      "claim_text": "The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein each of the plurality of databases is part of a same logical cluster."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 18,
+      "claim_text": "The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are part of a first logical cluster and remaining databases of the plurality of databases are part of a second logical cluster."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 19,
+      "claim_text": "The method of claim 14, wherein the database group comprises a plurality of databases, including at least one database, and wherein at least some databases of the plurality of databases are stand-alone databases and remaining databases of the plurality of databases are part of one or more logical clusters."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 20,
+      "claim_text": "The method of claim 14, further comprising: enabling an auto-registration feature in the database group; receiving request to register a new database on a database server virtual machine on which the database group resides; and upon determining that the auto-registration feature in the database group is enabled, automatically adding the new database to the database group, wherein, upon being added to the database group, the new database is protected using the same SLA and the protection schedule as at least one database."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Christopher J",
+      "examiner_name_last": "Raab"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Tarun",
+      "inventor_name_last": "Mehta"
+    },
+    {
+      "inventor_name_first": "Suseendran Babu",
+      "inventor_name_last": "N"
+    },
+    {
+      "inventor_name_first": "Shravan",
+      "inventor_name_last": "Dhawan"
+    },
+    {
+      "inventor_name_first": "Akshay",
+      "inventor_name_last": "Chandak"
+    }
+  ],
+  "patent_date": "2026-11-17",
+  "patent_id": "12801636",
+  "patent_title": "Database group management"
+}

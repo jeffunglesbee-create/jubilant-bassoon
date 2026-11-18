@@ -1,0 +1,150 @@
+{
+  "_ppubs_guid": "US-12804031-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Intel Corporation"
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A network interface device comprising: a host interface; a direct memory access (DMA) circuitry; and a network interface and circuitry to: receive a request to perform a service;  select a servicing node based on network latency and proximity of the requested service to the network interface device, wherein the proximity of the requested service includes execution in the network interface device; for the request to perform the service, select the network interface device to perform the service."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The network interface device of claim 1, wherein the circuitry is to associate a quality of service with the request, wherein the quality of service comprises a range of number of network device hops to the servicing node."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The network interface device of claim 1, wherein the circuitry is to: based on a quality of service, select an instance of the requested service that is executed by the network interface device."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The network interface device of claim 1, wherein the circuitry is to: based on a quality of service, select an instance of the requested service that is executed by a server that executes an issuer of the request to perform the service."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The network interface device of claim 1, wherein the circuitry is to: based on a quality of service, select an instance of the requested service that is executed by a server in a same rack as a server that executes an issuer of the request to perform the service."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The network interface device of claim 1, comprising: second circuitry that is to: in response to a request to construct a container, construct the container from an encrypted root file system and provide access to the container to a host system."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The network interface device of claim 1, wherein the network interface device comprises one or more of: network interface controller (NIC), SmartNIC, router, forwarding element, infrastructure processing unit (IPU), or data processing unit (DPU)."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The network interface device of claim 1, comprising a server that executes a process that is to issue the request, wherein the process is to specify a quality of service for the request."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 9,
+      "claim_text": "The network interface device of claim 1, wherein the circuitry is to: for a second request to perform a second service, select a second servicing node remote from the network interface device to perform the second service based on second network latency and second proximity of the second service to the network interface device."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 10,
+      "claim_text": "At least one non-transitory computer-readable medium comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure a network interface device to: associate a quality of service with a request to perform a service; and select a servicing node based on network latency and proximity of the requested service to the network interface device, wherein the proximity of the requested service includes execution in the network interface device; for the request to perform the service, select the network interface device to perform the service."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 11,
+      "claim_text": "The at least one non-transitory computer-readable medium of claim 10, wherein the quality of service comprises a range of number of network device hops to the servicing node."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 12,
+      "claim_text": "The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: based on the quality of service, select an instance of the requested service that is executed by the network interface device."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 13,
+      "claim_text": "The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: based on the quality of service, select an instance of the requested service that is executed by a server that executes an issuer of the request to perform the service."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 14,
+      "claim_text": "The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: based on the quality of service, select an instance of the requested service that is executed by a server in a same rack as a server that executes an issuer of the request to perform the service."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 15,
+      "claim_text": "The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: in response to a request to construct a container, construct the container from an encrypted root file system and provide access to the container to a host system."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 16,
+      "claim_text": "The at least one non-transitory computer-readable medium of claim 10, comprising instructions stored thereon, that when executed by one or more processors, cause the one or more processors to: configure the network interface device to: for a second request to perform a second service, select a second servicing node remote from the network interface device to perform the second service based on second network latency and second proximity of the second service to the network interface device."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 17,
+      "claim_text": "A method performed by a network interface device comprising a host interface, network interface, and direct memory access (DMA) circuitry, the method comprising: determining a quality of service associated with a request to perform a service; selecting a servicing node based on network latency and proximity of the requested service to a network interface device, wherein the proximity of the requested service includes execution in the network interface device; selecting, for the request to perform the service, the network interface device to perform the service."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 18,
+      "claim_text": "The method of claim 17, wherein the quality of service specifies a limit on number of network device hops to the servicing node."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 19,
+      "claim_text": "The method of claim 17, further comprising: selecting, based on the quality of service, an instance of the requested service that is executed by the network interface device."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 20,
+      "claim_text": "The method of claim 17, further comprising: selecting, based on the quality of service, an instance of the requested service that is executed by a server that executes an issuer of the request to perform the service."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 21,
+      "claim_text": "The method of claim 17, further comprising: selecting, based on the quality of service, an instance of the requested service that is executed by a server in a same rack as a server that executes an issuer of the request to perform the service."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 22,
+      "claim_text": "The method of claim 17, further comprising: constructing, in response to a request to construct a container, the container from an encrypted root file system and providing access to the container to a host system."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 23,
+      "claim_text": "The method of claim 17, further comprising: selecting, for a second request to perform a second service, a second servicing node remote from the network interface device to perform the second service based on second network latency and second proximity of the second service to the network interface device."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Johnny B",
+      "examiner_name_last": "Aguiar"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Patrick G.",
+      "inventor_name_last": "Kutch"
+    },
+    {
+      "inventor_name_first": "Carolyn",
+      "inventor_name_last": "Wyborny"
+    },
+    {
+      "inventor_name_first": "Ziye",
+      "inventor_name_last": "Yang"
+    }
+  ],
+  "patent_date": "2026-11-17",
+  "patent_id": "12804031",
+  "patent_title": "Network interface device to select a target service based on proximity of the target service"
+}
