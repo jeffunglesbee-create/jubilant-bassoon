@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-18 — archived golf rounds carry the round's real first tee
+
+Commit `b3e2c878` (`SW_VERSION 2026-11-17a`). Session doc: `outbox/cc-session-2026-11-18-golf-tee-times.md`. field-relay-nba `docs/CC-CMD-2026-11-16-golf-tee-times.md`, Task 3.
+
+**What changed.** `saveGolfRoundFinal` posts `start_time` from the relay's new `/v2/golf/enriched` `roundStart` (relay `140fa56`, deployed first), only when it is a string.
+
+**Proof.** smoke 1083/0; the real function in a Node sandbox: posts it, posts nothing without it, and the removal goes red.
+
+**Open (STAGED).** The first live archive row: after the RSM Classic round 1 (2026-11-19); the relay read is scheduled for 17:30Z that day.
+
 ## 2026-11-11 — past-date navigation shows the FA Cup, the EFL Cup and the EFL Trophy
 
 Commits `2d5b6df` (the change, `SW_VERSION 2026-11-10a`), `349b86a`, `225f70c` and `e72cf05` (the live probe and its fixes). Session doc: `outbox/cc-session-2026-11-11-past-date-cups.md`. The owner's "yes all 3" decided that the two EFL cups join the FA Cup (relay CC-CMD `docs/CC-CMD-2026-08-08-fa-cup-coverage.md`, Task 6).
