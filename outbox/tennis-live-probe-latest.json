@@ -1,20 +1,20 @@
 {
-  "ts": "2026-11-18T21:47:58.276Z",
+  "ts": "2026-11-19T04:06:14.171Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-17a",
   "triggered_by": "schedule",
   "relayReachable": true,
-  "relayLiveMatches": 7,
-  "relayLiveMatchesAllTiers": 152,
+  "relayLiveMatches": 6,
+  "relayLiveMatchesAllTiers": 154,
   "tiersSeen": [
     "challenger",
     "other",
     "utr",
     "wta_250"
   ],
-  "startedCards": 6,
-  "dayFeedCount": 149,
+  "startedCards": 0,
+  "dayFeedCount": 154,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "ATP Finals",
@@ -22,59 +22,63 @@
   ],
   "pageLoaded": true,
   "tennisSectionPresent": true,
-  "tennisCardCount": 7,
-  "cardsWithSetScore": 6,
-  "cardsWithOpponent": 7,
+  "tennisCardCount": 6,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 6,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
-      "home": "F. Labraña v A. Vergara Rivera",
-      "chip": "6-1 3-6 6-0"
+      "home": "B. Shelton v R. Jódar",
+      "chip": "(no chip)"
     },
     {
-      "home": "C. Alcaraz v D. Medvedev",
-      "chip": "6-2 6-4"
+      "home": "L. Bronzetti v C. Monnet",
+      "chip": "(no chip)"
     },
     {
-      "home": "G. Maristany v S. Costoulas",
-      "chip": "7-5 6-3"
+      "home": "V. Strakhova v V. Erjavec",
+      "chip": "(no chip)"
     },
     {
-      "home": "R. Masarova v P. Hercog",
-      "chip": "6-4 6-4"
+      "home": "A. Zolotareva v I. Burillo",
+      "chip": "(no chip)"
     },
     {
-      "home": "L. Romero Gormaz v N. Podoroska",
-      "chip": "6-3 6-4"
+      "home": "A. Zverev v A. Fils",
+      "chip": "(no chip)"
     },
     {
-      "home": "F. Cobolli v F. Tiafoe",
-      "chip": "6-7(6) 0-6"
-    },
-    {
-      "home": "A. Geerlings v L. Samson",
+      "home": "F. Labraña v A. Lazaro Garcia",
       "chip": "(no chip)"
     }
   ],
   "consoleErrors": [
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()"
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()"
   ],
   "failedRequests": [
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-18 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-18",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-18"
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-19",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-19"
   ],
   "renderedTournaments": [
     "ATP Finals",
@@ -82,24 +86,28 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:19",
-  "feedByDateOutcome": "ok:149",
-  "rowsBeforeTier": 152,
-  "rowsAfterTier": 7,
-  "sectionReturned": 7,
+  "feedLiveOutcome": "ok:16",
+  "feedByDateOutcome": "ok:154",
+  "rowsBeforeTier": 154,
+  "rowsAfterTier": 6,
+  "sectionReturned": 6,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
     "scheduled": 4,
-    "structuralRenders": 2,
+    "structuralRenders": 1,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 31454,
+  "tennisSectionHtmlLength": 36444,
   "sectionsInModel": [
+    "Bundesliga",
     "College Football",
+    "EFL League One",
+    "La Liga",
+    "Ligue 1",
     "MLS Soccer",
     "NBA",
     "NFL",
@@ -107,14 +115,18 @@
     "Tennis"
   ],
   "sectionsInDom": [
+    "Bundesliga",
     "College Football",
+    "EFL League One",
+    "La Liga",
+    "Ligue 1",
     "MLS Soccer",
     "NBA",
     "NFL",
     "NHL",
     "Tennis"
   ],
-  "tennisGamesInModel": 7,
+  "tennisGamesInModel": 6,
   "tennisSectionAnatomy": {
     "tag": "div",
     "className": "sport-section",
@@ -124,12 +136,16 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">7 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"F. Labraña v A. Vergara Rivera\" data-away=\"\" data-"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">6 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"B. Shelton v R. Jódar\" data-away=\"\" data-startt"
   },
   "domSectionCardCounts": [
     {
+      "sport": "Tennis",
+      "cards": 6
+    },
+    {
       "sport": "College Football",
-      "cards": 3
+      "cards": 9
     },
     {
       "sport": "NFL",
@@ -141,18 +157,30 @@
     },
     {
       "sport": "NBA",
-      "cards": 16
+      "cards": 25
     },
     {
       "sport": "MLS Soccer",
       "cards": 2
     },
     {
-      "sport": "Tennis",
-      "cards": 7
+      "sport": "La Liga",
+      "cards": 1
+    },
+    {
+      "sport": "Bundesliga",
+      "cards": 1
+    },
+    {
+      "sport": "Ligue 1",
+      "cards": 1
+    },
+    {
+      "sport": "EFL League One",
+      "cards": 1
     }
   ],
-  "sampleCardText": "📌★ F. Labraña v A. Vergara Rivera6-1 3-6 6-0 Santiago, Chile · Round of 32 · clay + Multiview Santiago, Chile ALONE ON SCREEN $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 7:05 PM T",
+  "sampleCardText": "📌★ B. Shelton v R. Jódar ATP Finals · hard + Multiview ATP Finals ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 8:00 AM Tennis ChannelTV loginCable/sate",
   "verdict": "PASS",
-  "reason": "relay 7 live, page 7 card(s), 6 of 6 STARTED with a set score (1 not yet under way, correctly chipless), 7 with an opponent; tournaments proven on the page: ATP Finals, Santiago, Chile"
+  "reason": "relay 6 live, page 6 card(s), 0 of 0 STARTED with a set score (6 not yet under way, correctly chipless), 6 with an opponent; tournaments proven on the page: ATP Finals, Santiago, Chile"
 }
