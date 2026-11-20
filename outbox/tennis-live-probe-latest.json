@@ -1,11 +1,11 @@
 {
-  "ts": "2026-11-20T03:57:19.912Z",
+  "ts": "2026-11-20T21:45:38.917Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-17a",
   "triggered_by": "schedule",
   "relayReachable": true,
-  "relayLiveMatches": 15,
+  "relayLiveMatches": 16,
   "relayLiveMatchesAllTiers": 163,
   "tiersSeen": [
     "challenger",
@@ -13,7 +13,7 @@
     "utr",
     "wta_250"
   ],
-  "startedCards": 0,
+  "startedCards": 11,
   "dayFeedCount": 163,
   "dayFeedTruncated": false,
   "expectedTournaments": [
@@ -23,9 +23,9 @@
   ],
   "pageLoaded": true,
   "tennisSectionPresent": true,
-  "tennisCardCount": 15,
-  "cardsWithSetScore": 0,
-  "cardsWithOpponent": 15,
+  "tennisCardCount": 16,
+  "cardsWithSetScore": 11,
+  "cardsWithOpponent": 16,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
@@ -35,19 +35,19 @@
     },
     {
       "home": "D. Jakupović v M. S. Goenadi",
-      "chip": "(no chip)"
+      "chip": "6-0 6-4"
     },
     {
       "home": "C. Alcaraz v F. Cobolli",
-      "chip": "(no chip)"
+      "chip": "6-4 6-1"
     },
     {
       "home": "T. Zidanšek v L. Naswardhani",
-      "chip": "(no chip)"
+      "chip": "6-1 6-0"
     },
     {
       "home": "L. Romero Gormaz v I. Burillo",
-      "chip": "(no chip)"
+      "chip": "6-4 6-3"
     },
     {
       "home": "Poland v Sweden",
@@ -55,11 +55,7 @@
     },
     {
       "home": "G. Feistel v K. Rinaldo Persson",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "L. Bronzetti v V. Strakhova",
-      "chip": "(no chip)"
+      "chip": "4-6 2-6"
     },
     {
       "home": "Brazil v Canada",
@@ -67,23 +63,31 @@
     },
     {
       "home": "N. Leme da Silva v B. Andreescu",
-      "chip": "(no chip)"
+      "chip": "3-6 1-6"
     },
     {
-      "home": "M. Kubka v C. W. Hennemann",
-      "chip": "(no chip)"
+      "home": "L. Bronzetti v V. Strakhova",
+      "chip": "6-4 6-2"
     },
     {
       "home": "L. Pigossi v K. Cross",
       "chip": "(no chip)"
     },
     {
+      "home": "M. Kubka v C. W. Hennemann",
+      "chip": "7-5 6-1"
+    },
+    {
+      "home": "G. Cé  v K. Cross",
+      "chip": "6-2 7-5"
+    },
+    {
       "home": "D. Medvedev v F. Tiafoe",
-      "chip": "(no chip)"
+      "chip": "6-3 6-4"
     },
     {
       "home": "G. Maristany v A. Lazaro Garcia",
-      "chip": "(no chip)"
+      "chip": "6-2 2-3 · 0-0 ○"
     },
     {
       "home": "R. Masarova v L. Samson",
@@ -91,26 +95,23 @@
     }
   ],
   "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 400 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-11-20&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
-    "error: Failed to load resource: net::ERR_FAILED",
-    "error: Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-11-20&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+    "error: Failed to load resource: the server responded with a status of 404 ()"
   ],
   "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/fifa-rankings/Orlando — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/live/ambient — net::ERR_ABORTED",
-    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-11-20&session_type=Race,Qualifying,Sprint — net::ERR_FAILED",
-    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-11-20&session_type=Race,Qualifying,Sprint — net::ERR_FAILED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=golf_401850981 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401876395 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401884736 — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
@@ -128,26 +129,38 @@
   "feedLiveOutcome": "ok:15",
   "feedByDateOutcome": "ok:163",
   "rowsBeforeTier": 163,
-  "rowsAfterTier": 15,
-  "sectionReturned": 15,
+  "rowsAfterTier": 16,
+  "sectionReturned": 16,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 2,
-    "structuralRenders": 1,
+    "scheduled": 4,
+    "structuralRenders": 2,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 91633,
+  "tennisSectionHtmlLength": 71922,
   "sectionsInModel": [
+    "Bundesliga",
+    "College Football",
+    "EFL Championship",
+    "EFL League One",
+    "EFL League Two",
+    "La Liga",
+    "Ligue 1",
+    "MLS Soccer",
+    "NBA",
+    "NHL",
+    "Premier League",
+    "Serie A",
     "Tennis"
   ],
   "sectionsInDom": [
     "Tennis"
   ],
-  "tennisGamesInModel": 15,
+  "tennisGamesInModel": 16,
   "tennisSectionAnatomy": {
     "tag": "div",
     "className": "sport-section",
@@ -157,15 +170,15 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">15 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"Slovenia v Indonesia\" data-away=\"\""
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">16 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-prime\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"Slovenia v Indonesia\" data-away=\"\" data-starttim"
   },
   "domSectionCardCounts": [
     {
       "sport": "Tennis",
-      "cards": 15
+      "cards": 16
     }
   ],
   "sampleCardText": "📌★ Slovenia v Indonesia Billie Jean King Cup · hard + Multiview Billie Jean King Cup Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 7:00 AM Tennis ChannelTV loginCable/s",
   "verdict": "PASS",
-  "reason": "relay 15 live, page 15 card(s), 0 of 0 STARTED with a set score (15 not yet under way, correctly chipless), 15 with an opponent; tournaments proven on the page: ATP Finals, Billie Jean King Cup, Santiago, Chile"
+  "reason": "relay 16 live, page 16 card(s), 11 of 11 STARTED with a set score (5 not yet under way, correctly chipless), 16 with an opponent; tournaments proven on the page: ATP Finals, Billie Jean King Cup, Santiago, Chile"
 }
