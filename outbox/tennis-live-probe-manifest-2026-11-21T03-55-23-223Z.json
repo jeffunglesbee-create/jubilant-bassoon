@@ -1,0 +1,308 @@
+{
+  "ts": "2026-11-21T03:55:23.223Z",
+  "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "sw": "2026-11-17a",
+  "triggered_by": "schedule",
+  "relayReachable": true,
+  "relayLiveMatches": 29,
+  "relayLiveMatchesAllTiers": 100,
+  "tiersSeen": [
+    "challenger",
+    "other",
+    "utr",
+    "wta_250"
+  ],
+  "startedCards": 1,
+  "dayFeedCount": 98,
+  "dayFeedTruncated": false,
+  "expectedTournaments": [
+    "ATP Finals",
+    "Billie Jean King Cup",
+    "Santiago, Chile"
+  ],
+  "pageLoaded": true,
+  "tennisSectionPresent": true,
+  "tennisCardCount": 29,
+  "cardsWithSetScore": 1,
+  "cardsWithOpponent": 29,
+  "cardsMissingScore": [],
+  "cardsMissingOpponent": [],
+  "chips": [
+    {
+      "home": "Japan v Argentina",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "M. Hontama v J. Gonzalez Daniele",
+      "chip": "3-2 · 30-15 ○"
+    },
+    {
+      "home": "H. Sakatsume v M. F. Urrutia",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "Thailand v Switzerland",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "M. Sawangkaew v V. Golubić",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "L. Tararudee v J. Teichmann",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "Klepac A / Radisic N v Goenadi M S / Sutjiadi A",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "T. Zidanšek v M. S. Goenadi",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "Falkowska W / Kubka M v Hennemann C W / Zaar L",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "D. Jakupović v L. Naswardhani",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "France v Australia",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "C. Burel v T. Gibson",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "M. Kubka v K. Rinaldo Persson",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "C. Alcaraz v B. Shelton",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "D. Parry v S. Hunter",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "G. Feistel v C. W. Hennemann",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "Pigossi L / Stefani L v Arseneault A / Dabrowski G",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "Brazil v Canada",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "L. Pigossi v B. Andreescu",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "G. Cé  v B. Andreescu",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "N. Leme da Silva v K. Cross",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "USA v Hungary",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "C. Gauff v D. Galfi",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "A. Zverev v D. Medvedev",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "A. Li v A. Bondár",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "L. Romero Gormaz v L. Bronzetti",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "G. Maristany v R. Masarova",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "Slovenia v Indonesia",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "Poland v Sweden",
+      "chip": "(no chip)"
+    }
+  ],
+  "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-11-21&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "error: Failed to load resource: net::ERR_FAILED",
+    "error: Access to fetch at 'https://api.openf1.org/v1/sessions?date_start%3E=2026-11-21&session_type=Race,Qualifying,Sprint' from origin 'https://jubilant-bassoon.jeffunglesbee.workers.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "error: Failed to load resource: net::ERR_FAILED",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
+    "GET https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/outbox/mlbn-schedule.json — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-20 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
+    "GET https://raw.githubusercontent.com/jeffunglesbee-create/jubilant-bassoon/main/outbox/mlbn-schedule.json — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-11-21&session_type=Race,Qualifying,Sprint — net::ERR_FAILED",
+    "GET https://api.openf1.org/v1/sessions?date_start%3E=2026-11-21&session_type=Race,Qualifying,Sprint — net::ERR_FAILED"
+  ],
+  "relayCallsFromPage": [
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-21",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-21"
+  ],
+  "renderedTournaments": [
+    "ATP Finals",
+    "Billie Jean King Cup",
+    "Santiago, Chile"
+  ],
+  "missingTournaments": [],
+  "diagRan": true,
+  "feedLiveOutcome": "ok:13",
+  "feedByDateOutcome": "ok:98",
+  "rowsBeforeTier": 100,
+  "rowsAfterTier": 29,
+  "sectionReturned": 29,
+  "sectionInAllData": true,
+  "producerThrew": null,
+  "renderPipeline": {
+    "absent": false,
+    "scheduled": 3,
+    "structuralRenders": 2,
+    "skippedStructuralRenders": 0
+  },
+  "tennisSectionCount": 1,
+  "tennisSectionParent": "main#main.main",
+  "tennisSectionHtmlLength": 174372,
+  "sectionsInModel": [
+    "Bundesliga",
+    "College Football",
+    "EFL Championship",
+    "EFL League One",
+    "EFL League Two",
+    "La Liga",
+    "Ligue 1",
+    "MLS Soccer",
+    "NBA",
+    "NFL",
+    "NHL",
+    "Premier League",
+    "Serie A",
+    "Tennis"
+  ],
+  "sectionsInDom": [
+    "Bundesliga",
+    "College Football",
+    "EFL Championship",
+    "EFL League One",
+    "EFL League Two",
+    "La Liga",
+    "Ligue 1",
+    "MLS Soccer",
+    "NBA",
+    "NFL",
+    "NHL",
+    "Premier League",
+    "Serie A",
+    "Tennis"
+  ],
+  "tennisGamesInModel": 29,
+  "tennisSectionAnatomy": {
+    "tag": "div",
+    "className": "sport-section",
+    "id": "(none)",
+    "heading": "(no heading)",
+    "childTags": [
+      "div.section-head",
+      "div.games-list"
+    ],
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">29 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact live espn-live circadian-preview\" data-gameid=\"g30\" data-sport=\"Tennis\" data-home=\"Japan v Argentina\" data-away=\"\" data-st"
+  },
+  "domSectionCardCounts": [
+    {
+      "sport": "College Football",
+      "cards": 24
+    },
+    {
+      "sport": "NFL",
+      "cards": 11
+    },
+    {
+      "sport": "NHL",
+      "cards": 19
+    },
+    {
+      "sport": "NBA",
+      "cards": 22
+    },
+    {
+      "sport": "MLS Soccer",
+      "cards": 6
+    },
+    {
+      "sport": "Premier League",
+      "cards": 9
+    },
+    {
+      "sport": "La Liga",
+      "cards": 9
+    },
+    {
+      "sport": "Serie A",
+      "cards": 9
+    },
+    {
+      "sport": "Bundesliga",
+      "cards": 9
+    },
+    {
+      "sport": "Ligue 1",
+      "cards": 9
+    },
+    {
+      "sport": "EFL Championship",
+      "cards": 12
+    },
+    {
+      "sport": "EFL League One",
+      "cards": 12
+    },
+    {
+      "sport": "EFL League Two",
+      "cards": 12
+    },
+    {
+      "sport": "Tennis",
+      "cards": 29
+    }
+  ],
+  "sampleCardText": "📌★ Japan v Argentina Billie Jean King Cup · hard + Multiview In progress · 56m in Billie Jean King Cup Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › LIVE Tennis Channel",
+  "verdict": "PASS",
+  "reason": "relay 29 live, page 29 card(s), 1 of 1 STARTED with a set score (28 not yet under way, correctly chipless), 29 with an opponent; tournaments proven on the page: ATP Finals, Billie Jean King Cup, Santiago, Chile"
+}
