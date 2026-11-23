@@ -1,149 +1,57 @@
 {
-  "ts": "2026-11-22T20:39:44.303Z",
+  "ts": "2026-11-23T03:41:41.208Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-17a",
   "triggered_by": "schedule",
   "relayReachable": true,
-  "relayLiveMatches": 29,
-  "relayLiveMatchesAllTiers": 172,
+  "relayLiveMatches": 7,
+  "relayLiveMatchesAllTiers": 200,
   "tiersSeen": [
     "challenger",
-    "other",
     "utr",
     "wta_250"
   ],
-  "startedCards": 13,
-  "dayFeedCount": 172,
+  "startedCards": 0,
+  "dayFeedCount": 200,
   "dayFeedTruncated": false,
   "expectedTournaments": [
-    "ATP Finals",
-    "Billie Jean King Cup",
-    "Buenos Aires, Argentina",
-    "Santiago, Chile"
+    "Buenos Aires, Argentina"
   ],
   "pageLoaded": true,
   "tennisSectionPresent": true,
-  "tennisCardCount": 29,
-  "cardsWithSetScore": 13,
-  "cardsWithOpponent": 29,
+  "tennisCardCount": 7,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 7,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
-      "home": "Aoyama S / Hozumi E v Gonzalez Daniele J M / Moyano L",
-      "chip": "6-2 6-1"
-    },
-    {
-      "home": "A. Li v A. Bondár",
-      "chip": "6-1 6-4"
-    },
-    {
-      "home": "H. Sakatsume v J. Gonzalez Daniele",
+      "home": "B. Bonardi v C. Monnet",
       "chip": "(no chip)"
     },
     {
-      "home": "E. Shibahara v L. Moyano",
-      "chip": "6-1 6-2"
-    },
-    {
-      "home": "M. Hontama v M. F. Urrutia",
+      "home": "M. Trevisan v A. Akli",
       "chip": "(no chip)"
     },
     {
-      "home": "Thailand v Switzerland",
+      "home": "P. Hercog v I. Oz",
       "chip": "(no chip)"
     },
     {
-      "home": "Naklo T / Plipuech P v Karamoko N / Waltert S",
-      "chip": "3-6 7-6(7) 6-3"
-    },
-    {
-      "home": "L. Tararudee v V. Golubić",
+      "home": "J. Estevez v A. Geerlings",
       "chip": "(no chip)"
     },
     {
-      "home": "A. Chanta v S. Bandecchi",
-      "chip": "3-6 5-7"
-    },
-    {
-      "home": "M. Sawangkaew v J. Teichmann",
+      "home": "N. Brancaccio v A. Zolotareva",
       "chip": "(no chip)"
     },
     {
-      "home": "France v Australia",
+      "home": "V. Lepchenko v A. Rencheli",
       "chip": "(no chip)"
     },
     {
-      "home": "Jeanjean L / Mladenovic K v Hunter S / Joint M",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "Mladenovic K / Parry D v Hunter S / Joint M",
-      "chip": "2-6 4-6"
-    },
-    {
-      "home": "D. Parry v T. Gibson",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "E. Jacquemot v M. Joint",
-      "chip": "1-6 3-6"
-    },
-    {
-      "home": "A. Rencheli v A. Osborne",
-      "chip": "6-4 6-4"
-    },
-    {
-      "home": "J. Estevez v C. Markus",
-      "chip": "6-1 6-0"
-    },
-    {
-      "home": "C. Burel v S. Hunter",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "L. Ayala v M. Bulbarella",
-      "chip": "6-2 6-3"
-    },
-    {
-      "home": "Z. Kulambayeva v G. Rondinoni",
-      "chip": "6-1 6-0"
-    },
-    {
-      "home": "A. Zverev v C. Alcaraz",
-      "chip": "2-6 6-7(7)"
-    },
-    {
-      "home": "USA v Hungary",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "Krawczyk D / Townsend T v Bondar A / Stollar F",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "Gauff C / Townsend T v Bondar A / Stollar F",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "Gauff C / Townsend T v Bondar A / Galfi D",
-      "chip": "6-4 6-3"
-    },
-    {
-      "home": "C. Gauff v A. Bondár",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "C. Gauff v A. Nagy",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "L. Romero Gormaz v R. Masarova",
-      "chip": "(no chip)"
-    },
-    {
-      "home": "A. Li v D. Galfi",
+      "home": "D. Papamichail v J. Riera",
       "chip": "(no chip)"
     }
   ],
@@ -165,42 +73,49 @@
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-22 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401873069 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401873075 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401873074 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401933730 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401933731 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401892771 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401892769 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401910033 — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-22",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-22"
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-23",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-23"
   ],
   "renderedTournaments": [
-    "ATP Finals",
-    "Billie Jean King Cup",
-    "Buenos Aires, Argentina",
-    "Santiago, Chile"
+    "Buenos Aires, Argentina"
   ],
   "missingTournaments": [],
   "diagRan": true,
   "feedLiveOutcome": "ok:8",
-  "feedByDateOutcome": "ok:172",
-  "rowsBeforeTier": 172,
-  "rowsAfterTier": 29,
-  "sectionReturned": 29,
+  "feedByDateOutcome": "ok:200",
+  "rowsBeforeTier": 200,
+  "rowsAfterTier": 7,
+  "sectionReturned": 7,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
     "scheduled": 4,
-    "structuralRenders": 1,
+    "structuralRenders": 2,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 133666,
+  "tennisSectionHtmlLength": 41908,
   "sectionsInModel": [
     "Bundesliga",
+    "College Football",
     "EFL Championship",
+    "EFL League One",
+    "EFL League Two",
     "La Liga",
     "Ligue 1",
     "MLS Soccer",
@@ -209,22 +124,13 @@
     "NHL",
     "Premier League",
     "Serie A",
-    "Tennis"
+    "Tennis",
+    "UEFA Champions League"
   ],
   "sectionsInDom": [
-    "Bundesliga",
-    "EFL Championship",
-    "La Liga",
-    "Ligue 1",
-    "MLS Soccer",
-    "NBA",
-    "NFL",
-    "NHL",
-    "Premier League",
-    "Serie A",
     "Tennis"
   ],
-  "tennisGamesInModel": 29,
+  "tennisGamesInModel": 7,
   "tennisSectionAnatomy": {
     "tag": "div",
     "className": "sport-section",
@@ -234,55 +140,15 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">29 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-late\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"Aoyama S / Hozumi E v Gonzalez Daniele J M / Moya"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">7 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"B. Bonardi v C. Monnet\" data-away=\""
   },
   "domSectionCardCounts": [
     {
-      "sport": "NFL",
-      "cards": 11
-    },
-    {
-      "sport": "NHL",
-      "cards": 5
-    },
-    {
-      "sport": "NBA",
-      "cards": 7
-    },
-    {
-      "sport": "MLS Soccer",
-      "cards": 3
-    },
-    {
-      "sport": "Premier League",
-      "cards": 2
-    },
-    {
-      "sport": "La Liga",
-      "cards": 4
-    },
-    {
-      "sport": "Serie A",
-      "cards": 5
-    },
-    {
-      "sport": "Bundesliga",
-      "cards": 2
-    },
-    {
-      "sport": "Ligue 1",
-      "cards": 3
-    },
-    {
-      "sport": "EFL Championship",
-      "cards": 1
-    },
-    {
       "sport": "Tennis",
-      "cards": 29
+      "cards": 7
     }
   ],
-  "sampleCardText": "📌★ Aoyama S / Hozumi E v Gonzalez Daniele J M / Moyano L6-2 6-1 Billie Jean King Cup · hard + Multiview L 0–0 F Billie Jean King Cup Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap f",
+  "sampleCardText": "📌★ B. Bonardi v C. Monnet Buenos Aires, Argentina · Round of 32 · clay + Multiview Buenos Aires, Argentina $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 9:00 AM Tennis ChannelTV log",
   "verdict": "PASS",
-  "reason": "relay 29 live, page 29 card(s), 13 of 13 STARTED with a set score (16 not yet under way, correctly chipless), 29 with an opponent; tournaments proven on the page: ATP Finals, Billie Jean King Cup, Buenos Aires, Argentina, Santiago, Chile"
+  "reason": "relay 7 live, page 7 card(s), 0 of 0 STARTED with a set score (7 not yet under way, correctly chipless), 7 with an opponent; tournaments proven on the page: Buenos Aires, Argentina"
 }
