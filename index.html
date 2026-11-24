@@ -18897,10 +18897,48 @@ function _isGolfRoundComplete(pgaData) {
     return Number.isFinite(thru) && thru >= 18;
   });
 }
+function _saveGolfPlayoff(pgaData) {
+  const po = pgaData.playoff;
+  if (!po || po.complete !== true || !po.winner || !po.winner.name) return;
+  const eventId = pgaData.eventId || '';
+  const dedup = eventId + '_PO';
+  if (_golfRoundSaved[dedup]) return;
+  _golfRoundSaved[dedup] = true;
+  const relayBase = (typeof V2_RELAY_BASE !== 'undefined')
+    ? V2_RELAY_BASE : 'https://field-relay-nba.jeffunglesbee.workers.dev';
+  const today = (typeof TODAY_ISO !== 'undefined') ? TODAY_ISO : new Date().toISOString().slice(0,10);
+  const others = (Array.isArray(po.players) ? po.players : [])
+    .filter(p => p && p.athleteId !== po.winner.athleteId && p.name).map(p => p.name);
+  // The winner's playoff score to par when it is one number ("-1"); a playoff of
+  // several holes is joined by the relay ("E -1") and is not a single score.
+  const result = typeof po.winner.result === 'string' && /^[+-]?\d+$|^E$/.test(po.winner.result)
+    ? (po.winner.result === 'E' ? 0 : Number(po.winner.result)) : null;
+  fetch(relayBase + '/archive/game', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sport: 'golf', league: 'PGA Tour', date: today,
+      home: pgaData.name || 'PGA Tour Event', away: 'PO',
+      home_score: result,
+      ...(typeof po.start === 'string' ? { start_time: po.start } : {}),
+      venue: pgaData.venue || '',
+      source_id: 'golf_' + (eventId || today),
+      note: others.length ? `${po.winner.name} won the playoff over ${others.join(', ')}` : `${po.winner.name} won the playoff`,
+    }),
+    keepalive: true,
+  }).catch(e => captureFieldError('archive:golf-playoff', e, false));
+}
 function saveGolfRoundFinal(pgaData) {
   if (!pgaData) return;
   const eventId = pgaData.eventId || '';
   const round = pgaData.round || '';
+  // A playoff is its own row, never a round (owner, 2026-11-24): the 2026-11-23 RSM
+  // playoff was archived as "R5" and round 4 had no row. The relay serves
+  // `playoff` {start, players, winner, complete} from ESPN's leaderboard and caps
+  // `round` at the tournament's regular rounds. Saved before the round's dedup
+  // return: round 4 can be saved as it ends, before the playoff is played.
+  // field-relay-nba docs/CC-CMD-2026-11-16-golf-tee-times.md.
+  _saveGolfPlayoff(pgaData);
   const dedup = eventId + '_R' + round;
   if (_golfRoundSaved[dedup]) return;
   _golfRoundSaved[dedup] = true;
@@ -28539,7 +28577,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-17a';
+  const SW_VERSION = '2026-11-24a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
