@@ -1,12 +1,12 @@
 {
-  "ts": "2026-11-24T01:36:24.829Z",
+  "ts": "2026-11-24T06:55:11.378Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-17a",
   "triggered_by": "schedule",
   "relayReachable": true,
   "relayLiveMatches": 10,
-  "relayLiveMatchesAllTiers": 201,
+  "relayLiveMatchesAllTiers": 181,
   "tiersSeen": [
     "challenger",
     "other",
@@ -14,7 +14,7 @@
     "wta_250"
   ],
   "startedCards": 0,
-  "dayFeedCount": 201,
+  "dayFeedCount": 181,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "Buenos Aires, Argentina",
@@ -70,28 +70,14 @@
     }
   ],
   "consoleErrors": [
-    "error: Failed to load resource: the server responded with a status of 400 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Failed to load resource: the server responded with a status of 403 ()",
-    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "error: Failed to load resource: the server responded with a status of 404 ()"
+    "error: Failed to load resource: the server responded with a status of 403 ()"
   ],
   "failedRequests": [
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-23 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=golf_401850981 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401875009 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401882802 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401879237 — net::ERR_ABORTED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
@@ -105,9 +91,9 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:12",
-  "feedByDateOutcome": "ok:201",
-  "rowsBeforeTier": 201,
+  "feedLiveOutcome": "ok:4",
+  "feedByDateOutcome": "ok:181",
+  "rowsBeforeTier": 181,
   "rowsAfterTier": 10,
   "sectionReturned": 10,
   "sectionInAllData": true,
@@ -115,24 +101,20 @@
   "renderPipeline": {
     "absent": false,
     "scheduled": 4,
-    "structuralRenders": 1,
+    "structuralRenders": 2,
     "skippedStructuralRenders": 0
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 58721,
+  "tennisSectionHtmlLength": 58733,
   "sectionsInModel": [
     "College Football",
     "EFL Championship",
     "EFL League One",
     "EFL League Two",
-    "La Liga",
     "MLS Soccer",
     "NBA",
-    "NFL",
     "NHL",
-    "Premier League",
-    "Serie A",
     "Tennis",
     "UEFA Champions League"
   ],
@@ -141,13 +123,9 @@
     "EFL Championship",
     "EFL League One",
     "EFL League Two",
-    "La Liga",
     "MLS Soccer",
     "NBA",
-    "NFL",
     "NHL",
-    "Premier League",
-    "Serie A",
     "Tennis",
     "UEFA Champions League"
   ],
@@ -161,7 +139,7 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">10 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-prime\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"R. Masarova v S. Costoulas\" data-away=\"\" data-st"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">10 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-prime rn-featured\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"R. Masarova v S. Costoulas\" data-awa"
   },
   "domSectionCardCounts": [
     {
@@ -173,36 +151,20 @@
       "cards": 2
     },
     {
-      "sport": "NFL",
-      "cards": 2
-    },
-    {
       "sport": "NHL",
-      "cards": 22
+      "cards": 1
     },
     {
       "sport": "NBA",
-      "cards": 22
+      "cards": 3
     },
     {
       "sport": "MLS Soccer",
-      "cards": 2
-    },
-    {
-      "sport": "Premier League",
-      "cards": 1
-    },
-    {
-      "sport": "La Liga",
-      "cards": 1
-    },
-    {
-      "sport": "Serie A",
       "cards": 1
     },
     {
       "sport": "EFL Championship",
-      "cards": 12
+      "cards": 8
     },
     {
       "sport": "EFL League One",
@@ -214,7 +176,7 @@
     },
     {
       "sport": "UEFA Champions League",
-      "cards": 18
+      "cards": 9
     }
   ],
   "sampleCardText": "📌★ R. Masarova v S. Costoulas Buenos Aires, Argentina · Round of 32 · clay + Multiview Buenos Aires, Argentina $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 9:00 AM Tennis ChannelTV",
