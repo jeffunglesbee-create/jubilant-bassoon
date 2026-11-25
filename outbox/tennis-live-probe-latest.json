@@ -1,20 +1,20 @@
 {
-  "ts": "2026-11-24T23:27:34.318Z",
+  "ts": "2026-11-25T05:24:14.775Z",
   "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
   "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
   "sw": "2026-11-24a",
   "triggered_by": "schedule",
   "relayReachable": true,
-  "relayLiveMatches": 13,
-  "relayLiveMatchesAllTiers": 173,
+  "relayLiveMatches": 6,
+  "relayLiveMatchesAllTiers": 130,
   "tiersSeen": [
     "challenger",
     "other",
     "utr",
     "wta_250"
   ],
-  "startedCards": 10,
-  "dayFeedCount": 169,
+  "startedCards": 0,
+  "dayFeedCount": 130,
   "dayFeedTruncated": false,
   "expectedTournaments": [
     "Buenos Aires, Argentina",
@@ -22,98 +22,58 @@
   ],
   "pageLoaded": true,
   "tennisSectionPresent": true,
-  "tennisCardCount": 13,
-  "cardsWithSetScore": 10,
-  "cardsWithOpponent": 13,
+  "tennisCardCount": 6,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 6,
   "cardsMissingScore": [],
   "cardsMissingOpponent": [],
   "chips": [
     {
-      "home": "R. Masarova v S. Costoulas",
+      "home": "Italy v R. o. Korea",
       "chip": "(no chip)"
     },
     {
-      "home": "V. Bosio v L. Samson",
-      "chip": "4-6 2-6"
-    },
-    {
-      "home": "Z. Kulambayeva v V. Erjavec",
-      "chip": "2-6 4-6"
-    },
-    {
-      "home": "Czechia v Canada",
+      "home": "S. Larraya Guidi v M. Carle",
       "chip": "(no chip)"
     },
     {
-      "home": "T. Machač v L. Draxl",
-      "chip": "6-2 3-6 6-2"
-    },
-    {
-      "home": "G. Maristany v L. M. Cinalli",
-      "chip": "6-1 6-1"
-    },
-    {
-      "home": "L. Bronzetti v A. Herrero Linana",
-      "chip": "1-6 2-6"
-    },
-    {
-      "home": "J. Lehečka v F. Auger-Aliassime",
-      "chip": "7-6(4) 6-2"
-    },
-    {
-      "home": "S. Sierra v V. Jimenez Kasintseva",
-      "chip": "1-6"
-    },
-    {
-      "home": "L. Ayala v I. Burillo",
-      "chip": "2-6 2-6"
-    },
-    {
-      "home": "Pavlasek A / Rikl P v Auger-Aliassime F / Chan D",
+      "home": "M. Trevisan v V. Erjavec",
       "chip": "(no chip)"
     },
     {
-      "home": "P. Hercog v S. Costoulas",
-      "chip": "2-6 2-4 ○"
+      "home": "I. Oz v J. Riera",
+      "chip": "(no chip)"
     },
     {
-      "home": "N. Podoroska v L. Romero Gormaz",
-      "chip": "7-6(4) 6-0"
+      "home": "A. Herrero Linana v A. Geerlings",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "S. Sierra v C. Monnet",
+      "chip": "(no chip)"
     }
   ],
   "consoleErrors": [
-    "error: Failed to load resource: the server responded with a status of 400 ()",
-    "error: Failed to load resource: the server responded with a status of 400 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
-    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
     "error: Failed to load resource: the server responded with a status of 404 ()",
     "error: Failed to load resource: the server responded with a status of 404 ()"
   ],
   "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
     "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-24 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=golf_401850981 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=golf_401850981 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401915297 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401915298 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401915299 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401915379 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401915294 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401915296 — net::ERR_ABORTED",
-    "GET https://field-relay-nba.jeffunglesbee.workers.dev/espn-summary/sports/soccer/fifa.world/summary?event=401915295 — net::ERR_ABORTED"
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-25 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
   ],
   "relayCallsFromPage": [
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
     "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-24",
-    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-24"
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-25",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-25"
   ],
   "renderedTournaments": [
     "Buenos Aires, Argentina",
@@ -121,28 +81,24 @@
   ],
   "missingTournaments": [],
   "diagRan": true,
-  "feedLiveOutcome": "ok:16",
-  "feedByDateOutcome": "ok:169",
-  "rowsBeforeTier": 173,
-  "rowsAfterTier": 13,
-  "sectionReturned": 13,
+  "feedLiveOutcome": "ok:7",
+  "feedByDateOutcome": "ok:130",
+  "rowsBeforeTier": 130,
+  "rowsAfterTier": 6,
+  "sectionReturned": 6,
   "sectionInAllData": true,
   "producerThrew": null,
   "renderPipeline": {
     "absent": false,
-    "scheduled": 4,
+    "scheduled": 3,
     "structuralRenders": 1,
-    "skippedStructuralRenders": 0
+    "skippedStructuralRenders": 1
   },
   "tennisSectionCount": 1,
   "tennisSectionParent": "main#main.main",
-  "tennisSectionHtmlLength": 54214,
+  "tennisSectionHtmlLength": 36296,
   "sectionsInModel": [
-    "College Football",
     "EFL Championship",
-    "EFL League One",
-    "EFL League Two",
-    "MLS Soccer",
     "NBA",
     "NFL",
     "NHL",
@@ -150,18 +106,14 @@
     "UEFA Champions League"
   ],
   "sectionsInDom": [
-    "College Football",
     "EFL Championship",
-    "EFL League One",
-    "EFL League Two",
-    "MLS Soccer",
     "NBA",
     "NFL",
     "NHL",
     "Tennis",
     "UEFA Champions League"
   ],
-  "tennisGamesInModel": 13,
+  "tennisGamesInModel": 6,
   "tennisSectionAnatomy": {
     "tag": "div",
     "className": "sport-section",
@@ -171,16 +123,12 @@
       "div.section-head",
       "div.games-list"
     ],
-    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">13 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-prime\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"R. Masarova v S. Costoulas\" data-away=\"\" data-st"
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">6 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured scout-pick-card\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"Italy v R. o. Korea"
   },
   "domSectionCardCounts": [
     {
       "sport": "Tennis",
-      "cards": 13
-    },
-    {
-      "sport": "College Football",
-      "cards": 2
+      "cards": 6
     },
     {
       "sport": "NFL",
@@ -188,34 +136,22 @@
     },
     {
       "sport": "NHL",
-      "cards": 15
+      "cards": 14
     },
     {
       "sport": "NBA",
-      "cards": 12
-    },
-    {
-      "sport": "MLS Soccer",
-      "cards": 1
+      "cards": 9
     },
     {
       "sport": "EFL Championship",
-      "cards": 12
-    },
-    {
-      "sport": "EFL League One",
       "cards": 4
     },
     {
-      "sport": "EFL League Two",
-      "cards": 2
-    },
-    {
       "sport": "UEFA Champions League",
-      "cards": 18
+      "cards": 9
     }
   ],
-  "sampleCardText": "📌★ R. Masarova v S. Costoulas Buenos Aires, Argentina · Round of 32 · clay + Multiview Buenos Aires, Argentina $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › 9:00 AM Tennis ChannelTV",
+  "sampleCardText": "📌★ Italy v R. o. Korea Davis Cup · Quarterfinals + Multiview Davis Cup ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › Scout's Pick 10:00 AM Tennis Channe",
   "verdict": "PASS",
-  "reason": "relay 13 live, page 13 card(s), 10 of 10 STARTED with a set score (3 not yet under way, correctly chipless), 13 with an opponent; tournaments proven on the page: Buenos Aires, Argentina, Davis Cup"
+  "reason": "relay 6 live, page 6 card(s), 0 of 0 STARTED with a set score (6 not yet under way, correctly chipless), 6 with an opponent; tournaments proven on the page: Buenos Aires, Argentina, Davis Cup"
 }

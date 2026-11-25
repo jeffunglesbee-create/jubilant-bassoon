@@ -1,0 +1,157 @@
+{
+  "ts": "2026-11-25T05:24:14.775Z",
+  "fieldUrl": "https://jubilant-bassoon.jeffunglesbee.workers.dev?wpt",
+  "relay": "https://field-relay-nba.jeffunglesbee.workers.dev",
+  "sw": "2026-11-24a",
+  "triggered_by": "schedule",
+  "relayReachable": true,
+  "relayLiveMatches": 6,
+  "relayLiveMatchesAllTiers": 130,
+  "tiersSeen": [
+    "challenger",
+    "other",
+    "utr",
+    "wta_250"
+  ],
+  "startedCards": 0,
+  "dayFeedCount": 130,
+  "dayFeedTruncated": false,
+  "expectedTournaments": [
+    "Buenos Aires, Argentina",
+    "Davis Cup"
+  ],
+  "pageLoaded": true,
+  "tennisSectionPresent": true,
+  "tennisCardCount": 6,
+  "cardsWithSetScore": 0,
+  "cardsWithOpponent": 6,
+  "cardsMissingScore": [],
+  "cardsMissingOpponent": [],
+  "chips": [
+    {
+      "home": "Italy v R. o. Korea",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "S. Larraya Guidi v M. Carle",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "M. Trevisan v V. Erjavec",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "I. Oz v J. Riera",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "A. Herrero Linana v A. Geerlings",
+      "chip": "(no chip)"
+    },
+    {
+      "home": "S. Sierra v C. Monnet",
+      "chip": "(no chip)"
+    }
+  ],
+  "consoleErrors": [
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 403 ()",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "failedRequests": [
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/bsd/coverage?sport=football — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/analytics/newspaper/2026-11-25 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/archive/drama-missing?limit=20 — net::ERR_ABORTED",
+    "GET https://field-relay-nba.jeffunglesbee.workers.dev/cfl/odds-probs — net::ERR_ABORTED"
+  ],
+  "relayCallsFromPage": [
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/live",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-25",
+    "200 https://field-relay-nba.jeffunglesbee.workers.dev/bsd/tennis/matches/by-date?date=2026-11-25"
+  ],
+  "renderedTournaments": [
+    "Buenos Aires, Argentina",
+    "Davis Cup"
+  ],
+  "missingTournaments": [],
+  "diagRan": true,
+  "feedLiveOutcome": "ok:7",
+  "feedByDateOutcome": "ok:130",
+  "rowsBeforeTier": 130,
+  "rowsAfterTier": 6,
+  "sectionReturned": 6,
+  "sectionInAllData": true,
+  "producerThrew": null,
+  "renderPipeline": {
+    "absent": false,
+    "scheduled": 3,
+    "structuralRenders": 1,
+    "skippedStructuralRenders": 1
+  },
+  "tennisSectionCount": 1,
+  "tennisSectionParent": "main#main.main",
+  "tennisSectionHtmlLength": 36296,
+  "sectionsInModel": [
+    "EFL Championship",
+    "NBA",
+    "NFL",
+    "NHL",
+    "Tennis",
+    "UEFA Champions League"
+  ],
+  "sectionsInDom": [
+    "EFL Championship",
+    "NBA",
+    "NFL",
+    "NHL",
+    "Tennis",
+    "UEFA Champions League"
+  ],
+  "tennisGamesInModel": 6,
+  "tennisSectionAnatomy": {
+    "tag": "div",
+    "className": "sport-section",
+    "id": "(none)",
+    "heading": "(no heading)",
+    "childTags": [
+      "div.section-head",
+      "div.games-list"
+    ],
+    "htmlHead": "\n      <div class=\"section-head\" style=\"border-left:3px solid var(--sport-tennis);padding-left:.75rem\">\n        <span class=\"s-name\">Tennis</span>\n        <span class=\"s-count\">6 matches</span>\n      </div>\n      <div class=\"games-list\"><div class=\"game-card card-tier-compact upcoming circadian-preview rn-featured scout-pick-card\" data-gameid=\"g1\" data-sport=\"Tennis\" data-home=\"Italy v R. o. Korea"
+  },
+  "domSectionCardCounts": [
+    {
+      "sport": "Tennis",
+      "cards": 6
+    },
+    {
+      "sport": "NFL",
+      "cards": 1
+    },
+    {
+      "sport": "NHL",
+      "cards": 14
+    },
+    {
+      "sport": "NBA",
+      "cards": 9
+    },
+    {
+      "sport": "EFL Championship",
+      "cards": 4
+    },
+    {
+      "sport": "UEFA Champions League",
+      "cards": 9
+    }
+  ],
+  "sampleCardText": "📌★ Italy v R. o. Korea Davis Cup · Quarterfinals + Multiview Davis Cup ALONE ON SCREEN Scout's Pick $11.99ESPN+: $11.99/month. Streams select games not on ESPN linear. tap for intel › Scout's Pick 10:00 AM Tennis Channe",
+  "verdict": "PASS",
+  "reason": "relay 6 live, page 6 card(s), 0 of 0 STARTED with a set score (6 not yet under way, correctly chipless), 6 with an opponent; tournaments proven on the page: Buenos Aires, Argentina, Davis Cup"
+}
