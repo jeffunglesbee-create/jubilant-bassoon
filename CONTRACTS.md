@@ -1846,3 +1846,37 @@ game-to-BSD join was live-only (`g.bsdEventId` in `handleV2Games`) and a pre-mat
 - Since 2026-11-24 a playoff is never a round. `round`, `today` and `thru` count only the tournament's regular rounds (the leaderboard's `numberOfRounds`, served by the scoreboard as `regularRounds`). `toPar` after a playoff is the official total over the regular rounds. `playoff` is `{ start, players: [{athleteId, name, result, position}], winner, complete }` or null (`src/golf-round-line.js`). Client: `saveGolfRoundFinal` posts a separate `away: 'PO'` row once `playoff.complete` (jubilant-bassoon `_saveGolfPlayoff`).
 - Since 2026-11-21 each leaderboard entry's `today` and `thru` are the player's CURRENT round (its own score and holes completed), read from that round's linescore; before, they were round 1's in every round (`src/golf-round-line.js`).
 - A `roundStart` of null is "not read", never "no round". `round` is unchanged and can still be null before the first shot; `teeTimes.round` names the round `roundStart` belongs to.
+
+## Tennis rows — `round_name` and `status` decide the Draw tab (relay-owned, client-read; added 2026-11-26)
+
+`docs/CC-CMD-2026-11-24-tennis-client-split-drift.md` in field-relay-nba, client half. Until 2026-11-26 the client chose
+which team events and season finals could reach the Draw tab by NAME, and every assignment went stale within weeks
+(three red weekly runs of `tennis-tier-ladders.yml`, a different event each time). The client now asks the rows.
+
+**Producer:** field-relay-nba, the BSD tennis proxies. **Consumer:** jubilant-bassoon `_tennisDrawPick` /
+`_tennisRowInMainDraw` (`src/legacy/field.js`), which reads the day's card (`/bsd/tennis/matches/by-date?date=`, merged with
+`/bsd/tennis/matches/live` for the Draw-tab chip) and then draws `/bsd/tennis/draw?tournament=&season=`.
+
+| field | on | shape | read by the client as |
+|---|---|---|---|
+| `round_name` | every by-date and live row | string; `''` on round-robin and rubber rows | a main-draw round iff it is **exactly** one of the seven names below |
+| `status` | every by-date and live row | string | `'cancelled'` is the only value read; every other value, a postponed or walkover row included, still counts |
+| `tournament.id`, `.name`, `.category` | every row | number, string, string | the key, the scope test (a tier category, or a name on the client's named list) and the rank |
+| `is_doubles` | every row | boolean | `true` is skipped; a tournament named `Doubles`, `Boys`, `Girls`, `Wheelchair` or `Quad` is skipped |
+
+**The vocabulary** (the relay draw route's `ORDER`, `src/index.js`, read 2026-11-26), spelled exactly, case and spacing
+included: `Round of 128`, `Round of 64`, `Round of 32`, `Round of 16`, `Quarterfinals`, `Semifinals`, `Final`. Any other
+`round_name` (`''`, `Qualification Round 1`, `Qualification Final`, ... as the committed `tennis-tier-ladders` readings show) is
+not drawn; the route counts it under `roundsOutsideMainDraw` rather than dropping it silently. A row is in the route's draw
+when its `round_name` is in the list and its `status` is not `'cancelled'`; the client applies the same two tests, so a
+tournament is offered only when a row on today's card is a match the route will draw.
+
+- **A 200 from `/bsd/tennis/draw` with `rounds: []`** is therefore skew between the card and the route (a season filed under
+  another year, a route that has not caught up), not a competition format. The client prints `season` and `editionMatches` as
+  served, so the route must keep serving both on every 200 (it does: `season`, and `editionMatches: edition.length`).
+- **Copies of the vocabulary.** The client's `_TENNIS_MAIN_DRAW_ROUNDS` is a second copy; field-laboratory's `src/Draw.fs`
+  (the `"Round of 128"` ... parse, line 97) is a third. If the relay changes `ORDER` or the cancelled rule, the client copy
+  changes in the SAME session (Rule 70). The guard is field-relay-nba's `scripts/lib/client-tennis-split.cjs` (run by
+  `tennis-tier-ladders.yml`), which reads the picker out of the DEPLOYED page and runs it against the draw route's own nodes,
+  plus `smoke.js` A-TDRAW-17, A-TDRAW-22 and A-TDRAW-23 here.
+- **Sync:** this section is written in the client's copy only. The relay's `CONTRACTS.md` must receive the same section.
