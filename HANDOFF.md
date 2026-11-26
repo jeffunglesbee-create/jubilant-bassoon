@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-26 (part 2) — the Night Owl prompt no longer demands a series record for a soccer match that has none
+
+Commit `b8be893` (`SW_VERSION 2026-11-26b`). Session doc: `outbox/cc-session-2026-11-26-night-owl-margin-unit.md` (Part 2). CC-CMD `docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md`, Task 2; the owner's "Fix the series wording".
+
+**What changed.** The cause was not the inputs the CC-CMD guessed but two unconditional instructions in the fallback prompt ("Series implication." and, with no stat context, "write from score, margin, series record ... Every sentence must include a specific number"). `owlNoSeriesRule` (`field_utils.js`, inline copy in `field.js`) drops both for a soccer match with no series record and adds a rule barring series, head-to-head and aggregate claims; the queue prompt carries the rule. Every other sport's prompt is unchanged.
+
+**Proof.** 104 of 444 soccer Night Owl briefs (2026-10-27..11-26) carried the wording, 14 of 34 in MLS; the relay holds none of the instruction text. smoke 1085/0 (A746), field_unit 86/0, eight deliberate breaks red. Deploy gate run `45896676592` success, live site confirmed 21:15:45Z.
+
+**Open (STAGED).** The live effect, read 2026-11-30 12:13Z with the margin-unit count: soccer briefs created after 2026-11-26 21:16:00 with series wording, 0. Not patched, filed: the same prompt's "a specific number in every sentence" with no soccer stat context (233 of 452 soccer briefs mention xG, 5 of 18 in League Two): `docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md`.
+
 ## 2026-11-26 — the Night Owl margin unit is `goal` for every soccer competition, not only "MLS Soccer"
 
 Commit `5be829f` (`SW_VERSION 2026-11-26a`). Session doc: `outbox/cc-session-2026-11-26-night-owl-margin-unit.md`. CC-CMD `docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md`, Tasks 0, 1 and 3; the owner's "Fix the Night Owl soccer margin unit".
