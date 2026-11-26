@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-26 — the Night Owl margin unit is `goal` for every soccer competition, not only "MLS Soccer"
+
+Commit `5be829f` (`SW_VERSION 2026-11-26a`). Session doc: `outbox/cc-session-2026-11-26-night-owl-margin-unit.md`. CC-CMD `docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md`, Tasks 0, 1 and 3; the owner's "Fix the Night Owl soccer margin unit".
+
+**What changed.** `isSoccerSportLabel` (`field_utils.js`, identical inline copy in `src/legacy/field.js`) is OR-ed into the Night Owl prompt's two margin-unit chains. Before, only "MLS Soccer" gave `goal`; every other soccer `_sport` ("Premier League", "EFL League One", ...) got `MARGIN: 4-points`.
+
+**Proof.** Briefs table, 2026-10-27..11-26: 252 of 410 non-MLS soccer briefs said "N-points margin", MLS 0 of 34 (`outbox/night-owl-soccer-wording-2026-11-26.json`). Chains cut from the source: 1 of 19 soccer labels gave `goal` before, 19 of 19 now (`outbox/night-owl-sport-strings-2026-11-26.json`). smoke 1084/0; field_unit 81/0; A745 red on five deliberate breaks. Deploy gate run `45865688146` success, live site confirmed.
+
+**Open (STAGED).** The live effect: soccer Night Owl briefs created after 2026-11-26 17:15Z with `points_margin` 0 (a follow-up reads it on 2026-11-30 12:13Z). Task 2, the "series" wording, is open: 104 of 444 soccer briefs, 14 of 34 in MLS, so a different cause.
+
 ## 2026-11-18 — archived golf rounds carry the round's real first tee
 
 Commit `b3e2c878` (`SW_VERSION 2026-11-17a`). Session doc: `outbox/cc-session-2026-11-18-golf-tee-times.md`. field-relay-nba `docs/CC-CMD-2026-11-16-golf-tee-times.md`, Task 3.
