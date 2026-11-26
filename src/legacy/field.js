@@ -23516,7 +23516,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-26b';
+  const SW_VERSION = '2026-11-26c';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24825,6 +24825,22 @@ function owlNoSeriesRule(sport, seriesRecord){
   const rec = typeof seriesRecord === 'string' ? seriesRecord.trim() : '';
   if(rec && rec !== '0-0') return '';
   return '- This is a single match, not a series. Do NOT mention a series, a series record, a head-to-head or previous-meeting record, an aggregate, or earlier seasons unless that exact fact is written in the data above.';
+}
+
+// Inlined from field_utils.js (smoke A191); identical to it. The Night Owl rule that bars xG / possession / shots / corners figures a soccer prompt does not carry:
+// the vocabulary line said "Use: shots, possession, xG" and the no-stats rule demanded a number in every sentence, so the model supplied them (docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md).
+// '' for every other sport and for a soccer prompt whose stat context carries all four.
+function owlSoccerNumbersRule(sport, statCtx){
+  if(!isSoccerSportLabel(sport)) return '';
+  const ctx = typeof statCtx === 'string' ? statCtx : '';
+  const missing = [];
+  if(!/\bxG\b/.test(ctx)) missing.push('xG');
+  if(!/\bPossession:/.test(ctx)) missing.push('possession');
+  if(!/\bShots:/.test(ctx)) missing.push('shots');
+  if(!/\bCorners:/.test(ctx)) missing.push('corners');
+  if(!missing.length) return '';
+  const list = missing.length > 1 ? missing.slice(0, -1).join(', ') + ' or ' + missing[missing.length - 1] : missing[0];
+  return '- No figure for ' + list + ' is given in the data above, so none is available. Do NOT state, estimate or hint at one. Cite a number only where it is written above; a sentence with no number is fine.';
 }
 
 function espnTeamMatch(espnName, fieldName){
@@ -40065,6 +40081,7 @@ async function saveEspnFinal(game, eData){
             'Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
             '- Write only from data above — never invent statistics or play-by-play.',
             owlNoSeriesRule(_owlQ_sp, game.seriesRecord),
+            owlSoccerNumbersRule(_owlQ_sp, entry.statCtx),
             '- CRITICAL — DO NOT FABRICATE SPECIFICS: no specific inning/quarter/at-bat details unless in stat context above.',
           ].filter(Boolean).join('\n');
           fetch(JOURNALISM_ENQUEUE_RELAY, {
@@ -40288,7 +40305,7 @@ async function fetchNightOwlFromClaude(topGame){
     : _sp.includes('wnba')
     ? 'Sport: WNBA Basketball. Score in POINTS. Use WNBA team names and player names specifically — never substitute NBA teams. Close game = one-possession game (within 3). Extra period = overtime.'
     : _sp.includes('wc26') || _sp.includes('world cup')
-    ? 'Sport: Football (soccer) — FIFA World Cup 2026. Score in GOALS (never points). Close game = one-goal game. Extra period = extra time (NEVER overtime). Use: shots, possession, xG, clean sheet, group stage standings, knockout bracket.'
+    ? 'Sport: Football (soccer) — FIFA World Cup 2026. Score in GOALS (never points). Close game = one-goal game. Extra period = extra time (NEVER overtime). Use: clean sheet, group stage standings, knockout bracket.'
     : _sp.includes('cricket') || _sp.includes('ipl')
     ? 'Sport: Cricket. Score in RUNS and WICKETS (e.g. 245/6 in 47 overs). Use: innings, overs, wickets, run rate, bowling figures. Close game = within 20 runs or 2 wickets.'
     : _sp.includes('rugby')
@@ -40302,7 +40319,7 @@ async function fetchNightOwlFromClaude(topGame){
       _sp.includes('ligue') || _sp.includes('efl') || _sp.includes('fa cup') || _sp.includes('ucl') ||
       _sp.includes('uel') || _sp.includes('uecl') || _sp.includes('epl') ||
       _sp.includes('bundesliga') || _sp.includes('laliga')
-    ? 'Sport: Football (soccer). Score in GOALS (NEVER "points"). Close game = one-goal game. Extra period = extra time (NEVER "overtime" or "OT"). NEVER use: basket, possession-game framing, interior scoring, one-possession, touchdown. Use: shots, possession percentage, xG, clean sheet, pressing.'
+    ? 'Sport: Football (soccer). Score in GOALS (NEVER "points"). Close game = one-goal game. Extra period = extra time (NEVER "overtime" or "OT"). NEVER use: basket, possession-game framing, interior scoring, one-possession, touchdown. Use: clean sheet, pressing.'
     : 'Sport: Basketball. Score in POINTS. Close game = one-possession game (within 3). Extra period = overtime. Use: assists, rebounds, field goal percentage, three-point shooting.';
   // Tier 1A: inject available stat context into Night Owl prompt (same sources as compound)
   // Fallback: if live caches are cold (user opened app post-game), use statCtx
@@ -40715,7 +40732,7 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       _owlStatCtx
         ? '- REQUIRED — CITE ALL STATS: every stat line provided above must be referenced by its specific figure in your recap. Do NOT copy the bracket labels ([MLB BOX], [SCORE NARRATIVE], etc.) into the prose — strip all brackets and just use the numbers. Do not omit stats. Lead the first sentence with the most specific number available — player name + figure (e.g. "Brunson 32 points" not "Brunson was strong").'
         : _owlNoSeriesRule
-          ? '- No box stats available — write from score, margin, and drama context only. Every sentence must include a specific number (final score, margin, or drama peak if meaningful).'
+          ? '- No box stats available — write from score, margin, and drama context only. Cite a figure only where it is written above; a sentence with no number is fine.'
           : '- No box stats available — write from score, margin, series record, and drama context only. Every sentence must include a specific number (final score, margin, series record, or drama peak if meaningful).',
       _owlDramaPromptCtx?'- DRAMA CONTEXT (post-game amnesty — drama numbers MAY appear in prose): use tension/arc data to frame the narrative (thriller vs wire-to-wire vs late-bloomer). Paraphrase lead changes and comeback facts from SCORE NARRATIVE as natural prose. DO NOT copy bracket labels like [DRAMA TREND] or [SCORE NARRATIVE] literally into the text — use the facts they contain, not the tag names.':'',
       '- Write only from the data above — never invent statistics, player tendencies, or context.',
@@ -40730,6 +40747,8 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       FIELD_PROSE_STYLE,
       getFieldVoice(_sp),
       getQualityTarget(_sp),
+      // After the voice block on purpose: FIELD_SOCCER_VOICE says "If xG is available, cite it" and gives "72% possession" as its example, so the statement that no such figure is given has to come last.
+      owlSoccerNumbersRule(_sp, _owlStatCtx),
       '- Third person only — never use "you" or address the reader directly.',
       '- Division accuracy: teams in the same division share ONE race, not "respective" races.',
       '- Explain what tactically swung the game.' + (_owlNoSeriesRule ? '' : ' Series implication.') + ' Plain prose.'

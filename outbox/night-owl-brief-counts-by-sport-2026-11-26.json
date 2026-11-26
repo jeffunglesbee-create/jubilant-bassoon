@@ -1,0 +1,296 @@
+{
+  "what": "Counts only, no brief text. `briefs` table of field-archive (D1 cc49101c-0569-4d41-8e7a-be139cde4f26), brief_type = 'night_owl', date >= '2026-10-27', grouped by sport. Read 2026-11-26 through the Cloudflare D1 query tool, read-only.",
+  "method": "SUM(brief_text LIKE '%xG%') etc. per sport. *_mention = the word appears (SQLite LIKE, case-insensitive); xg_figure = a GLOB for a digit beside 'xG'; poss_with_pct = 'possession' and a '%' sign both appear. Pattern counts, not parses: they bound the number of briefs that carry a figure, they do not prove each one is wrong.",
+  "conditions": "briefs written by the live system between 2026-10-27 and 2026-11-26; both writers (queue prompt and fallback prompt) are included, the briefs table does not record which one wrote a row beyond source = 'client'.",
+  "rows": [
+    {
+      "sport": "NHL",
+      "n": 90,
+      "xg_mention": 0,
+      "xg_figure": 0,
+      "poss_mention": 0,
+      "poss_with_pct": 0,
+      "shots_mention": 27,
+      "corner_mention": 3,
+      "avg_q": 160.2
+    },
+    {
+      "sport": "EFL Championship",
+      "n": 89,
+      "xg_mention": 48,
+      "xg_figure": 31,
+      "poss_mention": 47,
+      "poss_with_pct": 43,
+      "shots_mention": 45,
+      "corner_mention": 0,
+      "avg_q": 163.7
+    },
+    {
+      "sport": "EFL League One",
+      "n": 65,
+      "xg_mention": 29,
+      "xg_figure": 18,
+      "poss_mention": 26,
+      "poss_with_pct": 25,
+      "shots_mention": 38,
+      "corner_mention": 0,
+      "avg_q": 166
+    },
+    {
+      "sport": "EPL",
+      "n": 62,
+      "xg_mention": 21,
+      "xg_figure": 12,
+      "poss_mention": 43,
+      "poss_with_pct": 24,
+      "shots_mention": 47,
+      "corner_mention": 0,
+      "avg_q": 168.1
+    },
+    {
+      "sport": "La Liga",
+      "n": 46,
+      "xg_mention": 31,
+      "xg_figure": 23,
+      "poss_mention": 29,
+      "poss_with_pct": 28,
+      "shots_mention": 25,
+      "corner_mention": 0,
+      "avg_q": 164.6
+    },
+    {
+      "sport": "UEFA Europa League",
+      "n": 42,
+      "xg_mention": 22,
+      "xg_figure": 13,
+      "poss_mention": 30,
+      "poss_with_pct": 17,
+      "shots_mention": 32,
+      "corner_mention": 1,
+      "avg_q": 166.1
+    },
+    {
+      "sport": "Serie A",
+      "n": 42,
+      "xg_mention": 31,
+      "xg_figure": 20,
+      "poss_mention": 32,
+      "poss_with_pct": 31,
+      "shots_mention": 25,
+      "corner_mention": 0,
+      "avg_q": 165.5
+    },
+    {
+      "sport": "NBA",
+      "n": 41,
+      "xg_mention": 0,
+      "xg_figure": 0,
+      "poss_mention": 8,
+      "poss_with_pct": 0,
+      "shots_mention": 1,
+      "corner_mention": 0,
+      "avg_q": 162.8
+    },
+    {
+      "sport": "Bundesliga",
+      "n": 36,
+      "xg_mention": 23,
+      "xg_figure": 16,
+      "poss_mention": 25,
+      "poss_with_pct": 23,
+      "shots_mention": 20,
+      "corner_mention": 0,
+      "avg_q": 165.6
+    },
+    {
+      "sport": "MLS",
+      "n": 34,
+      "xg_mention": 16,
+      "xg_figure": 8,
+      "poss_mention": 15,
+      "poss_with_pct": 13,
+      "shots_mention": 13,
+      "corner_mention": 0,
+      "avg_q": 166.2
+    },
+    {
+      "sport": "UEFA Conference League",
+      "n": 21,
+      "xg_mention": 8,
+      "xg_figure": 3,
+      "poss_mention": 13,
+      "poss_with_pct": 7,
+      "shots_mention": 15,
+      "corner_mention": 0,
+      "avg_q": 166.6
+    },
+    {
+      "sport": "EFL League Two",
+      "n": 18,
+      "xg_mention": 5,
+      "xg_figure": 2,
+      "poss_mention": 6,
+      "poss_with_pct": 6,
+      "shots_mention": 7,
+      "corner_mention": 0,
+      "avg_q": 164.3
+    },
+    {
+      "sport": "College Football",
+      "n": 13,
+      "xg_mention": 6,
+      "xg_figure": 2,
+      "poss_mention": 4,
+      "poss_with_pct": 4,
+      "shots_mention": 4,
+      "corner_mention": 0,
+      "avg_q": 157.5
+    },
+    {
+      "sport": "Ligue 1",
+      "n": 12,
+      "xg_mention": 7,
+      "xg_figure": 6,
+      "poss_mention": 7,
+      "poss_with_pct": 7,
+      "shots_mention": 6,
+      "corner_mention": 0,
+      "avg_q": 168.7
+    },
+    {
+      "sport": "UEFA Champions League",
+      "n": 6,
+      "xg_mention": 2,
+      "xg_figure": 2,
+      "poss_mention": 2,
+      "poss_with_pct": 2,
+      "shots_mention": 2,
+      "corner_mention": 0,
+      "avg_q": 152.2
+    },
+    {
+      "sport": "CFL",
+      "n": 2,
+      "xg_mention": 0,
+      "xg_figure": 0,
+      "poss_mention": 1,
+      "poss_with_pct": 0,
+      "shots_mention": 0,
+      "corner_mention": 0,
+      "avg_q": 167.5
+    },
+    {
+      "sport": "Billie Jean King Cup · hard",
+      "n": 2,
+      "xg_mention": 0,
+      "xg_figure": 0,
+      "poss_mention": 0,
+      "poss_with_pct": 0,
+      "shots_mention": 0,
+      "corner_mention": 0,
+      "avg_q": 152.5
+    },
+    {
+      "sport": "MLB",
+      "n": 1,
+      "xg_mention": 0,
+      "xg_figure": 0,
+      "poss_mention": 0,
+      "poss_with_pct": 0,
+      "shots_mention": 0,
+      "corner_mention": 0,
+      "avg_q": 161
+    }
+  ],
+  "college_football_extra": {
+    "what": "Second query, same table and window, sport = 'College Football' only. All 13 briefs are dated 2026-11-14.",
+    "n": 13,
+    "goal_mention": 12,
+    "clean_sheet_mention": 4,
+    "touchdown_mention": 0,
+    "points_mention": 2,
+    "xg_mention": 6
+  },
+  "union_query": {
+    "what": "Third query, same table and window, 12 soccer sports. xg_or_possession_pct = briefs with an xG mention OR (possession and a % sign); ..._or_shots adds any mention of shots (a looser bound: the word appears in ordinary prose).",
+    "rows": [
+      {
+        "sport": "EFL Championship",
+        "n": 89,
+        "xg_or_possession_pct": 55,
+        "xg_or_possession_pct_or_shots": 72
+      },
+      {
+        "sport": "EFL League One",
+        "n": 65,
+        "xg_or_possession_pct": 35,
+        "xg_or_possession_pct_or_shots": 48
+      },
+      {
+        "sport": "EPL",
+        "n": 62,
+        "xg_or_possession_pct": 30,
+        "xg_or_possession_pct_or_shots": 48
+      },
+      {
+        "sport": "La Liga",
+        "n": 46,
+        "xg_or_possession_pct": 35,
+        "xg_or_possession_pct_or_shots": 39
+      },
+      {
+        "sport": "UEFA Europa League",
+        "n": 42,
+        "xg_or_possession_pct": 23,
+        "xg_or_possession_pct_or_shots": 33
+      },
+      {
+        "sport": "Serie A",
+        "n": 42,
+        "xg_or_possession_pct": 35,
+        "xg_or_possession_pct_or_shots": 40
+      },
+      {
+        "sport": "Bundesliga",
+        "n": 36,
+        "xg_or_possession_pct": 29,
+        "xg_or_possession_pct_or_shots": 31
+      },
+      {
+        "sport": "MLS",
+        "n": 34,
+        "xg_or_possession_pct": 21,
+        "xg_or_possession_pct_or_shots": 23
+      },
+      {
+        "sport": "UEFA Conference League",
+        "n": 21,
+        "xg_or_possession_pct": 11,
+        "xg_or_possession_pct_or_shots": 16
+      },
+      {
+        "sport": "EFL League Two",
+        "n": 18,
+        "xg_or_possession_pct": 6,
+        "xg_or_possession_pct_or_shots": 10
+      },
+      {
+        "sport": "Ligue 1",
+        "n": 12,
+        "xg_or_possession_pct": 9,
+        "xg_or_possession_pct_or_shots": 11
+      },
+      {
+        "sport": "UEFA Champions League",
+        "n": 6,
+        "xg_or_possession_pct": 2,
+        "xg_or_possession_pct_or_shots": 2
+      }
+    ]
+  },
+  "sport_column_aliases": {
+    "what": "The briefs table stores two soccer sports under a short name; the client labels are the long ones. Both short names appear as rows above and the long names appear in none, so the join below is one-to-one.",
+    "EPL": "Premier League",
+    "MLS": "MLS Soccer"
+  }
+}

@@ -8315,5 +8315,50 @@ assert('A746 — the Night Owl prompts bar series wording for a soccer match wit
     return true;
   })());
 
+// ── A747 / CC-CMD-2026-11-26-night-owl-soccer-invented-numbers ──
+// A soccer Night Owl prompt never carries an xG figure and, but for "MLS Soccer" and "FIFA World Cup 2026", no possession, shots or corners either; its vocabulary line said "Use: shots,
+// possession, xG" and its no-stats rule demanded "a specific number" in every sentence, so 270 of 439 briefs in the 11 labels with no such line carried an xG or a possession percentage
+// (2026-10-27..11-26). The real `_terms` chain and the real no-box-stats pair are cut out of the source and run; the rule is required in both prompts, after the voice block in the fallback.
+assert('A747 — the Night Owl soccer prompts no longer ask for or invite figures they do not carry (vocabulary lists, no-stats rule, owlSoccerNumbersRule in both prompts, inline copy identical)',
+  (() => {
+    const { owlSoccerNumbersRule, isSoccerSportLabel } = require('./field_utils.js');
+    const fs = require('fs');
+    // 1. the vocabulary line: run the real chain for every soccer label
+    const termsM = /const _terms = ([\s\S]*?);\n  \/\/ Tier 1A/.exec(html);
+    if (!termsM) return false;
+    const termsOf = (label) => new Function('_sp', 'return ' + termsM[1])(label.toLowerCase());
+    const tbl = /const V2_SECTION_LABEL = \{([\s\S]*?)\n\};/.exec(html), sl = /const SOCCER_LEAGUES = \[([\s\S]*?)\n\];/.exec(html);
+    if (!tbl || !sl) return false;
+    const v2 = Object.fromEntries([...tbl[1].matchAll(/(\w+):\s*'([^']+)'/g)].map((m) => [m[1], m[2]]));
+    const labels = new Set(['mls', 'epl', 'laliga', 'seriea', 'ligue1', 'eflchamp', 'eflone', 'efltwo', 'ucl', 'europa', 'conference', 'uclqual', 'europaqual', 'conferencequal', 'bundesliga', 'wc26'].map((k) => v2[k]));
+    for (const m of sl[1].matchAll(/section:\s*'([^']+)'/g)) labels.add(m[1]);
+    if (labels.size < 18) return false;
+    for (const l of labels) {
+      const t = termsOf(l), use = t.slice(Math.max(0, t.indexOf('Use:')));
+      if (!/^Sport: Football \(soccer\)/.test(t) || !/Use:/.test(t)) return false;                                          // still the soccer vocabulary line
+      if (/\bxG\b|possession|\bshots\b/i.test(use)) return false;                                                         // and no list that invites a figure
+    }
+    if (!/Use: shots, save percentage/.test(termsOf(v2.nhl))) return false;                                                // the other sports' lists are left as they were
+    // 2. the no-box-stats pair: the soccer branch asks for no number in every sentence, the other branch keeps its text
+    const nb = /_owlNoSeriesRule\s*\?\s*'(- No box stats available[^']*)'\s*:\s*'(- No box stats available[^']*)'/.exec(html);
+    if (!nb || /Every sentence must include a specific number/.test(nb[1]) || !/Cite a figure only where it is written above/.test(nb[1])) return false;
+    if (!/Every sentence must include a specific number/.test(nb[2])) return false;
+    // 3. the rule is in both prompts; in the fallback it follows the voice and quality blocks
+    if (!/getFieldVoice\(_sp\),\s*\n\s*getQualityTarget\(_sp\),\s*\n(?:\s*\/\/[^\n]*\n)*\s*owlSoccerNumbersRule\(_sp, _owlStatCtx\),/.test(html)) return false;
+    if (!/owlNoSeriesRule\(_owlQ_sp, game\.seriesRecord\),\s*\n\s*owlSoccerNumbersRule\(_owlQ_sp, entry\.statCtx\),/.test(html)) return false;
+    // 4. the inline copy is the field_utils.js function, byte for byte
+    const fnOf = (src) => { const m = /function owlSoccerNumbersRule\(sport, statCtx\)\{[\s\S]*?\n\}\n/.exec(src); return m ? m[0] : null; };
+    const inline = fnOf(html), pure = fnOf(fs.readFileSync('./field_utils.js', 'utf8'));
+    if (!inline || !pure || inline !== pure) return false;
+    // 5. the helper, run for every soccer label: all four named with no context, only xG left once a [MATCH STATS] line is there; no other sport
+    const ms = '  [MATCH STATS] Possession: A 60% — B 40% · Shots: A 10 — B 5 · Corners: A 6 — B 2';
+    for (const l of labels) {
+      if (!/No figure for xG, possession, shots or corners is given/.test(owlSoccerNumbersRule(l, ''))) return false;
+      if (!/No figure for xG is given/.test(owlSoccerNumbersRule(l, ms))) return false;
+    }
+    for (const l of [v2.nba, v2.wnba, v2.nfl, v2.nhl, v2.mlb, v2.afl]) if (owlSoccerNumbersRule(l, '') !== '' || isSoccerSportLabel(l)) return false;
+    return true;
+  })());
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

@@ -1,0 +1,429 @@
+{
+  "probe": "scripts/probe-night-owl-soccer-numbers.mjs",
+  "date": "2026-11-26",
+  "coverage": "19 soccer labels (V2_SECTION_LABEL soccer keys plus SOCCER_LEAGUES sections), read from src/legacy/field.js; 7 other-sport labels checked for a soccer branch",
+  "prompt": {
+    "noBoxStatsRuleDemandsANumberInEverySentence": true,
+    "noBoxStatsSoccerBranchText": "- No box stats available — write from score, margin, and drama context only. Every sentence must include a specific number (final score, margin, or drama peak if meaningful).",
+    "saveEspnFinalSnapshotHasASoccerBranch": false,
+    "xgMentionsInFunction": 2,
+    "xgMentionsInsideTermsChain": 2,
+    "anyDataSourceInFunctionThatCouldSupplyAnXgFigure": false,
+    "matchStatsLabelsEmittedByTheGate": [
+      "Possession:",
+      "Shots:",
+      "Corners:"
+    ],
+    "labelsWhereMatchStatsGatePasses": [
+      "FIFA World Cup 2026",
+      "MLS Soccer"
+    ],
+    "labelsWhereTermsInviteXG": 19
+  },
+  "labels": [
+    {
+      "label": "Bundesliga",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 36,
+        "xg_mention": 23,
+        "xg_figure": 16,
+        "poss_mention": 25,
+        "poss_with_pct": 23,
+        "shots_mention": 20,
+        "xg_or_possession_pct": 29
+      }
+    },
+    {
+      "label": "EFL Championship",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 89,
+        "xg_mention": 48,
+        "xg_figure": 31,
+        "poss_mention": 47,
+        "poss_with_pct": 43,
+        "shots_mention": 45,
+        "xg_or_possession_pct": 55
+      }
+    },
+    {
+      "label": "EFL Cup",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": null
+    },
+    {
+      "label": "EFL League One",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 65,
+        "xg_mention": 29,
+        "xg_figure": 18,
+        "poss_mention": 26,
+        "poss_with_pct": 25,
+        "shots_mention": 38,
+        "xg_or_possession_pct": 35
+      }
+    },
+    {
+      "label": "EFL League Two",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 18,
+        "xg_mention": 5,
+        "xg_figure": 2,
+        "poss_mention": 6,
+        "poss_with_pct": 6,
+        "shots_mention": 7,
+        "xg_or_possession_pct": 6
+      }
+    },
+    {
+      "label": "EFL Trophy",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": null
+    },
+    {
+      "label": "FA Cup",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": null
+    },
+    {
+      "label": "FIFA World Cup 2026",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:world-cup",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": true,
+      "briefs": null
+    },
+    {
+      "label": "La Liga",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 46,
+        "xg_mention": 31,
+        "xg_figure": 23,
+        "poss_mention": 29,
+        "poss_with_pct": 28,
+        "shots_mention": 25,
+        "xg_or_possession_pct": 35
+      }
+    },
+    {
+      "label": "Ligue 1",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 12,
+        "xg_mention": 7,
+        "xg_figure": 6,
+        "poss_mention": 7,
+        "poss_with_pct": 7,
+        "shots_mention": 6,
+        "xg_or_possession_pct": 9
+      }
+    },
+    {
+      "label": "MLS Soccer",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": true,
+      "briefs": {
+        "n": 34,
+        "xg_mention": 16,
+        "xg_figure": 8,
+        "poss_mention": 15,
+        "poss_with_pct": 13,
+        "shots_mention": 13,
+        "xg_or_possession_pct": 21
+      }
+    },
+    {
+      "label": "Premier League",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 62,
+        "xg_mention": 21,
+        "xg_figure": 12,
+        "poss_mention": 43,
+        "poss_with_pct": 24,
+        "shots_mention": 47,
+        "xg_or_possession_pct": 30
+      }
+    },
+    {
+      "label": "Serie A",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 42,
+        "xg_mention": 31,
+        "xg_figure": 20,
+        "poss_mention": 32,
+        "poss_with_pct": 31,
+        "shots_mention": 25,
+        "xg_or_possession_pct": 35
+      }
+    },
+    {
+      "label": "UEFA Champions League",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 6,
+        "xg_mention": 2,
+        "xg_figure": 2,
+        "poss_mention": 2,
+        "poss_with_pct": 2,
+        "shots_mention": 2,
+        "xg_or_possession_pct": 2
+      }
+    },
+    {
+      "label": "UEFA Champions League Qualifying",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": null
+    },
+    {
+      "label": "UEFA Conference League",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 21,
+        "xg_mention": 8,
+        "xg_figure": 3,
+        "poss_mention": 13,
+        "poss_with_pct": 7,
+        "shots_mention": 15,
+        "xg_or_possession_pct": 11
+      }
+    },
+    {
+      "label": "UEFA Conference League Qualifying",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": null
+    },
+    {
+      "label": "UEFA Europa League",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": {
+        "n": 42,
+        "xg_mention": 22,
+        "xg_figure": 13,
+        "poss_mention": 30,
+        "poss_with_pct": 17,
+        "shots_mention": 32,
+        "xg_or_possession_pct": 23
+      }
+    },
+    {
+      "label": "UEFA Europa League Qualifying",
+      "isSoccerSportLabel": true,
+      "termsBranch": "soccer:generic",
+      "termsUseListInvitesXG": true,
+      "termsUseListInvitesPossession": true,
+      "termsUseListInvitesShots": true,
+      "matchStatsGatePasses": false,
+      "briefs": null
+    }
+  ],
+  "otherSportsInASoccerBranch": [
+    {
+      "label": "College Football",
+      "termsBranch": "soccer:generic",
+      "briefs": {
+        "n": 13,
+        "xg_mention": 6
+      }
+    }
+  ],
+  "reading": {
+    "task01_figuresInPrompt": "NO xG figure can enter any soccer prompt (no source in the function, none in the saved snapshot)",
+    "labelsWithNoPossessionShotsCornersInPrompt": [
+      "Bundesliga",
+      "EFL Championship",
+      "EFL Cup",
+      "EFL League One",
+      "EFL League Two",
+      "EFL Trophy",
+      "FA Cup",
+      "La Liga",
+      "Ligue 1",
+      "Premier League",
+      "Serie A",
+      "UEFA Champions League",
+      "UEFA Champions League Qualifying",
+      "UEFA Conference League",
+      "UEFA Conference League Qualifying",
+      "UEFA Europa League",
+      "UEFA Europa League Qualifying"
+    ],
+    "labelsWithNoPossessionShotsCornersInPromptCount": 17,
+    "task02_inventedShare": [
+      {
+        "label": "Bundesliga",
+        "n": 36,
+        "xg_mention": 23,
+        "xg_or_possession_pct": 29,
+        "share": 0.81
+      },
+      {
+        "label": "EFL Championship",
+        "n": 89,
+        "xg_mention": 48,
+        "xg_or_possession_pct": 55,
+        "share": 0.62
+      },
+      {
+        "label": "EFL League One",
+        "n": 65,
+        "xg_mention": 29,
+        "xg_or_possession_pct": 35,
+        "share": 0.54
+      },
+      {
+        "label": "EFL League Two",
+        "n": 18,
+        "xg_mention": 5,
+        "xg_or_possession_pct": 6,
+        "share": 0.33
+      },
+      {
+        "label": "La Liga",
+        "n": 46,
+        "xg_mention": 31,
+        "xg_or_possession_pct": 35,
+        "share": 0.76
+      },
+      {
+        "label": "Ligue 1",
+        "n": 12,
+        "xg_mention": 7,
+        "xg_or_possession_pct": 9,
+        "share": 0.75
+      },
+      {
+        "label": "Premier League",
+        "n": 62,
+        "xg_mention": 21,
+        "xg_or_possession_pct": 30,
+        "share": 0.48
+      },
+      {
+        "label": "Serie A",
+        "n": 42,
+        "xg_mention": 31,
+        "xg_or_possession_pct": 35,
+        "share": 0.83
+      },
+      {
+        "label": "UEFA Champions League",
+        "n": 6,
+        "xg_mention": 2,
+        "xg_or_possession_pct": 2,
+        "share": 0.33
+      },
+      {
+        "label": "UEFA Conference League",
+        "n": 21,
+        "xg_mention": 8,
+        "xg_or_possession_pct": 11,
+        "share": 0.52
+      },
+      {
+        "label": "UEFA Europa League",
+        "n": 42,
+        "xg_mention": 22,
+        "xg_or_possession_pct": 23,
+        "share": 0.55
+      }
+    ],
+    "briefsInLabelsWithNoFigureInPrompt": 439,
+    "briefsWithAnXgMentionInThoseLabels": 227,
+    "briefsWithAnXgOrPossessionPctFigureInThoseLabels": 270,
+    "shareOfThoseBriefs": 0.615,
+    "gatePassingLabelsAreLeftOut": "FIFA World Cup 2026 and MLS Soccer can carry real possession/shots when the live stash exists; their briefs are not counted as invented here",
+    "labelsWithBriefsRead": 12
+  }
+}

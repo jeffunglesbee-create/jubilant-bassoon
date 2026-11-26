@@ -13,6 +13,7 @@ const {
   espnListsBroadcast,
   isSoccerSportLabel,
   owlNoSeriesRule,
+  owlSoccerNumbersRule,
   wxAlert,
   parseMatchweek,
   dramaTier,
@@ -922,6 +923,44 @@ test('owlNoSeriesRule: no other sport gets the rule, with or without a series re
 });
 test('owlNoSeriesRule: unreadable sport is no rule, never a throw', () => {
   for (const v of [null, undefined, '', 0, {}, []]) assert(owlNoSeriesRule(v, '') === '', String(v));
+});
+
+// ── owlSoccerNumbersRule ──────────────────────────────
+// The Night Owl rule that bars xG / possession / shots / corners figures a soccer prompt does not carry (docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md).
+// It reads the stat context the prompt carries, by the labels the [MATCH STATS] builder writes, and names the kinds with no figure in it.
+const MATCH_STATS_CTX = '  [MATCH STATS] Possession: Arsenal 61% — Chelsea 39% · Shots: Arsenal 14 (6 on target) — Chelsea 7 (2 on target) · Corners: Arsenal 8 — Chelsea 3';
+const GOAL_TIMELINE_CTX = '  [GOAL TIMELINE] 23\' Saka (Arsenal) · 71\' Palmer (Chelsea)';
+test('owlSoccerNumbersRule: a soccer prompt with no stat context is told no xG, possession, shots or corners figure exists, for every soccer label', () => {
+  for (const l of SOCCER_LABELS) {
+    const r = owlSoccerNumbersRule(l, '');
+    assert(/No figure for xG, possession, shots or corners is given/.test(r) && /Do NOT state, estimate or hint at one/.test(r) && /a sentence with no number is fine/.test(r), `${l}: ${r}`);
+  }
+});
+test('owlSoccerNumbersRule: a goal timeline alone supplies none of the four, so the rule is unchanged', () => {
+  assertEqual(owlSoccerNumbersRule('EFL League Two', GOAL_TIMELINE_CTX), owlSoccerNumbersRule('EFL League Two', ''));
+});
+test('owlSoccerNumbersRule: a [MATCH STATS] line lifts possession, shots and corners from the rule and leaves xG, which no prompt carries', () => {
+  const r = owlSoccerNumbersRule('MLS Soccer', MATCH_STATS_CTX);
+  assert(/No figure for xG is given/.test(r) && !/possession|shots|corners/i.test(r.split('Do NOT')[0]), r);
+});
+test('owlSoccerNumbersRule: each kind is lifted by its own label only (possession alone leaves shots and corners barred)', () => {
+  const r = owlSoccerNumbersRule('FIFA World Cup 2026', '  [MATCH STATS] Possession: A 55% — B 45%');
+  assert(/No figure for xG, shots or corners is given/.test(r), r);
+  assert(/No figure for xG, possession or corners is given/.test(owlSoccerNumbersRule('Serie A', 'Shots: A 9 — B 11')), 'shots alone');
+  assert(/No figure for xG, possession or shots is given/.test(owlSoccerNumbersRule('Serie A', 'Corners: A 4 — B 6')), 'corners alone');
+});
+test('owlSoccerNumbersRule: when all four are in the context there is no rule', () => {
+  assertEqual(owlSoccerNumbersRule('Premier League', MATCH_STATS_CTX + '\n  Team xG 1.8 — 0.6'), '');
+});
+test('owlSoccerNumbersRule: the word "possession" in prose is not a possession figure ("Possession:" with its colon is)', () => {
+  assert(/xG, possession/.test(owlSoccerNumbersRule('La Liga', 'a goal from a set piece after losing possession')), 'prose must not lift the rule');
+});
+test('owlSoccerNumbersRule: no other sport gets the rule, including the other football codes', () => {
+  for (const l of NOT_SOCCER_LABELS) assert(owlSoccerNumbersRule(l, '') === '', `${l} must be unchanged`);
+});
+test('owlSoccerNumbersRule: unreadable sport or context is handled, never a throw', () => {
+  for (const v of [null, undefined, '', 0, {}, []]) assert(owlSoccerNumbersRule(v, '') === '', String(v));
+  for (const c of [null, undefined, 0, {}, []]) assert(/No figure for xG, possession, shots or corners/.test(owlSoccerNumbersRule('EPL', c)), String(c));
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────
