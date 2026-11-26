@@ -18,7 +18,17 @@
 //   - every anchor must occur exactly once, and its replacement must be present in
 //     the mutated text, or the run is a HARNESS DEFECT and says so.
 //
-// Coverage is printed (Rule 91): `ran N mutations, caught M of N`.
+// M12..M26 are the mutants a 2026-11-26 review found by hand that ESCAPED the
+// first 11 (the suite stayed green): live rows always counting, a postponed or
+// walkover row dropped, the named-event default rank changed, the 250s ranked
+// with the 500s, the nav fed from one feed only, the doubles filters removed,
+// candidates keyed by name, the scope widened. Each is expected to turn red the
+// case that was written for it (a case id in `expect`), so a mutant that the
+// OLD text pins catch but no behaviour case catches is still NOT CAUGHT here.
+//
+// Coverage is printed (Rule 91): `ran N mutations, caught M of N`. A NOT CAUGHT
+// line says which assertions went red instead, so "red on a text pin only" is
+// visible as such.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -37,7 +47,11 @@ const runSmoke = (text) => {
   catch (e) { return { code: e.status ?? 1, out: `${e.stdout || ''}${e.stderr || ''}` }; }
 };
 // smoke prints `  ❌ <label> — <detail>` for a failure; the ids are the first token of the label.
-const redIds = (out) => out.split('\n').filter((l) => l.includes('❌')).map((l) => (/❌ (A-TDRAW-\d+(?:\/[A-Z0-9]+)?)/.exec(l) || [])[1]).filter(Boolean);
+// The case id may carry a hyphen and lower case (`I-count`, `NM1`), so the class is not [A-Z0-9]:
+// a narrower one read `A-TDRAW-22/I-count` as `A-TDRAW-22/I` and credited the wrong case.
+const redIds = (out) => out.split('\n').filter((l) => l.includes('❌')).map((l) => (/❌ (A-TDRAW-\d+(?:\/[A-Za-z0-9-]+)?)/.exec(l) || [])[1]).filter(Boolean);
+// Every red assertion's first token, for the "red instead" line (a mutation can turn red something that is not an A-TDRAW check).
+const anyRed = (out) => out.split('\n').filter((l) => l.includes('❌')).map((l) => (/❌ (\S+)/.exec(l) || [])[1]).filter(Boolean);
 
 const PRED = '    if (!_tennisRowInMainDraw(m)) continue;\n';
 const BODY = "  return _TENNIS_MAIN_DRAW_ROUNDS.includes(String(m?.round_name)) && String(m?.status) !== 'cancelled';";
@@ -77,6 +91,56 @@ const MUTATIONS = [
   { name: 'M11 a picker declaration moves inside a function (no longer top-level)',
     anchor: 'const _TENNIS_DRAW_TIER_RANK = {', replace: 'if (true) { var _x = 0; }\n  const _TENNIS_DRAW_TIER_RANK = {',
     expect: ['A-TDRAW-23'] },
+  { name: 'M12 a postponed main-draw row stops counting (the relay keeps it: it drops only cancelled)',
+    anchor: " && String(m?.status) !== 'cancelled';", replace: " && String(m?.status) !== 'cancelled' && String(m?.status) !== 'postponed';",
+    expect: ['A-TDRAW-22/P1'] },
+  { name: 'M13 a walkover main-draw row stops counting (same: the relay keeps it)',
+    anchor: " && String(m?.status) !== 'cancelled';", replace: " && String(m?.status) !== 'cancelled' && String(m?.status) !== 'walkover';",
+    expect: ['A-TDRAW-22/P2'] },
+  { name: 'M14 every live row counts as a main-draw match, whatever its round_name (the round-robin defect, reopened)',
+    anchor: " && String(m?.status) !== 'cancelled';", replace: " && String(m?.status) !== 'cancelled' || String(m?.status) === 'live';",
+    expect: ['A-TDRAW-22/L1', 'A-TDRAW-22/L2', 'A-TDRAW-22/NM3'] },
+  { name: 'M15 the nav is fed by the by-date rows only (the merged live rows are dropped)',
+    anchor: '    _tennisRevealDrawNav(rows);\n', replace: '    _tennisRevealDrawNav(dayRows.filter(_tennisTierAllowed));\n',
+    expect: ['A-TDRAW-22/NM1'] },
+  { name: 'M16 the nav is fed by the live rows only (the by-date card is dropped)',
+    anchor: '    _tennisRevealDrawNav(rows);\n', replace: '    _tennisRevealDrawNav(liveRows.filter(_tennisTierAllowed));\n',
+    expect: ['A-TDRAW-22/NM2'] },
+  { name: 'M17 the pick ignores is_doubles (the text the doubles pin looks for is still there)',
+    anchor: '  for (const m of rows || []) {\n    const t = m?.tournament;\n',
+    replace: '  for (const m0 of rows || []) {\n    const m = { ...m0, is_doubles: false };\n    const t = m?.tournament;\n',
+    expect: ['A-TDRAW-22/D1'] },
+  { name: 'M18 the pick stops skipping Doubles/Boys/Girls/Wheelchair/Quad by tournament name (the regex text stays)',
+    anchor: "    if (/Doubles|Boys|Girls|Wheelchair|Quad/i.test(t.name || '')) continue;\n",
+    replace: "    if (/Doubles|Boys|Girls|Wheelchair|Quad/i.test('')) continue;\n",
+    expect: ['A-TDRAW-22/D2'] },
+  { name: 'M19 a named event\'s default rank is 3 (level with the 250s) instead of 2',
+    anchor: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 2) : null)', replace: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 3) : null)',
+    expect: ['A-TDRAW-22/I', 'A-TDRAW-22/I-count'] },
+  { name: 'M20 a named event\'s default rank is 0 (level with a slam)',
+    anchor: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 2) : null)', replace: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 0) : null)',
+    expect: ['A-TDRAW-22/I-slam'] },
+  { name: 'M21 a named event\'s default rank is 1 (level with a 1000)',
+    anchor: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 2) : null)', replace: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 1) : null)',
+    expect: ['A-TDRAW-22/I-1000'] },
+  { name: 'M22 a named event\'s default rank is 9 (below everything)',
+    anchor: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 2) : null)', replace: '(_TENNIS_DRAW_NAMED_RANK[t.name] ?? 9) : null)',
+    expect: ['A-TDRAW-22/I', 'A-TDRAW-22/I-rev', 'A-TDRAW-22/I-count'] },
+  { name: 'M23 the 250s are ranked with the 500s (atp_250 and wta_250 at 2)',
+    anchor: '  atp_500: 2, wta_500: 2, atp_250: 3, wta_250: 3,\n', replace: '  atp_500: 2, wta_500: 2, atp_250: 2, wta_250: 2,\n',
+    expect: ['A-TDRAW-22/I', 'A-TDRAW-22/I-count'] },
+  { name: 'M24 candidate tournaments are keyed by name instead of by id',
+    anchor: '    const prev = seen.get(t.id);\n    if (!prev) seen.set(t.id, { id: t.id,', replace: '    const prev = seen.get(t.name);\n    if (!prev) seen.set(t.name, { id: t.id,',
+    expect: ['A-TDRAW-22/ID'] },
+  { name: 'M25 the scope is widened: challenger is admitted as a tier (in the tier set and the rank table)',
+    edits: [
+      ["  'atp_500', 'wta_500', 'atp_250', 'wta_250',\n]);", "  'atp_500', 'wta_500', 'atp_250', 'wta_250', 'challenger',\n]);"],
+      ['  atp_500: 2, wta_500: 2, atp_250: 3, wta_250: 3,\n', '  atp_500: 2, wta_500: 2, atp_250: 3, wta_250: 3, challenger: 4,\n'],
+    ],
+    expect: ['A-TDRAW-22/S1'] },
+  { name: 'M26 the scope is widened: the named-event list admits every tournament name',
+    anchor: 'const TENNIS_NAMED = /^(ATP Finals|WTA Finals|', replace: 'const TENNIS_NAMED = /^(.*|ATP Finals|WTA Finals|',
+    expect: ['A-TDRAW-22/S1', 'A-TDRAW-22/S2'] },
 ];
 
 let harnessDefects = 0, notCaught = 0, caught = 0;
@@ -90,17 +154,31 @@ if (control.code !== 0 || controlFailed !== '0') {
   process.exit(1);
 }
 
+// A mutation is one anchor/replace pair or several (`edits`). Every pair must find
+// its anchor exactly once in the text it is applied to and must change that text,
+// or nothing is mutated and the result is a harness defect, never a verdict.
+const applyEdits = (m) => {
+  const pairs = m.edits || [[m.anchor, m.replace]];
+  let text = original;
+  for (const [anchor, replace] of pairs) {
+    const hits = text.split(anchor).length - 1;
+    if (hits !== 1) return { error: `  ANCHOR      ${m.name}\n              anchor occurs ${hits} time(s), expected 1: ${JSON.stringify(anchor.slice(0, 60))}. NOTHING WAS MUTATED: a harness defect, not a result.` };
+    const next = text.replace(anchor, () => replace);
+    if (next === text || !next.includes(replace)) return { error: `  NOTAPPLIED  ${m.name}` };
+    text = next;
+  }
+  return { text };
+};
+
 for (const m of MUTATIONS) {
-  const hits = original.split(m.anchor).length - 1;
-  if (hits !== 1) { harnessDefects++; console.error(`  ANCHOR      ${m.name}\n              anchor occurs ${hits} time(s), expected 1. NOTHING WAS MUTATED: a harness defect, not a result.`); continue; }
-  const mutated = original.replace(m.anchor, () => m.replace);
-  if (mutated === original || !mutated.includes(m.replace)) { harnessDefects++; console.error(`  NOTAPPLIED  ${m.name}`); continue; }
-  const r = runSmoke(mutated);
+  const applied = applyEdits(m);
+  if (applied.error) { harnessDefects++; console.error(applied.error); continue; }
+  const r = runSmoke(applied.text);
   const red = redIds(r.out);
   const missing = m.expect.filter((id) => !red.includes(id));
   if (r.code === 0 || missing.length) {
     notCaught++;
-    console.error(`  NOT CAUGHT  ${m.name}\n              still green: ${missing.join(', ') || '(all of them; smoke exit 0)'}`);
+    console.error(`  NOT CAUGHT  ${m.name}\n              still green: ${missing.join(', ') || '(all of them; smoke exit 0)'}\n              smoke exit ${r.code}; red instead: ${anyRed(r.out).join(', ') || '(nothing)'}`);
   } else {
     caught++;
     console.log(`  caught      ${m.name}\n              red: ${red.join(', ')}`);
@@ -110,7 +188,9 @@ for (const m of MUTATIONS) {
 fs.rmSync(tmp, { recursive: true, force: true });
 const after = fs.readFileSync(SRC, 'utf8');
 if (after !== original) { console.error('FAIL: index.html changed during the run (it must not).'); process.exit(1); }
-console.log(`\nran ${MUTATIONS.length} mutations, caught ${caught} of ${MUTATIONS.length}; each asserted its anchor unique and its effect present; a control run on the unmutated copy was green; index.html untouched.`);
+const ok = notCaught === 0 && harnessDefects === 0;
+console.log(`\nran ${MUTATIONS.length} mutations, caught ${caught} of ${MUTATIONS.length}; not caught ${notCaught}; harness defects ${harnessDefects}.`);
+if (ok) console.log('Every mutation asserted its anchor(s) unique and its effect present, a control run on the unmutated copy was green, and index.html was untouched.');
 if (notCaught) console.error(`${notCaught} NOT CAUGHT: those are the assertions' real coverage, measured, and a defect of the check.`);
-if (harnessDefects) console.error(`${harnessDefects} harness defect(s).`);
-process.exit(notCaught || harnessDefects ? 1 : 0);
+if (harnessDefects) console.error(`${harnessDefects} harness defect(s): those mutations were NOT applied, so they say nothing about the assertions.`);
+process.exit(ok ? 0 : 1);

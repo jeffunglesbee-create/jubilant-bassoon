@@ -7858,8 +7858,14 @@ assert('A-TDRAW-16 — a named team event or season final is rankable by default
   // three weekly runs, a different event each time). Admission is now
   // TENNIS_NAMED (the scope list) plus the row's own round (A-TDRAW-17); a named
   // event ranks 2 unless the map prefers otherwise, and only the two Finals
-  // are preferred. Behaviour is pinned by A-TDRAW-22/I (a United Cup quarterfinal
-  // day beats an ATP 250 with no map entry for the United Cup).
+  // are preferred. THIS regex pins only the text of the expression. The rank
+  // itself is pinned by behaviour, in both card orders and against row counts so
+  // that no tie can hide a wrong rank: A-TDRAW-22/I and I-rev (a United Cup
+  // quarterfinal beats an ATP 250, whichever is listed first), I-count (it beats
+  // a 250 with twice the rows, so the 250s are not at 2 and the default is not 3),
+  // I-slam (a slam beats it: the default is not 0) and I-1000 (so does a 1000: the
+  // default is not 1). scripts/mutate-tennis-draw-pick.mjs M19-M23 break each of
+  // those and require the named cases red.
   /_TENNIS_DRAW_TIER_RANK\[t\.category\]\s*\n\s*\?\? \(TENNIS_NAMED\.test\(t\.name \|\| ''\) \? \(_TENNIS_DRAW_NAMED_RANK\[t\.name\] \?\? 2\) : null\)/.test(html) &&
   /const _TENNIS_DRAW_NAMED_RANK = \{\s*'ATP Finals': 1, 'WTA Finals': 1,\s*\};/.test(html),
   'a name map that admits events is a calendar state written down; it holds only preferences now');
@@ -7939,7 +7945,11 @@ const tdSandbox = (() => {
       cut('const TENNIS_TIERS = new Set([', '/// WHY THE TENNIS SECTION LOOKS')
       + cut('function _tennisTierAllowed(m){', 'async function fetchTennisLive(){')
       + cut('const _TENNIS_DRAW_TIER_RANK = {', '/// Show the Draw tab only when there is a draw to show.')
-      + cut('function _tennisRevealDrawNav(rows){', 'function toggleTennisView()') };
+      + cut('function _tennisRevealDrawNav(rows){', 'function toggleTennisView()')
+      // The nav's real call site: it merges the live and by-date feeds (live wins on
+      // an id) and hands the merged rows to _tennisRevealDrawNav. Cut whole, run
+      // with stubs for fetch, _tennisDiag, resolveBundle and FIELD_DEBUG (below).
+      + cut('async function fetchTennisLive(){', 'async function fetchSupplemental(') };
   } catch (e) { return { error: e.message, code: null }; }
 })();
 
@@ -7955,6 +7965,9 @@ const TD = {
   w250: tdT(77, 'Some WTA 250', 'wta_250'),     a250: tdT(88, 'Brisbane', 'atp_250'),
   b250: tdT(89, 'Another ATP 250', 'atp_250'),
   w500: tdT(66, 'Some WTA 500', 'wta_500'),
+  m1000: tdT(7, 'Paris Masters', 'masters_1000'), chal: tdT(300, 'Yokohama', 'challenger'),
+  adbl: tdT(15, 'Australian Open, Men Doubles', 'grand_slam'),
+  a250b: tdT(99, 'Brisbane', 'atp_250'),      // same NAME as TD.a250 (88), a different id
 };
 // Shaped like /bsd/tennis/draw?tournament=446 read on 2026-11-26 (QF=4, SF=1,
 // nation p1/p2, sets null on every node). Ids are synthetic; the shape and the
@@ -7995,18 +8008,68 @@ const tdCases = [
     card: [tdRow(TD.w250, { round_name: 'Round of 32', status: 'cancelled' })] },
   { id: 'H',  kind: 'pick', want: 88,   label: 'United Cup group rows beside an ATP 250 Round of 32 pick the 250',
     card: [tdRow(TD.uc), tdRow(TD.a250, { round_name: 'Round of 32' })] },
-  { id: 'I',  kind: 'pick', want: 391,  label: 'a United Cup quarterfinal day outranks an ATP 250 Round of 32 (named events rank 2 by default, 250s rank 3)',
+  // THE RANK CASES ARE ORDER- AND COUNT-INDEPENDENT ON PURPOSE. The pick sorts by
+  // rank, then by main-draw row count, and a stable sort keeps the first-seen
+  // tournament on a full tie. A case with the named event listed first and one row
+  // each passes with a WRONG rank (a default of 3, the 250s at 2), because the tie
+  // falls to the first row: that is what the 2026-11-26 review measured. So the
+  // 250 is listed first (I), the named event first (I-rev), and the named event is
+  // given FEWER rows than the 250 (I-count), so no tie can hide a wrong rank.
+  { id: 'I',  kind: 'pick', want: 391,  label: 'a United Cup quarterfinal day outranks an ATP 250 Round of 32 listed first on the card (named events rank 2 by default, 250s rank 3)',
+    card: [tdRow(TD.a250, { round_name: 'Round of 32' }), tdRow(TD.uc, { round_name: 'Quarterfinals' })] },
+  { id: 'I-rev', kind: 'pick', want: 391, label: 'the same two rows with the United Cup first: the same pick (order does not decide it)',
     card: [tdRow(TD.uc, { round_name: 'Quarterfinals' }), tdRow(TD.a250, { round_name: 'Round of 32' })] },
+  { id: 'I-count', kind: 'pick', want: 391, label: 'a United Cup quarterfinal (1 row) outranks an ATP 250 Round of 32 with twice the rows',
+    card: [tdRow(TD.uc, { round_name: 'Quarterfinals' }), tdRow(TD.a250, { round_name: 'Round of 32' }), tdRow(TD.a250, { round_name: 'Round of 32' })] },
+  { id: 'I-slam', kind: 'pick', want: 14, label: 'a slam Round of 128 (1 row) outranks a United Cup quarterfinal day with twice the rows (a named event ranks below a slam)',
+    card: [tdRow(TD.uc, { round_name: 'Quarterfinals' }), tdRow(TD.uc, { round_name: 'Quarterfinals' }), tdRow(TD.ao, { round_name: 'Round of 128' })] },
+  { id: 'I-1000', kind: 'pick', want: 7, label: 'a Masters 1000 Round of 16 (1 row) outranks a United Cup quarterfinal day with twice the rows (a named event ranks below a 1000)',
+    card: [tdRow(TD.uc, { round_name: 'Quarterfinals' }), tdRow(TD.uc, { round_name: 'Quarterfinals' }), tdRow(TD.m1000, { round_name: 'Round of 16' })] },
   { id: 'J',  kind: 'pick', want: 89,   label: 'cancelled rows do not count towards the busiest-draw tiebreak: 1 live + 3 cancelled loses to 2 finished',
     card: [tdRow(TD.a250, { round_name: 'Round of 32', status: 'live' }),
            tdRow(TD.a250, { round_name: 'Round of 32', status: 'cancelled' }), tdRow(TD.a250, { round_name: 'Round of 32', status: 'cancelled' }), tdRow(TD.a250, { round_name: 'Round of 32', status: 'cancelled' }),
            tdRow(TD.b250, { round_name: 'Round of 32', status: 'finished' }), tdRow(TD.b250, { round_name: 'Round of 32', status: 'finished' })] },
   { id: 'K',  kind: 'pick', want: 204,  label: 'the Finals keep their rank-1 preference: a WTA Finals semifinal beats a WTA 500 with twice the rows',
     card: [tdRow(TD.wta, { round_name: 'Semifinals' }), tdRow(TD.w500, { round_name: 'Round of 16' }), tdRow(TD.w500, { round_name: 'Round of 16' })] },
+  // THE PREDICATE'S STATUS RULE, case by case. The relay's draw route drops ONLY
+  // status 'cancelled' (field-relay-nba src/index.js: `main = inDraw.filter(status
+  // !== 'cancelled')`, read 2026-11-26), so a postponed or walkover row at a
+  // main-draw round is in the draw it will serve; and a LIVE row proves nothing
+  // about its round: round-robin rows are live too, with a blank round_name.
+  { id: 'L1', kind: 'pick', want: null, label: 'a live row with a blank round_name alone is not a draw (a live round-robin match proves no knockout)',
+    card: [tdRow(TD.atp, { status: 'live' })] },
+  { id: 'L2', kind: 'pick', want: 88,   label: 'a live ATP Finals row (blank round_name) beside an ATP 250 Round of 32 picks the 250',
+    card: [tdRow(TD.atp, { status: 'live' }), tdRow(TD.a250, { round_name: 'Round of 32' })] },
+  { id: 'P1', kind: 'pick', want: 88,   label: 'a postponed main-draw row is offered (the relay keeps it; it drops only cancelled)',
+    card: [tdRow(TD.a250, { round_name: 'Round of 32', status: 'postponed' })] },
+  { id: 'P2', kind: 'pick', want: 88,   label: 'a walkover main-draw row is offered (same)',
+    card: [tdRow(TD.a250, { round_name: 'Round of 32', status: 'walkover' })] },
+  // SCOPE: what the card is full of and must never offer. Challenger and UTR rows
+  // carry main-draw round names too (read 2026-11-26: category challenger,
+  // round_name Round of 16, status finished).
+  { id: 'S1', kind: 'pick', want: null, label: 'a Challenger Round of 16 alone is not offered (admission is the tier set or the named list, then the row)',
+    card: [tdRow(TD.chal, { round_name: 'Round of 16', status: 'finished' })] },
+  { id: 'S2', kind: 'pick', want: 88,   label: 'a Challenger Round of 16 beside an ATP 250 Round of 32 picks the 250',
+    card: [tdRow(TD.chal, { round_name: 'Round of 16', status: 'finished' }), tdRow(TD.a250, { round_name: 'Round of 32' })] },
+  { id: 'D1', kind: 'pick', want: null, label: 'a doubles row (is_doubles true) at a main-draw round is not a singles draw',
+    card: [tdRow(TD.a250, { round_name: 'Round of 32', is_doubles: true })] },
+  { id: 'D2', kind: 'pick', want: null, label: 'a tournament named for doubles (id 15, "Australian Open, Men Doubles") is skipped by name even with is_doubles false',
+    card: [tdRow(TD.adbl, { round_name: 'Round of 64' })] },
+  { id: 'ID', kind: 'pick', want: 99,   label: 'two tournaments with the same name and different ids are counted separately: 1 row of id 88 loses to 2 rows of id 99',
+    card: [tdRow(TD.a250, { round_name: 'Round of 32' }), tdRow(TD.a250b, { round_name: 'Round of 32' }), tdRow(TD.a250b, { round_name: 'Round of 32' })] },
   { id: 'N1', kind: 'nav', want: '',     label: 'the Draw tab is shown on a Davis Cup quarterfinal day',
     card: [tdRow(TD.dc, { round_name: 'Quarterfinals' })] },
   { id: 'N2', kind: 'nav', want: 'none', label: 'the Draw tab is hidden on a day of only ATP Finals round-robin rows',
     card: [tdRow(TD.atp), tdRow(TD.atp)] },
+  // THE NAV'S REAL CALL SITE: fetchTennisLive merges the live feed over the by-date
+  // card (live wins an id) and gives the merged rows to the nav. N1/N2 call the nav
+  // with one card and never run that merge.
+  { id: 'NM1', kind: 'navmerge', want: '',     label: 'fetchTennisLive: a main-draw row that only the LIVE feed carries (by-date empty) shows the Draw tab',
+    live: [tdRow(TD.a250, { round_name: 'Round of 32', status: 'live' })], byDate: [] },
+  { id: 'NM2', kind: 'navmerge', want: '',     label: 'fetchTennisLive: a main-draw row that only the BY-DATE card carries (live feed empty) shows the Draw tab',
+    live: [], byDate: [tdRow(TD.dc, { round_name: 'Quarterfinals' })] },
+  { id: 'NM3', kind: 'navmerge', want: 'none', label: 'fetchTennisLive: ATP Finals round-robin rows in both feeds, one of them live, hide the Draw tab',
+    live: [tdRow(TD.atp, { status: 'live' })], byDate: [tdRow(TD.atp), tdRow(TD.atp)] },
   { id: 'R1', kind: 'render', label: 'an empty `rounds` on a 200 says what the relay served and never claims the event is played as ties',
     card: [tdRow(TD.wta, { round_name: 'Semifinals' })],
     draws: { 204: { tournament: TD.wta, season: '2026', editionMatches: 7, mainDrawMatches: 0, complete: false, rounds: [], nodes: [], edges: [], anomalies: [] } } },
@@ -8022,17 +8085,23 @@ const input = JSON.parse(require('fs').readFileSync(0, 'utf8'));
     const els = {}, fetched = [];
     const el = (id) => (els[id] ||= { id, innerHTML: '', textContent: '', style: {} });
     const ctx = { V2_RELAY_BASE: 'https://relay.test', AbortSignal, captureFieldError() {}, document: { getElementById: el },
+      // fetchTennisLive is cut from the source whole; these are the four things it
+      // reaches outside itself for, stubbed: a diagnostics sink, the stream resolver
+      // (used only to label a card it returns), the debug flag, and fetch.
+      _tennisDiag() {}, resolveBundle: () => [], FIELD_DEBUG: false,
       fetch: async (url) => {
         fetched.push(url.replace('https://relay.test', ''));
-        if (url.includes('/matches/by-date')) return { ok: true, status: 200, json: async () => ({ results: c.card }) };
+        if (url.includes('/matches/by-date')) return { ok: true, status: 200, json: async () => ({ results: c.byDate || c.card || [] }) };
+        if (url.includes('/matches/live')) return { ok: true, status: 200, json: async () => ({ results: c.live || [] }) };
         const d = (c.draws || {})[Number(new URL(url).searchParams.get('tournament'))];
         return { ok: !!d, status: d ? 200 : 404, json: async () => d };
       } };
     vm.createContext(ctx);
-    vm.runInContext(input.code + '\\n;globalThis.__x = { pick: _tennisDrawPick, nav: _tennisRevealDrawNav, render: renderTennisBracket };', ctx);
+    vm.runInContext(input.code + '\\n;globalThis.__x = { pick: _tennisDrawPick, nav: _tennisRevealDrawNav, render: renderTennisBracket, live: fetchTennisLive };', ctx);
     const r = { id: c.id, kind: c.kind };
     if (c.kind === 'pick') { const p = ctx.__x.pick(c.card); r.got = p ? p.id : null; }
     if (c.kind === 'nav') { ctx.__x.nav(c.card); r.got = el('tennis-nav-link').style.display; }
+    if (c.kind === 'navmerge') { await ctx.__x.live(); r.got = el('tennis-nav-link').style.display; }
     if (c.kind === 'render') {
       await ctx.__x.render();
       r.html = el('tennis-draw').innerHTML; r.meta = el('tennis-draw-meta').textContent; r.title = el('tennis-draw-title').textContent; r.fetched = fetched;
@@ -8055,6 +8124,7 @@ const tdHeads = (h) => [...String(h || '').matchAll(/<div class="wct-col-head">(
 const tdOk = {
   pick: (c, r) => !!r && r.got === c.want,
   nav: (c, r) => !!r && r.got === c.want,
+  navmerge: (c, r) => !!r && r.got === c.want,
   render: (c, r) => {
     if (!r) return false;
     if (c.id === 'R1') {
@@ -8075,7 +8145,7 @@ for (const c of tdCases) {
 {
   const ran = tdRun.results.length, kinds = (k) => tdCases.filter((c) => c.kind === k).length;
   const executedOk = (k) => tdCases.filter((c) => c.kind === k && tdOk[k](c, tdResult(c.id))).length;
-  assert(`A-TDRAW-22 — coverage: executed ${ran} of ${tdCases.length} designed cases (pick ${executedOk('pick')}/${kinds('pick')} right, nav ${executedOk('nav')}/${kinds('nav')}, render ${executedOk('render')}/${kinds('render')}); ${tdSandbox.error ? 'EXTRACTION FAILED' : 'real declarations cut from the source'}`,
+  assert(`A-TDRAW-22 — coverage: executed ${ran} of ${tdCases.length} designed cases (pick ${executedOk('pick')}/${kinds('pick')} right, nav ${executedOk('nav')}/${kinds('nav')}, nav-through-the-real-merge ${executedOk('navmerge')}/${kinds('navmerge')}, render ${executedOk('render')}/${kinds('render')}); ${tdSandbox.error ? 'EXTRACTION FAILED' : 'real declarations cut from the source (fetch, _tennisDiag, resolveBundle and FIELD_DEBUG stubbed)'}`,
     !tdRun.error && ran === tdCases.length && tdCases.every((c) => tdOk[c.kind](c, tdResult(c.id))),
     tdRun.error || `${ran} of ${tdCases.length} ran`);
 }
