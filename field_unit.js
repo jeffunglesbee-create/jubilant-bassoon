@@ -12,6 +12,7 @@ const {
   espnTeamMatch,
   espnListsBroadcast,
   isSoccerSportLabel,
+  isNonSoccerFootballLabel,
   owlNoSeriesRule,
   owlSoccerNumbersRule,
   owlSoccerNoFigures,
@@ -979,6 +980,25 @@ test('owlSoccerNoFigures: no other sport is true, unreadable input is false, nev
   for (const l of NOT_SOCCER_LABELS) assert(owlSoccerNoFigures(l, '') === false, `${l} must be unchanged`);
   for (const v of [null, undefined, '', 0, {}, []]) assert(owlSoccerNoFigures(v, '') === false, String(v));
   for (const c of [null, undefined, 0, {}, []]) assert(owlSoccerNoFigures('EPL', c) === true, String(c));
+});
+
+// ── isNonSoccerFootballLabel ──────────────────────────────
+// A label for a football code that is not soccer; the Night Owl margin unit and getFieldVoice use it so `includes('football')` stops taking College and Australian Football for soccer
+// (docs/CC-CMD-2026-11-26-night-owl-sport-label-predicates.md).
+test('isNonSoccerFootballLabel: College, NCAA, American, Canadian and Australian Football labels are true', () => {
+  for (const l of ['College Football', 'college football', 'NCAA Football', 'American Football', 'Canadian Football League', 'Australian Football (AFL)']) assert(isNonSoccerFootballLabel(l) === true, l);
+});
+test('isNonSoccerFootballLabel: no soccer label is true', () => {
+  for (const l of SOCCER_LABELS) assert(isNonSoccerFootballLabel(l) === false, `${l} is soccer`);
+});
+test('isNonSoccerFootballLabel: labels with no "football" word, and the bare word, are false (the bare word stays with soccer, as before)', () => {
+  for (const l of ['NFL', 'CFL', 'AFL', 'CFB', 'NBA', 'WNBA', 'NHL', 'Baseball (MLB)', 'Football', 'Football (soccer)', 'Tennis', 'Golf']) assert(isNonSoccerFootballLabel(l) === false, l);
+});
+test('isNonSoccerFootballLabel: the qualifier alone is not enough, the word "football" is required (College Basketball, American League, Australian Open, Canadian Grand Prix)', () => {
+  for (const l of ['College Basketball', 'NCAA Basketball', 'American League', 'Australian Open', 'Canadian Grand Prix', 'College Baseball']) assert(isNonSoccerFootballLabel(l) === false, l);
+});
+test('isNonSoccerFootballLabel: unreadable input is false, never a throw', () => {
+  for (const v of [null, undefined, '', 0, 7, {}, [], ['College Football']]) assert(isNonSoccerFootballLabel(v) === false, String(v));
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────

@@ -8262,14 +8262,14 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
 // is covered the day it is added. Before the fix only "MLS Soccer" came out `goal`: 252 of 410 non-MLS soccer briefs in the relay's archive said "N-points margin".
 assert('A745 — both Night Owl margin-unit chains give `goal` for every soccer label the client builds, and the other sports\' units are unchanged',
   (() => {
-    const { isSoccerSportLabel } = require('./field_utils.js');
+    const { isSoccerSportLabel, isNonSoccerFootballLabel } = require('./field_utils.js');
     const chainOf = (name) => { const m = new RegExp('const ' + name + ' = [\\s\\S]*?: \'point\';').exec(html); return m ? m[0] : null; };
     const queueChain = chainOf('_owlQ_unit'), fallbackChain = chainOf('_marginUnit');
     if (!queueChain || !fallbackChain) return false;
     if (!/isSoccerSportLabel\(_owlQ_sp\)/.test(queueChain) || !/isSoccerSportLabel\(_sp\)/.test(fallbackChain)) return false;
     const queueUnit = (label) => new Function('_owlQ_sp', 'isSoccerSportLabel', queueChain + '; return _owlQ_unit;')(label.toLowerCase(), isSoccerSportLabel);
-    const fallbackUnit = (label) => new Function('_sp', 'isSoccerSportLabel',
-      "const _isAFLsport = _sp.includes('afl') || (_sp.includes('australian') && _sp.includes('football'));" + fallbackChain + '; return _marginUnit;')(label.toLowerCase(), isSoccerSportLabel);
+    const fallbackUnit = (label) => new Function('_sp', 'isSoccerSportLabel', 'isNonSoccerFootballLabel',
+      "const _isAFLsport = _sp.includes('afl') || (_sp.includes('australian') && _sp.includes('football'));" + fallbackChain + '; return _marginUnit;')(label.toLowerCase(), isSoccerSportLabel, isNonSoccerFootballLabel);
     const tbl = /const V2_SECTION_LABEL = \{([\s\S]*?)\n\};/.exec(html);
     if (!tbl) return false;
     const v2 = Object.fromEntries([...tbl[1].matchAll(/(\w+):\s*'([^']+)'/g)].map((m) => [m[1], m[2]]));
@@ -8361,6 +8361,56 @@ assert('A747 — the Night Owl soccer prompts no longer ask for or invite figure
     }
     for (const l of labels) if (owlSoccerNoFigures(l, '') !== true || owlSoccerNoFigures(l, ms) !== false || owlSoccerNoFigures(l, '  [MATCH STATS] Shots: A 3 — B 1') !== false) return false;   // any one soccer figure keeps the coaching in
     for (const l of [v2.nba, v2.wnba, v2.nfl, v2.nhl, v2.mlb, v2.afl]) if (owlSoccerNumbersRule(l, '') !== '' || owlSoccerNoFigures(l, '') !== false || isSoccerSportLabel(l)) return false;
+    return true;
+  })());
+
+// ── A748 / CC-CMD-2026-11-26-night-owl-sport-label-predicates, Task 1 ──
+// The Night Owl fallback prompt chooses a sport's vocabulary three times from the game's _sport label with substring tests: the `_terms` line, the margin unit and getFieldVoice. The soccer
+// branches tested includes('football'), so "College Football" got the soccer vocabulary line, `MARGIN: N-goals` and the soccer voice, and "Australian Football (AFL)" the soccer voice: 12 of
+// the 13 College Football Night Owl briefs (2026-11-14) said "goal", 4 "clean sheet", 6 "xG", 0 "touchdown". The three real expressions are cut out of the source and run.
+assert('A748 — College Football and Australian Football reach their own vocabulary line, margin unit and voice (not soccer\'s), the soccer labels still reach theirs, and the helper copies are identical',
+  (() => {
+    const fs = require('fs');
+    const { isSoccerSportLabel, isNonSoccerFootballLabel } = require('./field_utils.js');
+    const termsM = /const _terms = ([\s\S]*?);\n  \/\/ Tier 1A/.exec(html), unitM = /const _marginUnit = ([\s\S]*?: 'point';)/.exec(html);
+    const vStart = html.indexOf('function getFieldVoice(sport) {'), vEnd = html.indexOf('\n}\n', vStart);
+    if (!termsM || !unitM || vStart < 0) return false;
+    const terms = (l) => new Function('_sp', 'return ' + termsM[1])(l.toLowerCase());
+    const unit = (l) => new Function('_sp', 'isSoccerSportLabel', 'isNonSoccerFootballLabel', "const _isAFLsport = _sp.includes('afl') || (_sp.includes('australian') && _sp.includes('football'));\n const _marginUnit = " + unitM[1] + '\n return _marginUnit;')(l.toLowerCase(), isSoccerSportLabel, isNonSoccerFootballLabel);
+    const voice = (l) => new Function('FIELD_BASEBALL_VOICE', 'FIELD_HOCKEY_VOICE', 'FIELD_SOCCER_VOICE', 'isNonSoccerFootballLabel', html.slice(vStart, vEnd + 2) + '\n return getFieldVoice(' + JSON.stringify(l) + ');')('@BASEBALL', '@HOCKEY', '@SOCCER', isNonSoccerFootballLabel);
+    // College Football (and the other strings for it) is American football in all three
+    for (const l of ['College Football', 'NCAA Football', 'CFB']) if (!/^Sport: American Football/.test(terms(l)) || unit(l) !== 'point') return false;
+    if (!/^American Football/.test(voice('College Football')) || !/^American Football/.test(voice('NCAA Football'))) return false;
+    // Australian and Canadian football keep their own
+    if (!/^Sport: Australian/.test(terms('Australian Football (AFL)')) || unit('Australian Football (AFL)') !== 'point' || !/^Australian/.test(voice('Australian Football (AFL)'))) return false;
+    if (!/^Sport: Canadian/.test(terms('CFL')) || unit('CFL') !== 'point' || !/^Canadian/.test(voice('Canadian Football League'))) return false;
+    // the soccer labels keep the soccer line, `goal`, and (those that had one) the soccer voice
+    for (const l of ['La Liga', 'Bundesliga', 'Serie A', 'Ligue 1', 'EFL Championship', 'EFL League One', 'FA Cup', 'MLS Soccer']) if (!/^Sport: Football \(soccer\)/.test(terms(l)) || unit(l) !== 'goal' || voice(l) !== '@SOCCER') return false;
+    if (!/^Sport: Football \(soccer\)/.test(terms('Premier League')) || unit('Premier League') !== 'goal') return false;
+    // the other sports are as they were
+    if (unit('NFL') !== 'point' || unit('NBA') !== 'point' || unit('NHL') !== 'goal' || unit('Baseball (MLB)') !== 'run' || voice('NFL').indexOf('American Football') !== 0) return false;
+    // the inline helper is the field_utils.js function, byte for byte
+    const fnOf = (src) => { const m = /function isNonSoccerFootballLabel\(sport\)\{[\s\S]*?\n\}\n/.exec(src); return m ? m[0] : null; };
+    const inline = fnOf(html), pure = fnOf(fs.readFileSync('./field_utils.js', 'utf8'));
+    if (!inline || !pure || inline !== pure) return false;
+    return /!isNonSoccerFootballLabel\(_sp\) && _sp\.includes\('football'\)/.test(html) && /_sp\.includes\('football'\) && !isNonSoccerFootballLabel\(sp\)|sp\.includes\('football'\) && !isNonSoccerFootballLabel\(sp\)/.test(html);
+  })());
+
+// ── A749 / CC-CMD-2026-11-26-night-owl-sport-label-predicates, Task 3 ──
+// getQualityTarget's sport table listed soccer ahead of the other football codes and its bare 'football' tag took College, Australian and Canadian football; its coaching text named the sport
+// 'soccer' for every key but MLB, NHL and NBA/WNBA (so NFL, AFL, CFL and tennis games were coached on "recent soccer briefs"). The real function is cut out of the source and run with a stored-scores stub.
+assert('A749 — getQualityTarget names the right sport in its coaching text for the football codes, tennis and the sports it already knew, and soccer for soccer',
+  (() => {
+    const m = /function getQualityTarget\(sport\) \{[\s\S]*?\n\}\n/.exec(html);
+    if (!m) return false;
+    const say = (label) => new Function('localStorage', m[0] + '\n return getQualityTarget(' + JSON.stringify(label) + ');')({ getItem: () => JSON.stringify(Array.from({ length: 4 }, () => ({ label, score: 100, stat: 0.5 }))) });
+    const expect = { 'College Football': 'college football', 'Australian Football (AFL)': 'AFL', 'CFL': 'CFL', 'NFL': 'NFL', 'Baseball (MLB)': 'MLB', 'NHL': 'NHL', 'NBA': 'NBA/WNBA', 'WNBA': 'NBA/WNBA', 'ATP Tour': 'tennis',
+      'La Liga': 'soccer', 'Serie A': 'soccer', 'Bundesliga': 'soccer', 'MLS Soccer': 'soccer', 'EFL League One': 'soccer', 'FA Cup': 'soccer' };
+    for (const [label, name] of Object.entries(expect)) {
+      const t = say(label);
+      if (!t.includes('recent ' + name + ' briefs averaged score')) return false;
+      for (const other of ['soccer', 'college football', 'NFL', 'AFL', 'CFL', 'tennis', 'MLB', 'NHL', 'NBA/WNBA']) if (other !== name && new RegExp('recent ' + other.replace('/', '\\/') + ' briefs').test(t)) return false;
+    }
     return true;
   })());
 

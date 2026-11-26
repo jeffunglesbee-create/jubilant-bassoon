@@ -23516,7 +23516,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-26d';
+  const SW_VERSION = '2026-11-26e';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24851,6 +24851,14 @@ function owlSoccerNoFigures(sport, statCtx){
   return isSoccerSportLabel(sport) && owlSoccerMissingFigures(statCtx).length === 4;
 }
 
+// Inlined from field_utils.js (smoke A191); identical to it. True for a label that names a football code other than soccer ("College Football", "Australian Football (AFL)"): the Night Owl margin unit
+// and getFieldVoice test includes('football') to catch soccer, and these labels contain it (docs/CC-CMD-2026-11-26-night-owl-sport-label-predicates.md).
+function isNonSoccerFootballLabel(sport){
+  if(typeof sport !== 'string') return false;
+  const s = sport.toLowerCase();
+  return /\bfootball\b/.test(s) && /\b(college|ncaa|american|canadian|australian)\b/.test(s);
+}
+
 function espnTeamMatch(espnName, fieldName){
   if(!espnName||!fieldName) return false;
   // Normalize: lowercase, remove diacritics, strip punctuation
@@ -25300,7 +25308,7 @@ function getFieldVoice(sport) {
   const sp = (sport||'').toLowerCase();
   if (sp.includes('baseball') || sp.includes('mlb')) return FIELD_BASEBALL_VOICE;
   if (sp.includes('hockey') || sp.includes('nhl')) return FIELD_HOCKEY_VOICE;
-  if (sp.includes('soccer') || sp.includes('football') || sp.includes('epl') ||
+  if (sp.includes('soccer') || (sp.includes('football') && !isNonSoccerFootballLabel(sp)) || sp.includes('epl') ||
       sp.includes('mls') || sp.includes('liga') || sp.includes('ucl') ||
       sp.includes('bundesliga') || sp.includes('serie') || sp.includes('ligue') ||
       sp.includes('efl') || sp.includes('fa cup') || sp.includes('uecl') || sp.includes('uel')) return FIELD_SOCCER_VOICE;
@@ -25332,11 +25340,13 @@ function getQualityTarget(sport) {
       baseball:   ['mlb','baseball'],
       hockey:     ['nhl','hockey'],
       basketball: ['nba','wnba','basketball'],
-      soccer:     ['epl','mls','ucl','soccer','liga','football','bundesliga','serie','ligue','efl','fa cup','wc26','world cup'],
       nfl:        ['nfl','american football'],
+      cfb:        ['college football','ncaa football','cfb'],
       afl:        ['afl','australian'],
       cfl:        ['cfl','canadian football'],
       tennis:     ['atp','wta','tennis'],
+      // last: its bare 'football' would otherwise take College, Australian and Canadian football first (docs/CC-CMD-2026-11-26-night-owl-sport-label-predicates.md)
+      soccer:     ['epl','mls','ucl','soccer','liga','football','bundesliga','serie','ligue','efl','fa cup','wc26','world cup'],
     };
     let tags = null, key = null;
     for (const [k, vs] of Object.entries(sportTags)) {
@@ -25350,9 +25360,7 @@ function getQualityTarget(sport) {
     if (matched.length < 3) return ''; // need minimum data
     const avgScore = matched.reduce((a,s) => a + (s.score || 0), 0) / matched.length;
     const avgStat  = matched.reduce((a,s) => a + (s.stat  || 0), 0) / matched.length;
-    const labelStr = (key === 'baseball'   ? 'MLB' :
-                      key === 'hockey'     ? 'NHL' :
-                      key === 'basketball' ? 'NBA/WNBA' : 'soccer');
+    const labelStr = ({ baseball: 'MLB', hockey: 'NHL', basketball: 'NBA/WNBA', nfl: 'NFL', cfb: 'college football', afl: 'AFL', cfl: 'CFL', tennis: 'tennis' })[key] || 'soccer';
     const lines = [];
     // Scale fixed 2026-07-09 (CC-CMD-2026-07-09-enqueue-context-gap TASK 5):
     // this was still comparing against the pre-June-8 180-point scale (130/145),
@@ -40285,7 +40293,7 @@ async function fetchNightOwlFromClaude(topGame){
   // Raw scores for AFL are TOTAL POINTS (goals×6 + behinds) — do NOT call them "goals"
   const _isAFLsport = _sp.includes('afl') || (_sp.includes('australian') && _sp.includes('football'));
   const _marginUnit = (_sp.includes('baseball')||_sp.includes('mlb')) ? 'run'
-                   : (_sp.includes('hockey')||_sp.includes('nhl')||_sp.includes('soccer')||(!_isAFLsport && _sp.includes('football'))||_sp.includes('mls')||isSoccerSportLabel(_sp)) ? 'goal'
+                   : (_sp.includes('hockey')||_sp.includes('nhl')||_sp.includes('soccer')||(!_isAFLsport && !isNonSoccerFootballLabel(_sp) && _sp.includes('football'))||_sp.includes('mls')||isSoccerSportLabel(_sp)) ? 'goal'
                    : 'point';
   // AFL: convert point margin to goals+behinds description
   const _aflMarginStr = _isAFLsport ? (()=>{
@@ -40304,7 +40312,7 @@ async function fetchNightOwlFromClaude(topGame){
     ? 'SPORT=BASEBALL. This is a baseball game. Use ONLY baseball vocabulary.\nScore in RUNS. Close game = one-run game. Extra period = extra innings.\nFORBIDDEN — any use is a FACTUAL ERROR disqualifying the recap: quarter, quarters, fourth quarter, halftime, half time, field goal, field goal percentage, three-point, three-pointer, free throw, rebound, rebounds, one-possession, possession game, fast break, assist, assists, ball movement, interior scoring, basket, baskets, in the paint, down the stretch, offensive rhythm, offensive sets, transition game, points (unless quoting opponent stats), touchdown, first down, penalty kick, nil, offsides.\nUSE INSTEAD: runs, innings, hits, strikeouts, ERA, pitch count, at-bat, on-base, extra innings, bullpen, lineup, swing.'
     : _sp.includes('hockey') || _sp.includes('nhl')
     ? 'Sport: Ice Hockey. Score in GOALS (never "points"). Close game = one-goal game. Extra period = overtime or shootout. NEVER use: points, possession, quarter, basket. Use: shots, save percentage, power play, penalty kill.'
-    : _sp.includes('nfl') || _sp.includes('american football')
+    : _sp.includes('nfl') || _sp.includes('american football') || /\b(college|ncaa) football\b|\bcfb\b/.test(_sp)
     ? 'Sport: American Football. Score in POINTS (touchdowns=6, field goals=3). Close game = one-score game (8 points or fewer). Use: yards, first downs, turnover, red zone.'
     : _sp.includes('afl') || _sp.includes('australian')
     ? 'Sport: Australian Rules Football. Score in GOALS and BEHINDS. Total = goals×6 + behinds. CRITICAL MARGIN RULE: scores are given as TOTAL POINTS (e.g. 77–71). To describe the margin: divide point-margin by 6 to get approximate goals, remainder = behinds. A 6-point margin = one-goal margin (NOT six goals). A 12-point margin = two-goal margin. A 3-point margin = half-a-goal (describe as "within a goal"). NEVER say "X-goals margin" when you mean X-points margin — always convert. Close game = within a goal (≤6 points). Use: marks, handballs, clearances, inside 50s, score composite format goals.behinds.total (e.g. 12.5.77 = 12 goals, 5 behinds, 77 total). Forbidden: saying the point difference IS the number of goals.'

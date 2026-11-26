@@ -49,6 +49,7 @@
 // ── MATCHING ──────────────────────────────────────────────────────────────────
 //   espnTeamMatch(espnName, field) Fuzzy match ESPN team name to FIELD name
 //   isSoccerSportLabel(sport)      A game's _sport / league label names a soccer competition (the Night Owl margin unit)
+//   isNonSoccerFootballLabel(sport) A label for a football code that is not soccer (College / NCAA / American / Canadian / Australian Football)
 //   owlNoSeriesRule(sport, rec)    The Night Owl rule that bars series wording for a soccer match with no series record
 //   owlSoccerNumbersRule(sport, ctx) The Night Owl rule that bars xG / possession / shots / corners figures a soccer prompt does not carry
 //   owlSoccerNoFigures(sport, ctx)   True for a soccer prompt that carries none of the four (the Night Owl prompt then leaves out getQualityTarget's coaching for more numbers)
@@ -491,6 +492,19 @@ function owlSoccerNumbersRule(sport, statCtx){
  */
 function owlSoccerNoFigures(sport, statCtx){
   return isSoccerSportLabel(sport) && owlSoccerMissingFigures(statCtx).length === 4;
+}
+
+/**
+ * True for a label that names a football code other than soccer: "College Football", "NCAA Football", "American Football", "Canadian Football League", "Australian Football (AFL)".
+ * The Night Owl prompt's margin unit and getFieldVoice test `includes('football')` to catch soccer, and these labels contain it: College Football got the soccer vocabulary line,
+ * `MARGIN: N-goals` and the soccer voice ("Expected goals (xG) tell you more than the scoreline"), and Australian Football the soccer voice (docs/CC-CMD-2026-11-26-night-owl-sport-label-predicates.md).
+ * @param {string} sport — a game's _sport or league label
+ * @returns {boolean}
+ */
+function isNonSoccerFootballLabel(sport){
+  if(typeof sport !== 'string') return false;
+  const s = sport.toLowerCase();
+  return /\bfootball\b/.test(s) && /\b(college|ncaa|american|canadian|australian)\b/.test(s);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1062,7 +1076,7 @@ if (typeof module !== 'undefined' && module.exports) {
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
     toImpliedNum, dramaTier, isAmnestyState, scheduleForDate, fieldTodayIso,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
-    espnTeamMatch, espnListsBroadcast, isSoccerSportLabel, owlNoSeriesRule, owlSoccerNumbersRule, owlSoccerNoFigures,
+    espnTeamMatch, espnListsBroadcast, isSoccerSportLabel, isNonSoccerFootballLabel, owlNoSeriesRule, owlSoccerNumbersRule, owlSoccerNoFigures,
     // WC Permutations Engine
     computeGroupScenarios,
     wcSortByTiebreakers,

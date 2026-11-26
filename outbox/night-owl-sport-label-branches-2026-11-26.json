@@ -1,0 +1,285 @@
+{
+  "probe": "scripts/probe-night-owl-sport-label-branches.mjs",
+  "date": "2026-11-26",
+  "coverage": "26 labels (V2_SECTION_LABEL plus SOCCER_LEAGUES sections), read from src/legacy/field.js; the three expressions are cut out of the source and run",
+  "note": "voice 'none' for basketball is accepted (the NBA has no voice constant); a label is a mismatch when the vocabulary line, the margin unit or the voice lands on another sport or on none",
+  "mismatches": 9,
+  "wrongSport": [
+    {
+      "label": "Australian Football (AFL)",
+      "is": "afl",
+      "terms": "afl",
+      "margin_unit": "point",
+      "voice": "soccer"
+    },
+    {
+      "label": "College Football",
+      "is": "american-football",
+      "terms": "soccer",
+      "margin_unit": "goal",
+      "voice": "soccer"
+    }
+  ],
+  "rows": [
+    {
+      "label": "Australian Football (AFL)",
+      "sport": "afl",
+      "terms": "afl",
+      "termsOk": true,
+      "margin_unit": "point",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": false
+    },
+    {
+      "label": "Baseball (MLB)",
+      "sport": "baseball",
+      "terms": "baseball",
+      "termsOk": true,
+      "margin_unit": "run",
+      "unitOk": true,
+      "voice": "baseball",
+      "voiceOk": true
+    },
+    {
+      "label": "Bundesliga",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "College Football",
+      "sport": "american-football",
+      "terms": "soccer",
+      "termsOk": false,
+      "margin_unit": "goal",
+      "unitOk": false,
+      "voice": "soccer",
+      "voiceOk": false
+    },
+    {
+      "label": "EFL Championship",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "EFL Cup",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "EFL League One",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "EFL League Two",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "EFL Trophy",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "FA Cup",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "FIFA World Cup 2026",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "La Liga",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "Ligue 1",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "MLS Soccer",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "NBA",
+      "sport": "basketball",
+      "terms": "basketball",
+      "termsOk": true,
+      "margin_unit": "point",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": true
+    },
+    {
+      "label": "NFL",
+      "sport": "american-football",
+      "terms": "american-football",
+      "termsOk": true,
+      "margin_unit": "point",
+      "unitOk": true,
+      "voice": "american-football",
+      "voiceOk": true
+    },
+    {
+      "label": "NHL",
+      "sport": "hockey",
+      "terms": "hockey",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "hockey",
+      "voiceOk": true
+    },
+    {
+      "label": "Premier League",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": false
+    },
+    {
+      "label": "Serie A",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "soccer",
+      "voiceOk": true
+    },
+    {
+      "label": "UEFA Champions League Qualifying",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": false
+    },
+    {
+      "label": "UEFA Champions League",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": false
+    },
+    {
+      "label": "UEFA Conference League Qualifying",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": false
+    },
+    {
+      "label": "UEFA Conference League",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": false
+    },
+    {
+      "label": "UEFA Europa League Qualifying",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": false
+    },
+    {
+      "label": "UEFA Europa League",
+      "sport": "soccer",
+      "terms": "soccer",
+      "termsOk": true,
+      "margin_unit": "goal",
+      "unitOk": true,
+      "voice": "none",
+      "voiceOk": false
+    },
+    {
+      "label": "WNBA",
+      "sport": "wnba",
+      "terms": "wnba",
+      "termsOk": true,
+      "margin_unit": "point",
+      "unitOk": true,
+      "voice": "wnba",
+      "voiceOk": true
+    }
+  ]
+}
