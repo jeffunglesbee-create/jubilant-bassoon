@@ -23516,7 +23516,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-26a';
+  const SW_VERSION = '2026-11-26b';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24815,6 +24815,16 @@ function espnListsBroadcast(comp, name){
 function isSoccerSportLabel(sport){
   if(typeof sport !== 'string') return false;
   return /\b(soccer|mls|epl|efl|ucl|uel|uecl|uefa|fifa|wc26|bundesliga|laliga|liga|ligue|premier league|serie [a-c]|fa cup|champions league|europa league|conference league)\b/.test(sport.toLowerCase());
+}
+
+// Inlined from field_utils.js (smoke A191); identical to it. The Night Owl rule that bars series wording for a soccer match with no series record: the
+// prompt carried two unconditional series instructions, so the model invented series records (docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md, Task 2).
+// '' for every other sport and for a soccer game that really has a series record.
+function owlNoSeriesRule(sport, seriesRecord){
+  if(!isSoccerSportLabel(sport)) return '';
+  const rec = typeof seriesRecord === 'string' ? seriesRecord.trim() : '';
+  if(rec && rec !== '0-0') return '';
+  return '- This is a single match, not a series. Do NOT mention a series, a series record, a head-to-head or previous-meeting record, an aggregate, or earlier seasons unless that exact fact is written in the data above.';
 }
 
 function espnTeamMatch(espnName, fieldName){
@@ -40054,6 +40064,7 @@ async function saveEspnFinal(game, eData){
             '',
             'Rules: 80-100 words. Tactical. Not emotional. Lead with the turning point.',
             '- Write only from data above — never invent statistics or play-by-play.',
+            owlNoSeriesRule(_owlQ_sp, game.seriesRecord),
             '- CRITICAL — DO NOT FABRICATE SPECIFICS: no specific inning/quarter/at-bat details unless in stat context above.',
           ].filter(Boolean).join('\n');
           fetch(JOURNALISM_ENQUEUE_RELAY, {
@@ -40674,6 +40685,8 @@ Clinch type: ${_noChampCtx.clinchType}.${_noChampCtx.pathToFinals ? `
 Path to Finals: ${_noChampCtx.pathToFinals}` : ''}
 Write this Night Owl at the level the moment deserves. Do not undersell a championship.`
     : '';
+  // '' for every sport but soccer; for a soccer match with no series record, the rule that bars series wording AND the cue to drop the two series instructions below.
+  const _owlNoSeriesRule = owlNoSeriesRule(_sp, topGame.seriesRecord);
   const prompt=['Write a FIELD Night Owl recap.',
       '',
       'GAME DATA:',
@@ -40701,9 +40714,12 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       // forces every sentence to carry a specific number, directly lifting statDepth.
       _owlStatCtx
         ? '- REQUIRED — CITE ALL STATS: every stat line provided above must be referenced by its specific figure in your recap. Do NOT copy the bracket labels ([MLB BOX], [SCORE NARRATIVE], etc.) into the prose — strip all brackets and just use the numbers. Do not omit stats. Lead the first sentence with the most specific number available — player name + figure (e.g. "Brunson 32 points" not "Brunson was strong").'
-        : '- No box stats available — write from score, margin, series record, and drama context only. Every sentence must include a specific number (final score, margin, series record, or drama peak if meaningful).',
+        : _owlNoSeriesRule
+          ? '- No box stats available — write from score, margin, and drama context only. Every sentence must include a specific number (final score, margin, or drama peak if meaningful).'
+          : '- No box stats available — write from score, margin, series record, and drama context only. Every sentence must include a specific number (final score, margin, series record, or drama peak if meaningful).',
       _owlDramaPromptCtx?'- DRAMA CONTEXT (post-game amnesty — drama numbers MAY appear in prose): use tension/arc data to frame the narrative (thriller vs wire-to-wire vs late-bloomer). Paraphrase lead changes and comeback facts from SCORE NARRATIVE as natural prose. DO NOT copy bracket labels like [DRAMA TREND] or [SCORE NARRATIVE] literally into the text — use the facts they contain, not the tag names.':'',
       '- Write only from the data above — never invent statistics, player tendencies, or context.',
+      _owlNoSeriesRule,
       // PF-4: ban specific-inning / specific-at-bat / specific-period fabrications.
       // The LLM has ONLY the final score and any [MLB BOX], [PP/PK], standings
       // context shown above. Anything more specific (which inning was decisive,
@@ -40716,7 +40732,7 @@ Write this Night Owl at the level the moment deserves. Do not undersell a champi
       getQualityTarget(_sp),
       '- Third person only — never use "you" or address the reader directly.',
       '- Division accuracy: teams in the same division share ONE race, not "respective" races.',
-      '- Explain what tactically swung the game. Series implication. Plain prose.'
+      '- Explain what tactically swung the game.' + (_owlNoSeriesRule ? '' : ' Series implication.') + ' Plain prose.'
     ].filter(Boolean).join('\n');
   try{
     // ── WOW 6: try relay quality gate first (live-path quality enforcement)

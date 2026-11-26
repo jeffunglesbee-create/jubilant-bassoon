@@ -8286,5 +8286,34 @@ assert('A745 — both Night Owl margin-unit chains give `goal` for every soccer 
     return true;
   })());
 
+// ── A746 / CC-CMD-2026-11-26-night-owl-soccer-margin-unit, Task 2 ──
+// The Night Owl fallback prompt carried two unconditional series instructions: "Series implication." as its closing rule, and, with no box stats, "write from score, margin, series
+// record, and drama context only. Every sentence must include a specific number (final score, margin, series record ...)". For a soccer match with no series record that demands an
+// invented one: 104 of 444 soccer Night Owl briefs (2026-10-27..11-26) said "series record", "series matchup" or "aggregate series". Both are now conditional on owlNoSeriesRule,
+// and both prompts carry its rule. The real expressions are cut out of the source and run.
+assert('A746 — the Night Owl prompts bar series wording for a soccer match with no series record (closing rule and no-box-stats rule conditional, rule in both prompts)',
+  (() => {
+    const { owlNoSeriesRule } = require('./field_utils.js');
+    const closing = /'- Explain what tactically swung the game\.' \+ [^\n]*' Plain prose\.'/.exec(html);
+    if (!closing) return false;
+    const runClosing = (rule) => new Function('_owlNoSeriesRule', 'return ' + closing[0])(rule);
+    if (!/Series implication/.test(runClosing('')) || /Series implication/.test(runClosing('-rule'))) return false;           // present with no rule, gone with one
+    const nb = /_owlNoSeriesRule\s*\?\s*'(- No box stats available[^']*)'\s*:\s*'(- No box stats available[^']*)'/.exec(html);
+    if (!nb || /series record/i.test(nb[1]) || !/series record/i.test(nb[2])) return false;                                  // the soccer branch names none; the other keeps its text
+    if (!/const _owlNoSeriesRule = owlNoSeriesRule\(_sp, topGame\.seriesRecord\);/.test(html)) return false;
+    if (!/'- Write only from the data above — never invent statistics, player tendencies, or context\.',\s*\n\s*_owlNoSeriesRule,/.test(html)) return false;   // the rule is in the fallback prompt
+    if (!/owlNoSeriesRule\(_owlQ_sp, game\.seriesRecord\),/.test(html)) return false;                                      // and in the queue prompt
+    const tbl = /const V2_SECTION_LABEL = \{([\s\S]*?)\n\};/.exec(html);
+    const sl = /const SOCCER_LEAGUES = \[([\s\S]*?)\n\];/.exec(html);
+    if (!tbl || !sl) return false;
+    const v2 = Object.fromEntries([...tbl[1].matchAll(/(\w+):\s*'([^']+)'/g)].map((m) => [m[1], m[2]]));
+    const labels = new Set(['mls', 'epl', 'laliga', 'seriea', 'ligue1', 'eflchamp', 'eflone', 'efltwo', 'ucl', 'europa', 'conference', 'uclqual', 'europaqual', 'conferencequal', 'bundesliga', 'wc26'].map((k) => v2[k]));
+    for (const m of sl[1].matchAll(/section:\s*'([^']+)'/g)) labels.add(m[1]);
+    if (labels.size < 18) return false;
+    for (const l of labels) if (!owlNoSeriesRule(l, '').length || owlNoSeriesRule(l, '2-1') !== '') return false;               // every soccer label: rule with no record, none with one
+    for (const l of [v2.nba, v2.wnba, v2.nfl, v2.nhl, v2.mlb, v2.afl]) if (owlNoSeriesRule(l, '') !== '') return false;           // no other sport changes
+    return true;
+  })());
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

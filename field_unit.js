@@ -12,6 +12,7 @@ const {
   espnTeamMatch,
   espnListsBroadcast,
   isSoccerSportLabel,
+  owlNoSeriesRule,
   wxAlert,
   parseMatchweek,
   dramaTier,
@@ -898,6 +899,29 @@ test('isSoccerSportLabel: a word boundary, so "epl" inside a word is not the EPL
 });
 test('isSoccerSportLabel: unreadable input is false, never a throw', () => {
   for (const v of [null, undefined, '', 0, 7, {}, [], ['EPL']]) assert(isSoccerSportLabel(v) === false, String(v));
+});
+
+// ── owlNoSeriesRule ──────────────────────────────
+// The Night Owl rule that bars series wording for a soccer match with no series record (docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md, Task 2).
+// Non-empty exactly for a soccer label whose seriesRecord is empty or "0-0"; empty for every other sport and for a soccer game that has a real record.
+test('owlNoSeriesRule: every soccer label with no series record gets the rule, and the rule bars the series wording the briefs invented', () => {
+  for (const l of SOCCER_LABELS) {
+    const r = owlNoSeriesRule(l, '');
+    assert(typeof r === 'string' && r.length > 40, `${l} should get the rule`);
+    assert(/not a series/.test(r) && /series record/.test(r) && /aggregate/.test(r) && /head-to-head/.test(r), `${l}: the rule must name series, series record, aggregate and head-to-head`);
+  }
+});
+test('owlNoSeriesRule: "0-0", a blank record, null and undefined all mean no series record', () => {
+  for (const rec of ['', '0-0', '  0-0  ', '   ', null, undefined, 0, {}]) assert(owlNoSeriesRule('Premier League', rec).length > 0, `record ${JSON.stringify(rec)} should still get the rule`);
+});
+test('owlNoSeriesRule: a soccer game that really has a series record keeps its series wording (no rule)', () => {
+  assert(owlNoSeriesRule('UEFA Champions League', '1-0') === '' && owlNoSeriesRule('FA Cup', '2-1') === '');
+});
+test('owlNoSeriesRule: no other sport gets the rule, with or without a series record', () => {
+  for (const l of NOT_SOCCER_LABELS) assert(owlNoSeriesRule(l, '') === '' && owlNoSeriesRule(l, '3-1') === '', `${l} must be unchanged`);
+});
+test('owlNoSeriesRule: unreadable sport is no rule, never a throw', () => {
+  for (const v of [null, undefined, '', 0, {}, []]) assert(owlNoSeriesRule(v, '') === '', String(v));
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────

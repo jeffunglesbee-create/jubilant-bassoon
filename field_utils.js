@@ -49,6 +49,7 @@
 // ── MATCHING ──────────────────────────────────────────────────────────────────
 //   espnTeamMatch(espnName, field) Fuzzy match ESPN team name to FIELD name
 //   isSoccerSportLabel(sport)      A game's _sport / league label names a soccer competition (the Night Owl margin unit)
+//   owlNoSeriesRule(sport, rec)    The Night Owl rule that bars series wording for a soccer match with no series record
 //
 // ─────────────────────────────────────────────────────────────────────────────
 /* eslint-env browser */
@@ -422,6 +423,24 @@ function espnListsBroadcast(comp, name){
 function isSoccerSportLabel(sport){
   if(typeof sport !== 'string') return false;
   return /\b(soccer|mls|epl|efl|ucl|uel|uecl|uefa|fifa|wc26|bundesliga|laliga|liga|ligue|premier league|serie [a-c]|fa cup|champions league|europa league|conference league)\b/.test(sport.toLowerCase());
+}
+
+/**
+ * The Night Owl prompt rule for a soccer match that has no series record. A soccer league fixture or a cup tie is one match, and the prompt
+ * carried two unconditional series instructions ("Series implication." as its last rule; with no box stats, "write from score, margin,
+ * series record, and drama context only. Every sentence must include a specific number"), so the model invented a series record, a
+ * "series matchup", an "aggregate series" and "2024 series record" (104 of 444 soccer briefs, 2026-10-27..11-26; docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md, Task 2).
+ * Returns the rule text for a soccer sport whose seriesRecord is empty or "0-0", and '' for anything else (every other sport, and a soccer game
+ * that really has a series record), so a caller can drop the series instructions exactly when this is non-empty.
+ * @param {string} sport — a game's _sport or league label
+ * @param {string} seriesRecord — the game's seriesRecord ("" when it has none)
+ * @returns {string}
+ */
+function owlNoSeriesRule(sport, seriesRecord){
+  if(!isSoccerSportLabel(sport)) return '';
+  const rec = typeof seriesRecord === 'string' ? seriesRecord.trim() : '';
+  if(rec && rec !== '0-0') return '';
+  return '- This is a single match, not a series. Do NOT mention a series, a series record, a head-to-head or previous-meeting record, an aggregate, or earlier seasons unless that exact fact is written in the data above.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -993,7 +1012,7 @@ if (typeof module !== 'undefined' && module.exports) {
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
     toImpliedNum, dramaTier, isAmnestyState, scheduleForDate, fieldTodayIso,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
-    espnTeamMatch, espnListsBroadcast, isSoccerSportLabel,
+    espnTeamMatch, espnListsBroadcast, isSoccerSportLabel, owlNoSeriesRule,
     // WC Permutations Engine
     computeGroupScenarios,
     wcSortByTiebreakers,
