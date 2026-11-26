@@ -1,0 +1,221 @@
+{
+  "task": "docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md, Task 0.2 (the sport strings), read from the client source and run through the real chains",
+  "method": "the two chains (_owlQ_unit, _marginUnit) are cut out of index.html (HEAD = before, working tree = after) and run for every soccer label the client builds, read from V2_SECTION_LABEL and SOCCER_LEAGUES. This is the source of _sport for soccer cards (V2 injector, SOCCER_LEAGUES), not a runtime read of the deployed page.",
+  "limits": "A _sport that reaches a game from somewhere else (a relay label in game.league when _sport is empty) is covered by field_unit.js, which lists the relay labels; a label no table here names is not measured. The Playwright read of the live page (Task 0.2 as written) was not run.",
+  "soccer_labels": [
+    {
+      "label": "MLS Soccer",
+      "from": "V2_SECTION_LABEL.mls",
+      "queue_before": "goal",
+      "queue_after": "goal",
+      "fallback_before": "goal",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "Premier League",
+      "from": "V2_SECTION_LABEL.epl",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "La Liga",
+      "from": "V2_SECTION_LABEL.laliga",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "Serie A",
+      "from": "V2_SECTION_LABEL.seriea",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "Ligue 1",
+      "from": "V2_SECTION_LABEL.ligue1",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "EFL Championship",
+      "from": "V2_SECTION_LABEL.eflchamp",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "EFL League One",
+      "from": "V2_SECTION_LABEL.eflone",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "EFL League Two",
+      "from": "V2_SECTION_LABEL.efltwo",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "UEFA Champions League",
+      "from": "V2_SECTION_LABEL.ucl",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "UEFA Europa League",
+      "from": "V2_SECTION_LABEL.europa",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "UEFA Conference League",
+      "from": "V2_SECTION_LABEL.conference",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "UEFA Champions League Qualifying",
+      "from": "V2_SECTION_LABEL.uclqual",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "UEFA Europa League Qualifying",
+      "from": "V2_SECTION_LABEL.europaqual",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "UEFA Conference League Qualifying",
+      "from": "V2_SECTION_LABEL.conferencequal",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "Bundesliga",
+      "from": "V2_SECTION_LABEL.bundesliga",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "FIFA World Cup 2026",
+      "from": "V2_SECTION_LABEL.wc26",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "EFL Cup",
+      "from": "SOCCER_LEAGUES",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "EFL Trophy",
+      "from": "SOCCER_LEAGUES",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "FA Cup",
+      "from": "SOCCER_LEAGUES",
+      "queue_before": "point",
+      "queue_after": "goal",
+      "fallback_before": "point",
+      "fallback_after": "goal"
+    }
+  ],
+  "soccer_labels_goal_before": {
+    "queue": 1,
+    "fallback": 1,
+    "of": 19
+  },
+  "soccer_labels_goal_after": {
+    "queue": 19,
+    "fallback": 19,
+    "of": 19
+  },
+  "other_sports_unchanged_check": [
+    {
+      "label": "NBA",
+      "queue_before": "point",
+      "queue_after": "point",
+      "fallback_before": "point",
+      "fallback_after": "point"
+    },
+    {
+      "label": "WNBA",
+      "queue_before": "point",
+      "queue_after": "point",
+      "fallback_before": "point",
+      "fallback_after": "point"
+    },
+    {
+      "label": "NFL",
+      "queue_before": "point",
+      "queue_after": "point",
+      "fallback_before": "point",
+      "fallback_after": "point"
+    },
+    {
+      "label": "NHL",
+      "queue_before": "goal",
+      "queue_after": "goal",
+      "fallback_before": "goal",
+      "fallback_after": "goal"
+    },
+    {
+      "label": "Baseball (MLB)",
+      "queue_before": "run",
+      "queue_after": "run",
+      "fallback_before": "run",
+      "fallback_after": "run"
+    },
+    {
+      "label": "Australian Football (AFL)",
+      "queue_before": "point",
+      "queue_after": "point",
+      "fallback_before": "point",
+      "fallback_after": "point"
+    },
+    {
+      "label": "College Football",
+      "queue_before": "point",
+      "queue_after": "point",
+      "fallback_before": "goal",
+      "fallback_after": "goal"
+    }
+  ],
+  "note_college_football": "College Football gives goal in the fallback chain before and after (its includes(\"football\") test): an existing quirk, outside this fix and not pinned by A745."
+}

@@ -8256,5 +8256,35 @@ assert('A-ODDS-7 — the dead field.js wiring is gone',
     JSON.stringify(Object.fromEntries(Object.entries(slugs).map(([k, slug]) => [k, { past: past.get(k) || null, sweep: sweepSection(slug) || null }]))));
 }
 
+// ── A745 / CC-CMD-2026-11-26-night-owl-soccer-margin-unit ──
+// The Night Owl prompt writes `MARGIN: N-<unit>`. The two inline unit chains (the queue prompt's `_owlQ_unit`, the fallback's `_marginUnit`) are cut OUT OF THE SOURCE
+// and run for every soccer label the client builds: the V2 injector's V2_SECTION_LABEL and the SOCCER_LEAGUES sections, read from the source so a new competition
+// is covered the day it is added. Before the fix only "MLS Soccer" came out `goal`: 252 of 410 non-MLS soccer briefs in the relay's archive said "N-points margin".
+assert('A745 — both Night Owl margin-unit chains give `goal` for every soccer label the client builds, and the other sports\' units are unchanged',
+  (() => {
+    const { isSoccerSportLabel } = require('./field_utils.js');
+    const chainOf = (name) => { const m = new RegExp('const ' + name + ' = [\\s\\S]*?: \'point\';').exec(html); return m ? m[0] : null; };
+    const queueChain = chainOf('_owlQ_unit'), fallbackChain = chainOf('_marginUnit');
+    if (!queueChain || !fallbackChain) return false;
+    if (!/isSoccerSportLabel\(_owlQ_sp\)/.test(queueChain) || !/isSoccerSportLabel\(_sp\)/.test(fallbackChain)) return false;
+    const queueUnit = (label) => new Function('_owlQ_sp', 'isSoccerSportLabel', queueChain + '; return _owlQ_unit;')(label.toLowerCase(), isSoccerSportLabel);
+    const fallbackUnit = (label) => new Function('_sp', 'isSoccerSportLabel',
+      "const _isAFLsport = _sp.includes('afl') || (_sp.includes('australian') && _sp.includes('football'));" + fallbackChain + '; return _marginUnit;')(label.toLowerCase(), isSoccerSportLabel);
+    const tbl = /const V2_SECTION_LABEL = \{([\s\S]*?)\n\};/.exec(html);
+    if (!tbl) return false;
+    const v2 = Object.fromEntries([...tbl[1].matchAll(/(\w+):\s*'([^']+)'/g)].map((m) => [m[1], m[2]]));
+    const soccerKeys = ['mls', 'epl', 'laliga', 'seriea', 'ligue1', 'eflchamp', 'eflone', 'efltwo', 'ucl', 'europa', 'conference', 'uclqual', 'europaqual', 'conferencequal', 'bundesliga', 'wc26'];
+    const soccerLabels = new Set(soccerKeys.map((k) => v2[k]));
+    const sl = /const SOCCER_LEAGUES = \[([\s\S]*?)\n\];/.exec(html);
+    if (!sl) return false;
+    for (const m of sl[1].matchAll(/section:\s*'([^']+)'/g)) soccerLabels.add(m[1]);
+    if ([...soccerLabels].some((l) => !l) || soccerLabels.size < 18) return false;          // not vacuous: 16 V2 labels, plus the SOCCER_LEAGUES sections (Bundesliga is both)
+    for (const l of soccerLabels) if (queueUnit(l) !== 'goal' || fallbackUnit(l) !== 'goal') return false;
+    // the sports that were right stay as they were, in both chains
+    const unchanged = { [v2.nba]: 'point', [v2.wnba]: 'point', [v2.nfl]: 'point', [v2.nhl]: 'goal', [v2.mlb]: 'run', [v2.afl]: 'point' };
+    for (const [l, u] of Object.entries(unchanged)) if (queueUnit(l) !== u || fallbackUnit(l) !== u) return false;
+    return true;
+  })());
+
 console.log(`\n── Results: ${pass} passed, ${fail} failed ──────────────\n`);
 if (fail > 0) process.exit(1);

@@ -23516,7 +23516,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-24a';
+  const SW_VERSION = '2026-11-26a';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -24806,6 +24806,15 @@ function espnListsBroadcast(comp, name){
     if(b && Array.isArray(b.names) && b.names.some(n => String(n).toLowerCase() === name)) return true;
   }
   return false;
+}
+
+// Inlined from field_utils.js (smoke A191). The two copies are identical and field_utils.js's is the one field_unit.js tests. True when a game's
+// sport label names a soccer competition: the Night Owl `MARGIN:` unit chains (_owlQ_unit, _marginUnit) call it, because a soccer game's _sport is a
+// display label ("Premier League", "EFL League One") and only "MLS Soccer" has the word 'soccer' (docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md).
+// Not the bare words 'football' or 'league', which the other football codes carry. Unreadable input is false, never a throw.
+function isSoccerSportLabel(sport){
+  if(typeof sport !== 'string') return false;
+  return /\b(soccer|mls|epl|efl|ucl|uel|uecl|uefa|fifa|wc26|bundesliga|laliga|liga|ligue|premier league|serie [a-c]|fa cup|champions league|europa league|conference league)\b/.test(sport.toLowerCase());
 }
 
 function espnTeamMatch(espnName, fieldName){
@@ -40030,7 +40039,7 @@ async function saveEspnFinal(game, eData){
           const _owlQ_winner = (eData.awayScore||0) > (eData.homeScore||0) ? game.away : game.home;
           const _owlQ_margin = _owlFinalMargin;
           const _owlQ_unit = (_owlQ_sp.includes('baseball')||_owlQ_sp.includes('mlb')) ? 'run'
-            : (_owlQ_sp.includes('hockey')||_owlQ_sp.includes('nhl')||_owlQ_sp.includes('soccer')) ? 'goal'
+            : (_owlQ_sp.includes('hockey')||_owlQ_sp.includes('nhl')||_owlQ_sp.includes('soccer')||isSoccerSportLabel(_owlQ_sp)) ? 'goal'
             : 'point';
           const _owlQ_prompt = [
             'Write a FIELD Night Owl recap.',
@@ -40240,7 +40249,7 @@ async function fetchNightOwlFromClaude(topGame){
   // Raw scores for AFL are TOTAL POINTS (goals×6 + behinds) — do NOT call them "goals"
   const _isAFLsport = _sp.includes('afl') || (_sp.includes('australian') && _sp.includes('football'));
   const _marginUnit = (_sp.includes('baseball')||_sp.includes('mlb')) ? 'run'
-                   : (_sp.includes('hockey')||_sp.includes('nhl')||_sp.includes('soccer')||(!_isAFLsport && _sp.includes('football'))||_sp.includes('mls')) ? 'goal'
+                   : (_sp.includes('hockey')||_sp.includes('nhl')||_sp.includes('soccer')||(!_isAFLsport && _sp.includes('football'))||_sp.includes('mls')||isSoccerSportLabel(_sp)) ? 'goal'
                    : 'point';
   // AFL: convert point margin to goals+behinds description
   const _aflMarginStr = _isAFLsport ? (()=>{

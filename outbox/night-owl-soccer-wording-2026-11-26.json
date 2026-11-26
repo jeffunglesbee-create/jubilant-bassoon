@@ -1,0 +1,24 @@
+{
+  "task": "docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md, Task 0.1 (the defect, counted)",
+  "read_at": "2026-11-26",
+  "source": "ARCHIVE_DB cc49101c-0569-4d41-8e7a-be139cde4f26, table briefs, read-only SELECT through the Cloudflare D1 tool, counts only (no brief text copied)",
+  "window": "brief_type = night_owl, date >= 2026-10-27 (30 days)",
+  "sql": "SELECT sport, COUNT(*) briefs, SUM(brief_text LIKE '%-point margin%' OR '%-points margin%') points_margin, SUM(brief_text LIKE '%-goal margin%' OR '%-goals margin%') goal_margin, SUM(brief_text LIKE '%series record%' OR '%series matchup%' OR '%aggregate series%') series_wording, MIN(date), MAX(date) FROM briefs WHERE brief_type='night_owl' AND date >= '2026-10-27' AND sport IN (<the soccer labels>) GROUP BY sport",
+  "note": "SQLite LIKE is the stand-in for the CC-CMD's regexes: a brief that says '4-points margin' or '1-point margin' counts as points_margin. The queried labels with no night_owl row in the window (UEFA Europa Conference League, EFL Cup, EFL Trophy, FA Cup) are absent from the result.",
+  "labels": [
+    { "sport": "EFL Championship",      "briefs": 89, "points_margin": 48, "goal_margin": 40, "series_wording": 19, "first_date": "2026-10-31", "last_date": "2026-11-26" },
+    { "sport": "EFL League One",        "briefs": 65, "points_margin": 42, "goal_margin": 22, "series_wording": 17, "first_date": "2026-10-31", "last_date": "2026-11-25" },
+    { "sport": "EPL",                   "briefs": 62, "points_margin": 45, "goal_margin": 18, "series_wording": 20, "first_date": "2026-10-27", "last_date": "2026-11-25" },
+    { "sport": "La Liga",               "briefs": 46, "points_margin": 22, "goal_margin": 24, "series_wording": 6,  "first_date": "2026-10-30", "last_date": "2026-11-23" },
+    { "sport": "Serie A",               "briefs": 42, "points_margin": 23, "goal_margin": 18, "series_wording": 2,  "first_date": "2026-10-27", "last_date": "2026-11-23" },
+    { "sport": "Bundesliga",            "briefs": 36, "points_margin": 23, "goal_margin": 13, "series_wording": 5,  "first_date": "2026-10-30", "last_date": "2026-11-22" },
+    { "sport": "UEFA Europa League",    "briefs": 34, "points_margin": 26, "goal_margin": 8,  "series_wording": 16, "first_date": "2026-11-05", "last_date": "2026-11-06" },
+    { "sport": "MLS",                   "briefs": 34, "points_margin": 0,  "goal_margin": 31, "series_wording": 14, "first_date": "2026-10-29", "last_date": "2026-11-23" },
+    { "sport": "EFL League Two",        "briefs": 18, "points_margin": 12, "goal_margin": 6,  "series_wording": 4,  "first_date": "2026-10-31", "last_date": "2026-11-25" },
+    { "sport": "Ligue 1",               "briefs": 12, "points_margin": 8,  "goal_margin": 4,  "series_wording": 1,  "first_date": "2026-10-30", "last_date": "2026-11-22" },
+    { "sport": "UEFA Champions League", "briefs": 6,  "points_margin": 3,  "goal_margin": 2,  "series_wording": 0,  "first_date": "2026-11-04", "last_date": "2026-11-26" }
+  ],
+  "totals_all_labels": { "briefs": 444, "points_margin": 252, "goal_margin": 186, "series_wording": 104 },
+  "totals_without_mls": { "briefs": 410, "points_margin": 252 },
+  "reading": "MLS is the one soccer label whose _sport ('MLS Soccer') contains a word the two margin-unit chains test for ('soccer', 'mls'). It has 0 points_margin briefs of 34. Every other soccer label has them: 252 of 410 briefs. That is the cause the CC-CMD hypothesised, measured as a natural experiment. The 'goal margin' briefs in the other labels are the model following the prompt's other line, 'Sport: Football (soccer). Score in GOALS (NEVER \"points\")', over the MARGIN line that says points: the same prompt carries both."
+}

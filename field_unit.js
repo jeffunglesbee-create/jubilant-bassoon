@@ -11,6 +11,7 @@ const {
   toImpliedNum,
   espnTeamMatch,
   espnListsBroadcast,
+  isSoccerSportLabel,
   wxAlert,
   parseMatchweek,
   dramaTier,
@@ -863,6 +864,40 @@ test('espnListsBroadcast: unreadable input is false, never a throw', () => {
   assert(!espnListsBroadcast({ broadcasts: 'ESPN+' }, 'espn+'));
   assert(!espnListsBroadcast({ broadcasts: [{ names: 'ESPN+' }] }, 'espn+'));
   assert(!espnListsBroadcast({ broadcasts: [{ names: [null, 7] }] }, 'espn+'));
+});
+
+// ── isSoccerSportLabel ───────────────────────────
+// The Night Owl margin unit (docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md). Every label a soccer game can carry as `_sport`
+// (the V2 injector's V2_SECTION_LABEL, the SOCCER_LEAGUES sections, and the relay's own labels for `game.league`) must be true; every other
+// sport's label must be false, above all the other football codes and the labels that carry the words 'football' or 'league'.
+const SOCCER_LABELS = [
+  'MLS Soccer', 'Premier League', 'La Liga', 'Serie A', 'Ligue 1', 'Bundesliga',
+  'EFL Championship', 'EFL League One', 'EFL League Two', 'EFL Cup', 'EFL Trophy', 'FA Cup',
+  'UEFA Champions League', 'UEFA Europa League', 'UEFA Conference League',
+  'UEFA Champions League Qualifying', 'UEFA Europa League Qualifying', 'UEFA Conference League Qualifying',
+  'FIFA World Cup 2026',
+  // the relay's labels (SOCCER_LEAGUE_LABELS), which reach the client as game.league
+  'EPL', 'MLS', 'UEFA Europa Conference League', 'UEFA Europa Conference League Qualifying',
+];
+const NOT_SOCCER_LABELS = [
+  'NBA', 'WNBA', 'wnba', 'NHL', 'Baseball (MLB)', 'MLB', 'NFL', 'CFB', 'NCAA Football', 'College Football',
+  'Australian Football (AFL)', 'AFL', 'CFL', 'UFL', 'National Football League', 'Canadian Football League',
+  'Golf', 'PGA Tour', 'Tennis', 'IPL', 'Cricket', 'Rugby', 'replay',
+];
+test('isSoccerSportLabel: every soccer label a game can carry is true', () => {
+  for (const l of SOCCER_LABELS) assert(isSoccerSportLabel(l) === true, `${l} should be soccer`);
+});
+test('isSoccerSportLabel: case does not matter', () => {
+  assert(isSoccerSportLabel('premier league') && isSoccerSportLabel('EFL LEAGUE ONE') && isSoccerSportLabel('uefa champions league'));
+});
+test('isSoccerSportLabel: no other sport is soccer, including the other football codes and the labels with "football" or "league" in them', () => {
+  for (const l of NOT_SOCCER_LABELS) assert(isSoccerSportLabel(l) === false, `${l} should not be soccer`);
+});
+test('isSoccerSportLabel: a word boundary, so "epl" inside a word is not the EPL', () => {
+  assert(isSoccerSportLabel('replay') === false && isSoccerSportLabel('EPL') === true);
+});
+test('isSoccerSportLabel: unreadable input is false, never a throw', () => {
+  for (const v of [null, undefined, '', 0, 7, {}, [], ['EPL']]) assert(isSoccerSportLabel(v) === false, String(v));
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────

@@ -48,6 +48,7 @@
 //
 // ── MATCHING ──────────────────────────────────────────────────────────────────
 //   espnTeamMatch(espnName, field) Fuzzy match ESPN team name to FIELD name
+//   isSoccerSportLabel(sport)      A game's _sport / league label names a soccer competition (the Night Owl margin unit)
 //
 // ─────────────────────────────────────────────────────────────────────────────
 /* eslint-env browser */
@@ -401,6 +402,26 @@ function espnListsBroadcast(comp, name){
     if(b && Array.isArray(b.names) && b.names.some(n => String(n).toLowerCase() === name)) return true;
   }
   return false;
+}
+
+/**
+ * True when a game's sport label names a soccer competition. Used where a margin is written in
+ * the sport's own unit (the Night Owl prompt's `MARGIN: N-goals`): a soccer game's `_sport` is a
+ * display label ("Premier League", "EFL League One", "UEFA Champions League") and only "MLS Soccer"
+ * contains the word the two inline unit chains tested for, so every other soccer game was told
+ * `MARGIN: 4-points` (field-relay-nba archive, 2026-10-27..11-26: 252 of 410 non-MLS soccer
+ * Night Owl briefs say "N-points margin"; MLS, 0 of 34. docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md).
+ *
+ * Deliberately NOT the bare words 'football' or 'league': this is called where nothing has ruled out the
+ * other football codes yet, and "College Football", "Canadian Football" and "Australian Football (AFL)"
+ * carry the first and "National Football League" the second. Every token below names soccer only.
+ * A word-boundary match, so "epl" does not find "replay". Unreadable input is false, never a throw.
+ * @param {string} sport — a game's _sport or league label, any case
+ * @returns {boolean}
+ */
+function isSoccerSportLabel(sport){
+  if(typeof sport !== 'string') return false;
+  return /\b(soccer|mls|epl|efl|ucl|uel|uecl|uefa|fifa|wc26|bundesliga|laliga|liga|ligue|premier league|serie [a-c]|fa cup|champions league|europa league|conference league)\b/.test(sport.toLowerCase());
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -972,7 +993,7 @@ if (typeof module !== 'undefined' && module.exports) {
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
     toImpliedNum, dramaTier, isAmnestyState, scheduleForDate, fieldTodayIso,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
-    espnTeamMatch, espnListsBroadcast,
+    espnTeamMatch, espnListsBroadcast, isSoccerSportLabel,
     // WC Permutations Engine
     computeGroupScenarios,
     wcSortByTiebreakers,
