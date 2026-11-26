@@ -8319,9 +8319,9 @@ assert('A746 — the Night Owl prompts bar series wording for a soccer match wit
 // A soccer Night Owl prompt never carries an xG figure and, but for "MLS Soccer" and "FIFA World Cup 2026", no possession, shots or corners either; its vocabulary line said "Use: shots,
 // possession, xG" and its no-stats rule demanded "a specific number" in every sentence, so 270 of 439 briefs in the 11 labels with no such line carried an xG or a possession percentage
 // (2026-10-27..11-26). The real `_terms` chain and the real no-box-stats pair are cut out of the source and run; the rule is required in both prompts, after the voice block in the fallback.
-assert('A747 — the Night Owl soccer prompts no longer ask for or invite figures they do not carry (vocabulary lists, no-stats rule, owlSoccerNumbersRule in both prompts, inline copy identical)',
+assert('A747 — the Night Owl soccer prompts no longer ask for or invite figures they do not carry (vocabulary lists, no-stats rule, owlSoccerNumbersRule in both prompts, the quality coaching left out when none is carried, inline copies identical)',
   (() => {
-    const { owlSoccerNumbersRule, isSoccerSportLabel } = require('./field_utils.js');
+    const { owlSoccerNumbersRule, owlSoccerNoFigures, isSoccerSportLabel } = require('./field_utils.js');
     const fs = require('fs');
     // 1. the vocabulary line: run the real chain for every soccer label
     const termsM = /const _terms = ([\s\S]*?);\n  \/\/ Tier 1A/.exec(html);
@@ -8343,20 +8343,24 @@ assert('A747 — the Night Owl soccer prompts no longer ask for or invite figure
     const nb = /_owlNoSeriesRule\s*\?\s*'(- No box stats available[^']*)'\s*:\s*'(- No box stats available[^']*)'/.exec(html);
     if (!nb || /Every sentence must include a specific number/.test(nb[1]) || !/Cite a figure only where it is written above/.test(nb[1])) return false;
     if (!/Every sentence must include a specific number/.test(nb[2])) return false;
-    // 3. the rule is in both prompts; in the fallback it follows the voice and quality blocks
-    if (!/getFieldVoice\(_sp\),\s*\n\s*getQualityTarget\(_sp\),\s*\n(?:\s*\/\/[^\n]*\n)*\s*owlSoccerNumbersRule\(_sp, _owlStatCtx\),/.test(html)) return false;
+    // 3. the rule is in both prompts; in the fallback it follows the voice block and the quality coaching, which a soccer prompt that carries no figure leaves out
+    if (!/getFieldVoice\(_sp\),\s*\n(?:\s*\/\/[^\n]*\n)*\s*owlSoccerNoFigures\(_sp, _owlStatCtx\) \? '' : getQualityTarget\(_sp\),\s*\n(?:\s*\/\/[^\n]*\n)*\s*owlSoccerNumbersRule\(_sp, _owlStatCtx\),/.test(html)) return false;
     if (!/owlNoSeriesRule\(_owlQ_sp, game\.seriesRecord\),\s*\n\s*owlSoccerNumbersRule\(_owlQ_sp, entry\.statCtx\),/.test(html)) return false;
-    // 4. the inline copy is the field_utils.js function, byte for byte
-    const fnOf = (src) => { const m = /function owlSoccerNumbersRule\(sport, statCtx\)\{[\s\S]*?\n\}\n/.exec(src); return m ? m[0] : null; };
-    const inline = fnOf(html), pure = fnOf(fs.readFileSync('./field_utils.js', 'utf8'));
-    if (!inline || !pure || inline !== pure) return false;
+    // 4. the inline copies are the field_utils.js functions, byte for byte
+    const utilsSrc = fs.readFileSync('./field_utils.js', 'utf8');
+    for (const name of ['owlSoccerMissingFigures', 'owlSoccerNumbersRule', 'owlSoccerNoFigures']) {
+      const fnOf = (src) => { const m = new RegExp('function ' + name + '\\([^)]*\\)\\{[\\s\\S]*?\\n\\}\\n').exec(src); return m ? m[0] : null; };
+      const inline = fnOf(html), pure = fnOf(utilsSrc);
+      if (!inline || !pure || inline !== pure) return false;
+    }
     // 5. the helper, run for every soccer label: all four named with no context, only xG left once a [MATCH STATS] line is there; no other sport
     const ms = '  [MATCH STATS] Possession: A 60% — B 40% · Shots: A 10 — B 5 · Corners: A 6 — B 2';
     for (const l of labels) {
       if (!/No figure for xG, possession, shots or corners is given/.test(owlSoccerNumbersRule(l, ''))) return false;
       if (!/No figure for xG is given/.test(owlSoccerNumbersRule(l, ms))) return false;
     }
-    for (const l of [v2.nba, v2.wnba, v2.nfl, v2.nhl, v2.mlb, v2.afl]) if (owlSoccerNumbersRule(l, '') !== '' || isSoccerSportLabel(l)) return false;
+    for (const l of labels) if (owlSoccerNoFigures(l, '') !== true || owlSoccerNoFigures(l, ms) !== false || owlSoccerNoFigures(l, '  [MATCH STATS] Shots: A 3 — B 1') !== false) return false;   // any one soccer figure keeps the coaching in
+    for (const l of [v2.nba, v2.wnba, v2.nfl, v2.nhl, v2.mlb, v2.afl]) if (owlSoccerNumbersRule(l, '') !== '' || owlSoccerNoFigures(l, '') !== false || isSoccerSportLabel(l)) return false;
     return true;
   })());
 

@@ -55,13 +55,19 @@ const MUTANTS = [
   { name: 'inline copy loses the corners check', target: 'html', anchor: "  if(!/\\bCorners:/.test(ctx)) missing.push('corners');\n", expectOccurrences: 1, replacement: '', expect: 'A747' },
   { name: 'inline copy no longer gates on a soccer label', target: 'html', anchor: "function owlSoccerNumbersRule(sport, statCtx){\n  if(!isSoccerSportLabel(sport)) return '';", replacement: "function owlSoccerNumbersRule(sport, statCtx){\n  if(false) return '';", expect: 'A747' },
   { name: "NHL's own vocabulary list loses its shots (the other sports must stay as they were)", target: 'html', anchor: 'Use: shots, save percentage', replacement: 'Use: save percentage', expect: 'A747', expectOccurrences: 'any' },
+  { name: 'fallback prompt always carries the quality coaching, even with no figure', target: 'html', anchor: "owlSoccerNoFigures(_sp, _owlStatCtx) ? '' : getQualityTarget(_sp),", replacement: 'getQualityTarget(_sp),', expect: 'A747' },
+  { name: 'fallback prompt leaves the quality coaching out for every sport', target: 'html', anchor: "owlSoccerNoFigures(_sp, _owlStatCtx) ? '' : getQualityTarget(_sp),", replacement: "'',", expect: 'A747' },
+  { name: 'fallback prompt tests the wrong context for the coaching', target: 'html', anchor: "owlSoccerNoFigures(_sp, _owlStatCtx) ? '' : getQualityTarget(_sp),", replacement: "owlSoccerNoFigures(_sp, '') ? '' : getQualityTarget(_sp),", expect: 'A747' },
+  { name: 'inline owlSoccerNoFigures drops the all-four test (any one figure missing leaves the coaching out)', target: 'html', anchor: 'owlSoccerMissingFigures(statCtx).length === 4;', replacement: 'owlSoccerMissingFigures(statCtx).length >= 1;', expect: 'A747' },
   // ---- unit tests, on field_utils.js ------------------------------------------------------------------------------------------------------------------------------------
   { name: 'unit: xG is no longer named when absent', target: 'utils', anchor: "  if(!/\\bxG\\b/.test(ctx)) missing.push('xG');\n", replacement: '', expect: 'owlSoccerNumbersRule' },
   { name: 'unit: the possession check matches the word in prose', target: 'utils', anchor: "if(!/\\bPossession:/.test(ctx)) missing.push('possession');", replacement: "if(!/possession/i.test(ctx)) missing.push('possession');", expect: 'owlSoccerNumbersRule' },
   { name: 'unit: every sport gets the rule', target: 'utils', anchor: "function owlSoccerNumbersRule(sport, statCtx){\n  if(!isSoccerSportLabel(sport)) return '';", replacement: "function owlSoccerNumbersRule(sport, statCtx){\n  if(false) return '';", expect: 'owlSoccerNumbersRule' },
   { name: 'unit: a context that carries all four still returns the rule', target: 'utils', anchor: "  if(!missing.length) return '';\n  const list", replacement: "  const list", expect: 'owlSoccerNumbersRule' },
   { name: 'unit: the list is joined with the wrong word', target: 'utils', anchor: "' or ' + missing[missing.length - 1]", replacement: "' and ' + missing[missing.length - 1]", expect: 'owlSoccerNumbersRule' },
-  { name: 'unit: the rule stops saying a sentence without a number is fine', target: 'utils', anchor: ' a sentence with no number is fine.\';\n}\n\n// ───', replacement: '\';\n}\n\n// ───', expect: 'owlSoccerNumbersRule' },
+  { name: 'unit: the rule stops saying a sentence without a number is fine', target: 'utils', anchor: " a sentence with no number is fine.';\n}", replacement: "';\n}", expect: 'owlSoccerNumbersRule' },
+  { name: 'unit: owlSoccerNoFigures says true when any one figure is missing', target: 'utils', anchor: 'owlSoccerMissingFigures(statCtx).length === 4;', replacement: 'owlSoccerMissingFigures(statCtx).length >= 1;', expect: 'owlSoccerNoFigures' },
+  { name: 'unit: owlSoccerNoFigures is true for every sport', target: 'utils', anchor: 'return isSoccerSportLabel(sport) && owlSoccerMissingFigures(statCtx).length === 4;', replacement: 'return owlSoccerMissingFigures(statCtx).length === 4;', expect: 'owlSoccerNoFigures' },
   { name: 'unit: a non-string context throws', target: 'utils', anchor: "const ctx = typeof statCtx === 'string' ? statCtx : '';", replacement: "const ctx = statCtx.toString();", expect: 'owlSoccerNumbersRule' },
 ];
 
@@ -88,5 +94,5 @@ for (const m of MUTANTS) {
   else if (r.code !== 0 && failing.length === 0) { harnessErr++; console.log(`HARNESS ERROR  ${m.name}: non-zero exit with no failing line (a crash is not a catch)`); }
   else { notCaught++; console.log(`NOT CAUGHT  ${m.name}${r.code !== 0 ? ` (failed, but not on ${m.expect}: ${failing[0]?.slice(0, 120)})` : ''}`); }
 }
-console.log(`\ncoverage: ${MUTANTS.length} mutants of 2 suites (smoke A747: ${MUTANTS.filter((m) => m.target === 'html').length}; owlSoccerNumbersRule unit tests: ${MUTANTS.filter((m) => m.target === 'utils').length}); caught ${caught}, not caught ${notCaught}, harness errors ${harnessErr}`);
+console.log(`\ncoverage: ${MUTANTS.length} mutants of 2 suites (smoke A747: ${MUTANTS.filter((m) => m.target === 'html').length}; owlSoccerNumbersRule and owlSoccerNoFigures unit tests: ${MUTANTS.filter((m) => m.target === 'utils').length}); caught ${caught}, not caught ${notCaught}, harness errors ${harnessErr}`);
 process.exit(notCaught === 0 && harnessErr === 0 ? 0 : 1);

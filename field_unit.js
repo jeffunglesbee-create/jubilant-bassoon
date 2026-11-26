@@ -14,6 +14,7 @@ const {
   isSoccerSportLabel,
   owlNoSeriesRule,
   owlSoccerNumbersRule,
+  owlSoccerNoFigures,
   wxAlert,
   parseMatchweek,
   dramaTier,
@@ -961,6 +962,23 @@ test('owlSoccerNumbersRule: no other sport gets the rule, including the other fo
 test('owlSoccerNumbersRule: unreadable sport or context is handled, never a throw', () => {
   for (const v of [null, undefined, '', 0, {}, []]) assert(owlSoccerNumbersRule(v, '') === '', String(v));
   for (const c of [null, undefined, 0, {}, []]) assert(/No figure for xG, possession, shots or corners/.test(owlSoccerNumbersRule('EPL', c)), String(c));
+});
+
+// ── owlSoccerNoFigures ──────────────────────────────
+// True for a soccer prompt that carries none of xG, possession, shots or corners; the Night Owl fallback prompt then leaves out getQualityTarget's coaching for more numbers.
+test('owlSoccerNoFigures: every soccer label with no figure in its context, or only a goal timeline, is true', () => {
+  for (const l of SOCCER_LABELS) assert(owlSoccerNoFigures(l, '') === true && owlSoccerNoFigures(l, GOAL_TIMELINE_CTX) === true, `${l} should carry no figures`);
+});
+test('owlSoccerNoFigures: any one of possession, shots, corners or xG in the context makes it false', () => {
+  for (const c of ['Possession: A 55% — B 45%', 'Shots: A 9 — B 11', 'Corners: A 4 — B 6', 'Team xG 1.8 — 0.6', MATCH_STATS_CTX]) assert(owlSoccerNoFigures('MLS Soccer', c) === false, c);
+});
+test('owlSoccerNoFigures: prose that says "possession" or "shots" is not a figure', () => {
+  assert(owlSoccerNoFigures('La Liga', 'lost possession and conceded shots from set pieces') === true);
+});
+test('owlSoccerNoFigures: no other sport is true, unreadable input is false, never a throw', () => {
+  for (const l of NOT_SOCCER_LABELS) assert(owlSoccerNoFigures(l, '') === false, `${l} must be unchanged`);
+  for (const v of [null, undefined, '', 0, {}, []]) assert(owlSoccerNoFigures(v, '') === false, String(v));
+  for (const c of [null, undefined, 0, {}, []]) assert(owlSoccerNoFigures('EPL', c) === true, String(c));
 });
 
 // ── Summary ────────────────────────────────────────────────────────────────

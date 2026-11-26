@@ -51,6 +51,7 @@
 //   isSoccerSportLabel(sport)      A game's _sport / league label names a soccer competition (the Night Owl margin unit)
 //   owlNoSeriesRule(sport, rec)    The Night Owl rule that bars series wording for a soccer match with no series record
 //   owlSoccerNumbersRule(sport, ctx) The Night Owl rule that bars xG / possession / shots / corners figures a soccer prompt does not carry
+//   owlSoccerNoFigures(sport, ctx)   True for a soccer prompt that carries none of the four (the Night Owl prompt then leaves out getQualityTarget's coaching for more numbers)
 //
 // ─────────────────────────────────────────────────────────────────────────────
 /* eslint-env browser */
@@ -445,28 +446,51 @@ function owlNoSeriesRule(sport, seriesRecord){
 }
 
 /**
- * The Night Owl prompt rule that bars invented soccer figures. A soccer Night Owl prompt holds the score, the margin and, for two labels only
- * ("MLS Soccer", "FIFA World Cup 2026"), a [MATCH STATS] line of possession, shots and corners; it never holds an xG figure (no source in the
- * function, none in the saved snapshot). Yet its vocabulary line said "Use: shots, possession, xG" and, with no stat context, its rule said "Every
- * sentence must include a specific number", so the model supplied them: 270 of 439 briefs in the 11 labels with no such line carried an xG or a
- * possession percentage (2026-10-27..11-26; docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md, Task 0).
- * Reads the stat context the prompt actually carries, by the labels the [MATCH STATS] builder writes ("Possession:", "Shots:", "Corners:") and
- * the term "xG", and names the kinds with no figure in it. '' for every other sport, and for a soccer prompt that carries all four.
- * @param {string} sport — a game's _sport or league label
+ * The kinds of soccer figure a prompt's stat context carries no figure for: any of 'xG', 'possession', 'shots', 'corners', in that order. A soccer Night Owl prompt
+ * holds the score, the margin and, for two labels only ("MLS Soccer", "FIFA World Cup 2026"), a [MATCH STATS] line of possession, shots and corners; it never holds
+ * an xG figure (no source in the function, none in the saved snapshot). Reads the context by the labels the [MATCH STATS] builder writes ("Possession:", "Shots:",
+ * "Corners:") and the term "xG", so the word "possession" in prose is not a possession figure.
  * @param {string} statCtx — the stat context lines the prompt carries ('' when none)
- * @returns {string}
+ * @returns {string[]}
  */
-function owlSoccerNumbersRule(sport, statCtx){
-  if(!isSoccerSportLabel(sport)) return '';
+function owlSoccerMissingFigures(statCtx){
   const ctx = typeof statCtx === 'string' ? statCtx : '';
   const missing = [];
   if(!/\bxG\b/.test(ctx)) missing.push('xG');
   if(!/\bPossession:/.test(ctx)) missing.push('possession');
   if(!/\bShots:/.test(ctx)) missing.push('shots');
   if(!/\bCorners:/.test(ctx)) missing.push('corners');
+  return missing;
+}
+
+/**
+ * The Night Owl prompt rule that bars invented soccer figures. Its vocabulary line said "Use: shots, possession, xG" and, with no stat context, its rule said "Every
+ * sentence must include a specific number", so the model supplied the figures it did not have: 270 of 439 briefs in the 11 labels with no [MATCH STATS] line carried an xG
+ * or a possession percentage (2026-10-27..11-26; docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md, Task 0). Names the kinds owlSoccerMissingFigures finds
+ * absent. '' for every other sport, and for a soccer prompt that carries all four.
+ * @param {string} sport — a game's _sport or league label
+ * @param {string} statCtx — the stat context lines the prompt carries ('' when none)
+ * @returns {string}
+ */
+function owlSoccerNumbersRule(sport, statCtx){
+  if(!isSoccerSportLabel(sport)) return '';
+  const missing = owlSoccerMissingFigures(statCtx);
   if(!missing.length) return '';
   const list = missing.length > 1 ? missing.slice(0, -1).join(', ') + ' or ' + missing[missing.length - 1] : missing[0];
   return '- No figure for ' + list + ' is given in the data above, so none is available. Do NOT state, estimate or hint at one. Cite a number only where it is written above; a sentence with no number is fine.';
+}
+
+/**
+ * True for a soccer prompt whose stat context carries none of xG, possession, shots or corners. getQualityTarget(sport) coaches "use more specific numbers (ERA, OPS, pitch
+ * counts, percentages, scores)" and "add more specific facts (names, numbers, stats with units)" whenever a browser's stored brief scores average low on stat depth, and a
+ * soccer brief that holds none of those figures scores low by construction, so the coaching asks for the figures the numbers rule bars. The Night Owl fallback prompt leaves it out
+ * when this is true.
+ * @param {string} sport — a game's _sport or league label
+ * @param {string} statCtx — the stat context lines the prompt carries ('' when none)
+ * @returns {boolean}
+ */
+function owlSoccerNoFigures(sport, statCtx){
+  return isSoccerSportLabel(sport) && owlSoccerMissingFigures(statCtx).length === 4;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1038,7 +1062,7 @@ if (typeof module !== 'undefined' && module.exports) {
     wxAlert, wxDescription, wxIcon, wxWindDir, wxBadge,
     toImpliedNum, dramaTier, isAmnestyState, scheduleForDate, fieldTodayIso,
     trimToCompleteSentence, stripJsonFences, extractJsonBlock,
-    espnTeamMatch, espnListsBroadcast, isSoccerSportLabel, owlNoSeriesRule, owlSoccerNumbersRule,
+    espnTeamMatch, espnListsBroadcast, isSoccerSportLabel, owlNoSeriesRule, owlSoccerNumbersRule, owlSoccerNoFigures,
     // WC Permutations Engine
     computeGroupScenarios,
     wcSortByTiebreakers,
