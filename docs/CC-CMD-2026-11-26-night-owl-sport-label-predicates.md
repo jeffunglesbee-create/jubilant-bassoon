@@ -2,7 +2,7 @@
 
 **Repo:** jubilant-bassoon (the client). Symptom read from the relay's archive (`briefs` table), cause read from `src/legacy/field.js` and run from the source.
 **Branch:** main — commit directly, no feature branch, no PR. Edit target for JS is `src/legacy/field.js` only.
-**Status:** PARTIAL 2026-11-26 — Tasks 0, 1 and 3 built and deployed (see Result); Task 2 BLOCKED on the invented-numbers done condition (unblock criteria below); the done condition for Task 1 is a count in the briefs table, read by the armed follow-up.
+**Status:** PARTIAL 2026-11-26 — Tasks 0, 1 and 3 built and deployed in `cc708b3` (see Result); Task 2 BLOCKED on the invented-numbers done condition (unblock criteria below); the done condition for Task 1 is a count in the briefs table, read by the armed follow-up.
 **Filed by:** CC, as the third CC-CMD of `docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md` (Rule 87.4). Found by Task 0 of `docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md`: counting xG mentions per sport showed 6 of 13 College Football briefs saying "xG", which no football-code prompt should.
 
 One-liner:
@@ -46,13 +46,15 @@ The soccer branch of the vocabulary line and of `getFieldVoice` tests `includes(
 
 **Tests:** `field_unit.js` +5 (103 pass); smoke **A748** (the three expressions, run for College / NCAA / CFB, Australian, Canadian, eight soccer labels and four other sports, plus the inline helper identical to the pure one) and **A749** (the real `getQualityTarget` run with a stored-scores stub for 15 labels, each coached on the right sport and no other); `A745` now passes the helper to its margin chain. Smoke 1088 passed, 0 failed. `scripts/mutate-night-owl-sport-label-predicates.mjs`: **19 of 19 mutants red** (the first run reported one anchor that occurred twice and one unit gap, the missing "football word required" test; both fixed before this count). `SW_VERSION` 2026-11-26e.
 
+**Deploy:** commit `cc708b3`, Deploy gate run `45906535731`, success, complete 22:44:44Z. The boundary for the done condition below is `2026-11-26 22:46:00`.
+
 ## Task 2 — A soccer voice for the seven labels that reach none (BLOCKED, Rule 74)
 
 What: `getFieldVoice` should return `FIELD_SOCCER_VOICE` for Premier League and the UEFA labels (the soccer clause tests `epl`, `ucl`, `uel`, `uecl`, none of which is in a display label; `isSoccerSportLabel` is the right test). Blocked by: that voice says "Expected goals (xG) tell you more than the scoreline. If xG is available, cite it." and gives "72% possession" as its example, and adding it to about 130 briefs a month (Premier League 62, Europa League 42, Conference League 21, Champions League 6) before the invented-numbers fix (`docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md`) has been read would extend the voice that invites the numbers. Unblocked when: that CC-CMD's done condition reads 0 with a non-zero number of briefs (read by the follow-up armed for 2026-11-30 12:13Z). Verify after: `node scripts/probe-night-owl-sport-label-branches.mjs` prints `"mismatches": 0`, and A748 gains the seven labels.
 
 ## Done condition for Task 1 (Rule 89)
 
-After the deploy, `night_owl` briefs with sport `College Football` created after the deploy: those matching `goal` or `clean sheet` or `xG` is **0** with a non-zero number of briefs read; artifact `outbox/night-owl-college-football-after-<date>.json`. College football is in season through the bowl games (to mid-January), so a Saturday finishes the read; if the count of briefs is 0, re-arm, never call it passed on zero rows.
+After the deploy, `night_owl` briefs with sport `College Football` created after `2026-11-26 22:46:00`: those matching `goal` or `clean sheet` or `xG` is **0** with a non-zero number of briefs read; artifact `outbox/night-owl-college-football-after-<date>.json`. College football is in season through the bowl games (to mid-January), so a Saturday finishes the read; if the count of briefs is 0, re-arm, never call it passed on zero rows.
 
 ## Not in scope
 

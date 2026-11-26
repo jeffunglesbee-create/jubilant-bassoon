@@ -1,5 +1,15 @@
 # FIELD HANDOFF
 
+## 2026-11-26 (part 3) — soccer Night Owl prompts stop inviting figures they do not carry; College and Australian Football stop getting soccer's vocabulary
+
+Commits `5d98ffb`, `287b368` (invented numbers; `SW_VERSION` 2026-11-26c, d) and `cc708b3` (label predicates; 2026-11-26e). Session doc: `outbox/cc-session-2026-11-26-night-owl-margin-unit.md` (Part 3). CC-CMDs `docs/CC-CMD-2026-11-26-night-owl-soccer-invented-numbers.md` (the owner's "Fix the invented numbers") and `docs/CC-CMD-2026-11-26-night-owl-sport-label-predicates.md` (filed and built the same day, Rule 87.4 and BUILD-ON-A).
+
+**What changed.** No xG figure can enter any soccer Night Owl prompt, and possession, shots and corners enter for 2 of 19 labels (the P6B gate tests `epl` and `ucl`, not the labels), yet the vocabulary line said "Use: shots, possession, xG" and the no-stats rule demanded a number in every sentence. `owlSoccerNumbersRule` now names the kinds the prompt carries no figure for, in both prompts (after the voice block in the fallback); the soccer no-stats rule asks for a figure only where one is written; `getQualityTarget`'s "use more specific numbers" coaching is left out of a soccer prompt that carries none. Separately, College Football got the soccer vocabulary line, `MARGIN: N-goals` and the soccer voice (6 of its 13 briefs said "xG"): `isNonSoccerFootballLabel` now keeps the football codes out of the soccer branches, and `getQualityTarget` names the right sport.
+
+**Proof.** In the 11 labels with no figure in the prompt, 270 of 439 briefs (61.5%) carried an xG mention or possession with a % (`outbox/night-owl-soccer-prompt-numbers-2026-11-26.json`); the 26-label probe found 9 of 26 labels on the wrong sport or none (`outbox/night-owl-sport-label-branches-2026-11-26.json`, 7 left after). Smoke 1088/0 (A747, A748, A749), field_unit 103/0, mutation harnesses 26 of 26 and 19 of 19 red. Deploy gate runs `45905479701`, `45905977465`, `45906535731`, success.
+
+**Open (STAGED).** The live effects, read 2026-11-30 12:13Z with the margin-unit and series counts: soccer briefs created after 2026-11-26 22:39:00 with an xG mention or possession % (0 of a non-zero count, mean `quality_score` beside it); College Football briefs after the `cc708b3` deploy with goal, clean sheet or xG (0). Task 2 of the label-predicates CC-CMD (a soccer voice for Premier League and the UEFA labels) is blocked on the first of those reading 0.
+
 ## 2026-11-26 (part 2) — the Night Owl prompt no longer demands a series record for a soccer match that has none
 
 Commit `b8be893` (`SW_VERSION 2026-11-26b`). Session doc: `outbox/cc-session-2026-11-26-night-owl-margin-unit.md` (Part 2). CC-CMD `docs/CC-CMD-2026-11-26-night-owl-soccer-margin-unit.md`, Task 2; the owner's "Fix the series wording".
