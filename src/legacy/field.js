@@ -23516,7 +23516,7 @@ let _pwaPrompt = null;
   // Assertion 28 in smoke verifies this constant is present
   // Rule 23: suffix increments per deploy within a day (a → b → c); new day resets to 'a'.
   // July 12 ended at 'u'. July 13 starts here.
-  const SW_VERSION = '2026-11-26e';
+  const SW_VERSION = '2026-11-26f';
   window.SW_VERSION = SW_VERSION; // expose globally for health panel + debugging
 
   // Service Worker — registered from /sw.js for full origin scope (Cloudflare Pages HTTPS)
@@ -32735,77 +32735,55 @@ const _TENNIS_DRAW_TIER_RANK = {
   atp_500: 2, wta_500: 2, atp_250: 3, wta_250: 3,
 };
 
-// TEAM EVENTS AND SEASON FINALS, which the category table cannot rank because
-// they all sit in `other` alongside wildcard playoffs and satellite events.
+// THE DRAW DECISION IS MADE PER ROW, AT RUN TIME, NOT PER NAME.
 //
-// Until this list existed, none of them could reach this tab at all: the loop
-// below read `rank == null` and skipped. That was right for three of the seven
-// and a silent loss for four, and nothing said which — a null-rank accident
-// reads exactly like a decision.
+// Until 2026-11-26 the team events and the season finals reached this tab by
+// NAME: a rank map that admitted five of them and a regex that excluded the
+// Davis Cup and BJK Group I. Every assignment was measured when it was written
+// and was true that day, and none stayed true, because what a name stands for
+// is a calendar state. A competition has no knockout until its knockout starts.
 //
-// The split is measured, not assumed. All seven were read from the deployed
-// draw route on 2026-09-06:
+//   509 BJK Cup moved from excluded to admitted on 2026-10-07 (client 6af0ffbb).
+//   204 WTA Finals (2026-11-09) and 209 ATP Finals (2026-11-16) were admitted
+//       while their newest edition held only round-robin rows. Those rows carry
+//       a BLANK round name, the relay counts them under roundsOutsideMainDraw,
+//       and the tab opened onto a sentence calling a round-robin "ties".
+//   446 Davis Cup (2026-11-23) was excluded while the route served a real
+//       nation-versus-nation tie draw (QF=4, SF=1 on 2026-11-26; nations as
+//       p1/p2, sets null on every node).
 //
-//   ADMITTED — a knockout the draw route renders
-//     209 ATP Finals 2025        SF=2 F=1        3 main-draw matches
-//       4 Next Gen Finals 2025   SF=2 F=1        3
-//     204 WTA Finals 2025        SF=2 F=1        3
-//     391 United Cup 2026        QF=4 SF=2 F=1   7
+// tennis-tier-ladders.yml went red on each, three weeks running, naming a
+// different event every time. A fourth list edit is the same approach again
+// (Rule 42), so the lists are gone.
 //
-//   EXCLUDED — no main-draw round exists
-//     446 Davis Cup 2026              194 matches, every one outside the seven
-//     509 Billie Jean King Cup 2026    77 matches, likewise
-//     508 BJK Cup Group I 2026        130 matches, likewise
+// WHAT THE ROWS ALREADY SAY. Every by-date row and every live row carries
+// `round_name` and `status`, and the relay's draw route builds its main draw
+// from exactly those two: a row is in the draw when its round_name is one of
+// the seven names below and it is not cancelled (field-relay-nba src/index.js,
+// the draw route's ORDER constant, read 2026-11-26). The client asks the same
+// question of the same field, so a tournament is offered only if one of the
+// rows on today's card is a match the draw route will draw. Nothing is
+// asserted about the event's name, so a competition appears when its knockout
+// starts and leaves when it ends without anyone editing a date.
 //
-//   509 MOVED TO ADMITTED on 2026-10-07. The reading above is not retracted —
-//   it was true on 2026-09-06 — but the route no longer serves what it read.
-//   tennis-tier-ladders.yml, which exists to catch exactly this, went red on
-//   2026-09-21 and stayed red for three weekly runs with the same finding:
-//   "509 now serves 7 main-draw match(es) but the client excludes it by name
-//   — a real draw nobody can reach." Read from the deployed draw route on
-//   2026-10-07:
-//
-//     509 Billie Jean King Cup 2026   QF=4 SF=2 F=1   7 main-draw matches
-//         complete, 6 edges forming one tree, anomalies []
-//         99 rubbers + 7 qualification sit under roundsOutsideMainDraw
-//
-//   It is the same shape as 391 United Cup, which this list already admits:
-//   category `other`, nations rather than players as p1/p2, rank null on
-//   every entry, sets null on every node, 7 main-draw matches in QF/SF/F.
-//   The two are indistinguishable in structure, so admitting one and hiding
-//   the other was a name, not a decision. 508 and 446 still serve zero
-//   main-draw rounds and stay excluded on the measurement, not the habit.
-//
-// The Cups are ties. A tie has no bracket, and rendering "no main-draw rounds
-// yet" over one would be the same false claim as calling a 96-draw's entry
-// round 32 missing matches.
-//
-// The round-robin group stage of the three Finals is also invisible here, and
-// correctly so: those 12-13 matches carry a BLANK round name, the relay counts
-// them under roundsOutsideMainDraw, and a round-robin is not a round. What
-// renders is the knockout the group stage feeds.
+// That makes this a SECOND COPY of the relay's vocabulary, and a copy drifts
+// silently. The replay in field-relay-nba's tennis-tier-ladders.yml is the
+// check: it reads this function out of the deployed page and runs it against
+// the draw route's own nodes.
+const _TENNIS_MAIN_DRAW_ROUNDS = ['Round of 128', 'Round of 64', 'Round of 32', 'Round of 16',
+                                  'Quarterfinals', 'Semifinals', 'Final'];
+function _tennisRowInMainDraw(m){
+  return _TENNIS_MAIN_DRAW_ROUNDS.includes(String(m?.round_name)) && String(m?.status) !== 'cancelled';
+}
+
+// RANK FOR A NAMED EVENT is 2 unless this map says otherwise: the same rung as
+// a 500, above a 250, below a slam and a 1000. The map holds PREFERENCES, not
+// admission. Admission is TENNIS_NAMED (the scope list, kept on purpose) and
+// then the row test above. The two Finals sit at 1 because a season finale
+// should win the card against any tour event except a slam.
 const _TENNIS_DRAW_NAMED_RANK = {
-  'ATP Finals': 1, 'WTA Finals': 1, 'Next Gen Finals': 2, 'United Cup': 2,
-  // Rank 2 is the United Cup's, because 509 is the United Cup's shape: a
-  // nation knockout in the seven-round vocabulary. Dropping it from the
-  // regex below is NOT enough on its own — category `other` has no tier
-  // rank, so `rank == null` would still skip it one line later.
-  'Billie Jean King Cup': 2,
+  'ATP Finals': 1, 'WTA Finals': 1,
 };
-// Named so the exclusion is a decision on the page rather than a gap in the
-// table above. If BSD ever serves a Davis Cup knockout under the seven-round
-// vocabulary, this line is what has to change, and it is findable.
-//
-// It happened, to the senior Billie Jean King Cup rather than the Davis Cup,
-// and this line is what changed. `Group I` stays: 508 serves 130 matches and
-// zero main-draw rounds, so the Group I stage really is ties only. The
-// optional group is gone, so the name must now match in full.
-//
-// Both remaining arms are a SECOND lock, not the only one: neither name has a
-// rank, so `rank == null` one line below would skip them even with this regex
-// deleted. That redundancy is the point — a named exclusion is a decision on
-// the page, where a null-rank skip is indistinguishable from forgetting.
-const _TENNIS_DRAW_NO_BRACKET = /^(Davis Cup|Billie Jean King Cup Group I)$/;
 function _tennisDrawPick(rows){
   const seen = new Map();
   for (const m of rows || []) {
@@ -32818,8 +32796,12 @@ function _tennisDrawPick(rows){
     // (pairs, not players) and this renderer would show one name of two.
     if (m?.is_doubles) continue;
     if (/Doubles|Boys|Girls|Wheelchair|Quad/i.test(t.name || '')) continue;
-    if (_TENNIS_DRAW_NO_BRACKET.test(t.name || '')) continue;
-    const rank = _TENNIS_DRAW_TIER_RANK[t.category] ?? _TENNIS_DRAW_NAMED_RANK[t.name || ''];
+    // A ROW COUNTS ONLY IF IT IS A MAIN-DRAW MATCH. Round-robin, qualifying, rubber and
+    // cancelled rows do not make a tournament drawable, whatever it is called, and
+    // they are not counted towards its weight below either.
+    if (!_tennisRowInMainDraw(m)) continue;
+    const rank = _TENNIS_DRAW_TIER_RANK[t.category]
+      ?? (TENNIS_NAMED.test(t.name || '') ? (_TENNIS_DRAW_NAMED_RANK[t.name] ?? 2) : null);
     if (rank == null) continue;
     const prev = seen.get(t.id);
     if (!prev) seen.set(t.id, { id: t.id, name: t.name, category: t.category, rank, count: 1 });
@@ -32947,18 +32929,17 @@ async function renderTennisBracket(){
   for (const n of d.nodes || []) (nodesByRound[n.round] ||= []).push(n);
 
   if (!rounds.length) {
-    // TWO DIFFERENT STATES, and they read identically if only one is written.
-    // A draw whose first round has not been scheduled has none YET. A
-    // competition played as ties never will — Davis Cup 2026 serves 194
-    // matches and not one of them is in the seven-round vocabulary. Those are
-    // excluded from the picker above, so this is the second lock rather than
-    // the first, and it exists because "yet" over a Davis Cup tie is the same
-    // false claim as calling a 96-draw's entry round 32 missing matches.
-    host.innerHTML = d.mainDrawMatches === 0 && (d.editionMatches || 0) > 0
-      ? `<div class="wct-loading">${_tdtEsc(res.pick.name)} is played as ties, not as a`
-        + ` single draw — ${d.editionMatches} matches this season, none of them in a`
-        + ` knockout round.</div>`
-      : `<div class="wct-loading">${_tdtEsc(res.pick.name)} — no main-draw rounds yet.</div>`;
+    // THIS IS SKEW, NOT A COMPETITION FORMAT. The pick above is made only from
+    // rows that are main-draw matches (_tennisRowInMainDraw), and the draw route
+    // builds its rounds from the same two fields, so a 200 with no rounds means
+    // today's card and the route disagree: a season the route files under another
+    // year, or a route that has not caught up. Say what the relay served and nothing
+    // about why. An earlier version of this branch said an event "is played as
+    // ties" whenever its rounds were empty, and it said so for the ATP and WTA
+    // Finals during their round-robin weeks, which was false.
+    const served = d.editionMatches ? ` (${_tdtEsc(d.editionMatches)} matches, none in a main-draw round)` : '';
+    host.innerHTML = `<div class="wct-loading">${_tdtEsc(res.pick.name)} — today's card lists a main-draw match,`
+      + ` but the relay serves no main-draw round for ${_tdtEsc(d.season || 'this season')}${served}.</div>`;
     return;
   }
 

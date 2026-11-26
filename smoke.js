@@ -7851,42 +7851,234 @@ assert('A-TDRAW-20 — the tennis grid starts its columns at the top',
   /repeat\(4,1fr\) 120px repeat\(4,1fr\);min-width:900px;align-items:center/.test(html),
   'the World Cup grid must keep align-items:center — it is a different shape');
 
-assert('A-TDRAW-16 — the five team events with a knockout can reach the tab',
-  // All seven named events sit in category `other`, which has no rank, so
-  // until this list existed the loop skipped every one of them. That was right
-  // for three and a silent loss for four, and a null-rank accident reads
-  // exactly like a decision.
-  //
-  // Five as of 2026-10-07: the Billie Jean King Cup (509) began serving a
-  // QF/SF/F nation knockout, tennis-tier-ladders.yml reported it red for
-  // three weekly runs, and the entry here is what makes it reachable — the
-  // regex in A-TDRAW-17 is necessary but not sufficient, because `rank ==
-  // null` would still skip it.
-  /'ATP Finals': 1, 'WTA Finals': 1, 'Next Gen Finals': 2, 'United Cup': 2/.test(html) &&
-  /'Billie Jean King Cup': 2/.test(html) &&
-  /_TENNIS_DRAW_TIER_RANK\[t\.category\] \?\? _TENNIS_DRAW_NAMED_RANK\[t\.name \|\| ''\]/.test(html),
-  'the ATP/WTA/Next Gen Finals, the United Cup and the BJK Cup each serve a real knockout the route renders');
+assert('A-TDRAW-16 — a named team event or season final is rankable by default, and the name map holds preferences, not admission',
+  // Until 2026-11-26 this pinned a map that ADMITTED five events by name, and
+  // the sibling pin below excluded two by name. Both were true on the day they
+  // were written and stale within weeks (tennis-tier-ladders.yml went red for
+  // three weekly runs, a different event each time). Admission is now
+  // TENNIS_NAMED (the scope list) plus the row's own round (A-TDRAW-17); a named
+  // event ranks 2 unless the map prefers otherwise, and only the two Finals
+  // are preferred. Behaviour is pinned by A-TDRAW-22/I (a United Cup quarterfinal
+  // day beats an ATP 250 with no map entry for the United Cup).
+  /_TENNIS_DRAW_TIER_RANK\[t\.category\]\s*\n\s*\?\? \(TENNIS_NAMED\.test\(t\.name \|\| ''\) \? \(_TENNIS_DRAW_NAMED_RANK\[t\.name\] \?\? 2\) : null\)/.test(html) &&
+  /const _TENNIS_DRAW_NAMED_RANK = \{\s*'ATP Finals': 1, 'WTA Finals': 1,\s*\};/.test(html),
+  'a name map that admits events is a calendar state written down; it holds only preferences now');
 
-assert('A-TDRAW-17 — the tie-only Cups are excluded by name, as a decision not a gap',
-  // Davis Cup 2026 serves 194 matches and not one is in the seven-round
-  // vocabulary. A tie has no bracket. Excluding it by omission would be
-  // indistinguishable from forgetting it.
-  //
-  // The senior BJK Cup LEFT this set on 2026-10-07 — 509 now serves QF=4
-  // SF=2 F=1 and is admitted above. `Group I` must stay, and the optional
-  // group is gone so the name has to match in full: 508 serves 130 matches
-  // and zero main-draw rounds. This assertion is also what stops the
-  // exclusion being widened back over a draw the route really serves.
-  /_TENNIS_DRAW_NO_BRACKET = \/\^\(Davis Cup\|Billie Jean King Cup Group I\)\$\//.test(html) &&
-  /if \(_TENNIS_DRAW_NO_BRACKET\.test\(t\.name \|\| ''\)\) continue;/.test(html),
-  'a competition played as ties must not be offered as a draw, and one that is not must not be hidden');
+assert('A-TDRAW-17 — a tournament is offered only if a row on the card is a main-draw match, and no competition is excluded by name',
+  // The Davis Cup (446) serves a real tie draw and was hidden by name; the
+  // ATP and WTA Finals were offered during round-robin weeks and opened onto
+  // "played as ties". The predicate reads the same two fields the relay's
+  // draw route reads (round_name in its seven-name ORDER, status not
+  // 'cancelled'), so a drawable event appears when its knockout starts and
+  // leaves when it ends. The seven names are a COPY of the relay's ORDER
+  // (field-relay-nba src/index.js, read 2026-11-26), spelled identically; the
+  // replay in tennis-tier-ladders.yml is what notices if they part.
+  (() => {
+    const seven = /const _TENNIS_MAIN_DRAW_ROUNDS = \[([^\]]*)\];/.exec(html);
+    const names = seven ? [...seven[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : null;
+    return JSON.stringify(names) === JSON.stringify(['Round of 128', 'Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final']) &&
+      /if \(!_tennisRowInMainDraw\(m\)\) continue;/.test(fnBody(html, '_tennisDrawPick')) &&
+      /_TENNIS_MAIN_DRAW_ROUNDS\.includes\(String\(m\?\.round_name\)\) && String\(m\?\.status\) !== 'cancelled'/.test(fnBody(html, '_tennisRowInMainDraw')) &&
+      !/_TENNIS_DRAW_NO_BRACKET/.test(html);
+  })(),
+  'a competition is a draw today because its rows say so, not because of what it is called; behaviour is pinned by A-TDRAW-22');
 
-assert('A-TDRAW-18 — "no rounds YET" and "never will" are different sentences',
-  // A draw whose first round is unscheduled has none yet. A competition played
-  // as ties never will. Writing only one makes the other a false claim.
-  /is played as ties, not as a/.test(html) &&
-  /d\.mainDrawMatches === 0 && \(d\.editionMatches \|\| 0\) > 0/.test(html),
-  '"yet" over a Davis Cup tie is the same false claim as 32 missing first-round matches');
+assert('A-TDRAW-18 — an empty `rounds` on a 200 is reported as what the relay served, never as "played as ties"',
+  // With the pick made from main-draw rows, an empty `rounds` is skew between
+  // the card and the route. The old branch read it as a competition format
+  // ("played as ties") and was reachable for any event whose rounds were empty,
+  // which included the ATP and WTA Finals in their round-robin weeks.
+  // Behaviour is pinned by A-TDRAW-22/R1.
+  !/played as ties/.test(html) &&
+  /the relay serves no main-draw round for/.test(html) &&
+  !/d\.mainDrawMatches === 0 && \(d\.editionMatches \|\| 0\) > 0/.test(html),
+  'a sentence about why an event has no rounds is a guess; what the relay served is a fact');
+
+assert('A-TDRAW-23 — every declaration the relay replay reads out of the page is top-level in the source',
+  // field-relay-nba's tennis-tier-ladders.yml brace-matches these out of the
+  // DEPLOYED esbuild bundle, so a rename, a move into a function, or a deletion
+  // is a refusal there. The bundle itself was built and read on 2026-11-26
+  // (every name below survives un-renamed); this checks the source half.
+  (() => {
+    const names = ['_TENNIS_MAIN_DRAW_ROUNDS', '_tennisRowInMainDraw', '_tennisDrawPick', '_tennisTierAllowed', '_TENNIS_DRAW_TIER_RANK', '_TENNIS_DRAW_NAMED_RANK', 'TENNIS_TIERS', 'TENNIS_NAMED'];
+    return names.filter((n) => new RegExp('^(?:function|const) ' + n + '\\b', 'm').test(html)).length === names.length;
+  })(),
+  'checked 8 of 8 names: the six the replay is written against plus the two consts they reference');
+
+// ── A-TDRAW-22 — the run-time draw decision, EXECUTED, not pinned ─────────────
+// A-TDRAW-16/17/18 used to pin the TEXT of the name lists, and they passed for
+// as long as the lists said what they said: while the page hid the Davis Cup
+// quarterfinal, and while it offered an ATP Finals tab that opened onto "played
+// as ties". A text pin cannot tell a list that is right from a list that is
+// stale, because a stale list is still the text it was.
+//
+// So the pick is RUN. The real declarations are cut out of the source (the A745
+// idiom: nothing is duplicated into field_utils.js, so there is no second copy to
+// drift from the page's own) and executed over designed rows. The renderer is
+// async and this file is not, so the cases run in a child node process that
+// prints one JSON line.
+//
+// The pick cases are the rows' own round_name: the Draw tab is offered for a
+// tournament only if one of its rows today is a main-draw match, whatever its
+// NAME is. Cases A1/A2/E/G/B2/D fail if the predicate is removed; B fails if a
+// name exclusion for the Davis Cup comes back.
+//
+// Coverage is printed in the last assertion's own label (Rule 91), so a PASS
+// states its own denominator.
+const tdSandbox = (() => {
+  const cut = (from, to) => {
+    const i = html.indexOf(from);
+    if (i < 0) throw new Error('anchor missing: ' + from);
+    if (html.indexOf(from, i + 1) >= 0) throw new Error('anchor not unique: ' + from);
+    const j = html.indexOf(to, i);
+    if (j < 0) throw new Error('end anchor missing: ' + to);
+    return html.slice(i, j);
+  };
+  try {
+    return { error: null, code:
+      cut('const TENNIS_TIERS = new Set([', '/// WHY THE TENNIS SECTION LOOKS')
+      + cut('function _tennisTierAllowed(m){', 'async function fetchTennisLive(){')
+      + cut('const _TENNIS_DRAW_TIER_RANK = {', '/// Show the Draw tab only when there is a draw to show.')
+      + cut('function _tennisRevealDrawNav(rows){', 'function toggleTennisView()') };
+  } catch (e) { return { error: e.message, code: null }; }
+})();
+
+let tdRowSeq = 0;
+const tdT = (id, name, category) => ({ id, name, category, circuit: 'ATP', surface: 'hard' });
+const tdRow = (t, extra) => Object.assign({ id: ++tdRowSeq, tournament: t, is_doubles: false, round_name: '', status: 'scheduled' }, extra);
+const tdP = (id, name, cc) => ({ id, name, shortName: name, countryCode: cc, rank: null });
+const tdNode = (id, round, roundIndex, date, p1, p2, winnerId) => ({ id, round, roundIndex, date, status: winnerId == null ? 'scheduled' : 'finished', isDoubles: false, p1, p2, winnerId, sets: null });
+const TD = {
+  wta:  tdT(204, 'WTA Finals', 'other'),        atp:  tdT(209, 'ATP Finals', 'other'),
+  dc:   tdT(446, 'Davis Cup', 'other'),         bjk1: tdT(508, 'Billie Jean King Cup Group I', 'other'),
+  uc:   tdT(391, 'United Cup', 'other'),        ao:   tdT(14, 'Australian Open', 'grand_slam'),
+  w250: tdT(77, 'Some WTA 250', 'wta_250'),     a250: tdT(88, 'Brisbane', 'atp_250'),
+  b250: tdT(89, 'Another ATP 250', 'atp_250'),
+  w500: tdT(66, 'Some WTA 500', 'wta_500'),
+};
+// Shaped like /bsd/tennis/draw?tournament=446 read on 2026-11-26 (QF=4, SF=1,
+// nation p1/p2, sets null on every node). Ids are synthetic; the shape and the
+// names are the route's.
+const tdDavisDraw = {
+  tournament: TD.dc, season: '2026', editionMatches: 364, mainDrawMatches: 5, complete: false,
+  rounds: [
+    { round: 'Quarterfinals', index: 4, matches: 4, canonical: null, entryRound: true,  openInnermostRound: false, atCanonicalSize: null },
+    { round: 'Semifinals',    index: 5, matches: 1, canonical: null, entryRound: false, openInnermostRound: true,  atCanonicalSize: null },
+  ],
+  nodes: [
+    tdNode(1, 'Quarterfinals', 4, '2026-11-25T15:00:00+00:00', tdP(11, 'Czechia', 'CZ'), tdP(12, 'Canada', 'CA'), 11),
+    tdNode(2, 'Quarterfinals', 4, '2026-11-25T15:00:00+00:00', tdP(13, 'Italy', 'IT'), tdP(14, 'Republic of Korea', 'KR'), 13),
+    tdNode(3, 'Quarterfinals', 4, '2026-11-26T15:00:00+00:00', tdP(15, 'Great Britain', 'GB'), tdP(16, 'Germany', 'DE'), 16),
+    tdNode(4, 'Quarterfinals', 4, '2026-11-26T15:00:00+00:00', tdP(17, 'Austria', 'AT'), tdP(18, 'Spain', 'ES'), 18),
+    tdNode(5, 'Semifinals',    5, '2026-11-27T15:00:00+00:00', tdP(13, 'Italy', 'IT'), tdP(11, 'Czechia', 'CZ'), null),
+  ],
+  edges: [], anomalies: [],
+};
+const tdCases = [
+  { id: 'A1', kind: 'pick', want: null, label: 'a card of only WTA Finals round-robin rows (blank round_name) offers no draw',
+    card: [tdRow(TD.wta), tdRow(TD.wta)] },
+  { id: 'A2', kind: 'pick', want: 77,   label: 'round-robin rows never outrank a real draw: WTA Finals blanks beside a WTA 250 Round of 32 pick the 250',
+    card: [tdRow(TD.wta), tdRow(TD.w250, { round_name: 'Round of 32' })] },
+  { id: 'A3', kind: 'pick', want: 209,  label: 'an ATP Finals semifinal day is offered',
+    card: [tdRow(TD.atp, { round_name: 'Semifinals' })] },
+  { id: 'B',  kind: 'pick', want: 446,  label: 'a Davis Cup quarterfinal day is offered, with no list naming the Davis Cup',
+    card: [tdRow(TD.dc, { round_name: 'Quarterfinals' })] },
+  { id: 'B2', kind: 'pick', want: null, label: 'Davis Cup qualification and blank-round rows are not a draw',
+    card: [tdRow(TD.dc, { round_name: 'Qualification Round 1' }), tdRow(TD.dc)] },
+  { id: 'D',  kind: 'pick', want: null, label: 'BJK Cup Group I rubbers (blank round_name) stay out with no list naming them',
+    card: [tdRow(TD.bjk1)] },
+  { id: 'E',  kind: 'pick', want: null, label: 'a slam qualifying week (Qualification Round 1) is not a draw yet',
+    card: [tdRow(TD.ao, { round_name: 'Qualification Round 1' })] },
+  { id: 'F',  kind: 'pick', want: 14,   label: 'a slam main-draw day (Round of 128) is offered',
+    card: [tdRow(TD.ao, { round_name: 'Round of 128' })] },
+  { id: 'G',  kind: 'pick', want: null, label: 'a cancelled main-draw row alone is not a draw',
+    card: [tdRow(TD.w250, { round_name: 'Round of 32', status: 'cancelled' })] },
+  { id: 'H',  kind: 'pick', want: 88,   label: 'United Cup group rows beside an ATP 250 Round of 32 pick the 250',
+    card: [tdRow(TD.uc), tdRow(TD.a250, { round_name: 'Round of 32' })] },
+  { id: 'I',  kind: 'pick', want: 391,  label: 'a United Cup quarterfinal day outranks an ATP 250 Round of 32 (named events rank 2 by default, 250s rank 3)',
+    card: [tdRow(TD.uc, { round_name: 'Quarterfinals' }), tdRow(TD.a250, { round_name: 'Round of 32' })] },
+  { id: 'J',  kind: 'pick', want: 89,   label: 'cancelled rows do not count towards the busiest-draw tiebreak: 1 live + 3 cancelled loses to 2 finished',
+    card: [tdRow(TD.a250, { round_name: 'Round of 32', status: 'live' }),
+           tdRow(TD.a250, { round_name: 'Round of 32', status: 'cancelled' }), tdRow(TD.a250, { round_name: 'Round of 32', status: 'cancelled' }), tdRow(TD.a250, { round_name: 'Round of 32', status: 'cancelled' }),
+           tdRow(TD.b250, { round_name: 'Round of 32', status: 'finished' }), tdRow(TD.b250, { round_name: 'Round of 32', status: 'finished' })] },
+  { id: 'K',  kind: 'pick', want: 204,  label: 'the Finals keep their rank-1 preference: a WTA Finals semifinal beats a WTA 500 with twice the rows',
+    card: [tdRow(TD.wta, { round_name: 'Semifinals' }), tdRow(TD.w500, { round_name: 'Round of 16' }), tdRow(TD.w500, { round_name: 'Round of 16' })] },
+  { id: 'N1', kind: 'nav', want: '',     label: 'the Draw tab is shown on a Davis Cup quarterfinal day',
+    card: [tdRow(TD.dc, { round_name: 'Quarterfinals' })] },
+  { id: 'N2', kind: 'nav', want: 'none', label: 'the Draw tab is hidden on a day of only ATP Finals round-robin rows',
+    card: [tdRow(TD.atp), tdRow(TD.atp)] },
+  { id: 'R1', kind: 'render', label: 'an empty `rounds` on a 200 says what the relay served and never claims the event is played as ties',
+    card: [tdRow(TD.wta, { round_name: 'Semifinals' })],
+    draws: { 204: { tournament: TD.wta, season: '2026', editionMatches: 7, mainDrawMatches: 0, complete: false, rounds: [], nodes: [], edges: [], anomalies: [] } } },
+  { id: 'R2', kind: 'render', label: 'the Davis Cup draw, once offered, renders as a QF|SF|SF|QF tree with the nations on it',
+    card: [tdRow(TD.dc, { round_name: 'Quarterfinals' })], draws: { 446: tdDavisDraw } },
+];
+const tdRunner = `
+const vm = require('vm');
+const input = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+(async () => {
+  const out = [];
+  for (const c of input.cases) {
+    const els = {}, fetched = [];
+    const el = (id) => (els[id] ||= { id, innerHTML: '', textContent: '', style: {} });
+    const ctx = { V2_RELAY_BASE: 'https://relay.test', AbortSignal, captureFieldError() {}, document: { getElementById: el },
+      fetch: async (url) => {
+        fetched.push(url.replace('https://relay.test', ''));
+        if (url.includes('/matches/by-date')) return { ok: true, status: 200, json: async () => ({ results: c.card }) };
+        const d = (c.draws || {})[Number(new URL(url).searchParams.get('tournament'))];
+        return { ok: !!d, status: d ? 200 : 404, json: async () => d };
+      } };
+    vm.createContext(ctx);
+    vm.runInContext(input.code + '\\n;globalThis.__x = { pick: _tennisDrawPick, nav: _tennisRevealDrawNav, render: renderTennisBracket };', ctx);
+    const r = { id: c.id, kind: c.kind };
+    if (c.kind === 'pick') { const p = ctx.__x.pick(c.card); r.got = p ? p.id : null; }
+    if (c.kind === 'nav') { ctx.__x.nav(c.card); r.got = el('tennis-nav-link').style.display; }
+    if (c.kind === 'render') {
+      await ctx.__x.render();
+      r.html = el('tennis-draw').innerHTML; r.meta = el('tennis-draw-meta').textContent; r.title = el('tennis-draw-title').textContent; r.fetched = fetched;
+    }
+    out.push(r);
+  }
+  console.log(JSON.stringify(out));
+})().catch((e) => { console.error(String(e && e.stack || e)); process.exit(2); });
+`;
+const tdRun = (() => {
+  if (tdSandbox.error) return { error: tdSandbox.error, results: [] };
+  try {
+    const out = require('child_process').execFileSync(process.execPath, ['-e', tdRunner], {
+      input: JSON.stringify({ code: tdSandbox.code, cases: tdCases }), encoding: 'utf8', timeout: 60000, stdio: ['pipe', 'pipe', 'pipe'] });
+    return { error: null, results: JSON.parse(out.trim().split('\n').pop()) };
+  } catch (e) { return { error: String(e.stderr || e.message).slice(0, 400), results: [] }; }
+})();
+const tdResult = (id) => tdRun.results.find((r) => r.id === id) || null;
+const tdHeads = (h) => [...String(h || '').matchAll(/<div class="wct-col-head">([^<]*)<\/div>/g)].map((m) => m[1]);
+const tdOk = {
+  pick: (c, r) => !!r && r.got === c.want,
+  nav: (c, r) => !!r && r.got === c.want,
+  render: (c, r) => {
+    if (!r) return false;
+    if (c.id === 'R1') {
+      return /WTA Finals/.test(r.html) && !/played as ties/i.test(r.html) && !/knockout round/i.test(r.html)
+        && /the relay serves no main-draw round for 2026/.test(r.html) && /7 matches/.test(r.html);
+    }
+    return r.title === 'Davis Cup' && r.fetched.some((u) => /\/bsd\/tennis\/draw\?tournament=446&season=\d{4}$/.test(u))
+      && JSON.stringify(tdHeads(r.html)) === JSON.stringify(['QF', 'SF', 'SF', 'QF'])
+      && /5 main-draw matches · in progress/.test(r.meta)
+      && ['Czechia', 'Canada', 'Italy', 'Republic of Korea', 'Great Britain', 'Germany', 'Austria', 'Spain'].every((n) => r.html.includes('>' + n + '<'));
+  },
+};
+for (const c of tdCases) {
+  const r = tdResult(c.id);
+  assert(`A-TDRAW-22/${c.id} — ${c.label}`, tdOk[c.kind](c, r),
+    tdRun.error ? 'sandbox: ' + tdRun.error : (r ? (c.kind === 'render' ? `html: ${String(r.html).slice(0, 160)}` : `got ${JSON.stringify(r.got)}, want ${JSON.stringify(c.want)}`) : 'case did not run'));
+}
+{
+  const ran = tdRun.results.length, kinds = (k) => tdCases.filter((c) => c.kind === k).length;
+  const executedOk = (k) => tdCases.filter((c) => c.kind === k && tdOk[k](c, tdResult(c.id))).length;
+  assert(`A-TDRAW-22 — coverage: executed ${ran} of ${tdCases.length} designed cases (pick ${executedOk('pick')}/${kinds('pick')} right, nav ${executedOk('nav')}/${kinds('nav')}, render ${executedOk('render')}/${kinds('render')}); ${tdSandbox.error ? 'EXTRACTION FAILED' : 'real declarations cut from the source'}`,
+    !tdRun.error && ran === tdCases.length && tdCases.every((c) => tdOk[c.kind](c, tdResult(c.id))),
+    tdRun.error || `${ran} of ${tdCases.length} ran`);
+}
 
 assert('A-TDRAW-15 — every anomaly kind the relay emits has words, not a raw key',
   // The relay emits four kinds. A kind with no case falls through to
