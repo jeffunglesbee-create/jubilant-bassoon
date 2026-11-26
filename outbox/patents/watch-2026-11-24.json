@@ -1,0 +1,145 @@
+{
+  "week_tuesday": "2026-11-24",
+  "week_thursday": "2026-11-19",
+  "source": "ppubs",
+  "read_complete": true,
+  "watchlist": [
+    "Dynatrace LLC",
+    "Akamai Technologies",
+    "Datadog",
+    "New Relic",
+    "Cisco AppDynamics",
+    "Splunk LLC",
+    "Tealeaf Technology",
+    "SpeedCurve",
+    "LogRocket",
+    "Are You Watching This",
+    "RUWT",
+    "MetaBet",
+    "Data Skrive",
+    "Stats Perform",
+    "Sportradar"
+  ],
+  "controls": [
+    "number form",
+    "assignee + exact date, grants",
+    "assignee + exact date, applications",
+    "text + exact date, grants",
+    "text + exact date, applications"
+  ],
+  "scanned": {
+    "grants": {
+      "database": "USPAT",
+      "day": "2026-11-24",
+      "families_on_day": 8361,
+      "queries": 30
+    },
+    "applications": {
+      "database": "US-PGPUB",
+      "day": "2026-11-19",
+      "families_on_day": 8821,
+      "queries": 30
+    }
+  },
+  "matches": [
+    {
+      "assignee_match": "Datadog",
+      "patent_id": "12809697",
+      "title": "API consolidation recommendations to improve web application QoE",
+      "doc_kind": "grant",
+      "scan": "grants",
+      "basis": "text",
+      "terms": [
+        "Datadog",
+        "New Relic"
+      ],
+      "guid": "US-12809697-B2",
+      "date": "2026-11-24",
+      "assignee": "Cisco Technology, Inc. | Cisco Technology, Inc."
+    },
+    {
+      "assignee_match": "New Relic",
+      "patent_id": "12809748",
+      "title": "Chaos testing prioritization using runtime metrics",
+      "doc_kind": "grant",
+      "scan": "grants",
+      "basis": "text",
+      "terms": [
+        "New Relic"
+      ],
+      "guid": "US-12809748-B2",
+      "date": "2026-11-24",
+      "assignee": "DELL PRODUCTS L.P. | Dell Products, L.P."
+    },
+    {
+      "assignee_match": "Datadog",
+      "patent_id": "12811790",
+      "title": "Processing access requests on a service-to-service basis using a third-party identification token",
+      "doc_kind": "grant",
+      "scan": "grants",
+      "basis": "text",
+      "terms": [
+        "Datadog"
+      ],
+      "guid": "US-12811790-B2",
+      "date": "2026-11-24",
+      "assignee": "Chime Financial, Inc. | Chime Financial, Inc."
+    },
+    {
+      "assignee_match": "Sportradar",
+      "patent_id": "12812220",
+      "title": "Systems, apparatus, and methods for providing event video streams and synchronized event information via multiple internet channels",
+      "doc_kind": "grant",
+      "scan": "grants",
+      "basis": "text",
+      "terms": [
+        "Sportradar"
+      ],
+      "guid": "US-12812220-B2",
+      "date": "2026-11-24",
+      "assignee": "SportsCastr, Inc. | SportsCastr, Inc."
+    },
+    {
+      "assignee_match": "Dynatrace LLC",
+      "patent_id": "20260370724",
+      "title": "Method And System For Application Performance Neutral, Network Bandwidth Optimized Capturing Of Resources Used during The Interaction Of User With A web-Based Application To Create monitoring Data For",
+      "doc_kind": "application",
+      "scan": "applications",
+      "basis": "assignee",
+      "terms": [
+        "Dynatrace LLC"
+      ],
+      "guid": "US-20260370724-A1",
+      "date": "2026-11-19",
+      "assignee": "Dynatrace LLC | Dynatrace LLC"
+    },
+    {
+      "assignee_match": "Datadog",
+      "patent_id": "20260368063",
+      "title": "TECHNIQUES FOR HEAD-BASED GLOBAL TRACE MATERIALIZATION",
+      "doc_kind": "application",
+      "scan": "applications",
+      "basis": "text",
+      "terms": [
+        "Datadog"
+      ],
+      "guid": "US-20260368063-A1",
+      "date": "2026-11-19",
+      "assignee": "SAP SE"
+    },
+    {
+      "assignee_match": "Akamai Technologies",
+      "patent_id": "20260370620",
+      "title": "DISTRIBUTED NETWORK COMMUNICATION SYSTEMS AND METHODS",
+      "doc_kind": "application",
+      "scan": "applications",
+      "basis": "text",
+      "terms": [
+        "Akamai Technologies"
+      ],
+      "guid": "US-20260370620-A1",
+      "date": "2026-11-19",
+      "assignee": "Walmart Apollo, LLC"
+    }
+  ]
+}
