@@ -82,7 +82,7 @@ const MUTATIONS = [
     anchor: "  'ATP Finals': 1, 'WTA Finals': 1,\n};", replace: "  'ATP Finals': 2, 'WTA Finals': 2,\n};",
     expect: ['A-TDRAW-16', 'A-TDRAW-22/K'] },
   { name: 'M9  the sentence "played as ties" comes back for an empty rounds array',
-    anchor: "    host.innerHTML = `<div class=\"wct-loading\">${_tdtEsc(res.pick.name)} — today's card lists a main-draw match,`\n      + ` but the relay serves no main-draw round for ${_tdtEsc(d.season || 'this season')}${served}.</div>`;",
+    anchor: "    host.innerHTML = `<div class=\"wct-loading\">${_tdtEsc(res.pick.name)} — today's card lists a main-draw match,`\n      + ` but the relay serves no main-draw round for ${_tdtEsc(d.season)}`\n      + ` (rows served: ${_tdtEsc(d.editionMatches)}, none counted in a main-draw round).</div>`;",
     replace: "    host.innerHTML = `<div class=\"wct-loading\">${_tdtEsc(res.pick.name)} is played as ties, not as a single draw — ${d.editionMatches} matches this season, none of them in a knockout round.</div>`;",
     expect: ['A-TDRAW-22/R1', 'A-TDRAW-18'] },
   { name: 'M10 the predicate is renamed away from the name the relay replay reads',
@@ -141,6 +141,9 @@ const MUTATIONS = [
   { name: 'M26 the scope is widened: the named-event list admits every tournament name',
     anchor: 'const TENNIS_NAMED = /^(ATP Finals|WTA Finals|', replace: 'const TENNIS_NAMED = /^(.*|ATP Finals|WTA Finals|',
     expect: ['A-TDRAW-22/S1', 'A-TDRAW-22/S2'] },
+  { name: 'M28 the empty-rounds parenthetical goes back to "N matches, none in a main-draw round" (prints "1 matches", and is false for an edition of cancelled rows)',
+    anchor: '(rows served: ${_tdtEsc(d.editionMatches)}, none counted in a main-draw round)', replace: '(${_tdtEsc(d.editionMatches)} matches, none in a main-draw round)',
+    expect: ['A-TDRAW-22/R1'] },
   // A NEUTRAL edit: behaviour-preserving, so smoke must STAY green. It proves the
   // A-TDRAW-18 check does not depend on how a comment is wrapped: a text search for
   // the old sentence ("played as ties") over the whole page went red on a comment

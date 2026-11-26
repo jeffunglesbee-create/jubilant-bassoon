@@ -7878,7 +7878,8 @@ assert('A-TDRAW-17 — a tournament is offered only if a row on the card is a ma
   // 'cancelled'), so a drawable event appears when its knockout starts and
   // leaves when it ends. The seven names are a COPY of the relay's ORDER
   // (field-relay-nba src/index.js, read 2026-11-26), spelled identically; the
-  // replay in tennis-tier-ladders.yml is what notices if they part.
+  // replay in field-relay-nba's scripts/lib/client-tennis-split.cjs (run by its
+  // tennis-tier-ladders.yml) is what notices if they part.
   (() => {
     const seven = /const _TENNIS_MAIN_DRAW_ROUNDS = \[([^\]]*)\];/.exec(html);
     const names = seven ? [...seven[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : null;
@@ -8081,7 +8082,10 @@ const tdCases = [
     live: [tdRow(TD.atp, { status: 'live' })], byDate: [tdRow(TD.atp), tdRow(TD.atp)] },
   { id: 'R1', kind: 'render', label: 'an empty `rounds` on a 200 says what the relay served and never claims the event is played as ties',
     card: [tdRow(TD.wta, { round_name: 'Semifinals' })],
-    draws: { 204: { tournament: TD.wta, season: '2026', editionMatches: 7, mainDrawMatches: 0, complete: false, rounds: [], nodes: [], edges: [], anomalies: [] } } },
+    // editionMatches 1 and mainDrawMatches 0: an edition whose only row is a cancelled
+    // main-draw one (the relay counts every edition row, then drops cancelled ones from the
+    // draw), so the sentence must be true of that shape and must not say "1 matches".
+    draws: { 204: { tournament: TD.wta, season: '2026', editionMatches: 1, mainDrawMatches: 0, complete: false, rounds: [], nodes: [], edges: [], anomalies: [] } } },
   { id: 'R2', kind: 'render', label: 'the Davis Cup draw, once offered, renders as a QF|SF|SF|QF tree with the nations on it',
     card: [tdRow(TD.dc, { round_name: 'Quarterfinals' })], draws: { 446: tdDavisDraw } },
 ];
@@ -8138,7 +8142,8 @@ const tdOk = {
     if (!r) return false;
     if (c.id === 'R1') {
       return /WTA Finals/.test(r.html) && !/played as ties/i.test(r.html) && !/knockout round/i.test(r.html)
-        && /the relay serves no main-draw round for 2026/.test(r.html) && /7 matches/.test(r.html);
+        && /the relay serves no main-draw round for 2026 \(rows served: 1, none counted in a main-draw round\)\./.test(r.html)
+        && !/\d+ matches/.test(r.html);
     }
     return r.title === 'Davis Cup' && r.fetched.some((u) => /\/bsd\/tennis\/draw\?tournament=446&season=\d{4}$/.test(u))
       && JSON.stringify(tdHeads(r.html)) === JSON.stringify(['QF', 'SF', 'SF', 'QF'])

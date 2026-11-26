@@ -32767,9 +32767,16 @@ const _TENNIS_DRAW_TIER_RANK = {
 // starts and leaves when it ends without anyone editing a date.
 //
 // That makes this a SECOND COPY of the relay's vocabulary, and a copy drifts
-// silently. The replay in field-relay-nba's tennis-tier-ladders.yml is the
-// check: it reads this function out of the deployed page and runs it against
-// the draw route's own nodes.
+// silently. The check is field-relay-nba's scripts/lib/client-tennis-split.cjs
+// (run by its tennis-tier-ladders.yml): it reads the six declarations
+// _TENNIS_MAIN_DRAW_ROUNDS, _tennisRowInMainDraw, _tennisDrawPick,
+// _tennisTierAllowed, _TENNIS_DRAW_TIER_RANK and _TENNIS_DRAW_NAMED_RANK (and
+// the two consts they reference, TENNIS_TIERS and TENNIS_NAMED) out of the
+// DEPLOYED page and runs this pick against the draw route's own nodes. Rename or
+// move one of them and that check refuses, which is why smoke A-TDRAW-23 pins
+// their names. It had to be on the relay's main before this reached main: the
+// detector it replaced parsed the exclusion regex this change deleted, and
+// refused as soon as that regex was gone.
 const _TENNIS_MAIN_DRAW_ROUNDS = ['Round of 128', 'Round of 64', 'Round of 32', 'Round of 16',
                                   'Quarterfinals', 'Semifinals', 'Final'];
 function _tennisRowInMainDraw(m){
@@ -32779,8 +32786,23 @@ function _tennisRowInMainDraw(m){
 // RANK FOR A NAMED EVENT is 2 unless this map says otherwise: the same rung as
 // a 500, above a 250, below a slam and a 1000. The map holds PREFERENCES, not
 // admission. Admission is TENNIS_NAMED (the scope list, kept on purpose) and
-// then the row test above. The two Finals sit at 1 because a season finale
-// should win the card against any tour event except a slam.
+// then the row test above. The two Finals sit at 1: above a 500, a 250 and every
+// other named event, level with a 1000 (the busier card wins that tie), below a
+// slam.
+//
+// WHY THE DEFAULT OF 2 IS NOT A FALLBACK (Rule 76, "no fallbacks, only fixes").
+// The rank expression in _tennisDrawPick has three arms, and each is a declared
+// CLASS of tournament decided by what the row itself says, not a guess standing
+// in for a missing value: a tour event is ranked by its category; a season
+// finale by its name; any other named event by the one rule above. Nothing here
+// is read from a field the relay should have served and did not. A named event
+// is on TENNIS_NAMED because someone put it on the deliberate scope list, so it
+// is rankable by definition. The defect this replaces was the opposite: a named
+// event with no map entry fell through to a null rank and was skipped without a
+// word (lifting a name from the exclusion regex was not enough on its own; the
+// 2026-10-07 BJK Cup edit needed the map entry too, as the old comment warned),
+// and a default is what removes that failure. It is pinned by behaviour in smoke
+// A-TDRAW-22/I, I-rev, I-count, I-slam and I-1000, not only by the text.
 const _TENNIS_DRAW_NAMED_RANK = {
   'ATP Finals': 1, 'WTA Finals': 1,
 };
@@ -32937,9 +32959,14 @@ async function renderTennisBracket(){
     // about why. An earlier version of this branch said an event "is played as
     // ties" whenever its rounds were empty, and it said so for the ATP and WTA
     // Finals during their round-robin weeks, which was false.
-    const served = d.editionMatches ? ` (${_tdtEsc(d.editionMatches)} matches, none in a main-draw round)` : '';
+    // Both fields are served on every 200 (field-relay-nba src/index.js: `season`, and
+    // `editionMatches: edition.length`), so they are printed as served, not defaulted.
+    // editionMatches counts every row the vendor gave for the edition, cancelled
+    // main-draw rows included, so this reports rows served and says none was counted
+    // in a main-draw round; "none in a main-draw round" would be false for those.
     host.innerHTML = `<div class="wct-loading">${_tdtEsc(res.pick.name)} — today's card lists a main-draw match,`
-      + ` but the relay serves no main-draw round for ${_tdtEsc(d.season || 'this season')}${served}.</div>`;
+      + ` but the relay serves no main-draw round for ${_tdtEsc(d.season)}`
+      + ` (rows served: ${_tdtEsc(d.editionMatches)}, none counted in a main-draw round).</div>`;
     return;
   }
 
