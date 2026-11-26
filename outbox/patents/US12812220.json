@@ -1,0 +1,279 @@
+{
+  "_ppubs_guid": "US-12812220-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "SportsCastr, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A system, comprising: at least one media source to: receive an audio/video feed of a live event; provide a first copy of the audio/video feed of the live event from a first media server endpoint of the at least one media source to a first client device that includes at least one first display; receive from the first client device a composite outgoing stream of the audio/video feed and additional video content; and provide a first copy of the composite outgoing stream of the audio/video feed and additional video content from a second media server endpoint of the at least one media source; and  a webserver to transmit first instructions to a second client device that includes at least one second display to cause the second client device to: connect to the second media server endpoint of the at least one media source to receive, on a first communication channel between the second media server endpoint and the second client device, the first copy of the composite outgoing stream; and connect to a socket of a socket server to receive, on a second communication channel between the socket and the second client device, first digital content corresponding to first event information relating to the live event."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The system of claim 1, wherein: the at least one media source comprises at least one of: at least one WebRTC media server; or at least one RTMP media server; and  the at least one of the at least one WebRTC media server or the at least one RTMP media server is configured to: receive the audio/video feed of the live event; provide the first copy of the audio/video feed of the live event as a WebRTC copy or an RTMP copy from the first media server endpoint of the at least one media source to the first client device; and receive from the first client device the composite outgoing stream of the audio/video feed and the additional video content as a WebRTC composite outgoing stream or an RTMP outgoing stream."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The system of claim 2, wherein: the at least one media source further comprises at least one of: an RTMP CDN; or at least one HLS server; and  the at least one media source is configured to provide the first copy of the composite outgoing stream of the audio/video feed and the additional video content from the second media server endpoint of the at least one media source as at least one of: a first WebRTC copy of the composite outgoing stream; a first RTMP copy of the composite outgoing stream; a first RTMP CDN copy of the composite outgoing stream; or a first HLS copy of the composite outgoing stream."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The system of claim 1, wherein: the at least one media source comprises at least one RTMP media server and at least one HLS server; the at least one RTMP media server is configured to receive the audio/video feed of the live event and transmit a first HLS copy of the audio/video feed of the live event from the at least one RTMP media server to the at least one HLS server; and the at least one media source is configured to provide the first copy of the audio/video feed of the live event as another HLS copy from the first media server endpoint of the at least one HLS server to the first client device."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The system of claim 1, wherein: the live event is a sporting or gaming event; and the first event information is online gaming information."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The system of claim 1, wherein: the live event is a sporting or gaming event; and the first event information is score information."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The system of claim 1, further comprising the socket server."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 8,
+      "claim_text": "The system of claim 7, further comprising: a control server, coupled to the socket server, to provide the first digital content corresponding to the first event information to the socket server."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 9,
+      "claim_text": "The system of claim 1, wherein the webserver is further configured to transmit second instructions to the first client device to cause the first client device to: connect to the socket of the socket server to receive, on a third communication channel between the socket and the first client device, the first digital content corresponding to the first event information."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 10,
+      "claim_text": "The system of claim 1, wherein the webserver is configured to transmit third instructions to a third client device that includes at least one third display to enable the at least one third display of the third client device to render the first event information relating to the live event, wherein the third instructions transmitted by the webserver cause the third client device to: connect to the socket of the socket server to receive, on a fourth communication channel between the socket and the third client device, the first digital content corresponding to the first event information."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 11,
+      "claim_text": "The system of claim 10, wherein the webserver is configured to transmit the third instructions to the third client device to further enable the at least one third display of the third client device to render the first video relating to the live event and render the first event information relating to the live event, wherein the third instructions transmitted by the webserver cause the third client device to: connect to the second media server endpoint to receive, on a fifth communication channel between the second media server endpoint and the third client device, the first copy of the composite outgoing stream."
+    },
+    {
+      "claim_dependent": 11,
+      "claim_sequence": 12,
+      "claim_text": "The system of claim 11, wherein: the third instructions transmitted by the webserver further cause the third client device to: render, on the at least one third display of the third client device, the first video relating to the live event based on the first copy of the composite outgoing stream received on the fifth communication channel; and render, on the at least one third display of the third client device, at least some of the first event information based on the first digital content received on the fourth communication channel."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 13,
+      "claim_text": "The system of claim 12, wherein: the first instructions transmitted by the webserver cause the second client device to: render, on the at least one second display of the second client device, at least some of the first event information based on the first digital content received on the second communication channel; and obtain access to first additional information relating to the live event and/or redirect to a first web site or first app when a first user selects at least a portion of the rendered at least some of the first event information; and  the third instructions transmitted by the webserver cause the third client device to obtain access to the first additional information or second additional information relating to the live event and/or redirect to the first web site, the first app, a second web site or a second app related to the live event when a second user selects at least a portion of the rendered at least some of the first event information."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 14,
+      "claim_text": "The system of claim 10, wherein: the live event is a sporting or gaming event; and the first event information is online gaming information."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 15,
+      "claim_text": "The system of claim 10, wherein: the live event is a sporting or gaming event; and the first event information is score information."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 16,
+      "claim_text": "The system of claim 1, wherein: the first instructions transmitted by the webserver to the second client device cause the second client device to: render, on the at least one second display of the second client device, a first video relating to the live event based on the first copy of the composite outgoing stream; and render, on the at least one second display of the second client device, at least some of the first event information based on the first digital content received on the second communication channel."
+    },
+    {
+      "claim_dependent": 16,
+      "claim_sequence": 17,
+      "claim_text": "The system of claim 16, wherein the additional video content includes video-based commentary."
+    },
+    {
+      "claim_dependent": 16,
+      "claim_sequence": 18,
+      "claim_text": "The system of claim 16, wherein the first instructions transmitted by the webserver cause the second client device to: obtain access to first additional information relating to the live event and/or redirect to a first web site or first app when a first user selects at least a portion of the rendered at least some of the first event information."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 19,
+      "claim_text": "A method, comprising: A) receiving, by at least one media source, an audio/video feed of a live event; B) providing a first copy of the audio/video feed of the live event from a first media server endpoint of the at least one media source to a first client device that includes at least one first display; C) receiving, by the at least one media source from the first client device, a composite outgoing stream of the audio/video feed and additional video content; D) providing a first copy of the composite outgoing stream of the audio/video feed and additional video content from a second media server endpoint of the at least one media source; and E) transmitting first instructions to a second client device that includes at least one second display to cause the second client device to: connect to the second media server endpoint of the at least one media source to receive, on a first communication channel between the second media server endpoint and the second client device, the first copy of the composite outgoing stream; and connect to a socket of a socket server to receive, on a second communication channel between the socket and the second client device, first digital content corresponding to first event information relating to the live event."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 20,
+      "claim_text": "The method of claim 19, wherein: the at least one media source comprises at least one of: at least one WebRTC media server; or at least one RTMP media server;  A) comprises receiving, by the at least one of the at least one WebRTC media server or the at least one RTMP media server, the audio/video feed of the live event; B) comprises providing the first copy of the audio/video feed of the live event as a WebRTC copy or an RTMP copy from the first media server endpoint of the at least one media source to the first client device; and C) comprises receiving, by the at least one of the at least one WebRTC media server or the at least one RTMP server, from the first client device, the composite outgoing stream of the audio/video feed and the additional video content as a WebRTC composite outgoing stream or an RTMP composite outgoing stream."
+    },
+    {
+      "claim_dependent": 20,
+      "claim_sequence": 21,
+      "claim_text": "The method of claim 20, wherein: the at least one media source further comprises at least one of: an RTMP CDN; or at least one HLS server; and  D) comprises providing the first copy of the composite outgoing stream of the audio/video feed and the additional video content from the second media server endpoint of the at least one media source as at least one of: a first WebRTC copy of the composite outgoing stream; a first RTMP copy of the composite outgoing stream; a first RTMP CDN copy of the composite outgoing stream; or a first HLS copy of the composite outgoing stream."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 22,
+      "claim_text": "The method of claim 19, wherein: the at least one media source comprises at least one RTMP media server and at least one HLS server; A) comprises receiving, by the at least one RTMP media server, the audio/video feed of the live event and transmitting a first HLS copy of the audio/video feed of the live event from the at least one RTMP media server to the at least one HLS server; and B) comprises providing the first copy of the audio/video feed of the live event as another HLS copy from the first media server endpoint of the at least one HLS server to the first client device."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 23,
+      "claim_text": "The method of claim 19, further comprising: F) transmitting second instructions to the first client device to cause the first client device to connect to the socket of the socket server to receive, on a third communication channel between the socket and the first client device, the first digital content corresponding to the first event information."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 24,
+      "claim_text": "The method of claim 19, further comprising: G) transmitting third instructions to a third client device that includes at least one third display to enable the at least one third display of the third client device to render the first event information relating to the live event, wherein the third instructions transmitted in G) cause the third client device to: connect to the socket of the socket server to receive, on a fourth communication channel between the socket and the third client device, the first digital content corresponding to the first event information."
+    },
+    {
+      "claim_dependent": 24,
+      "claim_sequence": 25,
+      "claim_text": "The method of claim 24, wherein G) further comprises transmitting the third instructions to the third client device to enable the at least one third display of the third client device to render the first video relating to the live event and render the first event information relating to the live event, wherein the third instructions transmitted in G) cause the third client device to: connect to the second media server endpoint to receive, on a fifth communication channel between the second media server endpoint and the third client device, the first copy of the composite outgoing stream."
+    },
+    {
+      "claim_dependent": 25,
+      "claim_sequence": 26,
+      "claim_text": "The method of claim 25, wherein: the third instructions transmitted in G) further cause the third client device to: render, on the at least one third display of the third client device, the first video relating to the live event based on the first copy of the composite outgoing stream received on the fifth communication channel; and render, on the at least one third display of the third client device, at least some of the first event information based on the first digital content received on the fourth communication channel."
+    },
+    {
+      "claim_dependent": 26,
+      "claim_sequence": 27,
+      "claim_text": "The method of claim 26, wherein: the first instructions transmitted in E) cause the second client device to: render, on the at least one second display of the second client device, at least some of the first event information based on the first digital content received on the second communication channel; and obtain access to first additional information relating to the live event and/or redirect to a first web site or first app when a first user selects at least a portion of the rendered at least some of the first event information; and  the third instructions transmitted in G) cause the third client device to obtain access to the first additional information or second additional information relating to the live event and/or redirect to the first web site, the first app, a second web site or a second app related to the live event when a second user selects at least a portion of the rendered at least some of the first event information."
+    },
+    {
+      "claim_dependent": 27,
+      "claim_sequence": 28,
+      "claim_text": "The method of claim 27, wherein: the live event is a sporting or gaming event; and the first event information is online gaming information."
+    },
+    {
+      "claim_dependent": 27,
+      "claim_sequence": 29,
+      "claim_text": "The method of claim 27, wherein: the live event is a sporting or gaming event; and the first event information is score information."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 30,
+      "claim_text": "The method of claim 19, wherein: E) comprises transmitting the first instructions to the second client device to cause the at least one second display of the second client device to render a first video relating to the live event and render the first event information relating to the live event, wherein the first instructions transmitted in E) cause the second client device to: render, on the at least one second display of the second client device, the first video relating to the live event based on the first copy of the composite outgoing stream; and render, on the at least one second display of the second client device, at least some of the first event information based on the first digital content received on the second communication channel."
+    },
+    {
+      "claim_dependent": 30,
+      "claim_sequence": 31,
+      "claim_text": "The method of claim 30, wherein in C), the additional video content includes video-based commentary."
+    },
+    {
+      "claim_dependent": 30,
+      "claim_sequence": 32,
+      "claim_text": "The method of claim 30, wherein the first instructions transmitted in E) cause the second client device to: obtain access to first additional information relating to the live event and/or redirect to a first web site or first app when a first user selects at least a portion of the rendered at least some of the first event information."
+    },
+    {
+      "claim_dependent": 32,
+      "claim_sequence": 33,
+      "claim_text": "The method of claim 32, wherein: the live event is a sporting or gaming event; and the first event information is online gaming information."
+    },
+    {
+      "claim_dependent": 32,
+      "claim_sequence": 34,
+      "claim_text": "The method of claim 32, wherein: the live event is a sporting or gaming event; and the first event information is score information."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 35,
+      "claim_text": "A system, comprising: at least one media source to: receive an audio/video feed of a live event; provide a first copy of the audio/video feed of the live event from a first media server endpoint of the at least one media source to a first client device that includes at least one first display; receive from the first client device a composite outgoing stream of the audio/video feed and additional video content; and provide a first copy of the composite outgoing stream of the audio/video feed and additional video content from a second media server endpoint of the at least one media source; and  a webserver to: transmit first instructions to a second client device that includes at least one second display to cause the second client device to: connect to the second media server endpoint of the at least one media source to receive, on a first communication channel between the second media server endpoint and the second client device, a first copy of the composite outgoing stream; and connect to a socket of a socket server to receive, on a second communication channel between the socket and the second client device, first digital content corresponding to first event information relating to the live event; and  transmit second instructions to a third client device that includes at least one third display to cause the third client device to: connect to the socket of the socket server to receive, on a third communication channel between the socket and the third client device, the first digital content corresponding to the first event information."
+    },
+    {
+      "claim_dependent": 35,
+      "claim_sequence": 36,
+      "claim_text": "The system of claim 35, wherein the webserver is configured to transmit the second instructions to the third client device to cause the third client device to: connect to the second media server endpoint to receive, on a fourth communication channel between the second media server endpoint and the third client device, the first copy of the composite outgoing stream."
+    },
+    {
+      "claim_dependent": 36,
+      "claim_sequence": 37,
+      "claim_text": "The system of claim 36, wherein: the first instructions transmitted by the webserver to the second client device cause the second client device to: render, on the at least one second display of the second client device, a first video relating to the live event based on the first copy of the composite outgoing stream received on the first communication channel; and render, on the at least one second display of the second client device, at least some of the first event information based on the first digital content received on the second communication channel; and  the second instructions transmitted by the webserver to the third client device cause the third client device to: render, on the at least one third display of the third client device, the first video relating to the live event based on the first copy of the composite outgoing stream received on the fourth communication channel; and render, on the at least one third display of the third client device, at least some of the first event information based on the first digital content received on the third communication channel."
+    },
+    {
+      "claim_dependent": 37,
+      "claim_sequence": 38,
+      "claim_text": "The system of claim 37, wherein: the first instructions transmitted by the webserver cause the second client device to obtain access to first additional information relating to the live event and/or redirect to a first web site or first app when a first user selects at least a portion of the rendered at least some of the first event information; and the second instructions transmitted by the webserver cause the third client device to obtain access to the first additional information or second additional information relating to the live event and/or redirect to the first web site, the first app, a second web site or a second app related to the live event when a second user selects at least a portion of the rendered at least some of the first event information."
+    },
+    {
+      "claim_dependent": 38,
+      "claim_sequence": 39,
+      "claim_text": "The system of claim 38, wherein: the live event is a sporting or gaming event; and the first event information is online gaming information."
+    },
+    {
+      "claim_dependent": 38,
+      "claim_sequence": 40,
+      "claim_text": "The system of claim 38, wherein: the live event is a sporting or gaming event; and the first event information is score information."
+    },
+    {
+      "claim_dependent": 35,
+      "claim_sequence": 41,
+      "claim_text": "The system of claim 35, wherein the webserver is further configured to transmit third instructions to the first client device to cause the first client device to: connect to the socket of the socket server to receive, on a fifth communication channel between the socket and the first client device, the first digital content corresponding to the first event information."
+    },
+    {
+      "claim_dependent": 35,
+      "claim_sequence": 42,
+      "claim_text": "The system of claim 35, wherein: the at least one media source comprises at least one WebRTC media server; and the at least one WebRTC media server is configured to: receive the audio/video feed of the live event; provide the first copy of the audio/video feed of the live event as a WebRTC copy from the first media server endpoint of the at least one media source to the first client device; and receive from the first client device the composite outgoing stream of the audio/video feed and the additional video content."
+    },
+    {
+      "claim_dependent": 42,
+      "claim_sequence": 43,
+      "claim_text": "The system of claim 42, wherein: the at least one media source further comprises at least one of: at least one RTMP media server; an RTMP CDN; or at least one HLS server; and  the at least one media source is configured to provide the first copy of the composite outgoing stream of the audio/video feed and the additional video content from the second media server endpoint of the at least one media source as at least one of: a first WebRTC copy of the composite outgoing stream; a first RTMP copy of the composite outgoing stream; a first RTMP CDN copy of the composite outgoing stream; or a first HLS copy of the composite outgoing stream."
+    },
+    {
+      "claim_dependent": 35,
+      "claim_sequence": 44,
+      "claim_text": "The system of claim 35, further comprising the socket server."
+    },
+    {
+      "claim_dependent": 44,
+      "claim_sequence": 45,
+      "claim_text": "The system of claim 44, further comprising: a control server, coupled to the socket server, to provide the first digital content corresponding to the first event information to the socket server."
+    },
+    {
+      "claim_dependent": 45,
+      "claim_sequence": 46,
+      "claim_text": "The system of claim 45, wherein: the at least one media source comprises at least one of: at least one WebRTC media server; or at least one RTMP media server;  the at least one of the at least one WebRTC media server or the at least one RTMP media server is configured to: receive the audio/video feed of the live event; provide the first copy of the audio/video feed of the live event as a WebRTC copy or an RTMP copy from the first media server endpoint of the at least one media source to the first client device; and receive from the first client device the composite outgoing stream of the audio/video feed and the additional video content as a WebRTC composite outgoing stream or an RTMP composite outgoing stream."
+    },
+    {
+      "claim_dependent": 46,
+      "claim_sequence": 47,
+      "claim_text": "The system of claim 46, wherein: the at least one media source further comprises at least one of: an RTMP CDN; or at least one HLS server; and  the at least one media source is configured to provide the first copy of the composite outgoing stream of the audio/video feed and the additional video content from the second media server endpoint of the at least one media source as at least one of: a first WebRTC copy of the composite outgoing stream; a first RTMP copy of the composite outgoing stream; a first RTMP CDN copy of the composite outgoing stream; or a first HLS copy of the composite outgoing stream."
+    },
+    {
+      "claim_dependent": 35,
+      "claim_sequence": 48,
+      "claim_text": "The system of claim 35, wherein the additional video content includes video-based commentary."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Sm A",
+      "examiner_name_last": "Rahman"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Peter",
+      "inventor_name_last": "Azuolas"
+    },
+    {
+      "inventor_name_first": "Kevin",
+      "inventor_name_last": "April"
+    },
+    {
+      "inventor_name_first": "Brian",
+      "inventor_name_last": "Silston"
+    },
+    {
+      "inventor_name_first": "Philip Nicholas",
+      "inventor_name_last": "Schupak"
+    }
+  ],
+  "patent_date": "2026-11-24",
+  "patent_id": "12812220",
+  "patent_title": "Systems, apparatus, and methods for providing event video streams and synchronized event information via multiple internet channels"
+}

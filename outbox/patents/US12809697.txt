@@ -1,0 +1,71 @@
+US12809697
+Title: API consolidation recommendations to improve web application QoE
+Grant date: 2026-11-24
+Assignee: Cisco Technology, Inc.
+Inventors: Pierre-André Savalle, Grégory Mermoud, Jean-Philippe Vasseur, Eduard Schornig, Michal Wladyslaw Garcarz
+Source: ppubs
+PPUBS GUID: US-12809697-B2
+
+======================================================================
+CLAIMS
+======================================================================
+
+Claim 1 [independent]:
+A method comprising: obtaining, by a device, trace data indicative of application programming interface calls sent during sessions between clients and an application accessible via a network; using timestamps from the trace data associated with the application programming interface calls to assign them to time bins; evaluating how frequently any two of the application programming interface calls are made together within any particular bin in the time bins; identifying, by the device and based on the evaluating, a set of calls among the application programming interface calls that are frequently co-occurring; quantifying, by the device, a latency savings expected to occur were the set of calls to be consolidated into a singular call instead of being made separately; and providing, by the device and to a user interface, a recommendation to consolidate the set of calls into a consolidated call that indicates the latency savings.
+
+Claim 2 [dep on 1]:
+The method as in claim 1, wherein the trace data comprises application performance monitoring trace data associated with the sessions.
+
+Claim 3 [dep on 1]:
+The method as in claim 1, wherein the trace data comprises real user monitoring trace data associated with the sessions.
+
+Claim 4 [dep on 3]:
+The method as in claim 3, wherein identifying the set of calls comprises: disregarding application performance monitoring trace data associated with the sessions, when the real user monitoring trace data is available for the sessions.
+
+Claim 5 [dep on 1]:
+The method as in claim 1, further comprising: configuring, by the device, a gateway to perform the set of calls in response to receiving the consolidated call.
+
+Claim 6 [dep on 1]:
+The method as in claim 1, wherein the latency savings is based in part on path performance metrics collected by the network.
+
+Claim 7 [dep on 1]:
+The method as in claim 1, wherein identifying the set of calls comprises: replacing variable parameters in call paths associated with the set of calls with placeholders.
+
+Claim 8 [dep on 1]:
+The method as in claim 1, further comprising: preventing, by the device, a further recommendation to consolidate the set of calls into a consolidated call from being provided to the user interface, based on a silence request from the user interface.
+
+Claim 9 [dep on 1]:
+The method as in claim 1, wherein the user interface is provided via an application performance monitoring (APM) platform.
+
+Claim 10 [independent]:
+An apparatus, comprising: one or more network interfaces; a processor coupled to the one or more network interfaces; and a memory configured to store one or more instructions that, when executed by the processor, configure the processor to: obtain trace data indicative of application programming interface calls sent during sessions between clients and an application accessible via a network; use timestamps from the trace data associated with the application programming interface calls to assign them to time bins; evaluate how frequently any two of the application programming interface calls are made together within any particular bin in the time bins; identify, based on the evaluation, a set of calls among the application programming interface calls that are frequently co-occurring; quantify a latency savings expected to occur were the set of calls to be consolidated into a singular call instead of being made separately; and provide, to a user interface, a recommendation to consolidate the set of calls into a consolidated call that indicates the latency savings.
+
+Claim 11 [dep on 10]:
+The apparatus as in claim 10, wherein the trace data comprises application performance monitoring trace data associated with the sessions.
+
+Claim 12 [dep on 10]:
+The apparatus as in claim 10, wherein the trace data comprises real user monitoring trace data associated with the sessions.
+
+Claim 13 [dep on 12]:
+The apparatus as in claim 12, wherein the processor is configured to identify the set of calls by: disregarding application performance monitoring trace data associated with the sessions, when the real user monitoring trace data is available for the sessions.
+
+Claim 14 [dep on 10]:
+The apparatus as in claim 10, wherein the processor is further configured to: configure a gateway to perform the set of calls in response to receiving the consolidated call.
+
+Claim 15 [dep on 10]:
+The apparatus as in claim 10, wherein the latency savings is based in part on path performance metrics collected by the network.
+
+Claim 16 [dep on 10]:
+The apparatus as in claim 10, wherein the processor is configured to identify the set of calls by: replacing variable parameters in call paths associated with the set of calls with placeholders.
+
+Claim 17 [dep on 10]:
+The apparatus as in claim 10, wherein the processor is further configured to: prevent a further recommendation to consolidate the set of calls into a consolidated call from being provided to the user interface, based on a silence request from the user interface.
+
+Claim 18 [independent]:
+A tangible, non-transitory, computer-readable medium storing program instructions that cause a device to execute a process comprising: obtaining, by the device, trace data indicative of application programming interface calls sent during sessions between clients and an application accessible via a network, the trace data indicating, for individual ones of the application programming interface calls, when the respective application programming interface call was sent; identifying, by the device and based on the trace data, a set of calls among the application programming interface calls that are frequently sent within a same portion of the sessions; identifying, by the device and for individual ones of the set of calls, an amount of time from sending a respective call to receiving a response to the respective call; quantifying, by the device and based on the amount of time for individual ones of the set of calls, a latency savings expected to occur were the set of calls to be consolidated into a singular call instead of being made separately; and configuring, by the device, a component to consolidate the set of calls into the singular call.
+
+Claim 19 [dep on 18]:
+The tangible, non-transitory, computer-readable medium as in claim 18, wherein the identifying the amount of time for individual ones of the set of calls is based on path performance metrics collected by the network.
+
+Claim 20 [dep on 18]:
+The tangible, non-transitory, computer-readable medium as in claim 18, wherein the component includes at least one of a software application or a hardware device associated with one or more of the sessions.

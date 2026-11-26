@@ -1,0 +1,147 @@
+{
+  "_ppubs_guid": "US-12811790-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Chime Financial, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A computer-implemented method comprising: generating a first authorization policy associated with a first computer service defining a plurality of authorized request paths for the first computer service; receiving, at the first computer service, a first access request comprising a first access request path; authorizing the first access request based on determining the first access request path corresponding to the first access request is included in the plurality of authorized request paths defined in the first authorization policy associated with the first computer service; receiving, at the first computer service, a second access request comprising a second access request path; and denying the second access request based on determining the second access request path corresponding to the second access request does not match any of the plurality of authorized request paths defined in the first authorization policy associated with the first computer service."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The computer-implemented method of claim 1, wherein generating the first authorization policy associated with the first computer service comprises identifying, for the first computer service, one or more allowed actions authorized for each authorized request path of the plurality of authorized request paths."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The computer-implemented method of claim 1, wherein receiving the first access request at the first computer service comprises receiving a request to access a second computer service having a second authorization policy different than the first authorization policy associated with the first computer service."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 4,
+      "claim_text": "The computer-implemented method of claim 3, further comprising: sending, by the first computer service, the first access request to the second computer service; and receiving, from the second computer service at the first computer service, a response indicating whether the first access request is authorized in accordance with the second authorization policy."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The computer-implemented method of claim 1, wherein receiving the first access request at the first computer service comprises receiving a requested action and a third-party identification token from a second computer service."
+    },
+    {
+      "claim_dependent": 5,
+      "claim_sequence": 6,
+      "claim_text": "The computer-implemented method of claim 5, wherein authorizing the first access request comprises determining whether the first access request path is included in the plurality of authorized request paths defined in the first authorization policy without determining a permission scope associated with the second computer service."
+    },
+    {
+      "claim_dependent": 5,
+      "claim_sequence": 7,
+      "claim_text": "The computer-implemented method of claim 5, further comprising providing, by the first computer service to the second computer service, a response to the first access request in response to authorizing the first access request at the first computer service."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 8,
+      "claim_text": "A non-transitory computer-readable medium storing instructions that, when executed by at least one processor, cause a computer system to: generate a first authorization policy associated with a first computer service defining a plurality of authorized request paths for the first computer service; receive, at the first computer service, a first access request comprising a first access request path; authorize the first access request based on determining the first access request path corresponding to the first access request is included in the plurality of authorized request paths defined in the first authorization policy associated with the first computer service; receive, at the first computer service, a second access request comprising a second access request path; and deny the second access request based on determining the second access request path corresponding to the second access request does not match any of the plurality of authorized request paths defined in the first authorization policy associated with the first computer service."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 9,
+      "claim_text": "The non-transitory computer-readable medium of claim 8, wherein generating the first authorization policy associated with the first computer service comprises identifying, for the first computer service, one or more allowed actions authorized for each authorized request path of the plurality of authorized request paths."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 10,
+      "claim_text": "The non-transitory computer-readable medium of claim 8, wherein receiving the first access request at the first computer service comprises receiving a request to access a second computer service having a second authorization policy different than the first authorization policy associated with the first computer service."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 11,
+      "claim_text": "The non-transitory computer-readable medium of claim 10, further comprising instructions that, when executed by the at least one processor, cause the computer system to: send, by the first computer service, the first access request to the second computer service; and receive, from the second computer service at the first computer service, a response indicating whether the first access request is authorized in accordance with the second authorization policy."
+    },
+    {
+      "claim_dependent": 8,
+      "claim_sequence": 12,
+      "claim_text": "The non-transitory computer-readable medium of claim 8, wherein receiving the first access request at the first computer service comprises receiving a requested action and a third-party identification token from a second computer service."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 13,
+      "claim_text": "The non-transitory computer-readable medium of claim 12, wherein authorizing the first access request comprises determining whether the first access request path is included in the plurality of authorized request paths defined in the first authorization policy without determining a permission scope associated with the second computer service."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 14,
+      "claim_text": "The non-transitory computer-readable medium of claim 12, further comprising instructions that, when executed by the at least one processor, cause the computer system to provide, by the first computer service to the second computer service, a response to the first access request in response to authorizing the first access request at the first computer service."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 15,
+      "claim_text": "A system comprising: at least one processor; and at least one non-transitory computer-readable storage medium storing instructions that, when executed by the at least one processor, cause the system to: generate a first authorization policy associated with a first computer service defining a plurality of authorized request paths for the first computer service; receive, at the first computer service, a first access request comprising a first access request path; authorize the first access request based on determining the first access request path corresponding to the first access request is included in the plurality of authorized request paths defined in the first authorization policy associated with the first computer service; receive, at the first computer service, a second access request comprising a second access request path; and deny the second access request based on determining the second access request path corresponding to the second access request does not match any of the plurality of authorized request paths defined in the first authorization policy associated with the first computer service."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 16,
+      "claim_text": "The system of claim 15, wherein generating the first authorization policy associated with the first computer service comprises identifying, for the first computer service, one or more allowed actions authorized for each authorized request path of the plurality of authorized request paths."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 17,
+      "claim_text": "The system of claim 15, wherein receiving the first access request at the first computer service comprises receiving a request to access a second computer service having a second authorization policy different than the first authorization policy associated with the first computer service."
+    },
+    {
+      "claim_dependent": 17,
+      "claim_sequence": 18,
+      "claim_text": "The system of claim 17, further comprising instructions that, when executed by the at least one processor, cause the system to: send, by the first computer service, the first access request to the second computer service; and receive, from the second computer service at the first computer service, a response indicating whether the first access request is authorized in accordance with the second authorization policy."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 19,
+      "claim_text": "The system of claim 15, wherein receiving the first access request at the first computer service comprises receiving a requested action and a third-party identification token from a second computer service."
+    },
+    {
+      "claim_dependent": 19,
+      "claim_sequence": 20,
+      "claim_text": "The system of claim 19, wherein authorizing the first access request comprises determining whether the first access request path is included in the plurality of authorized request paths defined in the first authorization policy without determining a permission scope associated with the second computer service."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "J. Brant",
+      "examiner_name_last": "Murphy"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Mukund",
+      "inventor_name_last": "Sarma"
+    },
+    {
+      "inventor_name_first": "Afaaq Alam",
+      "inventor_name_last": "Patel"
+    },
+    {
+      "inventor_name_first": "Robert",
+      "inventor_name_last": "Morris, Jr."
+    },
+    {
+      "inventor_name_first": "Arkadiy",
+      "inventor_name_last": "Tetelman"
+    },
+    {
+      "inventor_name_first": "Jeffrey",
+      "inventor_name_last": "Trudeau"
+    },
+    {
+      "inventor_name_first": "Paul Michael",
+      "inventor_name_last": "Kuliniewicz"
+    }
+  ],
+  "patent_date": "2026-11-24",
+  "patent_id": "12811790",
+  "patent_title": "Processing access requests on a service-to-service basis using a third-party identification token"
+}

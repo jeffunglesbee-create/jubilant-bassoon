@@ -1,0 +1,139 @@
+{
+  "_ppubs_guid": "US-12809748-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "DELL PRODUCTS L.P."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A device, comprising: at least one processor; and at least one memory that stores executable instructions that, when executed by the at least one processor, facilitate performance of operations, comprising: receiving performance threshold data for a group of microservices deployed via a microservices platform, wherein the performance threshold data comprises performance thresholds determined to be applicable to a first microservice of the group of microservices, and wherein the performance thresholds respectively correspond to respective runtime metrics monitored by the microservices platform; receiving runtime metric data representing measurements of the respective runtime metrics during operation of the first microservice via the microservices platform; based on the performance threshold data and the runtime metric data, determining maximal relative deviation (MRD) data, comprising an MRD value for the first microservice that represents one of the performance thresholds, wherein the MRD data, based on the runtime metric data, is determined to have a highest likelihood of being violated during operation of the first microservice; determining a chaos testing scenario recommendation for a chaos testing device or service, wherein the chaos testing scenario recommendation recommends testing the first microservice by targeting a specific runtime metric that corresponds to a specific performance threshold, of the performance threshold, identified in connection with the MRD value, and wherein the chaos testing scenario recommendation excludes, from a recommendation to the chaos testing device or service, any scenario for testing the first microservice that tests a different runtime metric corresponding to a different performance threshold not associated with the MRD value or that has a relative deviation value that is below a defined threshold; and after transmitting the MRD data and the chaos testing scenario recommendation to the chaos testing device or service, performing testing using the MRD data and the chaos testing scenario recommendation, the testing being performed, via the chaos testing device or service, to cause random or systematic failures in the first microservices platform in order to test selected microservices identified as a subgroup of the group of microservices in which the MRD value satisfies a defined criterion."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The device of claim 1, wherein the performance thresholds represent performance or operational limits set by a system operator of the microservices platform or derived from a specification of the microservices platform."
+    },
+    {
+      "claim_dependent": 2,
+      "claim_sequence": 3,
+      "claim_text": "The device of claim 2, wherein the performance thresholds comprise at least one of a memory usage threshold, a processing threshold, a network usage threshold, or a latency threshold for a given operation."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 4,
+      "claim_text": "The device of claim 1, wherein the performance threshold data comprises a microservice name field that identifies a target microservice of the microservices, a threshold name field that identifies a target threshold applicable to the target microservice, a threshold value field indicative of a threshold value associated with the target threshold, and a metric name field that identifies a target metric, of the respective runtime metrics."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The device of claim 1, wherein the operations further comprise, based on the performance threshold data and the runtime metric data, generating combined data comprising a microservice name field that identifies a target microservice of the microservices, a threshold name field that identifies a target threshold applicable to the target microservice, a threshold value field indicative of a threshold value associated with the target threshold, a metric name field that identifies a target metric, of the respective runtime metrics, and target metric data indicative measurements of the target metric during operation of the target microservice."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The device of claim 1, wherein the operations further comprise, based on the runtime metric data, determining an average metric value for each respective runtime metric of the respective runtime metrics that corresponds to a respective performance threshold, of the performance thresholds, applicable to the first microservice."
+    },
+    {
+      "claim_dependent": 6,
+      "claim_sequence": 7,
+      "claim_text": "The device of claim 6, wherein the operations further comprise determining a respective relative deviation value for the respective performance threshold applicable to the first microservice, and wherein the respective relative deviation value is indicative of a respective deviation of the respective average metric value from the respective performance threshold."
+    },
+    {
+      "claim_dependent": 7,
+      "claim_sequence": 8,
+      "claim_text": "The device of claim 7, wherein the MRD value for the first microservice is determined by selecting the respective performance threshold having a highest relative deviation among each respective deviation value."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 9,
+      "claim_text": "A device, comprising: at least one processor; and at least one memory that stores executable instructions that, when executed by the at least one processor, facilitate performance of operations, comprising: receiving performance threshold data for a first group of microservices deployed on a microservices platform, wherein the performance threshold data comprises performance thresholds determined to be applicable to a first microservice of the first group of microservices, and wherein the performance thresholds respectively correspond to respective runtime metrics monitored by the microservices platform; receiving runtime metric data representing measurements of the respective runtime metric during operation of the first microservice on the microservices platform; based on the performance threshold data and the runtime metric data, determining a respective average metric value for each respective runtime metric of the respective runtime metrics that corresponds to a respective performance threshold, of the performance thresholds, applicable to the first microservice; determining a respective relative deviation value for the respective performance threshold applicable to the first microservice, and wherein the respective relative deviation value is indicative of a respective deviation of the respective average metric value from the respective performance threshold; as a function of the respective average metric value and the respective relative deviation value, determining greatest relative deviation (MRD) data, comprising an MRD value for the first microservice that represents one of the performance thresholds, that, based on the runtime metrics data, is determined to have at least a threshold limit on likelihood of being violated during operation of the first microservice; determining a chaos testing scenario recommendation for a chaos testing device or service, and wherein the chaos testing scenario recommendation recommends testing the first microservice by targeting a specific runtime metric that corresponds to a specific performance threshold, of the performance threshold, identified in connection with the MRD value, wherein the chaos testing scenario recommendation excludes, from a recommendation to the chaos testing device or service, any scenario for testing the first microservice that tests a different runtime metric corresponding to a different performance threshold not associated with the MRD value or that has a relative deviation value that is below a defined threshold; and after transmitting the MRD data and the chaos testing scenario recommendation to the chaos testing device or service, the MRD data performing testing using the MRD data and the chaos testing scenario recommendation, the testing being performed, via the chaos testing device or service, to cause random or systematic failures in the microservices platform in order to test selected microservices identified by a second group of microservices indicative of a subgroup of the first group of microservices in which the MRD value satisfies a defined criterion."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 10,
+      "claim_text": "The device of claim 9, wherein the operations further comprise iteratively determining respective other MRD values, other than the MRD value associated with the first microservice, and wherein the respective other MRD values correspond to other respective microservices deployed on the microservices platform other than the first microservice."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 11,
+      "claim_text": "The device of claim 9, wherein the performance threshold data comprises a microservice name field that identifies a target microservice of the microservices, a threshold name field that identifies a target threshold applicable to the target microservice, a threshold value field indicative of threshold value associated with the target threshold, and a metric name field that identifies a target metric, of the respective runtime metrics."
+    },
+    {
+      "claim_dependent": 9,
+      "claim_sequence": 12,
+      "claim_text": "The device of claim 9, wherein the operations further comprise recalculating the MRD data according to at least one of: a configurable frequency parameter that indicates a frequency by which to recalculate the MRD data, a configurable selection policy that indicates a rule for selecting the first microservice for chaos testing as a function of the MRD data, or a configurable scenario selection policy that indicates a chaos testing scenario type as a function of the MRD data."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 13,
+      "claim_text": "A method, comprising: receiving, by a device comprising at least one processor, performance threshold data for a group of microservices deployed via a microservices platform, wherein the performance threshold data comprises performance thresholds determined to be applicable to a first microservice of the group of microservices, and wherein the performance thresholds respectively correspond to respective runtime metrics monitored by the microservices platform; receiving, by the device, runtime metric data representing measurements of the respective runtime metrics during operation of the first microservice via the microservices platform; based on the performance threshold data and the runtime metric data, determining, by the device, maximal relative deviation (MRD) data, comprising an MRD value for the first microservice that represents one of the performance thresholds, that, based on the runtime metrics data, is determined to have a highest likelihood of being violated during operation of the first microservice; determining a chaos testing scenario recommendation for a chaos testing device or service, and wherein the chaos testing scenario recommendation recommends testing the first microservice by targeting a specific runtime metric that corresponds to a specific performance threshold, of the performance threshold, identified in connection with the MRD value, wherein the chaos testing scenario recommendation excludes, from a recommendation to the chaos testing device or service, any scenario for testing the first microservice that tests a different runtime metric corresponding to a different performance threshold not associated with the MRD value or that has a relative deviation value that is below a defined threshold; and after transmitting, by the device, the MRD data and the chaos testing scenario recommendation to the chaos testing device or service, performing testing using the MRD data and the chaos testing scenario recommendation, the testing being performed, via the chaos testing device or service, to cause random or systematic failures in the microservices platform in order to test selected microservices identified as a subgroup of the group of microservices in which the MRD value satisfies a defined criterion."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 14,
+      "claim_text": "The method of claim 13, further comprising, based on the runtime metric data, determining, by the device, an average metric value for each respective runtime metric that corresponds to a respective performance threshold, of the performance thresholds, applicable to the first microservice."
+    },
+    {
+      "claim_dependent": 14,
+      "claim_sequence": 15,
+      "claim_text": "The method of claim 14, further comprising determining, by the device, a respective relative deviation value for the respective performance threshold applicable to the first microservice, and wherein the respective relative deviation value is indicative of a respective deviation of the respective average metric value from the respective performance threshold."
+    },
+    {
+      "claim_dependent": 15,
+      "claim_sequence": 16,
+      "claim_text": "The method of claim 15, further comprising determining, by the device, that the highest likelihood of being violated during operation of the first microservice is a function of selecting the respective performance threshold having a highest relative deviation among each respective deviation value."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 17,
+      "claim_text": "The method of claim 13, wherein the performance thresholds represent performance or operational limits set by a system operator of the microservices platform."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 18,
+      "claim_text": "The method of claim 13, wherein the performance thresholds represent performance or operational limits derived from a specification of the microservices platform."
+    },
+    {
+      "claim_dependent": 18,
+      "claim_sequence": 19,
+      "claim_text": "The method of claim 18, wherein the performance thresholds comprise at least one of a memory usage threshold, a processing threshold, a network usage threshold, or a latency threshold for a given operation."
+    },
+    {
+      "claim_dependent": 13,
+      "claim_sequence": 20,
+      "claim_text": "The method of claim 13, wherein the performance threshold data comprises a microservice name field that identifies a target microservice of the microservices, a threshold name field that identifies a target threshold applicable to the target microservice, a threshold value field indicative of a threshold value associated with the target threshold, and a metric name field that identifies a target metric, of the respective runtime metrics."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Lewis A",
+      "examiner_name_last": "Bullock, Jr."
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Boris",
+      "inventor_name_last": "Shpilyuck"
+    },
+    {
+      "inventor_name_first": "Nisan",
+      "inventor_name_last": "Haimov"
+    },
+    {
+      "inventor_name_first": "Igor",
+      "inventor_name_last": "Dubrovsky"
+    },
+    {
+      "inventor_name_first": "Parmeshwr",
+      "inventor_name_last": "Prasad"
+    }
+  ],
+  "patent_date": "2026-11-24",
+  "patent_id": "12809748",
+  "patent_title": "Chaos testing prioritization using runtime metrics"
+}

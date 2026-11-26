@@ -1,0 +1,143 @@
+{
+  "_ppubs_guid": "US-12809697-B2",
+  "_ppubs_type": "USPAT",
+  "_source": "ppubs",
+  "assignees": [
+    {
+      "assignee_organization": "Cisco Technology, Inc."
+    }
+  ],
+  "claims": [
+    {
+      "claim_dependent": null,
+      "claim_sequence": 1,
+      "claim_text": "A method comprising: obtaining, by a device, trace data indicative of application programming interface calls sent during sessions between clients and an application accessible via a network; using timestamps from the trace data associated with the application programming interface calls to assign them to time bins; evaluating how frequently any two of the application programming interface calls are made together within any particular bin in the time bins; identifying, by the device and based on the evaluating, a set of calls among the application programming interface calls that are frequently co-occurring; quantifying, by the device, a latency savings expected to occur were the set of calls to be consolidated into a singular call instead of being made separately; and providing, by the device and to a user interface, a recommendation to consolidate the set of calls into a consolidated call that indicates the latency savings."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 2,
+      "claim_text": "The method as in claim 1, wherein the trace data comprises application performance monitoring trace data associated with the sessions."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 3,
+      "claim_text": "The method as in claim 1, wherein the trace data comprises real user monitoring trace data associated with the sessions."
+    },
+    {
+      "claim_dependent": 3,
+      "claim_sequence": 4,
+      "claim_text": "The method as in claim 3, wherein identifying the set of calls comprises: disregarding application performance monitoring trace data associated with the sessions, when the real user monitoring trace data is available for the sessions."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 5,
+      "claim_text": "The method as in claim 1, further comprising: configuring, by the device, a gateway to perform the set of calls in response to receiving the consolidated call."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 6,
+      "claim_text": "The method as in claim 1, wherein the latency savings is based in part on path performance metrics collected by the network."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 7,
+      "claim_text": "The method as in claim 1, wherein identifying the set of calls comprises: replacing variable parameters in call paths associated with the set of calls with placeholders."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 8,
+      "claim_text": "The method as in claim 1, further comprising: preventing, by the device, a further recommendation to consolidate the set of calls into a consolidated call from being provided to the user interface, based on a silence request from the user interface."
+    },
+    {
+      "claim_dependent": 1,
+      "claim_sequence": 9,
+      "claim_text": "The method as in claim 1, wherein the user interface is provided via an application performance monitoring (APM) platform."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 10,
+      "claim_text": "An apparatus, comprising: one or more network interfaces; a processor coupled to the one or more network interfaces; and a memory configured to store one or more instructions that, when executed by the processor, configure the processor to: obtain trace data indicative of application programming interface calls sent during sessions between clients and an application accessible via a network; use timestamps from the trace data associated with the application programming interface calls to assign them to time bins; evaluate how frequently any two of the application programming interface calls are made together within any particular bin in the time bins; identify, based on the evaluation, a set of calls among the application programming interface calls that are frequently co-occurring; quantify a latency savings expected to occur were the set of calls to be consolidated into a singular call instead of being made separately; and provide, to a user interface, a recommendation to consolidate the set of calls into a consolidated call that indicates the latency savings."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 11,
+      "claim_text": "The apparatus as in claim 10, wherein the trace data comprises application performance monitoring trace data associated with the sessions."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 12,
+      "claim_text": "The apparatus as in claim 10, wherein the trace data comprises real user monitoring trace data associated with the sessions."
+    },
+    {
+      "claim_dependent": 12,
+      "claim_sequence": 13,
+      "claim_text": "The apparatus as in claim 12, wherein the processor is configured to identify the set of calls by: disregarding application performance monitoring trace data associated with the sessions, when the real user monitoring trace data is available for the sessions."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 14,
+      "claim_text": "The apparatus as in claim 10, wherein the processor is further configured to: configure a gateway to perform the set of calls in response to receiving the consolidated call."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 15,
+      "claim_text": "The apparatus as in claim 10, wherein the latency savings is based in part on path performance metrics collected by the network."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 16,
+      "claim_text": "The apparatus as in claim 10, wherein the processor is configured to identify the set of calls by: replacing variable parameters in call paths associated with the set of calls with placeholders."
+    },
+    {
+      "claim_dependent": 10,
+      "claim_sequence": 17,
+      "claim_text": "The apparatus as in claim 10, wherein the processor is further configured to: prevent a further recommendation to consolidate the set of calls into a consolidated call from being provided to the user interface, based on a silence request from the user interface."
+    },
+    {
+      "claim_dependent": null,
+      "claim_sequence": 18,
+      "claim_text": "A tangible, non-transitory, computer-readable medium storing program instructions that cause a device to execute a process comprising: obtaining, by the device, trace data indicative of application programming interface calls sent during sessions between clients and an application accessible via a network, the trace data indicating, for individual ones of the application programming interface calls, when the respective application programming interface call was sent; identifying, by the device and based on the trace data, a set of calls among the application programming interface calls that are frequently sent within a same portion of the sessions; identifying, by the device and for individual ones of the set of calls, an amount of time from sending a respective call to receiving a response to the respective call; quantifying, by the device and based on the amount of time for individual ones of the set of calls, a latency savings expected to occur were the set of calls to be consolidated into a singular call instead of being made separately; and configuring, by the device, a component to consolidate the set of calls into the singular call."
+    },
+    {
+      "claim_dependent": 18,
+      "claim_sequence": 19,
+      "claim_text": "The tangible, non-transitory, computer-readable medium as in claim 18, wherein the identifying the amount of time for individual ones of the set of calls is based on path performance metrics collected by the network."
+    },
+    {
+      "claim_dependent": 18,
+      "claim_sequence": 20,
+      "claim_text": "The tangible, non-transitory, computer-readable medium as in claim 18, wherein the component includes at least one of a software application or a hardware device associated with one or more of the sessions."
+    }
+  ],
+  "examiners": [
+    {
+      "examiner_name_first": "Tuan C",
+      "examiner_name_last": "Dao"
+    }
+  ],
+  "inventors": [
+    {
+      "inventor_name_first": "Pierre-André",
+      "inventor_name_last": "Savalle"
+    },
+    {
+      "inventor_name_first": "Grégory",
+      "inventor_name_last": "Mermoud"
+    },
+    {
+      "inventor_name_first": "Jean-Philippe",
+      "inventor_name_last": "Vasseur"
+    },
+    {
+      "inventor_name_first": "Eduard",
+      "inventor_name_last": "Schornig"
+    },
+    {
+      "inventor_name_first": "Michal Wladyslaw",
+      "inventor_name_last": "Garcarz"
+    }
+  ],
+  "patent_date": "2026-11-24",
+  "patent_id": "12809697",
+  "patent_title": "API consolidation recommendations to improve web application QoE"
+}
