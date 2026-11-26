@@ -7884,7 +7884,10 @@ assert('A-TDRAW-17 — a tournament is offered only if a row on the card is a ma
     const names = seven ? [...seven[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : null;
     return JSON.stringify(names) === JSON.stringify(['Round of 128', 'Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final']) &&
       /if \(!_tennisRowInMainDraw\(m\)\) continue;/.test(fnBody(html, '_tennisDrawPick')) &&
-      /_TENNIS_MAIN_DRAW_ROUNDS\.includes\(String\(m\?\.round_name\)\) && String\(m\?\.status\) !== 'cancelled'/.test(fnBody(html, '_tennisRowInMainDraw')) &&
+      // The WHOLE body, anchored at both ends: an unanchored substring went on matching
+      // after `|| String(m?.status) === 'live'` was appended (every live row a draw) or a
+      // second status was excluded, and both passed. Behaviour: A-TDRAW-22/L1, L2, P1, P2.
+      /^function _tennisRowInMainDraw\(m\)\{\s*return _TENNIS_MAIN_DRAW_ROUNDS\.includes\(String\(m\?\.round_name\)\) && String\(m\?\.status\) !== 'cancelled';\s*\}$/.test(fnBody(html, '_tennisRowInMainDraw')) &&
       !/_TENNIS_DRAW_NO_BRACKET/.test(html);
   })(),
   'a competition is a draw today because its rows say so, not because of what it is called; behaviour is pinned by A-TDRAW-22');
@@ -7894,22 +7897,28 @@ assert('A-TDRAW-18 — an empty `rounds` on a 200 is reported as what the relay 
   // the card and the route. The old branch read it as a competition format
   // ("played as ties") and was reachable for any event whose rounds were empty,
   // which included the ATP and WTA Finals in their round-robin weeks.
-  // Behaviour is pinned by A-TDRAW-22/R1.
-  !/played as ties/.test(html) &&
+  // The old sentence is not searched for in the page text: a comment may quote it,
+  // and a text search over the whole page then goes red on how that comment is
+  // wrapped (it passed only because the real comment was wrapped across two lines;
+  // harness M27 adds a one-line quote and requires smoke to stay green). What the
+  // reader is told is pinned by A-TDRAW-22/R1, which renders this branch and reads
+  // the HTML it produces.
   /the relay serves no main-draw round for/.test(html) &&
   !/d\.mainDrawMatches === 0 && \(d\.editionMatches \|\| 0\) > 0/.test(html),
   'a sentence about why an event has no rounds is a guess; what the relay served is a fact');
 
-assert('A-TDRAW-23 — every declaration the relay replay reads out of the page is top-level in the source',
-  // field-relay-nba's tennis-tier-ladders.yml brace-matches these out of the
-  // DEPLOYED esbuild bundle, so a rename, a move into a function, or a deletion
-  // is a refusal there. The bundle itself was built and read on 2026-11-26
-  // (every name below survives un-renamed); this checks the source half.
-  (() => {
-    const names = ['_TENNIS_MAIN_DRAW_ROUNDS', '_tennisRowInMainDraw', '_tennisDrawPick', '_tennisTierAllowed', '_TENNIS_DRAW_TIER_RANK', '_TENNIS_DRAW_NAMED_RANK', 'TENNIS_TIERS', 'TENNIS_NAMED'];
-    return names.filter((n) => new RegExp('^(?:function|const) ' + n + '\\b', 'm').test(html)).length === names.length;
-  })(),
-  'checked 8 of 8 names: the six the replay is written against plus the two consts they reference');
+// field-relay-nba's scripts/lib/client-tennis-split.cjs (run by its tennis-tier-ladders
+// workflow) brace-matches these out of the DEPLOYED esbuild bundle, so a rename, a move
+// into a function, or a deletion is a refusal there. The bundle itself was built and
+// read on 2026-11-26 (every name below survives un-renamed); this checks the source
+// half only, and says how many names it checked (Rule 91).
+{
+  const names = ['_TENNIS_MAIN_DRAW_ROUNDS', '_tennisRowInMainDraw', '_tennisDrawPick', '_tennisTierAllowed', '_TENNIS_DRAW_TIER_RANK', '_TENNIS_DRAW_NAMED_RANK', 'TENNIS_TIERS', 'TENNIS_NAMED'];
+  const missing = names.filter((n) => !new RegExp('^(?:function|const) ' + n + '\\b', 'm').test(html));
+  assert(`A-TDRAW-23 — every declaration the relay replay reads out of the page is top-level in the source (checked ${names.length - missing.length} of ${names.length} names: the six the replay is written against plus the two consts they reference)`,
+    missing.length === 0,
+    `not a top-level function/const declaration: ${missing.join(', ')}`);
+}
 
 // ── A-TDRAW-22 — the run-time draw decision, EXECUTED, not pinned ─────────────
 // A-TDRAW-16/17/18 used to pin the TEXT of the name lists, and they passed for

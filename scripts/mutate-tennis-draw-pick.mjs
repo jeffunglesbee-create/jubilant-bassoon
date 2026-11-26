@@ -93,13 +93,13 @@ const MUTATIONS = [
     expect: ['A-TDRAW-23'] },
   { name: 'M12 a postponed main-draw row stops counting (the relay keeps it: it drops only cancelled)',
     anchor: " && String(m?.status) !== 'cancelled';", replace: " && String(m?.status) !== 'cancelled' && String(m?.status) !== 'postponed';",
-    expect: ['A-TDRAW-22/P1'] },
+    expect: ['A-TDRAW-22/P1', 'A-TDRAW-17'] },
   { name: 'M13 a walkover main-draw row stops counting (same: the relay keeps it)',
     anchor: " && String(m?.status) !== 'cancelled';", replace: " && String(m?.status) !== 'cancelled' && String(m?.status) !== 'walkover';",
-    expect: ['A-TDRAW-22/P2'] },
+    expect: ['A-TDRAW-22/P2', 'A-TDRAW-17'] },
   { name: 'M14 every live row counts as a main-draw match, whatever its round_name (the round-robin defect, reopened)',
     anchor: " && String(m?.status) !== 'cancelled';", replace: " && String(m?.status) !== 'cancelled' || String(m?.status) === 'live';",
-    expect: ['A-TDRAW-22/L1', 'A-TDRAW-22/L2', 'A-TDRAW-22/NM3'] },
+    expect: ['A-TDRAW-22/L1', 'A-TDRAW-22/L2', 'A-TDRAW-22/NM3', 'A-TDRAW-17'] },
   { name: 'M15 the nav is fed by the by-date rows only (the merged live rows are dropped)',
     anchor: '    _tennisRevealDrawNav(rows);\n', replace: '    _tennisRevealDrawNav(dayRows.filter(_tennisTierAllowed));\n',
     expect: ['A-TDRAW-22/NM1'] },
@@ -141,6 +141,14 @@ const MUTATIONS = [
   { name: 'M26 the scope is widened: the named-event list admits every tournament name',
     anchor: 'const TENNIS_NAMED = /^(ATP Finals|WTA Finals|', replace: 'const TENNIS_NAMED = /^(.*|ATP Finals|WTA Finals|',
     expect: ['A-TDRAW-22/S1', 'A-TDRAW-22/S2'] },
+  // A NEUTRAL edit: behaviour-preserving, so smoke must STAY green. It proves the
+  // A-TDRAW-18 check does not depend on how a comment is wrapped: a text search for
+  // the old sentence ("played as ties") over the whole page went red on a comment
+  // that quotes it on one line, and passed only because the real comment had been
+  // hand-wrapped across two.
+  { name: 'M27 (neutral) a comment quoting the old sentence on one line is added in the empty-rounds branch',
+    anchor: '  if (!rounds.length) {\n', replace: '  if (!rounds.length) {\n    // (neutral edit: an old version of this branch said an event "is played as ties".)\n',
+    neutral: true },
 ];
 
 let harnessDefects = 0, notCaught = 0, caught = 0;
@@ -175,6 +183,11 @@ for (const m of MUTATIONS) {
   if (applied.error) { harnessDefects++; console.error(applied.error); continue; }
   const r = runSmoke(applied.text);
   const red = redIds(r.out);
+  if (m.neutral) {
+    if (r.code === 0) { caught++; console.log(`  stayed green ${m.name}\n              (a behaviour-neutral edit: smoke exit 0, as it must)`); }
+    else { notCaught++; console.error(`  NOT NEUTRAL ${m.name}\n              smoke went red on a behaviour-neutral edit: ${anyRed(r.out).join(', ')}`); }
+    continue;
+  }
   const missing = m.expect.filter((id) => !red.includes(id));
   if (r.code === 0 || missing.length) {
     notCaught++;
@@ -189,7 +202,7 @@ fs.rmSync(tmp, { recursive: true, force: true });
 const after = fs.readFileSync(SRC, 'utf8');
 if (after !== original) { console.error('FAIL: index.html changed during the run (it must not).'); process.exit(1); }
 const ok = notCaught === 0 && harnessDefects === 0;
-console.log(`\nran ${MUTATIONS.length} mutations, caught ${caught} of ${MUTATIONS.length}; not caught ${notCaught}; harness defects ${harnessDefects}.`);
+console.log(`\nran ${MUTATIONS.length} mutations, caught ${caught} of ${MUTATIONS.length} (a neutral edit counts when smoke stays green); not caught ${notCaught}; harness defects ${harnessDefects}.`);
 if (ok) console.log('Every mutation asserted its anchor(s) unique and its effect present, a control run on the unmutated copy was green, and index.html was untouched.');
 if (notCaught) console.error(`${notCaught} NOT CAUGHT: those are the assertions' real coverage, measured, and a defect of the check.`);
 if (harnessDefects) console.error(`${harnessDefects} harness defect(s): those mutations were NOT applied, so they say nothing about the assertions.`);
