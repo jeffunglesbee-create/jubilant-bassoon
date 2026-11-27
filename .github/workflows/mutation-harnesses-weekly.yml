@@ -1,0 +1,57 @@
+name: Mutation harnesses (weekly)
+
+# scripts/mutate-tennis-draw-pick.mjs breaks the Draw-tab picker 28 ways and
+# requires smoke.js to notice each one. It proves the 33 designed cases in
+# smoke.js (A-TDRAW-16/17/18/22/23) can fail. Until this workflow it was run
+# by nothing: no workflow, no smoke row, no package.json script. Checks never
+# shown to fail have been found vacuous in this project more than once, and a
+# harness nobody runs is the same thing one step removed.
+#
+# WEEKLY, NOT PER DEPLOY. The harness takes about 75 seconds. A step in
+# deploy-gate.yml would add that to every deploy; the picker changes rarely, and
+# a week is a short enough window for a case to rot unseen. Owner decision
+# 2026-11-27 ("go with Claude's best recommendations", on the recommendation
+# filed in the field-relay-nba CC-CMD of 2026-11-27, item 2).
+#
+# READ-ONLY. The harness copies index.html and src/legacy/field.js to a temp
+# directory, mutates the copies, and asserts it left the tree untouched.
+# A failure is a case that stopped catching its mutant: fix the case or the
+# picker, never this workflow. silently-dead-crons (field-relay-nba) judges this
+# workflow on its last three scheduled runs like any other.
+#
+# More harnesses join as steps below, one step each, so one going red names
+# itself and does not hide the others.
+
+on:
+  schedule:
+    - cron: '40 6 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-harnesses-weekly
+  cancel-in-progress: false
+
+jobs:
+  harnesses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Draw-tab picker mutants (each must turn smoke.js red)
+        run: |
+          set -o pipefail
+          node scripts/mutate-tennis-draw-pick.mjs 2>&1 | tee mutate-tennis-draw-pick.log
+          {
+            echo '### Draw-tab picker mutation harness'
+            echo '```'
+            tail -3 mutate-tennis-draw-pick.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
