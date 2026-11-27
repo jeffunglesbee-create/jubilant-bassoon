@@ -1090,6 +1090,29 @@ only `STATUS_IN_PROGRESS` as live; its status names for them are not read); a bo
 
 **The laboratory's copy must be synced** (ATOMIC-A), relay first, as for the soccer board: a change to any key above, to the state words, or to which sports carry an `espnEventId`.
 
+## `journalism` on GET /v2/games?sport=afl — Kali and Squiggle context per game (relay-owned; written 2026-11-24)
+
+Producer: `buildAFLJournalismContext` (`src/index.js`), called from `handleV2Games` only when `KALI_AFL_TOKEN` is set (the block's gate; the Squiggle half rides on it too), with `src/afl-squiggle.js` for finals.
+Consumer: none that reads a value. jubilant-bassoon's one reader, `tests/adapter-visible-value.spec.js` (optional-chained, runs only on dispatch), and no field-laboratory code. If a consumer is added it must be synced here first.
+
+```
+game.journalism: {
+  kali:     null | { homeWinPct, awayWinPct, squiggleConsensus, factors, homeBreakdown, awayBreakdown, _kaliProof: { adapterId, sourceId, round, year } },
+  squiggle: null | { homeConfidence: string, awayConfidence: number }
+}
+```
+`squiggle` is Squiggle's Aggregate tip for THIS game: `homeConfidence` is the game's home club's percentage as a two-decimal STRING and `awayConfidence` is the rest as a NUMBER (float noise included: `100 - 72.30` is `27.700000000000003`). The two types differ because the value is passed through as Squiggle serves it; they are kept as they were (a change is a contract decision: `docs/CC-CMD-2026-11-24-afl-squiggle-reads-and-the-round-label.md`). When Squiggle's row lists the two clubs the other way round to ESPN's game, each side's value goes to the right club (the home value is then `(100 - h).toFixed(2)`). A row whose `hconfidence` is not a non-empty string or a number in 0..100 (a tip not yet computed arrives as null, which `Number()` reads as 0) is no tip: `squiggle` stays null, for a regular game and for a final. The relay reads Squiggle with `;source=8` (the Aggregate source), so the rows are Squiggle's consensus alone.
+Presence: every game of the slate carries `journalism: { kali: null, squiggle: null }` once the context ran for it, and a value where a row joined. No `journalism` key at all when the context returned nothing (no Kali token, or a slate of regular games with no week number).
+
+The join (since 2026-11-24): a Kali or Squiggle row belongs to a game only when BOTH its clubs are the game's two clubs, by the AFL identity key (`resolveAFLTeamKey`, `sameAFLClub` in `src/identity-resolver.js`): ESPN's "GWS GIANTS" and Squiggle's "Greater Western Sydney" are one club. Before it a game of GWS carried `squiggle: null` and a prefix rule joined rows by their home club alone.
+Round and year: a REGULAR game is read through its ESPN week (`event.week.number`, 0 for the Opening Round) as the Squiggle and Kali round, in the year of its own ESPN `event.season.year` (the clock's year when an event has none; never the AFL config's constant). A FINAL (ESPN `event.season.type` 3, slug `post-season`) is not: ESPN's week restarts at 1 for the postseason (1 Wildcard Finals ... 5 Grand Final) and Squiggle numbers the finals 25-29 in 2026, so its tip is the Aggregate row of its own two clubs on its Melbourne kickoff day (`squiggleTipForGame`, one read of `?q=tips;year=Y;team=T;source=8`), `kali` stays `null`, and a final with no row is `squiggle: null` with a warning (`[AFL-SQUIGGLE]`), never another round's tip.
+Observed (Rule 73), 2026-11-24, `probe_relay_route` on the deployed relay before the fix: 2026-09-05 Adelaide Crows v Western Bulldogs `squiggle` `{ "47.29", 52.71 }` (March's round-2 tip; the final's own is 68.60 for Adelaide), the 2026-09-26 Grand Final `null`, GWS GIANTS v Geelong Cats (2026-07-11) `null`, the Opening Round games (2026-03-05) no `journalism` key. After the fix: `scripts/check-afl-journalism-context.mjs` and `.github/workflows/afl-finals-live-check.yml`.
+`game.round` on the AFL board is a NUMBER (ESPN's week: 0 for the Opening Round, 1-24, then 1-5 for the finals), against the string the `game.round` section above specifies, and a final's number is a regular round's: known, not changed here (the client's badge shows it as a bare digit and hides 0).
+
+## GET /squiggle?q=... — `X-FIELD-Squiggle-Contact` (relay-owned, additive, written 2026-11-26)
+
+The route forwards a Squiggle `?q=` query unchanged (`src/index.js`, `pathname.startsWith('/squiggle')`) and now adds one response header on every answer to a forwarded query (a 200, an upstream refusal such as a 403 or 503, a cache hit; not the route's own 400 for a missing `q=`, nor OPTIONS or a 405, nor the 500 `relayFetch` throws on an upstream 304): `X-FIELD-Squiggle-Contact: set | unset | invalid`. It says whether the owner's Worker secret `SQUIGGLE_CONTACT` is in the User-Agent the relay sends to Squiggle (Squiggle requires a contact address there): `set` (one plain address, sent: ` - <address>` after the usual User-Agent, Squiggle's own example shape), `unset` (the owner has not set the secret), `invalid` (set, but not one plain address: none is sent). It is a word and never the address. Producer: `squiggleContactState` (`src/afl-squiggle.js`). Consumer: check 14 of `scripts/verify-staged-items.mjs` (`squiggle_contact_set`). The body is unchanged, so no client reads anything new; jubilant-bassoon's and field-laboratory's copies need no sync.
+
 ## GET /v2/games?sport=aflw — the AFLW board (aflapi.afl.com.au, written 2026-11-23)
 
 AFLW is not on ESPN (core `australian-football/leagues` lists `afl` only, runner probe 2026-11-22), so this board is the AFL's own API: `https://aflapi.afl.com.au/afl/v2`, competition 3 ("NAB AFLW"), read
@@ -1847,36 +1870,16 @@ game-to-BSD join was live-only (`g.bsdEventId` in `handleV2Games`) and a pre-mat
 - Since 2026-11-21 each leaderboard entry's `today` and `thru` are the player's CURRENT round (its own score and holes completed), read from that round's linescore; before, they were round 1's in every round (`src/golf-round-line.js`).
 - A `roundStart` of null is "not read", never "no round". `round` is unchanged and can still be null before the first shot; `teeTimes.round` names the round `roundStart` belongs to.
 
-## Tennis rows — `round_name` and `status` decide the Draw tab (relay-owned, client-read; added 2026-11-26)
+## Tennis main-draw `round_name` vocabulary — `/bsd/tennis/matches/by-date`, `/bsd/tennis/matches/live`, `/bsd/tennis/draw` (relay-owned, written 2026-11-27)
 
-`docs/CC-CMD-2026-11-24-tennis-client-split-drift.md` in field-relay-nba, client half. Until 2026-11-26 the client chose
-which team events and season finals could reach the Draw tab by NAME, and every assignment went stale within weeks
-(three red weekly runs of `tennis-tier-ladders.yml`, a different event each time). The client now asks the rows.
+The relay serves each BSD tennis match with the vendor's `round_name` unchanged, on all three routes (one feed: by-date and the draw route read `${BSD_BASE}/tennis/api/v2/matches/`, live reads `.../matches/live/`). To the relay a match is MAIN DRAW if and only if its `round_name` is exactly one of these seven strings and its `status` is not `cancelled`:
 
-**Producer:** field-relay-nba, the BSD tennis proxies. **Consumer:** jubilant-bassoon `_tennisDrawPick` /
-`_tennisRowInMainDraw` (`src/legacy/field.js`), which reads the day's card (`/bsd/tennis/matches/by-date?date=`, merged with
-`/bsd/tennis/matches/live` for the Draw-tab chip) and then draws `/bsd/tennis/draw?tournament=&season=`.
+`Round of 128` · `Round of 64` · `Round of 32` · `Round of 16` · `Quarterfinals` · `Semifinals` · `Final`
 
-| field | on | shape | read by the client as |
-|---|---|---|---|
-| `round_name` | every by-date and live row | string; `''` on round-robin and rubber rows | a main-draw round iff it is **exactly** one of the seven names below |
-| `status` | every by-date and live row | string | `'cancelled'` is the only value read; every other value, a postponed or walkover row included, still counts |
-| `tournament.id`, `.name`, `.category` | every row | number, string, string | the key, the scope test (a tier category, or a name on the client's named list) and the rank |
-| `is_doubles` | every row | boolean | `true` is skipped; a tournament named `Doubles`, `Boys`, `Girls`, `Wheelchair` or `Quad` is skipped |
+That list is `ORDER` in the draw route (`src/index.js`, `const ORDER = [...]`); a draw's `rounds[].index` and a node's `roundIndex` are the position in it, 0 to 6. Every other row is OUTSIDE the main draw. The draw route counts them in `roundsOutsideMainDraw`, keyed by the name: `Qualification Round 1`, `Qualification Round 2`, `Qualification Final`, `""` (blank: round-robin rubbers and tie rows carry no round name), and `(absent)` for a row with no `round_name` at all. A cancelled row in a main-draw round is left out of `nodes` and reported as the `cancelledRowsExcluded` anomaly.
 
-**The vocabulary** (the relay draw route's `ORDER`, `src/index.js`, read 2026-11-26), spelled exactly, case and spacing
-included: `Round of 128`, `Round of 64`, `Round of 32`, `Round of 16`, `Quarterfinals`, `Semifinals`, `Final`. Any other
-`round_name` (`''`, `Qualification Round 1`, `Qualification Final`, ... as the committed `tennis-tier-ladders` readings show) is
-not drawn; the route counts it under `roundsOutsideMainDraw` rather than dropping it silently. A row is in the route's draw
-when its `round_name` is in the list and its `status` is not `'cancelled'`; the client applies the same two tests, so a
-tournament is offered only when a row on today's card is a match the route will draw.
+Observed (Rule 73), 2026-11-26, `probe_relay_route` on the deployed relay: draw 135/2026 (US Open Men, complete): `rounds` Round of 128 to Final at indices 0..6, `roundsOutsideMainDraw` `{Qualification Final: 16, Qualification Round 2: 32, Qualification Round 1: 66}`, `tournament.category` `grand_slam`; draw 209/2026 (ATP Finals, complete): `{"": 12}`; draw 446/2026 (Davis Cup, in progress): `{"": 339, Qualification Final: 7, Qualification Round 1: 13}`; `/bsd/tennis/matches/live` (3 rows, status `live`): `round_name` `Round of 16` on each. Not observed: a by-date card read in full (the probe returns its first ~12 KB), so that by-date rows carry the same names is read from the shared feed, not seen.
 
-- **A 200 from `/bsd/tennis/draw` with `rounds: []`** is therefore skew between the card and the route (a season filed under
-  another year, a route that has not caught up), not a competition format. The client prints `season` and `editionMatches` as
-  served, so the route must keep serving both on every 200 (it does: `season`, and `editionMatches: edition.length`).
-- **Copies of the vocabulary.** The client's `_TENNIS_MAIN_DRAW_ROUNDS` is a second copy; field-laboratory's `src/Draw.fs`
-  (the `"Round of 128"` ... parse, line 97) is a third. If the relay changes `ORDER` or the cancelled rule, the client copy
-  changes in the SAME session (Rule 70). The guard is field-relay-nba's `scripts/lib/client-tennis-split.cjs` (run by
-  `tennis-tier-ladders.yml`), which reads the picker out of the DEPLOYED page and runs it against the draw route's own nodes,
-  plus `smoke.js` A-TDRAW-17, A-TDRAW-22 and A-TDRAW-23 here.
-- **Sync:** this section is written in the client's copy only. The relay's `CONTRACTS.md` must receive the same section.
+**Consumer:** jubilant-bassoon decides per row whether a Draw tab is offered by this vocabulary (`_TENNIS_MAIN_DRAW_ROUNDS` and `_tennisRowInMainDraw` in `src/legacy/field.js`, replacing a name list). That is a second copy of the seven names. If `ORDER` or the vendor's labels move, the client's copy must move with them, and jubilant-bassoon's copy of this file must be the same file when that client change lands (`contracts-identity-check.yml` requires the two to be byte-identical).
+
+**Guard:** `scripts/tennis-tier-ladders.mjs` (weekly, `.github/workflows/tennis-tier-ladders.yml`) replays the deployed client's picker. Its V1 check offers a card row bearing each main-draw round of the complete US Open Men 2026 edition (read from that draw payload's `rounds`, so the replay keeps no list of its own) and requires a Draw tab; its V2 check offers a row bearing each key of `roundsOutsideMainDraw` in any draw payload it read and requires none. A name dropped or mistyped in the client fails the run.
