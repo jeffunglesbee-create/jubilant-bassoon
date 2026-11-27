@@ -1,0 +1,72 @@
+control (unmutated copy): smoke exit 0, 0 failed
+  caught      M1  the predicate line is deleted from the pick (the exact line the fix added)
+              red: A-TDRAW-17, A-TDRAW-22/A1, A-TDRAW-22/A2, A-TDRAW-22/B2, A-TDRAW-22/D, A-TDRAW-22/E, A-TDRAW-22/G, A-TDRAW-22/H, A-TDRAW-22/J, A-TDRAW-22/N2, A-TDRAW-22
+  caught      M2  a Davis Cup exclusion by name comes back
+              red: A-TDRAW-22/B, A-TDRAW-22/N1, A-TDRAW-22/R2, A-TDRAW-22
+  caught      M3  the predicate is always true
+              red: A-TDRAW-17, A-TDRAW-22/A1, A-TDRAW-22/A2, A-TDRAW-22/B2, A-TDRAW-22/D, A-TDRAW-22/E, A-TDRAW-22/G, A-TDRAW-22/H, A-TDRAW-22/J, A-TDRAW-22/N2, A-TDRAW-22
+  caught      M4  the predicate is always false (the pick can never be non-null)
+              red: A-TDRAW-17, A-TDRAW-22/A2, A-TDRAW-22/A3, A-TDRAW-22/B, A-TDRAW-22/F, A-TDRAW-22/H, A-TDRAW-22/I, A-TDRAW-22/J, A-TDRAW-22/K, A-TDRAW-22/N1, A-TDRAW-22/R1, A-TDRAW-22/R2, A-TDRAW-22
+  caught      M5  cancelled rows count as main-draw matches
+              red: A-TDRAW-17, A-TDRAW-22/G, A-TDRAW-22/J, A-TDRAW-22
+  caught      M6  one round name is misspelled against the relay vocabulary (Quarterfinals -> Quarter-finals)
+              red: A-TDRAW-17, A-TDRAW-22/B, A-TDRAW-22/I, A-TDRAW-22/N1, A-TDRAW-22/R2, A-TDRAW-22
+  caught      M7  a named event is no longer rankable by default
+              red: A-TDRAW-16, A-TDRAW-22/B, A-TDRAW-22/I, A-TDRAW-22/N1, A-TDRAW-22/R2, A-TDRAW-22
+  caught      M8  the Finals lose their rank-1 preference
+              red: A-TDRAW-16, A-TDRAW-22/K, A-TDRAW-22
+  caught      M9  the sentence "played as ties" comes back for an empty rounds array
+              red: A-TDRAW-18, A-TDRAW-22/R1, A-TDRAW-22
+  caught      M10 the predicate is renamed away from the name the relay replay reads
+              red: A-TDRAW-17, A-TDRAW-23, A-TDRAW-22/A1, A-TDRAW-22/A2, A-TDRAW-22/A3, A-TDRAW-22/B, A-TDRAW-22/B2, A-TDRAW-22/D, A-TDRAW-22/E, A-TDRAW-22/F, A-TDRAW-22/G, A-TDRAW-22/H, A-TDRAW-22/I, A-TDRAW-22/J, A-TDRAW-22/K, A-TDRAW-22/N1, A-TDRAW-22/N2, A-TDRAW-22/R1, A-TDRAW-22/R2, A-TDRAW-22
+  caught      M11 a picker declaration moves inside a function (no longer top-level)
+              red: A-TDRAW-23
+  NOT CAUGHT  M12 a postponed main-draw row stops counting (the relay keeps it: it drops only cancelled)
+              still green: A-TDRAW-22/P1
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M13 a walkover main-draw row stops counting (same: the relay keeps it)
+              still green: A-TDRAW-22/P2
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M14 every live row counts as a main-draw match, whatever its round_name (the round-robin defect, reopened)
+              still green: A-TDRAW-22/L1, A-TDRAW-22/L2, A-TDRAW-22/NM3
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M15 the nav is fed by the by-date rows only (the merged live rows are dropped)
+              still green: A-TDRAW-22/NM1
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M16 the nav is fed by the live rows only (the by-date card is dropped)
+              still green: A-TDRAW-22/NM2
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M17 the pick ignores is_doubles (the text the doubles pin looks for is still there)
+              still green: A-TDRAW-22/D1
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M18 the pick stops skipping Doubles/Boys/Girls/Wheelchair/Quad by tournament name (the regex text stays)
+              still green: A-TDRAW-22/D2
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M19 a named event's default rank is 3 (level with the 250s) instead of 2
+              still green: A-TDRAW-22/I, A-TDRAW-22/I-count
+              smoke exit 1; red instead: A-TDRAW-16
+  NOT CAUGHT  M20 a named event's default rank is 0 (level with a slam)
+              still green: A-TDRAW-22/I-slam
+              smoke exit 1; red instead: A-TDRAW-16
+  NOT CAUGHT  M21 a named event's default rank is 1 (level with a 1000)
+              still green: A-TDRAW-22/I-1000
+              smoke exit 1; red instead: A-TDRAW-16
+  NOT CAUGHT  M22 a named event's default rank is 9 (below everything)
+              still green: A-TDRAW-22/I-rev, A-TDRAW-22/I-count
+              smoke exit 1; red instead: A-TDRAW-16, A-TDRAW-22/I, A-TDRAW-22
+  NOT CAUGHT  M23 the 250s are ranked with the 500s (atp_250 and wta_250 at 2)
+              still green: A-TDRAW-22/I, A-TDRAW-22/I-count
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M24 candidate tournaments are keyed by name instead of by id
+              still green: A-TDRAW-22/ID
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M25 the scope is widened: challenger is admitted as a tier (in the tier set and the rank table)
+              still green: A-TDRAW-22/S1
+              smoke exit 0; red instead: (nothing)
+  NOT CAUGHT  M26 the scope is widened: the named-event list admits every tournament name
+              still green: A-TDRAW-22/S1, A-TDRAW-22/S2
+              smoke exit 1; red instead: (nothing)
+
+ran 26 mutations, caught 11 of 26; not caught 15; harness defects 0.
+15 NOT CAUGHT: those are the assertions' real coverage, measured, and a defect of the check.
+exit=1
